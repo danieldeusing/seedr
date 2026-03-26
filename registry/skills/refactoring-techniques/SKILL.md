@@ -63,8 +63,9 @@ description: |
 
 ## Workflow
 
-1. **Identify the smell** - What makes the code hard to work with?
+1. **Identify the smell** - Name the specific code smell (e.g., Long Method, Large Class, Long Parameter List, Feature Envy)
 2. **Select technique** - Use the selection guide above
-3. **Read technique details** - Load the appropriate reference file
-4. **Apply incrementally** - Make small, verifiable changes
-5. **Test after each step** - Ensure behavior is preserved
+3. **Read technique details** - Load the appropriate reference file and cite it (e.g., "See [Composing Methods](references/composing-methods.md) for full details")
+4. **Show before/after** - Always include a concrete code example showing the code before and after applying the primary technique
+5. **Apply incrementally** - Make small, verifiable changes
+6. **Test after each step** - Ensure behavior is preserved

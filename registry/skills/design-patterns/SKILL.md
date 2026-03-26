@@ -13,6 +13,19 @@ description: >
 
 Quick reference for the 23 Gang of Four design patterns organized by category.
 
+## How to Respond
+
+When a user asks about design patterns, structure your response with these sections:
+
+1. **Recommendation** — Commit to ONE specific pattern. Do not list multiple options without picking one.
+2. **Why This Pattern** — Explain how the user's specific scenario maps to this pattern's intent. Reference their domain language (e.g., "your payment types become Strategy implementations").
+3. **Code Example** — Adapt the example to the user's domain. Use their class names, their problem context — not generic Shape/Animal/Product examples. Match the user's programming language if specified; default to TypeScript if unspecified.
+4. **Trade-offs** — Mention at least one caveat, alternative, or situation where this pattern would be the wrong choice.
+
+If the user explicitly asks to implement a specific pattern, skip the recommendation section and focus on why, domain-adapted code, and trade-offs.
+
+Before responding, consult the relevant reference file (references/creational.md, references/structural.md, or references/behavioral.md) for the pattern's participants, when-to-use criteria, and caveats to ensure accuracy.
+
 ## Pattern Selection Guide
 
 | Problem | Consider |

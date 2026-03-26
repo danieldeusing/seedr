@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="10">
+<title>Skill Optimizer Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 20px; color: #fff; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; }
+  .card h2 { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .big-number { font-size: 48px; font-weight: 700; }
+  .green { color: #4ade80; }
+  .red { color: #f87171; }
+  .yellow { color: #fbbf24; }
+  .white { color: #fff; }
+  .muted { color: #888; font-size: 14px; margin-top: 4px; }
+  .stat-row { display: flex; gap: 24px; }
+  .stat-item .big-number { font-size: 36px; }
+  .chart-container { position: relative; width: 100%; height: 200px; }
+  .chart-container svg { width: 100%; height: 100%; }
+  .checklist-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; font-size: 13px; gap: 12px; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-label { flex: 1; }
+  .badge-pass { color: #4ade80; font-weight: 600; white-space: nowrap; }
+  .badge-fail { color: #f87171; font-weight: 600; white-space: nowrap; }
+  .full-width { grid-column: 1 / -1; }
+  .log-entry { padding: 12px 16px; border-bottom: 1px solid #222; font-size: 13px; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .log-round { font-weight: 600; color: #fff; }
+  .log-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 8px; }
+  .log-kept { background: #166534; color: #4ade80; }
+  .log-reverted { background: #7f1d1d; color: #f87171; }
+  .log-score { font-weight: 600; }
+  .log-change { color: #aaa; }
+  .log-reason { color: #666; font-size: 12px; margin-top: 2px; }
+  .empty { color: #555; font-style: italic; padding: 16px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Skill Optimizer</h1>
+<div class="subtitle" id="subtitle">Waiting for data...</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Current Score</h2>
+    <div class="big-number green" id="current-score">--%</div>
+    <div class="muted" id="score-delta"></div>
+  </div>
+  <div class="card">
+    <h2>Progress</h2>
+    <div class="stat-row">
+      <div class="stat-item">
+        <div class="big-number white" id="rounds-count">0</div>
+        <div class="muted">rounds</div>
+      </div>
+      <div class="stat-item">
+        <div class="big-number green" id="kept-count">0</div>
+        <div class="muted">kept</div>
+      </div>
+      <div class="stat-item">
+        <div class="big-number red" id="reverted-count">0</div>
+        <div class="muted">reverted</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Score Over Time</h2>
+    <div class="chart-container"><svg id="chart" viewBox="0 0 500 200" preserveAspectRatio="none"></svg></div>
+  </div>
+  <div class="card">
+    <h2>Checklist (Latest Round)</h2>
+    <div id="checklist"><div class="empty">No data yet</div></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card full-width">
+    <h2>Changelog</h2>
+    <div id="changelog"><div class="empty">No rounds completed yet</div></div>
+  </div>
+</div>
+
+<script>
+const AUTORESEARCH_DATA = null;
+
+function render(d) {
+  if (!d) return;
+  document.getElementById('subtitle').textContent = 'Improving: ' + d.skill;
+
+  var score = Math.round((d.currentScore != null ? d.currentScore : d.baseline) * 100);
+  var el = document.getElementById('current-score');
+  el.textContent = score + '%';
+  el.className = 'big-number ' + (score >= 80 ? 'green' : score >= 60 ? 'yellow' : 'red');
+
+  var base = Math.round((d.baseline || 0) * 100);
+  var diff = score - base;
+  document.getElementById('score-delta').textContent =
+    (diff >= 0 ? '+' : '') + diff + '% from baseline (' + base + '%)';
+
+  var rounds = d.rounds || [];
+  var kept = 0, reverted = 0;
+  for (var i = 0; i < rounds.length; i++) { rounds[i].kept ? kept++ : reverted++; }
+  document.getElementById('rounds-count').textContent = rounds.length;
+  document.getElementById('kept-count').textContent = kept;
+  document.getElementById('reverted-count').textContent = reverted;
+
+  // Chart
+  var scores = [d.baseline];
+  for (var i = 0; i < rounds.length; i++) scores.push(rounds[i].score);
+  var svg = document.getElementById('chart');
+  if (scores.length > 1) {
+    var w = 500, h = 200, pad = 30;
+    var mn = 1, mx = 0;
+    for (var i = 0; i < scores.length; i++) {
+      if (scores[i] < mn) mn = scores[i];
+      if (scores[i] > mx) mx = scores[i];
+    }
+    mn = Math.max(0, mn - 0.08);
+    mx = Math.min(1, mx + 0.08);
+    var range = mx - mn || 0.1;
+
+    var html = '';
+    for (var p = Math.ceil(mn * 10) / 10; p <= mx + 0.001; p += 0.1) {
+      var y = h - pad - ((p - mn) / range) * (h - 2 * pad);
+      html += '<line x1="' + pad + '" y1="' + y + '" x2="' + (w - pad) + '" y2="' + y + '" stroke="#222" stroke-width="1"/>';
+      html += '<text x="' + (pad - 4) + '" y="' + (y + 4) + '" fill="#555" font-size="10" text-anchor="end">' + Math.round(p * 100) + '%</text>';
+    }
+
+    var pts = [];
+    for (var i = 0; i < scores.length; i++) {
+      var x = pad + (i / (scores.length - 1)) * (w - 2 * pad);
+      var y = h - pad - ((scores[i] - mn) / range) * (h - 2 * pad);
+      pts.push(x + ',' + y);
+      var label = i === 0 ? 'Base' : 'R' + i;
+      var kept_i = i > 0 && rounds[i - 1].kept;
+      var col = i === 0 ? '#6b7280' : (kept_i ? '#4ade80' : '#f87171');
+      html += '<circle cx="' + x + '" cy="' + y + '" r="4" fill="' + col + '"/>';
+      html += '<text x="' + x + '" y="' + (y - 10) + '" fill="#888" font-size="9" text-anchor="middle">' + label + '</text>';
+    }
+    html = '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#4ade80" stroke-width="2" opacity="0.6"/>' + html;
+    svg.innerHTML = html;
+  }
+
+  // Checklist
+  var cl = document.getElementById('checklist');
+  if (d.checklist && rounds.length > 0) {
+    var last = rounds[rounds.length - 1];
+    var items = '';
+    for (var i = 0; i < d.checklist.length; i++) {
+      var q = d.checklist[i];
+      var passed = last.checks && last.checks[q];
+      items += '<div class="checklist-item"><span class="checklist-label">' + q + '</span>';
+      items += '<span class="' + (passed ? 'badge-pass' : 'badge-fail') + '">' + (passed ? 'PASS' : 'FAIL') + '</span></div>';
+    }
+    cl.innerHTML = items;
+  }
+
+  // Changelog
+  var log = document.getElementById('changelog');
+  if (rounds.length > 0) {
+    var entries = '';
+    for (var i = rounds.length - 1; i >= 0; i--) {
+      var r = rounds[i];
+      var sc = Math.round(r.score * 100);
+      entries += '<div class="log-entry"><div class="log-header"><span>';
+      entries += '<span class="log-round">Round ' + r.round + '</span>';
+      entries += '<span class="log-badge ' + (r.kept ? 'log-kept' : 'log-reverted') + '">' + (r.kept ? 'KEPT' : 'REVERTED') + '</span>';
+      entries += '</span><span class="log-score ' + (sc >= 80 ? 'green' : sc >= 60 ? 'yellow' : 'red') + '">' + sc + '%</span></div>';
+      entries += '<div class="log-change">' + r.change + '</div>';
+      if (r.reason) entries += '<div class="log-reason">' + r.reason + '</div>';
+      entries += '</div>';
+    }
+    log.innerHTML = entries;
+  }
+}
+
+render(AUTORESEARCH_DATA);
+</script>
+</body>
+</html>

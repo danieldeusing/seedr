@@ -81,14 +81,16 @@ Based on detected stack, apply rules from the appropriate reference:
 - **Go**: See [references/go.md](references/go.md)
 - **Pre-commit hooks**: See [references/pre-commit.md](references/pre-commit.md)
 
-**Priority**: Enhance existing configs. Only create new files if none exist.
+**Priority**: Read and enhance existing configs. If a lint config already exists, read it first and merge new rules into the existing structure rather than replacing it. Only create new files if none exist.
 
 ### 4. Output
 
 1. **Show changes** - Display diff of config modifications
-2. **List dependencies** - Show packages to install
-3. **Ask to install** - Use AskUserQuestion to confirm installation
-4. **Ask about --fix** - Offer to run auto-fix after setup
+2. **Add lint scripts** - Add `lint` and `lint:fix` scripts to `package.json` (JS) or show equivalent CLI commands for other stacks
+3. **List key rules** - Show a "Key rules enabled" summary naming at least 5 specific rule IDs (e.g., `no-unused-vars`, `E501`, `B006`) with a one-line description of what each catches
+4. **List dependencies** - Show packages to install
+5. **Ask to install** - Use AskUserQuestion to confirm installation
+6. **Ask about --fix** - Offer to run auto-fix after setup
 
 ```
 header: "Install"
@@ -121,3 +123,5 @@ Follow best practice conventions:
 | Complexity | `warn` | cognitive-complexity, max-depth |
 | Style | `warn` | prefer-const, no-var |
 | Formatting | `off` | Let Prettier handle it |
+
+**For tools without native severity levels** (e.g., ruff, clippy): map the severity concept by categorizing rules in the output. In the "Key rules enabled" summary, label each rule as `[error]`, `[warn]`, or `[off]` based on the table above. For ruff, put formatting rules (E501, W291, W292) in `ignore` and explain in the output that bug/security rules will block CI while style rules are advisory.

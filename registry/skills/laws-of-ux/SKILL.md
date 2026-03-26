@@ -128,7 +128,7 @@ When reviewing UI changes against these laws:
 1. Use the mapping table to identify which laws apply to your specific change
 2. For each relevant law, assess whether the change aligns with or violates the principle
 3. If you spot a violation, note it with a brief explanation referencing the law by name
-4. Suggest a concrete improvement — don't just flag the problem
+4. Suggest a concrete improvement — don't just flag the problem. Every suggestion must name a specific UI pattern, component, value, or structural change. Never use hedge words ("consider", "perhaps", "might want to") or vague terms ("smart defaults", "better UX"). Say exactly what to build, add, remove, or change.
 5. Prioritize fixes that affect the most users (Pareto Principle)
 
 Keep feedback proportionate to the change. A small button move doesn't need a 10-law audit. Focus on the 2-3 most relevant laws for each change.

@@ -25,6 +25,49 @@ Instructions for the agent go here. Write like you're briefing a colleague.
 The more specific and structured, the more consistent the behavior.
 ```
 
+## Complete Example
+
+Here is a complete, well-structured agent — use this as a template for quality:
+
+```markdown
+---
+name: dependency-auditor
+description: Audit npm/yarn dependencies for known vulnerabilities, outdated packages, and license compliance issues. Use when reviewing package.json or running security checks.
+tools: [Read, Grep, Glob, Bash]
+model: sonnet
+permissionMode: default
+maxTurns: 12
+---
+
+# Dependency Auditor
+
+You audit project dependencies for security, freshness, and license compliance.
+
+## Focus Areas
+- **Vulnerabilities**: Check for CVEs via `npm audit` or `yarn audit`. Flag critical/high severity.
+- **Outdated packages**: Identify packages >2 major versions behind.
+- **License compliance**: Flag copyleft licenses (GPL, AGPL) in commercial projects.
+- **Unused dependencies**: Cross-reference imports against package.json entries.
+
+## Process
+1. Read package.json and lock file to understand the dependency tree.
+2. Run `npm audit --json` (or yarn equivalent) and parse results.
+3. Grep source files to find actually-used imports vs declared dependencies.
+4. Compile findings into a structured report.
+
+## Output Format
+For each finding, report:
+- **Package**: name and current version
+- **Issue**: vulnerability CVE / outdated / license / unused
+- **Severity**: Critical, High, Medium, Low, Info
+- **Action**: specific recommended fix (e.g., "upgrade lodash from 4.17.15 to 4.17.21")
+
+## Rules
+- Never auto-fix — report only. The user decides what to upgrade.
+- If no issues found, confirm clean audit with summary stats.
+- Skip devDependencies for license checks unless asked.
+```
+
 ## Frontmatter Fields
 
 ### Required
@@ -32,7 +75,7 @@ The more specific and structured, the more consistent the behavior.
 | Field | Description |
 |-------|-------------|
 | `name` | Unique identifier — lowercase letters and hyphens only (e.g. `code-reviewer`). Referenced in prompts and CLI flags. |
-| `description` | Short sentence explaining what agent does. Claude matches messages against every agent's description to decide which to spawn — **make it specific and unambiguous**. |
+| `description` | Short sentence explaining what agent does. Claude matches messages against every agent's description to decide which to spawn — **make it specific and unambiguous**. Must include: (1) the action performed, (2) the domain/scope, and (3) a "Use when..." trigger phrase. Example: "Audit npm dependencies for vulnerabilities and license issues. Use when reviewing package.json or running security checks." |
 
 ### Optional
 
@@ -177,7 +220,7 @@ Disable a built-in: `{ "permissions": { "deny": ["Task(Explore)"] } }` in settin
 4. **Set permissions** — `dontAsk` for read-only agents, `default` for writers.
 5. **Set maxTurns** — Estimate reasonable turns for the task. Add small buffer.
 6. **Write description** — Specific enough that Claude activates it for the right tasks and ignores it for others.
-7. **Write system prompt** — Tell the agent how to do its job: what to focus on, output format, what to avoid, domain rules.
+7. **Write system prompt** — Structure with four sections: **Focus Areas** (what to check/do), **Process** (step-by-step workflow), **Output Format** (how to report results), **Rules** (constraints and edge cases). See the Complete Example above.
 8. **Add memory** (optional) — Only if agent runs repeatedly across sessions. See [references/memory-and-hooks.md](references/memory-and-hooks.md).
 9. **Add hooks** (optional) — Auto-format, auto-lint, cleanup. See [references/memory-and-hooks.md](references/memory-and-hooks.md).
 10. **Add skills** (optional) — Explicitly list any skills the agent needs.

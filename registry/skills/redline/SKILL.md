@@ -222,7 +222,7 @@ For annotations that map to different files, dispatch parallel agents — one pe
 2. Locates the element from Step 3
 3. Interprets the comment in context:
    - **`comment`**: The user's feedback — this is the PRIMARY instruction
-   - **`computedCss`**: Current styling — use to understand what needs to change (e.g., for "too much padding", read `padding-*` values)
+   - **`computedCss`**: Current styling — cite specific values in your analysis and summary (e.g., "padding-top is currently 24px, reducing to 12px"). Always reference the before-value from computedCss so the user can verify the change.
    - **`html`**: Rendered outerHTML — shows attributes and structure
    - **`childHints`**: Direct children — helps navigate inner structure
 4. Applies the minimal fix
@@ -256,3 +256,5 @@ Files modified:
   - src/components/Card.tsx
   - src/styles/buttons.css
 ```
+
+**ALWAYS use this exact format** — even when all annotations are skipped. Omit sections with zero items (e.g., if nothing was fixed, omit the `Fixed:` section), but keep the structured format with section headers. Never replace this with a conversational paragraph.

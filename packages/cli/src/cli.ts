@@ -4,13 +4,14 @@ import { listCommand } from "./commands/list.js";
 import { removeCommand } from "./commands/remove.js";
 import { initCommand } from "./commands/init.js";
 import { printLogo } from "./utils/ui.js";
+import packageJson from "../package.json";
 
 const program = new Command();
 
 program
   .name("seedr")
   .description("Seed your Coding Agents with capabilities")
-  .version("0.1.0")
+  .version(packageJson.version)
   .addCommand(addCommand)
   .addCommand(listCommand)
   .addCommand(removeCommand)

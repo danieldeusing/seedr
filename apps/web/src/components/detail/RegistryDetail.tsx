@@ -70,7 +70,7 @@ function CollapsibleTextSection({ children, header }: { children: ReactNode; hea
   const showCollapsed = overflows && !expanded;
 
   return (
-    <div>
+    <div data-term>
       <div className="mb-2 flex items-center justify-between">
         <h3 className="prompt">{header}</h3>
         {overflows && (
@@ -94,7 +94,7 @@ function CollapsibleTextSection({ children, header }: { children: ReactNode; hea
         )}
       </div>
 
-      <div className="relative">
+      <div data-term-out className="relative">
         <div
           ref={contentRef}
           className={MARKDOWN_CLASSES}
@@ -158,9 +158,9 @@ export function RegistryDetail({
 
       {/* Description */}
       {description && (
-        <div>
+        <div data-term>
           <h3 className="prompt mb-2">description</h3>
-          <p className="text-md leading-relaxed text-muted-foreground">{description}</p>
+          <p data-term-out className="text-md leading-relaxed text-muted-foreground">{description}</p>
         </div>
       )}
 
@@ -180,9 +180,11 @@ export function RegistryDetail({
 
       {/* Compatible with */}
       {compatibleTools && compatibleTools.length > 0 && (
-        <div>
+        <div data-term>
           <h3 className="prompt mb-3">compatible with</h3>
-          <CompatibilityBadges tools={compatibleTools} size="md" />
+          <div data-term-out>
+            <CompatibilityBadges tools={compatibleTools} size="md" />
+          </div>
         </div>
       )}
 

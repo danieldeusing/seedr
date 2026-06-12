@@ -342,6 +342,43 @@ html[data-theme="paper"] {
   .link-quiet:hover {
     color: var(--primary);
   }
+
+  /*
+   * live terminal session: `$ command` prompts type out, section content reveals
+   * like command output. Gated behind html.term-anim, added pre-paint by the
+   * inline script in index.html — with JS disabled nothing is ever hidden.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    /* pending prompt: fully invisible (incl. the `$ ` prefix — a shell only prints
+       the prompt when it's ready), line box reserved */
+    html.term-anim [data-term] .prompt:not(.term-live),
+    html.term-anim [data-term] .prompt:not(.term-live)::before {
+      color: transparent;
+    }
+    /* pending output: keep layout (no CLS), no interaction until revealed */
+    html.term-anim [data-term] [data-term-out]:not(.term-show) {
+      visibility: hidden;
+    }
+    /* phosphor warm-up flicker */
+    html.term-anim [data-term] [data-term-out].term-show {
+      animation: term-output 0.2s steps(3, end) both;
+    }
+    @keyframes term-output {
+      from {
+        opacity: 0;
+      }
+    }
+    /* caret at the typing edge (JS-created; distinct from the blinking .cursor-block) */
+    .term-caret {
+      display: inline-block;
+      width: 0.55em;
+      height: 1em;
+      margin-left: 2px;
+      background: var(--primary);
+      vertical-align: baseline;
+      transform: translateY(0.12em);
+    }
+  }
 }
 
 @utility card {

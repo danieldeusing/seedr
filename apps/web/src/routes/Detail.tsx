@@ -15,6 +15,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PluginContents } from "@/components/PluginContents";
 import { getItem, getLongDescription, getFileTree } from "@/lib/registry";
+import { useTerminalSession } from "@/lib/useTerminalSession";
 import type { ComponentType, FileTreeNode, ScopeType, SourceType } from "@/lib/types";
 
 const PREVIEW_THEME = "seedr-preview";
@@ -127,43 +128,7 @@ const scopeDescriptions: Record<ScopeType, string> = {
   local: "Built for local settings (gitignored). May not work correctly in other scopes.",
 };
 
-export function Detail() {
-  const { type, slug } = useParams<{ type: string; slug: string }>();
-  const componentType = type?.replace(/s$/, "") as ComponentType;
-  useScrollRestoration();
-
-  const item = slug ? getItem(slug, componentType) : undefined;
-
-  const [longDescription, setLongDescription] = useState<string>();
-  const [fileTree, setFileTree] = useState<FileTreeNode[]>();
-  useEffect(() => {
-    if (!slug) return;
-    getLongDescription(slug, componentType).then(setLongDescription);
-    getFileTree(slug, componentType).then(setFileTree);
-  }, [slug, componentType]);
-
-  const fetchFileContent = useCallback(async (relativePath: string) => {
-    if (!item?.externalUrl) throw new Error("No external URL");
-    const rawUrl = getRawUrl(item.externalUrl, relativePath);
-    if (!rawUrl) throw new Error("Could not determine file URL");
-    const response = await fetch(rawUrl);
-    if (!response.ok) throw new Error(`Failed to fetch file (${response.status})`);
-    return response.text();
-  }, [item?.externalUrl]);
-
-  if (!item) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
-        <p className="text-subtext">Item not found</p>
-        <Link to="/" className="text-accent hover:underline mt-4 inline-block">
-          Go home
-        </Link>
-      </div>
-    );
-  }
-
-  const installCommand = `npx @danieldeusing/seedr add ${item.slug} --type ${item.type}`;
-
+function buildDetailLabels(item: NonNullable<ReturnType<typeof getItem>>): DetailLabelData[] {
   const labels: DetailLabelData[] = [];
   if (item.sourceType) {
     labels.push({
@@ -206,6 +171,53 @@ export function Detail() {
       tooltip: { title: `${scopeLabels[item.targetScope]} Scope`, description: scopeDescriptions[item.targetScope] },
     });
   }
+  return labels;
+}
+
+export function Detail() {
+  const { type, slug } = useParams<{ type: string; slug: string }>();
+  const componentType = type?.replace(/s$/, "") as ComponentType;
+  useScrollRestoration();
+
+  const item = slug ? getItem(slug, componentType) : undefined;
+
+  const [longDescription, setLongDescription] = useState<string>();
+  const [fileTree, setFileTree] = useState<FileTreeNode[]>();
+  useEffect(() => {
+    if (!slug) return;
+    getLongDescription(slug, componentType).then(setLongDescription);
+    getFileTree(slug, componentType).then(setFileTree);
+  }, [slug, componentType]);
+
+  // Replay the terminal session per item; lazy sections (tl;dr, file tree)
+  // join the animation queue when their data arrives.
+  useTerminalSession(
+    item ? `${item.type}/${item.slug}|${longDescription ? 1 : 0}|${fileTree ? 1 : 0}` : null
+  );
+
+  const fetchFileContent = useCallback(async (relativePath: string) => {
+    if (!item?.externalUrl) throw new Error("No external URL");
+    const rawUrl = getRawUrl(item.externalUrl, relativePath);
+    if (!rawUrl) throw new Error("Could not determine file URL");
+    const response = await fetch(rawUrl);
+    if (!response.ok) throw new Error(`Failed to fetch file (${response.status})`);
+    return response.text();
+  }, [item?.externalUrl]);
+
+  if (!item) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
+        <p className="text-subtext">Item not found</p>
+        <Link to="/" className="text-accent hover:underline mt-4 inline-block">
+          Go home
+        </Link>
+      </div>
+    );
+  }
+
+  const installCommand = `npx @danieldeusing/seedr add ${item.slug} --type ${item.type}`;
+
+  const labels = buildDetailLabels(item);
 
   const subtitle = (item.author || item.sourceType === "toolr") ? (
     <div className="flex items-center gap-2 text-sm text-subtext">
@@ -238,30 +250,36 @@ export function Detail() {
       maxWidth="max-w-6xl"
     >
       {/* Install command */}
-      <div>
+      <div data-term>
         <h3 className="prompt mb-3">install</h3>
-        <CodeBlock code={installCommand} />
+        <div data-term-out>
+          <CodeBlock code={installCommand} />
+        </div>
       </div>
 
       {/* Plugin type explanation */}
       {item.pluginType === "wrapper" && item.wrapper && (
-        <div>
+        <div data-term>
           <h3 className="prompt mb-3">wrapped capability</h3>
-          <p className="text-md text-muted-foreground leading-relaxed mb-1">
+          <p data-term-out className="text-md text-muted-foreground leading-relaxed mb-1">
             This plugin wraps a single capability as an installable plugin.
             Functionally equivalent to installing the {typeLabels[item.wrapper as keyof typeof typeLabels]?.toLowerCase() || item.wrapper} directly, but delivered and managed as a plugin package.
           </p>
-          <PluginContents counts={{ [item.wrapper]: 1 }} />
+          <div data-term-out>
+            <PluginContents counts={{ [item.wrapper]: 1 }} />
+          </div>
         </div>
       )}
 
       {item.pluginType === "package" && item.package && Object.keys(item.package).length > 0 && (
-        <div>
+        <div data-term>
           <h3 className="prompt mb-3">package contents</h3>
-          <p className="text-md text-muted-foreground leading-relaxed mb-1">
+          <p data-term-out className="text-md text-muted-foreground leading-relaxed mb-1">
             This plugin bundles multiple capabilities into a single installable package.
           </p>
-          <PluginContents counts={item.package} />
+          <div data-term-out>
+            <PluginContents counts={item.package} />
+          </div>
         </div>
       )}
 
@@ -277,9 +295,9 @@ export function Detail() {
       )}
 
       {/* CLI Reference */}
-      <div>
+      <div data-term>
         <h3 className="prompt mb-3">cli reference</h3>
-        <div className="bg-surface border border-overlay rounded-lg overflow-hidden">
+        <div data-term-out className="bg-surface border border-overlay rounded-lg overflow-hidden">
           <table className="w-full text-sm table-fixed">
             <colgroup>
               <col className="w-[200px]" />
@@ -335,21 +353,27 @@ export function Detail() {
       </div>
 
       {/* Example commands */}
-      <div>
+      <div data-term>
         <h3 className="prompt mb-3">examples</h3>
         <div className="space-y-4">
-          <CodeBlock
-            label="Install for all compatible coding agents"
-            code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents all --method symlink`}
-          />
-          <CodeBlock
-            label="Install for specific coding agent"
-            code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents claude`}
-          />
-          <CodeBlock
-            label="Non-interactive (CI/scripts)"
-            code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents all --scope project --method symlink --yes`}
-          />
+          <div data-term-out>
+            <CodeBlock
+              label="Install for all compatible coding agents"
+              code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents all --method symlink`}
+            />
+          </div>
+          <div data-term-out>
+            <CodeBlock
+              label="Install for specific coding agent"
+              code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents claude`}
+            />
+          </div>
+          <div data-term-out>
+            <CodeBlock
+              label="Non-interactive (CI/scripts)"
+              code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents all --scope project --method symlink --yes`}
+            />
+          </div>
         </div>
       </div>
     </RegistryDetail>

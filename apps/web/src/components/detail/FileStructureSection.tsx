@@ -260,9 +260,9 @@ export function FileStructureSection({
   ];
 
   return (
-    <div>
+    <div data-term>
       <h3 className="prompt mb-2">file structure</h3>
-      <div className="flex gap-3" style={{ height: `${height}px` }}>
+      <div data-term-out className="flex gap-3" style={{ height: `${height}px` }}>
         {/* Tree panel */}
         <div
           className={cn(

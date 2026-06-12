@@ -10,7 +10,8 @@ import { ItemCard } from "@/components/ItemCard";
 import { getItemsByType, fuseOptions } from "@/lib/registry";
 import { pluralize } from "@/lib/text";
 import type { ComponentType, CodingAgent, SourceType, ScopeType, PluginType, RegistryItem } from "@/lib/types";
-import { typeLabelPlural } from "@/lib/colors";
+import { typeLabelPlural, typeTextColors } from "@/lib/colors";
+import { TypeIcon } from "@/components/TypeIcon";
 
 import { agentOptions, sourceOptions, scopeOptions } from "@/lib/filterOptions";
 
@@ -169,7 +170,8 @@ export function Browse() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-lg font-bold text-text mb-2">
+        <h1 className="flex items-center gap-2 text-lg font-bold text-text mb-2">
+          <TypeIcon type={componentType} size={20} className={typeTextColors[componentType]} />
           {typeLabelPlural[componentType]}
         </h1>
         <p className="text-subtext">

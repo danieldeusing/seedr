@@ -37,6 +37,7 @@ export function StatusBar() {
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", THEME_BACKGROUNDS[next]);
+    document.getElementById("favicon")?.setAttribute("href", `/favicon-${next}.svg`);
     setTheme(next);
   };
 

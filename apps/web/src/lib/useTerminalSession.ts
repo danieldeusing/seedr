@@ -55,17 +55,22 @@ export function useTerminalSession(subject: unknown) {
         typeNext();
       });
 
+    // command "execution" latency between the typed prompt and its output
+    const OUTPUT_DELAY_MS = 280;
+
     const revealOutputs = (section: HTMLElement, instant: boolean) =>
       new Promise<void>(finished => {
         const chunks = section.querySelectorAll("[data-term-out]:not(.term-show)");
-        const stagger = (index: number) => Math.min(index * 70, 280);
+        const stagger = (index: number) => Math.min(index * 180, 720);
         chunks.forEach((chunk, index) => {
           if (instant) chunk.classList.add("term-show");
           else schedule(() => chunk.classList.add("term-show"), stagger(index));
         });
         if (instant || chunks.length === 0) finished();
-        else schedule(finished, stagger(chunks.length - 1) + 200);
+        else schedule(finished, stagger(chunks.length - 1) + 300);
       });
+
+    const pause = (ms: number) => new Promise<void>(resolve => schedule(resolve, ms));
 
     const playSection = async (section: HTMLElement) => {
       if (cancelled) return;
@@ -74,7 +79,10 @@ export function useTerminalSession(subject: unknown) {
       const prompt = section.querySelector<HTMLElement>(".prompt:not(.term-live)");
       if (prompt) {
         if (offscreen) prompt.classList.add("term-live");
-        else await typePrompt(prompt);
+        else {
+          await typePrompt(prompt);
+          await pause(OUTPUT_DELAY_MS);
+        }
       }
       await revealOutputs(section, offscreen);
     };

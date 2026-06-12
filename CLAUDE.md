@@ -270,7 +270,7 @@ The web app uses shared components from the `@toolr/ui-design` npm package. Sour
 To iterate without waiting for npm publishes, use a file reference in `apps/web/package.json`:
 
 ```json
-"@toolr/ui-design": "file:../../../shared/ui-design"
+"@toolr/ui-design": "file:../../../../../twiced/toolr/shared/ui-design"
 ```
 
 Remember to switch back to the versioned dependency before committing.
@@ -282,7 +282,7 @@ Remember to switch back to the versioned dependency before committing.
 cd /Users/daniel/Work/twiced/toolr/shared/ui-design && npm run build
 
 # 2. Reinstall to refresh pnpm hardlinks
-cd /Users/daniel/Work/twiced/toolr/seedr && pnpm install
+cd /Users/daniel/Work/danieldeusing/apps/seedr && pnpm install
 
 # 3. Kill ALL running dev servers (Vite caches modules in memory)
 tmux kill-session -t seedr 2>/dev/null
@@ -293,7 +293,7 @@ lsof -ti :6200 | xargs kill -9 2>/dev/null
 rm -rf apps/web/node_modules/.vite apps/web/node_modules/.cache
 
 # 5. Restart dev server
-tmux new-session -d -s seedr -c /Users/daniel/Work/twiced/toolr/seedr
+tmux new-session -d -s seedr -c /Users/daniel/Work/danieldeusing/apps/seedr
 tmux send-keys -t seedr 'pnpm dev' Enter
 ```
 

@@ -25,7 +25,7 @@ export function CookieConsent() {
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex-grow">
           <p className="text-sm text-foreground mb-1">
-            <span className="text-primary">$</span> cookie-consent
+            <span className="text-primary">$</span> ./cookie-consent.sh
           </p>
           <p className="text-xs text-muted-foreground">
             This site uses only essential cookies for functionality. No tracking or analytics.

@@ -261,7 +261,7 @@ export function FileStructureSection({
 
   return (
     <div data-term>
-      <h3 className="prompt mb-2">file structure</h3>
+      <h3 className="prompt mb-2">tree {rootName}/</h3>
       <div data-term-out className="flex gap-3" style={{ height: `${height}px` }}>
         {/* Tree panel */}
         <div

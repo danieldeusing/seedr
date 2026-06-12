@@ -159,19 +159,19 @@ export function RegistryDetail({
       {/* Description */}
       {description && (
         <div data-term>
-          <h3 className="prompt mb-2">description</h3>
+          <h3 className="prompt mb-2">cat description.md</h3>
           <p data-term-out className="text-md leading-relaxed text-muted-foreground">{description}</p>
         </div>
       )}
 
       {/* Long description (TL;DR) */}
       {longDescription && (
-        <CollapsibleTextSection header="tl;dr">{longDescription}</CollapsibleTextSection>
+        <CollapsibleTextSection header={'cat "tl;dr.md"'}>{longDescription}</CollapsibleTextSection>
       )}
 
       {/* Integration explanation */}
       {integration && (
-        <CollapsibleTextSection header="info">
+        <CollapsibleTextSection header="man integrations">
           {INTEGRATION_PARAGRAPHS.map((paragraph) => (
             <p key={paragraph.slice(0, 16)}>{paragraph}</p>
           ))}
@@ -181,7 +181,7 @@ export function RegistryDetail({
       {/* Compatible with */}
       {compatibleTools && compatibleTools.length > 0 && (
         <div data-term>
-          <h3 className="prompt mb-3">compatible with</h3>
+          <h3 className="prompt mb-3">jq .compatibility item.json</h3>
           <div data-term-out>
             <CompatibilityBadges tools={compatibleTools} size="md" />
           </div>

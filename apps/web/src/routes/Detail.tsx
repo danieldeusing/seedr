@@ -253,7 +253,7 @@ export function Detail() {
     >
       {/* Install command */}
       <div data-term>
-        <h3 className="prompt mb-3">install</h3>
+        <h3 className="prompt mb-3">cat install.sh</h3>
         <div data-term-out>
           <CodeBlock code={installCommand} />
         </div>
@@ -262,7 +262,7 @@ export function Detail() {
       {/* Plugin type explanation */}
       {item.pluginType === "wrapper" && item.wrapper && (
         <div data-term>
-          <h3 className="prompt mb-3">wrapped capability</h3>
+          <h3 className="prompt mb-3">jq .wrapper plugin.json</h3>
           <p data-term-out className="text-md text-muted-foreground leading-relaxed mb-1">
             This plugin wraps a single capability as an installable plugin.
             Functionally equivalent to installing the {typeLabels[item.wrapper as keyof typeof typeLabels]?.toLowerCase() || item.wrapper} directly, but delivered and managed as a plugin package.
@@ -275,7 +275,7 @@ export function Detail() {
 
       {item.pluginType === "package" && item.package && Object.keys(item.package).length > 0 && (
         <div data-term>
-          <h3 className="prompt mb-3">package contents</h3>
+          <h3 className="prompt mb-3">jq .package plugin.json</h3>
           <p data-term-out className="text-md text-muted-foreground leading-relaxed mb-1">
             This plugin bundles multiple capabilities into a single installable package.
           </p>
@@ -298,7 +298,7 @@ export function Detail() {
 
       {/* CLI Reference */}
       <div data-term>
-        <h3 className="prompt mb-3">cli reference</h3>
+        <h3 className="prompt mb-3">seedr add --help</h3>
         <div data-term-out className="bg-surface border border-overlay rounded-lg overflow-hidden">
           <table className="w-full text-sm table-fixed">
             <colgroup>
@@ -356,7 +356,7 @@ export function Detail() {
 
       {/* Example commands */}
       <div data-term>
-        <h3 className="prompt mb-3">examples</h3>
+        <h3 className="prompt mb-3">history</h3>
         <div className="space-y-4">
           <div data-term-out>
             <CodeBlock

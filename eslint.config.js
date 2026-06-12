@@ -4,7 +4,6 @@ import sonarjs from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
 import reactHooks from "eslint-plugin-react-hooks";
 import { reactRefresh } from "eslint-plugin-react-refresh";
-import toolrDesign from "./eslint-plugin-toolr-design.js";
 
 export default tseslint.config(
   // Global ignores
@@ -61,23 +60,6 @@ export default tseslint.config(
       ...reactRefresh.configs.vite.rules,
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
-    },
-  },
-
-  // Design system enforcement
-  {
-    files: ["apps/web/src/**/*.{ts,tsx}"],
-    plugins: {
-      "toolr-design": toolrDesign,
-    },
-    rules: {
-      "toolr-design/no-raw-spacing": "warn",
-      "toolr-design/no-raw-colors": "warn",
-      "toolr-design/no-raw-text-size": "warn",
-      "toolr-design/prefer-design-components": "warn",
-      "toolr-design/no-deep-imports": "error",
-      "toolr-design/no-direct-icon-imports": "warn",
-      "toolr-design/no-browser-dialogs": "warn",
     },
   }
 );

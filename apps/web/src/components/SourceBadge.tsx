@@ -1,4 +1,5 @@
-import { Label } from "@toolr/ui-design";
+import { Shield } from "lucide-react";
+import { Label } from "./ui/Label";
 import { sourceToBadgeColor, sourceLabels } from "@/lib/colors";
 import type { SourceType } from "@/lib/types";
 
@@ -19,7 +20,7 @@ export function SourceBadge({ source, className = "", size = "sm" }: SourceBadge
     <Label
       text={sourceLabels[source]}
       accentColor={sourceToBadgeColor[source]}
-      icon="shield"
+      icon={Shield}
       size={size}
       tooltip={{ title: sourceLabels[source], description: sourceDescriptions[source] }}
       className={className}

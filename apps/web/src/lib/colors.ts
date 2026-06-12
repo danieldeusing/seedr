@@ -1,7 +1,22 @@
-import type { LabelColor, IconName } from "@toolr/ui-design";
 import type { ComponentType, CodingAgent, SourceType, ScopeType } from "./types";
 
-export type BadgeColor = LabelColor;
+// Tailwind color names used by badge accents (see Label in components/ui/Label.tsx)
+export type BadgeColor =
+  | "neutral"
+  | "green"
+  | "red"
+  | "blue"
+  | "orange"
+  | "purple"
+  | "amber"
+  | "emerald"
+  | "indigo"
+  | "teal"
+  | "violet"
+  | "pink";
+
+// Icon names consumed by breadcrumb rendering
+export type IconName = "sparkles" | "webhook" | "bot" | "package" | "terminal" | "settings" | "plug";
 
 // Type labels for display (singular)
 export const typeLabels: Record<ComponentType, string> = {

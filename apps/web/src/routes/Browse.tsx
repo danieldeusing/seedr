@@ -3,8 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { useUpdateParams } from "@/hooks/useUpdateParams";
 import Fuse from "fuse.js";
-import { Input, FilterDropdown, SortDropdown } from "@toolr/ui-design";
-import type { SortField } from "@toolr/ui-design";
+import { Input } from "@/components/ui/Input";
+import { FilterDropdown } from "@/components/FilterDropdown";
+import { SortDropdown, type SortField } from "@/components/SortDropdown";
 import { ItemCard } from "@/components/ItemCard";
 import { getItemsByType, fuseOptions } from "@/lib/registry";
 import { pluralize } from "@/lib/text";
@@ -186,10 +187,8 @@ export function Browse() {
           <Input
             type="search"
             placeholder={`Search ${typeLabelPlural[componentType].toLowerCase()}...`}
-            size="sm"
             value={query}
             onChange={setQuery}
-
           />
         </div>
 
@@ -203,7 +202,6 @@ export function Browse() {
             options={kindOptions}
             onChange={setKindFilter}
             allLabel="Kind"
-
           />
         )}
 
@@ -214,7 +212,6 @@ export function Browse() {
             options={pluginTypeOptions}
             onChange={setPluginTypeFilter}
             allLabel="Type"
-
           />
         )}
 
@@ -224,7 +221,6 @@ export function Browse() {
             options={capabilityOptions}
             onChange={setCapabilityFilter}
             allLabel="Capability"
-
           />
         )}
 
@@ -234,7 +230,6 @@ export function Browse() {
           options={sourceOptions}
           onChange={setSourceFilter}
           allLabel="Source"
-
         />
 
         {sourceFilter === "toolr" && (
@@ -243,7 +238,6 @@ export function Browse() {
             options={scopeOptions}
             onChange={setScopeFilter}
             allLabel="Scope"
-
           />
         )}
 
@@ -252,7 +246,6 @@ export function Browse() {
           options={agentOptions}
           onChange={setToolFilter}
           allLabel="Coding Agent"
-
         />
 
         <SortDropdown
@@ -261,7 +254,6 @@ export function Browse() {
           onFieldChange={setSortField}
           onToggleDirection={toggleSortDir}
           fields={sortFields}
-
         />
       </div>
 

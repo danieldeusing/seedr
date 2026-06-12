@@ -4,8 +4,11 @@ import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { useUpdateParams } from "@/hooks/useUpdateParams";
 import Fuse from "fuse.js";
 // toolr-design-ignore-next-line
-import { Sprout } from "lucide-react";
-import { Input, FilterDropdown, IconButton } from "@toolr/ui-design";
+import { Sprout, X } from "lucide-react";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/Tooltip";
+import { FilterDropdown } from "@/components/FilterDropdown";
 import { ItemCard } from "@/components/ItemCard";
 import { typeIcons } from "@/components/TypeIcon";
 import { getAllItems, getTypeCounts, fuseOptions } from "@/lib/registry";
@@ -100,8 +103,8 @@ export function Home() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Hero */}
       <div className="text-center mb-8">
-        <Sprout className="w-6 h-6 text-green-500 mx-auto mb-2" />
-        <h1 className="text-md text-green-500 mb-8">
+        <Sprout className="w-6 h-6 text-primary mx-auto mb-2" />
+        <h1 className="text-md text-primary mb-8">
           Seed your Coding Agents with capabilities
         </h1>
 
@@ -109,10 +112,8 @@ export function Home() {
           <Input
             type="search"
             placeholder="Search skills, hooks, agents, MCP servers..."
-            size="sm"
             value={query}
             onChange={setQuery}
-
           />
         </div>
       </div>
@@ -132,7 +133,6 @@ export function Home() {
                 options={sourceOptions}
                 onChange={setSourceFilter}
                 allLabel="Source"
-    
               />
 
               {sourceFilter === "toolr" && (
@@ -141,7 +141,6 @@ export function Home() {
                   options={scopeOptions}
                   onChange={setScopeFilter}
                   allLabel="Scope"
-      
                 />
               )}
 
@@ -150,17 +149,23 @@ export function Home() {
                 options={agentOptions}
                 onChange={setToolFilter}
                 allLabel="Coding Agent"
-    
               />
 
               {hasActiveFilters && (
-                <IconButton
-                  icon="x"
-                  accentColor="red"
-                  size="sm"
-                  tooltip={{ description: "Reset all filters" }}
-                  onClick={resetFilters}
-                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon-xs"
+                      className="h-7 text-destructive"
+                      aria-label="Reset all filters"
+                      onClick={resetFilters}
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reset all filters</TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -204,7 +209,7 @@ export function Home() {
           <div className="mt-8 text-center text-sm text-text-dim max-w-2xl mx-auto">
             <p>
               Quality over quantity. One well-crafted capability beats a thousand mediocre ones.
-              We only include official capabilities, Toolr Suite creations, and carefully
+              We only include official capabilities, first-party creations, and carefully
               vetted community contributions.
             </p>
           </div>

@@ -1,6 +1,6 @@
 # Seedr
 
-Seed your Coding Agents with capabilities. Part of the [toolr-suite](https://toolr.dev) ecosystem.
+Seed your Coding Agents with capabilities.
 
 Seedr is a CLI tool and web registry for AI coding assistant content. Install curated skills, agents, hooks, plugins, MCP servers, and settings for Claude Code, GitHub Copilot, Gemini, Codex, and OpenCode with a single command.
 

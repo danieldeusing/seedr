@@ -1,12 +1,13 @@
-import { Label } from "@toolr/ui-design";
-import type { IconName } from "@toolr/ui-design";
+import { Folder, Lock, User } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Label } from "./ui/Label";
 import { scopeToBadgeColor, scopeLabels } from "@/lib/colors";
 import type { ScopeType } from "@/lib/types";
 
-const scopeIcons: Record<ScopeType, IconName> = {
-  user: "user",
-  project: "folder",
-  local: "lock",
+const scopeIcons: Record<ScopeType, LucideIcon> = {
+  user: User,
+  project: Folder,
+  local: Lock,
 };
 
 const scopeDescriptions: Record<ScopeType, string> = {

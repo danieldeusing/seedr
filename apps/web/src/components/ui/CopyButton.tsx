@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { IconButton } from "@toolr/ui-design";
+import { Check, Copy } from "lucide-react";
+import { Button } from "./Button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "./Tooltip";
 
 /** Duration to show "Copied!" feedback before resetting */
 const COPY_FEEDBACK_DURATION_MS = 2000;
@@ -18,11 +20,13 @@ export function CopyButton({ text }: CopyButtonProps) {
   };
 
   return (
-    <IconButton
-      icon={copied ? "check" : "copy"}
-      size="xs"
-      tooltip={{ description: copied ? "Copied!" : "Copy" }}
-      onClick={handleCopy}
-    />
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button variant="ghost" size="icon-xs" aria-label="Copy" onClick={handleCopy}>
+          {copied ? <Check /> : <Copy />}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{copied ? "Copied!" : "Copy"}</TooltipContent>
+    </Tooltip>
   );
 }

@@ -1,7 +1,14 @@
 import { createContext, useContext, useReducer, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { BreadcrumbSegment } from "@toolr/ui-design";
 import { typeLabelPlural, typeBreadcrumbIcon, typeBreadcrumbColor } from "@/lib/colors";
+
+export interface BreadcrumbSegment {
+  id: string;
+  label: string;
+  icon?: string;
+  color?: string;
+  onClick?: () => void;
+}
 import { getItem } from "@/lib/registry";
 import type { ComponentType } from "@/lib/types";
 

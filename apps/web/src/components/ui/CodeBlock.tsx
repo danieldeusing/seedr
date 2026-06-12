@@ -1,4 +1,3 @@
-import { useAccentColor, ACCENT_NAV } from "@toolr/ui-design";
 import { CopyButton } from "./CopyButton";
 
 interface CodeBlockProps {
@@ -11,15 +10,12 @@ interface CodeBlockProps {
  * Extracts the repeated pattern from Detail.tsx.
  */
 export function CodeBlock({ code, label }: CodeBlockProps) {
-  const accent = useAccentColor() ?? "blue";
-  const borderClass = ACCENT_NAV[accent]?.border ?? "border-overlay/50";
-
   return (
     <div>
       {label && (
         <h3 className="text-sm font-medium text-subtext mb-2">{label}</h3>
       )}
-      <div className={`bg-surface/50 border ${borderClass} rounded-lg p-3`}>
+      <div className="bg-surface/50 border border-border p-3">
         <div className="flex items-center justify-between gap-2">
           <code className="text-sm font-mono text-text">{code}</code>
           <CopyButton text={code} />

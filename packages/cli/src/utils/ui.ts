@@ -15,8 +15,7 @@ const LOGO = `
 ╚══════╝╚══════╝╚══════╝╚═════╝ ╚═╝  ╚═╝`;
 
 const URLS = {
-  toolr: "https://toolr.dev",
-  seedr: "https://seedr.toolr.dev",
+  seedr: "https://seedr.danieldeusing.de",
 };
 
 export function printLogo(): void {

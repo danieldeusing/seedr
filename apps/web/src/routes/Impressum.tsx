@@ -18,17 +18,12 @@ export function Impressum() {
       <div className="prose prose-invert max-w-none space-y-4">
         <section>
           <h2 className="text-lg font-semibold text-text mb-3">
-            Company Information
+            Site Operator
           </h2>
           <p className="text-subtext">
-            twiceD Technology GmbH<br />
+            Daniel Deusing<br />
             Rosenbergstr. 32<br />
             56579 Hardert, Germany
-          </p>
-          <p className="text-subtext mt-2">
-            Registry Court: Amtsgericht Montabaur HRB 28581<br />
-            Managing Director: Daniel Deusing<br />
-            VAT ID: DE352174194
           </p>
         </section>
 
@@ -38,10 +33,10 @@ export function Impressum() {
             Phone: +49 151 16545891<br />
             Email:{" "}
             <a
-              href="mailto:info@twiced.de"
+              href="mailto:info@danieldeusing.de"
               className="text-accent hover:underline"
             >
-              info@twiced.de
+              info@danieldeusing.de
             </a>
           </p>
         </section>

@@ -3,7 +3,7 @@ import type { InstallScope, ComponentType } from "../types.js";
 
 declare const CLI_VERSION: string;
 
-const ANALYTICS_URL = "https://seedr.toolr.dev/api/installs";
+const ANALYTICS_URL = "https://seedr.danieldeusing.de/api/installs";
 
 export function trackInstalls(
   slug: string,

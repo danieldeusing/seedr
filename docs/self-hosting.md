@@ -28,7 +28,7 @@ git clone https://github.com/YOUR-ORG/seedr.git
 cd seedr
 
 # Set upstream so you can pull future updates
-git remote add upstream https://github.com/twiced-technology-gmbh/seedr.git
+git remote add upstream https://github.com/danieldeusing/seedr.git
 ```
 
 ## Step 2: Install & Build
@@ -169,17 +169,17 @@ The codebase has several places that reference the upstream identity (author nam
 - `.claude/skills/` — add-toolr and remove-toolr skill templates
 - `registry/*/*/item.json` — all existing items with `"sourceType": "toolr"`
 
-**Install commands in the web UI** — The detail page shows `npx @toolr/seedr add ...` commands. Update `apps/web/src/routes/Detail.tsx` to reference your package name and registry:
+**Install commands in the web UI** — The detail page shows `npx @danieldeusing/seedr add ...` commands. Update `apps/web/src/routes/Detail.tsx` to reference your package name and registry:
 
 ```typescript
 // Before
-npx @toolr/seedr add ${item.slug}
+npx @danieldeusing/seedr add ${item.slug}
 
 // After (with private Verdaccio registry)
 npx --registry https://your-registry-url @yourorg/seedr add ${item.slug}
 ```
 
-**Hardcoded URLs** — Search for `seedr.toolr.dev` and replace with your instance URL in:
+**Hardcoded URLs** — Search for `seedr.danieldeusing.de` and replace with your instance URL in:
 - `packages/cli/src/utils/ui.ts` — CLI banner
 - `packages/cli/src/utils/analytics.ts` — analytics endpoint
 - `packages/cli/src/commands/init.ts` — init command output

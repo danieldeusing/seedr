@@ -103,7 +103,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
         <h3 className="text-sm font-medium text-text mb-0.5">{item.name}</h3>
         {(item.author || item.sourceType === "toolr") && (
           <p className="text-xs text-text-dim mb-1.5">
-            by {item.sourceType === "toolr" ? "TwiceD Technology" : item.author?.name}
+            by {item.sourceType === "toolr" ? "Daniel Deusing" : item.author?.name}
           </p>
         )}
         <p className="text-subtext text-xs mb-3 flex-grow line-clamp-2">{item.description}</p>

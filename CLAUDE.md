@@ -37,13 +37,13 @@ pnpm build                # Production build
 
 ```bash
 # Run all unit tests
-pnpm --filter @toolr/seedr test
+pnpm --filter @danieldeusing/seedr test
 
 # Run tests in watch mode
-pnpm --filter @toolr/seedr test:watch
+pnpm --filter @danieldeusing/seedr test:watch
 
 # Run tests with coverage report
-pnpm --filter @toolr/seedr test:coverage
+pnpm --filter @danieldeusing/seedr test:coverage
 ```
 
 ### Install Smoke Tests
@@ -81,7 +81,7 @@ See [docs/manual-tests/dry-run-commands.md](docs/manual-tests/dry-run-commands.m
 
 ```
 seedr/
-├── apps/web/             # React web app (seedr.toolr.dev)
+├── apps/web/             # React web app (seedr.danieldeusing.de)
 │   └── public/playgrounds/  # Interactive architecture playgrounds
 ├── packages/cli/         # CLI package (npx seedr)
 ├── registry/
@@ -238,7 +238,7 @@ npx tsc --noEmit
 
 ## npm Publishing
 
-The CLI is published to npm as `@toolr/seedr`. Push to `prod` branch triggers `.github/workflows/deploy.yml` (publish-cli job).
+The CLI is published to npm as `@danieldeusing/seedr`. Push to `prod` branch triggers `.github/workflows/deploy.yml` (publish-cli job).
 
 ### How CI auth works
 
@@ -250,7 +250,9 @@ Publishing uses **npm Trusted Publishers (OIDC)** — no npm tokens needed. Requ
 
 ### GitHub secrets needed
 
-- `APP_ID` / `APP_PRIVATE_KEY` — GitHub App token for version bump commits (shared across toolr repos)
+- `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` — Cloudflare Pages deploys (deploy-web job)
+- Version bump commits and registry sync pushes use the default `GITHUB_TOKEN` (no extra secrets)
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` — sync notification emails
 
 ## @toolr/ui-design
 

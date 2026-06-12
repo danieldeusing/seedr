@@ -4,7 +4,7 @@ import type { SourceType } from "@/lib/types";
 
 const sourceDescriptions: Record<SourceType, string> = {
   official: "Published by the tool maker",
-  toolr: "Published by Toolr Suite",
+  toolr: "Published by Daniel Deusing",
   community: "Community contribution",
 };
 

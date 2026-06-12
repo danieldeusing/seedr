@@ -2,7 +2,6 @@ import { Link, useLocation } from "react-router-dom";
 // toolr-design-ignore-next-line
 import { Github } from "lucide-react";
 import { ToolrAppLogo, IconButton, NavigationBar } from "@toolr/ui-design";
-import { TwiceDLogo } from "./TwiceDLogo";
 import { useNavigation } from "@/contexts/NavigationContext";
 
 export function Header() {
@@ -38,7 +37,7 @@ export function Header() {
                 Seedr
               </span>
               <span className="text-sm text-text-dim tracking-wide uppercase leading-none mt-0.5">
-                Toolr Suite
+                by Daniel Deusing
               </span>
             </div>
           </Link>
@@ -66,23 +65,8 @@ export function Header() {
         {/* Right: External links (takes remaining space) */}
         <div className="flex-1 flex items-center justify-end gap-2">
           <IconButton
-            icon={<ToolrAppLogo app="toolr" size={14} />}
-            href="https://toolr.dev"
-            size="sm"
-            accentColor="blue"
-            tooltip={{ description: "Visit toolr.dev" }}
-            tooltipPosition="bottom"
-          />
-          <IconButton
-            icon={<TwiceDLogo size={14} className="text-blue-400" />}
-            href="https://twiced.de"
-            size="sm"
-            tooltip={{ description: "Visit twiced.de" }}
-            tooltipPosition="bottom"
-          />
-          <IconButton
             icon={<Github className="w-4 h-4" />}
-            href="https://github.com/twiced-technology-gmbh/seedr"
+            href="https://github.com/danieldeusing/seedr"
             size="sm"
             accentColor="neutral"
             tooltip={{ description: "View source code" }}

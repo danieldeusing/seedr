@@ -15,7 +15,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REGISTRY_PATH = join(__dirname, "../../../../registry");
 
 // Remote registry URL (GitHub raw content)
-const GITHUB_RAW_URL = "https://raw.githubusercontent.com/twiced-technology-gmbh/seedr/main/registry";
+const GITHUB_RAW_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main/registry";
 
 const cache = {
   index: null as RegistryManifestIndex | null,

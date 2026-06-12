@@ -106,9 +106,9 @@ When Anthropic adds a new skill or a community plugin is updated:
         ↓
 10. Commits: "chore(cli): bump version to 0.1.5 [skip ci]"
         ↓
-11. Publishes @toolr/seedr@0.1.5 to npm
+11. Publishes @danieldeusing/seedr@0.1.5 to npm
         ↓
-12. Users get new/updated items via: npx @toolr/seedr add <name>
+12. Users get new/updated items via: npx @danieldeusing/seedr add <name>
 ```
 
 ## Manual Triggers

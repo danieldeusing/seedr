@@ -48,7 +48,7 @@ function getRawUrl(externalUrl: string, filePath: string): string | null {
   const branch = withTree?.[3] ?? "main";
   const basePath = withTree?.[4];
 
-  if (import.meta.env.DEV && owner === "twiced-technology-gmbh" && repo === "seedr") {
+  if (import.meta.env.DEV && owner === "danieldeusing" && repo === "seedr") {
     return `/${basePath}/${filePath}`;
   }
 
@@ -141,7 +141,7 @@ export function Detail() {
     );
   }
 
-  const installCommand = `npx @toolr/seedr add ${item.slug} --type ${item.type}`;
+  const installCommand = `npx @danieldeusing/seedr add ${item.slug} --type ${item.type}`;
 
   const labels: LabelProps[] = [];
   if (item.sourceType) {
@@ -321,15 +321,15 @@ export function Detail() {
           <div className="space-y-4">
             <CodeBlock
               label="Install for all compatible coding agents"
-              code={`npx @toolr/seedr add ${item.slug} --type ${item.type} --agents all --method symlink`}
+              code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents all --method symlink`}
             />
             <CodeBlock
               label="Install for specific coding agent"
-              code={`npx @toolr/seedr add ${item.slug} --type ${item.type} --agents claude`}
+              code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents claude`}
             />
             <CodeBlock
               label="Non-interactive (CI/scripts)"
-              code={`npx @toolr/seedr add ${item.slug} --type ${item.type} --agents all --scope project --method symlink --yes`}
+              code={`npx @danieldeusing/seedr add ${item.slug} --type ${item.type} --agents all --scope project --method symlink --yes`}
             />
           </div>
         </div>

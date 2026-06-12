@@ -61,18 +61,10 @@ jobs:
       id-token: write # For npm provenance
 
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Need full history for change detection
-          token: ${{ steps.app-token.outputs.token }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -102,7 +94,7 @@ jobs:
       - name: Check for CLI/registry changes since last npm release
         id: changes
         run: |
-          NPM_VERSION=$(npm view @toolr/seedr version 2>/dev/null || echo "0.0.0")
+          NPM_VERSION=$(npm view @danieldeusing/seedr version 2>/dev/null || echo "0.0.0")
           PACKAGE_VERSION=$(node -p "require('./packages/cli/package.json').version")
 
           # Check if current version matches npm (no manual bump)

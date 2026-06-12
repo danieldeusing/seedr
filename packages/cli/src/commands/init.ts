@@ -66,10 +66,10 @@ This directory contains AI configuration files for ${CODING_AGENTS[agent].name}.
 
 Add skills with:
 \`\`\`bash
-npx @toolr/seedr add <skill-name> --agents ${agent}
+npx @danieldeusing/seedr add <skill-name> --agents ${agent}
 \`\`\`
 
-Browse available skills at https://seedr.toolr.dev
+Browse available skills at https://seedr.danieldeusing.de
 `
         );
 
@@ -78,7 +78,7 @@ Browse available skills at https://seedr.toolr.dev
 
       console.log("");
       console.log(
-        brand("Done! Use 'npx @toolr/seedr add <skill>' to install skills.")
+        brand("Done! Use 'npx @danieldeusing/seedr add <skill>' to install skills.")
       );
     } catch (error) {
       handleCommandError(error);

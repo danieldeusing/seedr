@@ -11,19 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write # To dispatch the deploy workflow after pushing
 
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ steps.app-token.outputs.token }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -49,7 +41,7 @@ jobs:
 
       - name: Sync registry
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm sync
 
       - name: Stage and check for changes
@@ -90,6 +82,12 @@ jobs:
           git push origin main
           git push origin main:prod
 
+      - name: Trigger deploy
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref prod
+
       - name: Send new items email
         if: steps.changes.outputs.new_items == 'true'
         uses: dawidd6/action-send-mail@v3
@@ -99,7 +97,7 @@ jobs:
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: "Seedr Registry: New items detected"
-          to: daniel.deusing@twiced.de
+          to: info@danieldeusing.de
           from: ${{ secrets.SMTP_USERNAME }}
           content_type: text/plain
           body: |
@@ -107,5 +105,5 @@ jobs:
 
             ${{ steps.changes.outputs.list }}
 
-            View the registry: https://seedr.toolr.dev
-            GitHub: https://github.com/twiced-technology-gmbh/seedr
+            View the registry: https://seedr.danieldeusing.de
+            GitHub: https://github.com/danieldeusing/seedr

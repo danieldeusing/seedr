@@ -236,7 +236,7 @@ Write the item metadata as `registry/<type>s/<slug>/item.json`:
   "compatibility": ["<from user answers>"],
   "sourceType": "toolr",
   "author": { "name": "Toolr Suite", "url": "https://github.com/toolr-suite" },
-  "externalUrl": "https://github.com/twiced-technology-gmbh/seedr/tree/main/registry/<type>s/<slug>",
+  "externalUrl": "https://github.com/danieldeusing/seedr/tree/main/registry/<type>s/<slug>",
   "updatedAt": "<current ISO 8601 date>",
   "contents": { "files": [<file tree>] }
 }

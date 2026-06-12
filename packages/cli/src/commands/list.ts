@@ -70,7 +70,7 @@ async function listAvailable(type?: ComponentType): Promise<void> {
 
   console.log("");
   console.log(
-    chalk.gray(`Total: ${items.length} items. Use 'npx @toolr/seedr add <name>' to install.`)
+    chalk.gray(`Total: ${items.length} items. Use 'npx @danieldeusing/seedr add <name>' to install.`)
   );
 }
 

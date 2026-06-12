@@ -29,7 +29,7 @@ export function Privacy() {
         <section>
           <h2 className="text-lg font-semibold text-text mb-3">Data Controller</h2>
           <p className="text-subtext">
-            twiceD Technology GmbH<br />
+            Daniel Deusing<br />
             Rosenbergstr. 32<br />
             56579 Hardert, Germany
           </p>
@@ -37,10 +37,10 @@ export function Privacy() {
             Phone: +49 151 16545891<br />
             Email:{" "}
             <a
-              href="mailto:info@twiced.de"
+              href="mailto:info@danieldeusing.de"
               className="text-accent hover:underline"
             >
-              info@twiced.de
+              info@danieldeusing.de
             </a>
           </p>
         </section>
@@ -138,8 +138,10 @@ export function Privacy() {
         <section>
           <h2 className="text-lg font-semibold text-text mb-3">CLI Usage</h2>
           <p className="text-subtext">
-            The Seedr CLI fetches registry data from GitHub. No usage data or
-            personal information is collected or transmitted during this process.
+            The Seedr CLI fetches registry data from GitHub. When an item is
+            installed, the CLI sends an anonymous install event (item name, type,
+            target tool, scope, and CLI version) to our API for aggregate install
+            statistics. No personal data, IP addresses, or identifiers are stored.
           </p>
         </section>
 

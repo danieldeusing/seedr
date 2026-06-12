@@ -32,7 +32,7 @@ describe("trackInstalls", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     const [url, opts] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("https://seedr.toolr.dev/api/installs");
+    expect(url).toBe("https://seedr.danieldeusing.de/api/installs");
     expect(opts.method).toBe("POST");
 
     const body = JSON.parse(opts.body);

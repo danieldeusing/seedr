@@ -88,7 +88,7 @@ export const sourceToBadgeColor: Record<SourceType, BadgeColor> = {
 
 export const sourceLabels: Record<SourceType, string> = {
   official: "Official",
-  toolr: "Toolr",
+  toolr: "Seedr",
   community: "Community",
 };
 

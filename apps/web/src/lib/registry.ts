@@ -19,7 +19,7 @@ const devTestItem: RegistryItem = {
   description: "Test item for previewing various media formats (dev only)",
   compatibility: ["claude"],
   sourceType: "toolr",
-  author: { name: "TwiceD Technology" },
+  author: { name: "Daniel Deusing" },
   externalUrl: "local://dev-samples",
   contents: {
     files: [

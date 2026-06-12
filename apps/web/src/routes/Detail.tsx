@@ -183,17 +183,19 @@ export function Detail() {
 
   const [longDescription, setLongDescription] = useState<string>();
   const [fileTree, setFileTree] = useState<FileTreeNode[]>();
+  const [lazyDataSettled, setLazyDataSettled] = useState(false);
   useEffect(() => {
     if (!slug) return;
-    getLongDescription(slug, componentType).then(setLongDescription);
-    getFileTree(slug, componentType).then(setFileTree);
+    setLazyDataSettled(false);
+    Promise.allSettled([
+      getLongDescription(slug, componentType).then(setLongDescription),
+      getFileTree(slug, componentType).then(setFileTree),
+    ]).then(() => setLazyDataSettled(true));
   }, [slug, componentType]);
 
-  // Replay the terminal session per item; lazy sections (tl;dr, file tree)
-  // join the animation queue when their data arrives.
-  useTerminalSession(
-    item ? `${item.type}/${item.slug}|${longDescription ? 1 : 0}|${fileTree ? 1 : 0}` : null
-  );
+  // Start the terminal session only once the lazy sections (tl;dr, file tree)
+  // have settled, so the whole page animates in one uninterrupted sequence.
+  useTerminalSession(item && lazyDataSettled ? `${item.type}/${item.slug}` : null);
 
   const fetchFileContent = useCallback(async (relativePath: string) => {
     if (!item?.externalUrl) throw new Error("No external URL");

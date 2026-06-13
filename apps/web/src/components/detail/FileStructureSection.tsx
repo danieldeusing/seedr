@@ -262,7 +262,8 @@ export function FileStructureSection({
   return (
     <div data-term>
       <h3 className="prompt mb-2">tree {rootName}/</h3>
-      <div data-term-out className="flex gap-3" style={{ height: `${height}px` }}>
+      <div data-term-out>
+      <div className="flex gap-3" style={{ height: `${height}px` }}>
         {/* Tree panel */}
         <div
           className={cn(
@@ -364,6 +365,7 @@ export function FileStructureSection({
         className="group -mt-1.5 flex h-4 cursor-grab items-center justify-center active:cursor-grabbing"
       >
         <div className="h-1 w-10 bg-border transition-colors group-hover:bg-primary" />
+      </div>
       </div>
     </div>
   );

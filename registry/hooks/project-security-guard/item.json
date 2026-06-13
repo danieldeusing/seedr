@@ -1,0 +1,48 @@
+{
+  "slug": "project-security-guard",
+  "name": "Project Security Guard",
+  "type": "hook",
+  "description": "Project-scoped security hook that blocks dangerous Bash commands and sensitive file access while auto-approving safe dev workflows.",
+  "longDescription": "Intercepts Bash, Read, Write, Edit, and Glob calls at the project level. Blocks:\n\n- **Destructive disk ops**: unsafe `rm`, `.env` access outside project\n- **Network exfiltration**: `curl` uploads, `netcat`, paste services, DNS exfil, cloud storage\n- **Code injection**: `eval`, hex obfuscation\n- **System modification**: services, cron, users, firewall, kernel\n- **Dangerous git**: `force push`, `reset --hard`, `clean -f`, `checkout --`, `branch -D`, remote hijack\n- **Other**: package publishing, destructive database commands, cloud/container/infrastructure ops\n\nSensitive credential paths outside the project are blocked for all file tools. Safe developer commands are auto-approved and persisted to the project allow list.",
+  "compatibility": [
+    "claude"
+  ],
+  "sourceType": "toolr",
+  "author": {
+    "name": "Daniel Deusing",
+    "url": "https://github.com/danieldeusing"
+  },
+  "externalUrl": "https://github.com/danieldeusing/seedr/tree/main/registry/hooks/project-security-guard",
+  "updatedAt": "2026-02-09T00:00:00Z",
+  "contents": {
+    "files": [
+      {
+        "name": "project-security-guard.sh",
+        "type": "file"
+      }
+    ],
+    "triggers": [
+      {
+        "event": "PreToolUse",
+        "matcher": "Bash"
+      },
+      {
+        "event": "PreToolUse",
+        "matcher": "Write"
+      },
+      {
+        "event": "PreToolUse",
+        "matcher": "Edit"
+      },
+      {
+        "event": "PreToolUse",
+        "matcher": "Read"
+      },
+      {
+        "event": "PreToolUse",
+        "matcher": "Glob"
+      }
+    ]
+  },
+  "targetScope": "project"
+}

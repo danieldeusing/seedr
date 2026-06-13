@@ -1,0 +1,44 @@
+{
+  "slug": "universal-security-guard",
+  "name": "Universal Security Guard",
+  "type": "hook",
+  "description": "User-scoped security hook that blocks universally dangerous operations like reverse shells, privilege escalation, and credential access across all projects.",
+  "longDescription": "Intercepts Bash, Read, Write, and Edit calls globally across all projects. Blocks:\n\n- **Reverse shells**: `/dev/tcp`, `netcat` exec, `socat` bridges\n- **Privilege escalation**: `sudo`, `chmod` SUID/777\n- **Execution chains**: download-and-execute, encoding bypass to shell\n- **Library injection**: `LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`\n- **Persistence**: `crontab`, `launchctl`, `systemd`\n- **macOS attacks**: `osascript`, keychain access, Gatekeeper/SIP bypass\n- **Credential reads**: SSH keys, cloud creds, browser passwords, crypto wallets, shell histories, Terraform state\n- **Other**: dangerous `git config`, system directory writes, container escapes, firewall/kernel manipulation, fork bombs\n\nNever auto-approves — only denies threats and defers safe commands to the normal permission flow.",
+  "compatibility": [
+    "claude"
+  ],
+  "sourceType": "toolr",
+  "author": {
+    "name": "Daniel Deusing",
+    "url": "https://github.com/danieldeusing"
+  },
+  "externalUrl": "https://github.com/danieldeusing/seedr/tree/main/registry/hooks/universal-security-guard",
+  "updatedAt": "2026-02-09T00:00:00Z",
+  "contents": {
+    "files": [
+      {
+        "name": "universal-security-guard.sh",
+        "type": "file"
+      }
+    ],
+    "triggers": [
+      {
+        "event": "PreToolUse",
+        "matcher": "Bash"
+      },
+      {
+        "event": "PreToolUse",
+        "matcher": "Write"
+      },
+      {
+        "event": "PreToolUse",
+        "matcher": "Edit"
+      },
+      {
+        "event": "PreToolUse",
+        "matcher": "Read"
+      }
+    ]
+  },
+  "targetScope": "user"
+}

@@ -1,0 +1,103 @@
+name: Sync Registry
+
+on:
+  schedule:
+    # Run daily at 6:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write # To dispatch the deploy workflow after pushing
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync registry
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm sync
+
+      - name: Stage and check for changes
+        id: changes
+        run: |
+          # Detect new item.json files before staging
+          NEW_FILES=$(git ls-files --others --exclude-standard registry/*/*/item.json)
+          if [ -n "$NEW_FILES" ]; then
+            echo "new_items=true" >> $GITHUB_OUTPUT
+            ITEMS=""
+            for f in $NEW_FILES; do
+              SLUG=$(echo "$f" | sed 's|registry/[^/]*/\([^/]*\)/item.json|\1|')
+              TYPE=$(echo "$f" | sed 's|registry/\([^/]*\)/.*|\1|' | sed 's/s$//')
+              NAME=$(grep -o '"name": *"[^"]*"' "$f" | head -1 | sed 's/"name": *"\([^"]*\)"/\1/')
+              ITEMS="${ITEMS}- **${NAME}** (${TYPE}: \`${SLUG}\`)\n"
+            done
+            echo "list<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$ITEMS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "new_items=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Stage all registry changes (modified + new files)
+          git add registry/
+          if git diff --cached --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push to main and prod
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: sync registry from Anthropic"
+          # Rebase onto the latest branches before pushing to survive concurrent moves.
+          git fetch origin main prod
+          git rebase origin/main
+          git push origin HEAD:main
+          git rebase origin/prod
+          git push origin HEAD:prod
+
+      - name: Trigger deploy
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref prod
+
+      - name: Send new items email
+        if: steps.changes.outputs.new_items == 'true'
+        uses: dawidd6/action-send-mail@6d98ae34d733f9a723a9e04e94f2f24ba05e1402 # v6.x
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "Seedr Registry: New items detected"
+          to: info@danieldeusing.de
+          from: ${{ secrets.SMTP_USERNAME }}
+          content_type: text/plain
+          body: |
+            New items were added to the seedr registry during today's sync:
+
+            ${{ steps.changes.outputs.list }}
+
+            View the registry: https://seedr.danieldeusing.de
+            GitHub: https://github.com/danieldeusing/seedr

@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seedr CLI Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --base: #000000;
+  --surface: #262626;
+  --surface-alt: #383838;
+  --overlay: #383838;
+  --overlay-hover: #383838;
+  --subtext: #666666;
+  --text: #cccccc;
+  --text-dim: #666666;
+  --accent: #60a5fa;
+  --active: #2e2e2e;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --skill: #f472b6;
+  --hook: #c084fc;
+  --agent: #60a5fa;
+  --plugin: #818cf8;
+  --command: #fbbf24;
+  --settings: #fb923c;
+  --mcp: #14b8a6;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--base); color: var(--text); min-height: 100vh; }
+.header { height: 45px; border-bottom: 1px solid var(--overlay); background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.header h1 { font-size: 14px; font-weight: 600; }
+.header span { font-size: 12px; color: var(--subtext); }
+.layout { display: grid; grid-template-columns: 280px 1fr; height: calc(100vh - 45px); }
+.controls { background: var(--surface); border-right: 1px solid var(--overlay); padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.preview { display: flex; flex-direction: column; overflow-y: auto; }
+.section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtext); margin-bottom: 6px; }
+
+/* Command tabs */
+.cmd-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.cmd-tab { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.15s; }
+.cmd-tab:hover { border-color: var(--overlay-hover); color: var(--text); }
+.cmd-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Form controls */
+.control-group { display: flex; flex-direction: column; gap: 4px; }
+.text-input { height: 26px; padding: 0 10px; font-size: 13px; font-family: 'JetBrains Mono', monospace; background: var(--surface-alt); border: 1px solid var(--overlay); border-radius: 8px; color: var(--text); outline: none; }
+.text-input:focus { border-color: var(--accent); }
+.text-input::placeholder { color: var(--text-dim); }
+select { height: 26px; padding: 0 8px; font-size: 13px; background: var(--surface-alt); border: 1px solid var(--overlay); border-radius: 8px; color: var(--text); outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236c7086'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+select:focus { border-color: var(--accent); }
+select option { background: var(--surface-alt); color: var(--text); }
+
+/* Checkboxes & radios */
+.check-group { display: flex; flex-direction: column; gap: 3px; }
+.check-item { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 2px 0; }
+.check-item.disabled { opacity: 0.35; cursor: not-allowed; }
+.check-item input { accent-color: var(--accent); cursor: pointer; }
+.check-item.disabled input { cursor: not-allowed; }
+.tool-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.compat-badge { font-size: 10px; color: var(--text-dim); margin-left: auto; }
+
+/* Radio group */
+.radio-group { display: flex; gap: 4px; }
+.radio-btn { flex: 1; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 12px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.15s; }
+.radio-btn:hover { border-color: var(--overlay-hover); }
+.radio-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Toggle */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; }
+.toggle-label { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--subtext); }
+.toggle { width: 36px; height: 20px; border-radius: 10px; background: var(--surface-alt); border: 1px solid var(--overlay); cursor: pointer; position: relative; transition: all 0.15s; }
+.toggle.on { background: var(--accent); border-color: var(--accent); }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: all 0.15s; }
+.toggle.on::after { left: 18px; }
+
+/* Presets */
+.presets { display: flex; flex-wrap: wrap; gap: 4px; }
+.preset-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--overlay); background: transparent; color: var(--subtext); font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Divider */
+.divider { height: 1px; background: var(--overlay); margin: 4px 0; }
+
+/* Preview sections */
+.cmd-bar { background: var(--surface); border-bottom: 1px solid var(--overlay); padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; }
+.cmd-text { flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+.cmd-text .dollar { color: var(--success); }
+.cmd-text .flag { color: var(--accent); }
+.cmd-text .value { color: var(--warning); }
+.copy-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-btn.copied { border-color: var(--success); color: var(--success); }
+
+.terminal, .filetree { padding: 16px; flex: 1; }
+.terminal-header, .filetree-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtext); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--overlay); }
+.term-content { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; }
+.term-line { display: flex; gap: 8px; }
+.term-check { color: var(--success); }
+.term-warn { color: var(--warning); }
+.term-label { color: var(--subtext); }
+.term-value { color: var(--text); }
+.term-muted { color: var(--text-dim); font-style: italic; }
+.term-desc { color: var(--text-dim); margin-left: 24px; }
+.term-blank { height: 8px; }
+
+/* File tree */
+.tree-content { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; white-space: pre; }
+.tree-dir { color: var(--subtext); }
+.tree-created { color: var(--success); }
+.tree-modified { color: var(--warning); }
+.tree-symlink { color: var(--accent); }
+.tree-arrow { color: var(--text-dim); }
+.tree-annotation { color: var(--text-dim); font-style: italic; font-size: 11px; }
+
+/* JSON preview */
+.json-preview { background: var(--surface); border: 1px solid var(--overlay); border-radius: 8px; padding: 12px; margin-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; }
+.json-key { color: var(--accent); }
+.json-str { color: var(--success); }
+.json-added { color: var(--success); }
+.json-bracket { color: var(--subtext); }
+
+/* Dry run banner */
+.dry-run-banner { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; padding: 8px 12px; margin: 8px 16px; font-size: 12px; color: var(--warning); display: flex; align-items: center; gap: 8px; }
+
+/* Type badge */
+.type-badge { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; border: 1px solid; }
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .controls { border-right: none; border-bottom: 1px solid var(--overlay); max-height: 40vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Seedr CLI Explorer</h1>
+  <span>Interactive command playground</span>
+</div>
+
+<div class="layout">
+  <div class="controls">
+    <div>
+      <div class="section-label">Command</div>
+      <div class="cmd-tabs" id="cmdTabs"></div>
+    </div>
+    <div class="divider"></div>
+    <div id="optionsPanel"></div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Presets</div>
+      <div class="presets" id="presets"></div>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="cmd-bar">
+      <div class="cmd-text" id="cmdText"></div>
+      <button class="copy-btn" id="copyBtn" onclick="copyCommand()">Copy</button>
+    </div>
+    <div id="dryRunBanner" class="dry-run-banner" style="display:none">
+      <span>&#9888;</span> Dry run mode — no files will be created or modified
+    </div>
+    <div class="terminal">
+      <div class="terminal-header">Terminal Output</div>
+      <div class="term-content" id="termOutput"></div>
+    </div>
+    <div class="filetree">
+      <div class="filetree-header">File System Effects</div>
+      <div class="tree-content" id="fileTree"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const COMMANDS = ['add', 'list', 'remove', 'init'];
+
+const TYPES = {
+  skill:    { label: 'Skill',    color: '#f472b6', structure: 'directory', mainFile: 'SKILL.md' },
+  command:  { label: 'Command',  color: '#fbbf24', structure: 'directory', mainFile: 'COMMAND.md' },
+  agent:    { label: 'Agent',    color: '#60a5fa', structure: 'file',      mainFile: '{slug}.md' },
+  hook:     { label: 'Hook',     color: '#c084fc', structure: 'json-merge', mergeTarget: 'settings.json', mergeField: 'hooks' },
+  mcp:      { label: 'MCP',      color: '#14b8a6', structure: 'json-merge', mergeTarget: '.mcp.json', mergeField: 'mcpServers' },
+  plugin:   { label: 'Plugin',   color: '#818cf8', structure: 'plugin' },
+  settings: { label: 'Settings', color: '#fb923c', structure: 'json-merge', mergeTarget: 'settings.json' },
+};
+
+const TOOLS = {
+  claude:   { label: 'Claude Code',    short: 'claude',   dir: '.claude',   userDir: '~/.claude' },
+  copilot:  { label: 'GitHub Copilot', short: 'copilot',  dir: '.github',   userDir: '~/.config/github-copilot' },
+  gemini:   { label: 'Gemini',         short: 'gemini',   dir: '.gemini',   userDir: '~/.gemini' },
+  codex:    { label: 'OpenAI Codex',   short: 'codex',    dir: '.codex',    userDir: '~/.codex' },
+  opencode: { label: 'OpenCode',       short: 'opencode', dir: '.opencode', userDir: '~/.opencode' },
+};
+
+const COMPATIBILITY = {
+  skill: ['claude', 'copilot', 'gemini', 'codex', 'opencode'],
+  command: ['claude'],
+  agent: ['claude'],
+  hook: ['claude'],
+  plugin: ['claude'],
+  settings: ['claude'],
+  mcp: ['claude'],
+};
+
+// Tools that read .agents/skills/ directly (no symlink needed when using central storage)
+const READS_AGENTS_DIR = ['gemini', 'codex', 'opencode'];
+
+const SAMPLE_ITEMS = {
+  pdf:               { type: 'skill',    desc: 'Generate, read, and manipulate PDF documents', files: ['SKILL.md', 'scripts/'] },
+  commit:            { type: 'skill',    desc: 'Commit changes following project conventions', files: ['SKILL.md'] },
+  playground:        { type: 'skill',    desc: 'Create interactive HTML playgrounds', files: ['SKILL.md', 'templates/'] },
+  'pre-commit-lint': { type: 'hook',     desc: 'Run linting before commits', hook: 'PreToolUse', matcher: 'Bash', script: 'pre-commit-lint.sh' },
+  context7:          { type: 'mcp',      desc: 'Fetch up-to-date documentation', server: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] } },
+  superpowers:       { type: 'plugin',   desc: 'Ships 29 agents, 22 commands, 19 skills', version: '1.0.0', marketplace: 'superpowers', pluginName: 'superpowers' },
+  'code-review':     { type: 'agent',    desc: 'Review code for quality and security issues', files: ['code-review.md'] },
+  'memory':          { type: 'settings', desc: 'Optimized memory and context settings', settings: { preferredNotifyMethod: 'terminal', taskAutoArchive: true } },
+  'slash-commands':  { type: 'command',  desc: 'Custom slash commands for workflows', files: ['COMMAND.md', 'scripts/'] },
+};
+
+const PRESETS = [
+  { label: 'Simple Skill', command: 'add', add: { name: 'pdf', type: 'skill', agents: ['claude'], scope: 'project', method: 'copy', yes: false, force: false, dryRun: false } },
+  { label: 'Multi-Tool',   command: 'add', add: { name: 'pdf', type: 'skill', agents: ['claude', 'copilot', 'gemini'], scope: 'project', method: 'symlink', yes: false, force: false, dryRun: false } },
+  { label: 'Hook',         command: 'add', add: { name: 'pre-commit-lint', type: 'hook', agents: ['claude'], scope: 'project', method: 'copy', yes: false, force: false, dryRun: false } },
+  { label: 'MCP Server',   command: 'add', add: { name: 'context7', type: 'mcp', agents: ['claude'], scope: 'user', method: 'copy', yes: false, force: false, dryRun: false } },
+  { label: 'Dry Run',      command: 'add', add: { name: 'pdf', type: 'skill', agents: ['claude', 'copilot'], scope: 'project', method: 'symlink', yes: false, force: false, dryRun: true } },
+];
+
+const state = {
+  command: 'add',
+  add: { name: 'pdf', type: 'skill', agents: ['claude'], scope: 'project', method: 'copy', yes: false, force: false, dryRun: false },
+  list: { type: '', installed: false, scope: 'project' },
+  remove: { name: 'pdf', agents: ['claude'], scope: 'project', yes: false },
+};
+
+// ── Rendering ──
+
+function renderCmdTabs() {
+  const el = document.getElementById('cmdTabs');
+  el.innerHTML = COMMANDS.map(c =>
+    `<button class="cmd-tab ${state.command === c ? 'active' : ''}" onclick="selectCommand('${c}')">${c}</button>`
+  ).join('');
+}
+
+function renderPresets() {
+  const el = document.getElementById('presets');
+  el.innerHTML = PRESETS.map((p, i) =>
+    `<button class="preset-btn" onclick="applyPreset(${i})">${p.label}</button>`
+  ).join('');
+}
+
+function renderOptions() {
+  const el = document.getElementById('optionsPanel');
+  if (state.command === 'add') el.innerHTML = renderAddOptions();
+  else if (state.command === 'list') el.innerHTML = renderListOptions();
+  else if (state.command === 'remove') el.innerHTML = renderRemoveOptions();
+  else el.innerHTML = renderInitOptions();
+  bindEvents();
+}
+
+function renderAddOptions() {
+  const s = state.add;
+  const compat = COMPATIBILITY[s.type] || [];
+  const showMethod = s.type === 'skill' || s.type === 'command';
+  return `
+    <div class="control-group">
+      <div class="section-label">Item Name</div>
+      <input type="text" class="text-input" id="addName" value="${s.name}" placeholder="e.g. pdf, commit">
+    </div>
+    <div class="control-group">
+      <div class="section-label">Type</div>
+      <select id="addType">
+        ${Object.entries(TYPES).map(([k, v]) =>
+          `<option value="${k}" ${s.type === k ? 'selected' : ''}>${v.label}</option>`
+        ).join('')}
+      </select>
+    </div>
+    <div class="control-group">
+      <div class="section-label">Target Tools <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0">(-a, --agents)</span></div>
+      <div class="check-group">
+        ${Object.entries(TOOLS).map(([k, v]) => {
+          const supported = compat.includes(k);
+          return `<label class="check-item ${supported ? '' : 'disabled'}">
+            <input type="checkbox" data-tool="${k}" ${s.agents.includes(k) && supported ? 'checked' : ''} ${supported ? '' : 'disabled'}>
+            <span class="tool-label">${v.short}</span>
+            ${!supported ? `<span class="compat-badge">${TYPES[s.type].label} only</span>` : ''}
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="section-label">Scope <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0">(-s, --scope)</span></div>
+      <div class="radio-group">
+        ${['project', 'user', 'local'].map(v =>
+          `<div class="radio-btn ${s.scope === v ? 'active' : ''}" onclick="setAddScope('${v}')">${v}</div>`
+        ).join('')}
+      </div>
+    </div>
+    ${showMethod ? `
+    <div class="control-group">
+      <div class="section-label">Method <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0">(-m, --method)</span></div>
+      <div class="radio-group">
+        ${['copy', 'symlink'].map(v =>
+          `<div class="radio-btn ${s.method === v ? 'active' : ''}" onclick="setAddMethod('${v}')">${v}</div>`
+        ).join('')}
+      </div>
+    </div>` : ''}
+    <div class="control-group">
+      <div class="section-label">Flags</div>
+      <div class="toggle-row"><span class="toggle-label">--yes</span><div class="toggle ${s.yes ? 'on' : ''}" onclick="toggleAdd('yes')"></div></div>
+      <div class="toggle-row"><span class="toggle-label">--force</span><div class="toggle ${s.force ? 'on' : ''}" onclick="toggleAdd('force')"></div></div>
+      <div class="toggle-row"><span class="toggle-label">--dry-run</span><div class="toggle ${s.dryRun ? 'on' : ''}" onclick="toggleAdd('dryRun')"></div></div>
+    </div>`;
+}
+
+function renderListOptions() {
+  const s = state.list;
+  return `
+    <div class="control-group">
+      <div class="section-label">Type Filter <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0">(-t, --type)</span></div>
+      <select id="listType">
+        <option value="" ${!s.type ? 'selected' : ''}>All types</option>
+        ${Object.entries(TYPES).map(([k, v]) =>
+          `<option value="${k}" ${s.type === k ? 'selected' : ''}>${v.label}</option>`
+        ).join('')}
+      </select>
+    </div>
+    <div class="control-group">
+      <div class="section-label">Mode</div>
+      <div class="toggle-row"><span class="toggle-label">--installed</span><div class="toggle ${s.installed ? 'on' : ''}" onclick="toggleList('installed')"></div></div>
+    </div>
+    ${s.installed ? `
+    <div class="control-group">
+      <div class="section-label">Scope</div>
+      <div class="radio-group">
+        ${['project', 'user'].map(v =>
+          `<div class="radio-btn ${s.scope === v ? 'active' : ''}" onclick="setListScope('${v}')">${v}</div>`
+        ).join('')}
+      </div>
+    </div>` : ''}`;
+}
+
+function renderRemoveOptions() {
+  const s = state.remove;
+  return `
+    <div class="control-group">
+      <div class="section-label">Item Name</div>
+      <input type="text" class="text-input" id="removeName" value="${s.name}" placeholder="e.g. pdf">
+    </div>
+    <div class="control-group">
+      <div class="section-label">Target Tools <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0">(-a, --agents)</span></div>
+      <div class="check-group">
+        ${Object.entries(TOOLS).map(([k, v]) =>
+          `<label class="check-item">
+            <input type="checkbox" data-rtool="${k}" ${s.agents.includes(k) ? 'checked' : ''}>
+            <span class="tool-label">${v.short}</span>
+          </label>`
+        ).join('')}
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="section-label">Scope</div>
+      <div class="radio-group">
+        ${['project', 'user'].map(v =>
+          `<div class="radio-btn ${s.scope === v ? 'active' : ''}" onclick="setRemoveScope('${v}')">${v}</div>`
+        ).join('')}
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="section-label">Flags</div>
+      <div class="toggle-row"><span class="toggle-label">--yes</span><div class="toggle ${s.yes ? 'on' : ''}" onclick="toggleRemove('yes')"></div></div>
+    </div>`;
+}
+
+function renderInitOptions() {
+  return `<div style="color:var(--subtext);font-size:13px;line-height:1.6;padding:8px 0;">
+    <p style="margin-bottom:8px"><strong style="color:var(--text)">seedr init</strong> sets up a new project for seedr.</p>
+    <p>Creates the base directory structure and configuration files needed to install and manage AI coding assistant content.</p>
+    <p style="margin-top:8px;color:var(--text-dim)">No options available.</p>
+  </div>`;
+}
+
+function bindEvents() {
+  const addName = document.getElementById('addName');
+  if (addName) addName.addEventListener('input', e => { state.add.name = e.target.value || 'pdf'; updateAll(); });
+
+  const addType = document.getElementById('addType');
+  if (addType) addType.addEventListener('change', e => {
+    state.add.type = e.target.value;
+    const compat = COMPATIBILITY[state.add.type] || [];
+    state.add.agents = state.add.agents.filter(a => compat.includes(a));
+    if (state.add.agents.length === 0 && compat.length > 0) state.add.agents = [compat[0]];
+    // Auto-set name to a sample of that type
+    const sample = Object.entries(SAMPLE_ITEMS).find(([, v]) => v.type === state.add.type);
+    if (sample) state.add.name = sample[0];
+    renderOptions();
+    updateAll();
+  });
+
+  document.querySelectorAll('[data-tool]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = [...document.querySelectorAll('[data-tool]:checked')].map(el => el.dataset.tool);
+      state.add.agents = checked.length ? checked : ['claude'];
+      updateAll();
+    });
+  });
+
+  const listType = document.getElementById('listType');
+  if (listType) listType.addEventListener('change', e => { state.list.type = e.target.value; updateAll(); });
+
+  const removeName = document.getElementById('removeName');
+  if (removeName) removeName.addEventListener('input', e => { state.remove.name = e.target.value || 'pdf'; updateAll(); });
+
+  document.querySelectorAll('[data-rtool]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = [...document.querySelectorAll('[data-rtool]:checked')].map(el => el.dataset.rtool);
+      state.remove.agents = checked.length ? checked : ['claude'];
+      updateAll();
+    });
+  });
+}
+
+// ── Command string ──
+
+function buildCommand() {
+  const parts = ['npx seedr'];
+  if (state.command === 'add') {
+    const s = state.add;
+    parts.push('add', s.name);
+    if (s.type) parts.push('--type', s.type);
+    if (s.agents.length && !(s.agents.length === 1 && s.agents[0] === 'claude')) parts.push('--agents', s.agents.join(','));
+    if (s.scope !== 'project') parts.push('--scope', s.scope);
+    if (s.method !== 'copy' && (s.type === 'skill' || s.type === 'command')) parts.push('--method', s.method);
+    if (s.yes) parts.push('--yes');
+    if (s.force) parts.push('--force');
+    if (s.dryRun) parts.push('--dry-run');
+  } else if (state.command === 'list') {
+    const s = state.list;
+    parts.push('list');
+    if (s.type) parts.push('--type', s.type);
+    if (s.installed) parts.push('--installed');
+    if (s.installed && s.scope !== 'project') parts.push('--scope', s.scope);
+  } else if (state.command === 'remove') {
+    const s = state.remove;
+    parts.push('remove', s.name);
+    if (s.agents.length && !(s.agents.length === 1 && s.agents[0] === 'claude')) parts.push('--agents', s.agents.join(','));
+    if (s.scope !== 'project') parts.push('--scope', s.scope);
+    if (s.yes) parts.push('--yes');
+  } else {
+    parts.push('init');
+  }
+  return parts;
+}
+
+function renderCommand() {
+  const parts = buildCommand();
+  const el = document.getElementById('cmdText');
+  const html = parts.map((p, i) => {
+    if (i === 0) return `<span class="dollar">$</span> ${esc(p)}`;
+    if (p.startsWith('--')) return `<span class="flag">${esc(p)}</span>`;
+    if (i > 0 && parts[i - 1]?.startsWith('--')) return `<span class="value">${esc(p)}</span>`;
+    if (i === 2 && (state.command === 'add' || state.command === 'remove')) return `<span class="value">${esc(p)}</span>`;
+    return esc(p);
+  }).join(' ');
+  el.innerHTML = html;
+}
+
+// ── Terminal output ──
+
+function renderTerminal() {
+  const el = document.getElementById('termOutput');
+  let lines = [];
+
+  if (state.command === 'add') {
+    const s = state.add;
+    const item = SAMPLE_ITEMS[s.name];
+    const typeDef = TYPES[s.type];
+    const typeColor = typeDef?.color || '#cdd6f4';
+
+    lines.push(line('check', 'Resolved:', `${s.name} <span class="type-badge" style="color:${typeColor};border-color:${typeColor}60">${typeDef?.label || s.type}</span>`));
+    if (item) lines.push(`<div class="term-desc">"${item.desc}"</div>`);
+    lines.push('<div class="term-blank"></div>');
+    lines.push(line('check', 'Tools:', s.agents.map(a => TOOLS[a].label).join(', ')));
+    lines.push(line('check', 'Scope:', s.scope));
+    if (s.type === 'skill' || s.type === 'command') {
+      lines.push(line('check', 'Method:', s.method));
+    }
+
+    if (s.dryRun) {
+      lines.push('<div class="term-blank"></div>');
+      lines.push(`<div class="term-line"><span class="term-warn">&#9888;</span> <span class="term-value">Dry run — showing what would happen</span></div>`);
+    } else {
+      lines.push('<div class="term-blank"></div>');
+      if (s.yes) {
+        lines.push(`<div class="term-muted">Confirmation skipped (--yes)</div>`);
+      } else {
+        lines.push(`<div class="term-muted">? Confirm installation (Y/n)</div>`);
+      }
+      lines.push('<div class="term-blank"></div>');
+
+      const useSymlink = s.method === 'symlink' && (s.type === 'skill' || s.type === 'command');
+      const multiTool = s.agents.length > 1;
+
+      if (useSymlink && multiTool) {
+        const typeDir = s.type + 's';
+        lines.push(line('check', 'Copied to central:', `.agents/${typeDir}/${s.name}/`));
+        s.agents.forEach(tool => {
+          if (READS_AGENTS_DIR.includes(tool)) {
+            lines.push(line('check', `${TOOLS[tool].short}:`, `reads .agents/${typeDir}/ directly (no symlink needed)`));
+          } else {
+            lines.push(line('check', `Symlinked for ${TOOLS[tool].short}:`, `${getToolDir(tool, s.scope)}/${typeDir}/${s.name}/`));
+          }
+        });
+      } else if (typeDef?.structure === 'json-merge') {
+        const target = getSettingsTarget(s.type, s.scope, s.agents[0]);
+        if (s.type === 'hook') {
+          lines.push(line('check', 'Copied hook script:', `${getToolDir('claude', s.scope)}/hooks/${s.name}.sh`));
+        }
+        lines.push(line('check', 'Merged config into:', target));
+      } else if (typeDef?.structure === 'plugin') {
+        const mp = item?.marketplace || 'seedr';
+        const pn = item?.pluginName || s.name;
+        const pv = item?.version || '1.0.0';
+        const pid = `${pn}@${mp}`;
+        lines.push(line('check', 'Fetched to temp:', `~/.claude/plugins/cache/.tmp/${s.name}/`));
+        lines.push(line('check', 'Read metadata:', `.claude-plugin/plugin.json, marketplace.json`));
+        lines.push(line('check', 'Plugin ID:', `<span style="color:var(--warning)">${pid}</span>`));
+        lines.push(line('check', 'Marketplace:', `cloned to ~/.claude/plugins/marketplaces/${mp}/`));
+        lines.push(line('check', 'Cached to:', `~/.claude/plugins/cache/${mp}/${pn}/${pv}/`));
+        lines.push(line('check', 'Registry:', `~/.claude/plugins/installed_plugins.json`));
+        const settingsFile = s.scope === 'local' ? '.claude/settings.local.json' : (s.scope === 'user' ? '~/.claude/settings.json' : '.claude/settings.json');
+        lines.push(line('check', 'Enabled in:', `${settingsFile} → enabledPlugins["${pid}"] = true`));
+      } else {
+        s.agents.forEach(tool => {
+          const typeDir = s.type + 's';
+          const path = typeDef?.structure === 'file'
+            ? `${getToolDir(tool, s.scope)}/${typeDir}/${s.name}.md`
+            : `${getToolDir(tool, s.scope)}/${typeDir}/${s.name}/`;
+          lines.push(line('check', `Installed for ${TOOLS[tool].short}:`, path));
+        });
+      }
+
+      lines.push('<div class="term-blank"></div>');
+      if (s.force) lines.push(`<div class="term-muted">Existing files overwritten (--force)</div>`);
+      lines.push(`<div class="term-line"><span class="term-check">&#10003;</span> <span style="color:var(--success)">Installation complete</span></div>`);
+    }
+  } else if (state.command === 'list') {
+    const s = state.list;
+    if (s.installed) {
+      lines.push(`<div class="term-value" style="margin-bottom:6px">Installed items (${s.scope} scope):</div>`);
+      lines.push('<div class="term-blank"></div>');
+      lines.push(`<div style="color:var(--skill);font-weight:600">  claude:</div>`);
+      lines.push(`<div class="term-value">    pdf</div>`);
+      lines.push(`<div class="term-value">    commit</div>`);
+      lines.push(`<div class="term-value">    playground</div>`);
+      if (!s.type || s.type === 'hook') {
+        lines.push(`<div style="color:var(--hook);font-weight:600;margin-top:6px">  hooks:</div>`);
+        lines.push(`<div class="term-value">    pre-commit-lint</div>`);
+      }
+    } else {
+      const types = s.type ? { [s.type]: TYPES[s.type] } : TYPES;
+      Object.entries(types).forEach(([key, t]) => {
+        const items = Object.entries(SAMPLE_ITEMS).filter(([, v]) => v.type === key);
+        if (items.length === 0) return;
+        lines.push(`<div style="color:${t.color};font-weight:600">${t.label}s (${items.length})</div>`);
+        items.forEach(([slug, v]) => {
+          lines.push(`<div class="term-value">  <span style="color:var(--text);display:inline-block;width:140px">${slug}</span> <span style="color:var(--subtext)">${v.desc}</span></div>`);
+        });
+        lines.push('<div class="term-blank"></div>');
+      });
+    }
+  } else if (state.command === 'remove') {
+    const s = state.remove;
+    lines.push(line('check', 'Found', `${s.name} installed for: ${s.agents.map(a => TOOLS[a].short).join(', ')}`));
+    lines.push('<div class="term-blank"></div>');
+    if (!s.yes) lines.push(`<div class="term-muted">? Confirm removal (Y/n)</div>`);
+    else lines.push(`<div class="term-muted">Confirmation skipped (--yes)</div>`);
+    lines.push('<div class="term-blank"></div>');
+    s.agents.forEach(tool => {
+      const dir = getToolDir(tool, s.scope);
+      lines.push(line('check', `Removed from ${TOOLS[tool].short}:`, `${dir}/skills/${s.name}/`));
+    });
+    lines.push('<div class="term-blank"></div>');
+    lines.push(`<div class="term-line"><span class="term-check">&#10003;</span> <span style="color:var(--success)">Removal complete</span></div>`);
+  } else {
+    lines.push(`<div class="term-muted">Initializing seedr project...</div>`);
+    lines.push('<div class="term-blank"></div>');
+    lines.push(line('check', 'Created', '.claude/ directory'));
+    lines.push(line('check', 'Created', '.claude/settings.json'));
+    lines.push(line('check', 'Created', '.claude/skills/ directory'));
+    lines.push(line('check', 'Created', '.claude/commands/ directory'));
+    lines.push('<div class="term-blank"></div>');
+    lines.push(`<div class="term-line"><span class="term-check">&#10003;</span> <span style="color:var(--success)">Project initialized</span></div>`);
+    lines.push('<div class="term-blank"></div>');
+    lines.push(`<div class="term-muted">Install items with: npx seedr add &lt;name&gt;</div>`);
+  }
+
+  el.innerHTML = lines.join('\n');
+}
+
+// ── File tree ──
+
+function renderFileTree() {
+  const el = document.getElementById('fileTree');
+  if (state.command === 'list') {
+    el.innerHTML = '<span class="tree-dir">No file system changes — list is read-only</span>';
+    return;
+  }
+  if (state.command === 'init') {
+    el.innerHTML = buildTreeStr([
+      { name: 'my-project/', type: 'dir', children: [
+        { name: '.claude/', type: 'created', children: [
+          { name: 'skills/', type: 'created' },
+          { name: 'commands/', type: 'created' },
+          { name: 'settings.json', type: 'created' },
+        ]}
+      ]}
+    ]);
+    return;
+  }
+  if (state.command === 'remove') {
+    const s = state.remove;
+    const root = { name: s.scope === 'user' ? '~/' : 'my-project/', type: 'dir', children: [] };
+    s.agents.forEach(tool => {
+      const dir = s.scope === 'user' ? TOOLS[tool].userDir.replace('~/', '') + '/' : TOOLS[tool].dir + '/';
+      root.children.push({
+        name: dir, type: 'dir', children: [
+          { name: 'skills/', type: 'dir', children: [
+            { name: `${s.name}/`, type: 'deleted', annotation: 'removed' }
+          ]}
+        ]
+      });
+    });
+    el.innerHTML = buildTreeStr([root]);
+    return;
+  }
+
+  // ADD command
+  const s = state.add;
+  const typeDef = TYPES[s.type];
+  const item = SAMPLE_ITEMS[s.name];
+  const useSymlink = s.method === 'symlink' && (s.type === 'skill' || s.type === 'command');
+  const multiTool = s.agents.length > 1;
+  const typeDir = s.type + 's';
+
+  const root = { name: s.scope === 'user' ? '~/' : 'my-project/', type: 'dir', children: [] };
+
+  if (typeDef?.structure === 'directory' || typeDef?.structure === 'file') {
+    if (useSymlink && multiTool) {
+      // Central storage
+      const centralFiles = buildItemFiles(s.type, s.name, item);
+      root.children.push({
+        name: '.agents/', type: 'dir', children: [{
+          name: typeDir + '/', type: 'dir', children: [{
+            name: s.name + '/', type: 'created', annotation: 'central copy', children: centralFiles
+          }]
+        }]
+      });
+      // Symlinks per tool (skip tools that read .agents/ directly)
+      s.agents.forEach(tool => {
+        if (READS_AGENTS_DIR.includes(tool)) return; // reads .agents/ directly, no symlink
+        const toolDir = s.scope === 'user' ? TOOLS[tool].userDir.replace('~/', '') + '/' : TOOLS[tool].dir + '/';
+        root.children.push({
+          name: toolDir, type: 'dir', children: [{
+            name: typeDir + '/', type: 'dir', children: [{
+              name: s.name + '/', type: 'symlink', target: `../../.agents/${typeDir}/${s.name}/`
+            }]
+          }]
+        });
+      });
+    } else {
+      s.agents.forEach(tool => {
+        const toolDir = s.scope === 'user' ? TOOLS[tool].userDir.replace('~/', '') + '/' : TOOLS[tool].dir + '/';
+        const files = buildItemFiles(s.type, s.name, item);
+        if (typeDef.structure === 'file') {
+          root.children.push({
+            name: toolDir, type: 'dir', children: [{
+              name: typeDir + '/', type: 'dir', children: [{
+                name: s.name + '.md', type: 'created'
+              }]
+            }]
+          });
+        } else {
+          root.children.push({
+            name: toolDir, type: 'dir', children: [{
+              name: typeDir + '/', type: 'dir', children: [{
+                name: s.name + '/', type: 'created', children: files
+              }]
+            }]
+          });
+        }
+      });
+    }
+  } else if (typeDef?.structure === 'json-merge') {
+    const toolDir = s.scope === 'user' ? TOOLS['claude'].userDir.replace('~/', '') + '/' : TOOLS['claude'].dir + '/';
+    const children = [];
+
+    if (s.type === 'hook') {
+      children.push({ name: 'hooks/', type: 'dir', children: [
+        { name: s.name + '.sh', type: 'created', annotation: 'hook script' }
+      ]});
+    }
+
+    const target = s.type === 'mcp'
+      ? (s.scope === 'user' ? '.mcp.json' : '.mcp.json')
+      : (s.scope === 'local' ? 'settings.local.json' : 'settings.json');
+
+    if (s.type === 'mcp' && s.scope !== 'user') {
+      // .mcp.json is at project root, not inside .claude/
+      root.children.push({ name: target, type: 'modified', annotation: 'merged' });
+      if (children.length) {
+        root.children.push({ name: toolDir, type: 'dir', children });
+      }
+    } else if (s.type === 'mcp' && s.scope === 'user') {
+      // User-scope MCP config goes to ~/.claude.json
+      root.children.push({ name: '.claude.json', type: 'modified', annotation: 'mcpServers merged' });
+    } else {
+      children.push({ name: target, type: 'modified', annotation: 'merged' });
+      root.children.push({ name: toolDir, type: 'dir', children });
+    }
+
+    // Show JSON merge preview
+    if (s.type === 'hook' && item) {
+      el.innerHTML = buildTreeStr([root]) + '\n' + buildJsonMerge(s.type, s.name, item);
+    } else if (s.type === 'mcp' && item) {
+      el.innerHTML = buildTreeStr([root]) + '\n' + buildJsonMerge(s.type, s.name, item);
+    } else if (s.type === 'settings' && item) {
+      el.innerHTML = buildTreeStr([root]) + '\n' + buildJsonMerge(s.type, s.name, item);
+    } else {
+      el.innerHTML = buildTreeStr([root]);
+    }
+    return;
+  } else if (typeDef?.structure === 'plugin') {
+    const mp = item?.marketplace || 'seedr';
+    const pn = item?.pluginName || s.name;
+    const pv = item?.version || '1.0.0';
+    const pid = `${pn}@${mp}`;
+
+    // Plugin cache, marketplace, and registry are ALWAYS in ~/.claude/ (user home)
+    const userHome = { name: '~/', type: 'dir', children: [
+      { name: '.claude/', type: 'dir', children: [
+        { name: 'plugins/', type: 'dir', children: [
+          { name: 'cache/', type: 'dir', children: [
+            { name: mp + '/', type: 'dir', children: [
+              { name: pn + '/', type: 'dir', children: [
+                { name: pv + '/', type: 'created', annotation: 'cached content', children: [
+                  { name: '.claude-plugin/', type: 'created', children: [
+                    { name: 'plugin.json', type: 'created' },
+                    { name: 'marketplace.json', type: 'created' },
+                  ]},
+                  { name: 'skills/', type: 'created' },
+                  { name: 'agents/', type: 'created' },
+                  { name: 'commands/', type: 'created' },
+                  { name: 'hooks/', type: 'created' },
+                ]}
+              ]}
+            ]}
+          ]},
+          { name: 'marketplaces/', type: 'dir', children: [
+            { name: mp + '/', type: 'created', annotation: 'git clone' },
+          ]},
+          { name: 'installed_plugins.json', type: 'modified', annotation: 'scope + path' },
+          { name: 'known_marketplaces.json', type: 'modified', annotation: 'marketplace source' },
+        ]},
+      ]}
+    ]};
+
+    // enabledPlugins goes in scope-dependent settings.json
+    if (s.scope === 'user') {
+      // settings.json is also in ~/.claude/
+      userHome.children[0].children.push(
+        { name: 'settings.json', type: 'modified', annotation: `enabledPlugins["${pid}"] = true` }
+      );
+      el.innerHTML = buildTreeStr([userHome]) + buildPluginJsonPreview(pid, s.scope, pv);
+      return;
+    } else {
+      // Project/local scope: settings.json is in project, cache is in ~/
+      const settingsFile = s.scope === 'local' ? 'settings.local.json' : 'settings.json';
+      const projectRoot = { name: 'my-project/', type: 'dir', children: [
+        { name: '.claude/', type: 'dir', children: [
+          { name: settingsFile, type: 'modified', annotation: `enabledPlugins["${pid}"] = true` },
+        ]}
+      ]};
+      el.innerHTML = buildTreeStr([userHome]) + '\n' + buildTreeStr([projectRoot]) + buildPluginJsonPreview(pid, s.scope, pv);
+      return;
+    }
+  }
+
+  el.innerHTML = buildTreeStr([root]);
+}
+
+function buildItemFiles(type, name, item) {
+  const typeDef = TYPES[type];
+  if (typeDef.structure === 'file') return [];
+  const files = [];
+  if (item?.files) {
+    item.files.forEach(f => {
+      if (f.endsWith('/')) files.push({ name: f, type: 'created' });
+      else files.push({ name: f, type: 'created' });
+    });
+  } else {
+    files.push({ name: typeDef.mainFile || 'SKILL.md', type: 'created' });
+  }
+  return files;
+}
+
+function buildTreeStr(nodes, prefix = '') {
+  let result = '';
+  nodes.forEach((node, i) => {
+    const last = i === nodes.length - 1;
+    const connector = prefix === '' ? '' : (last ? '└── ' : '├── ');
+    const childPrefix = prefix === '' ? '' : prefix + (last ? '    ' : '│   ');
+
+    let cls = 'tree-dir';
+    if (node.type === 'created') cls = 'tree-created';
+    else if (node.type === 'modified') cls = 'tree-modified';
+    else if (node.type === 'symlink') cls = 'tree-symlink';
+    else if (node.type === 'deleted') cls = 'tree-modified';
+
+    let nameStr = `<span class="${cls}">${esc(node.name)}</span>`;
+    if (node.type === 'symlink' && node.target) {
+      nameStr += ` <span class="tree-arrow">\u2192</span> <span class="tree-symlink">${esc(node.target)}</span>`;
+    }
+    if (node.annotation) {
+      nameStr += ` <span class="tree-annotation">\u2190 ${esc(node.annotation)}</span>`;
+    }
+
+    result += prefix + connector + nameStr + '\n';
+    if (node.children) {
+      result += buildTreeStr(node.children, childPrefix || '  ');
+    }
+  });
+  return result;
+}
+
+function buildJsonMerge(type, name, item) {
+  let json = '';
+  if (type === 'hook') {
+    const hook = item.hook || 'PreToolUse';
+    const matcher = item.matcher || '';
+    const script = item.script || name + '.sh';
+    json = `<div class="json-preview">
+<span class="json-bracket">{</span>
+  <span class="json-key">"hooks"</span>: <span class="json-bracket">{</span>
+    <span class="json-added json-key">"${hook}"</span>: <span class="json-bracket">[</span>
+      <span class="json-bracket">{</span>
+        ${matcher ? `<span class="json-added json-key">"matcher"</span>: <span class="json-added json-str">"${matcher}"</span>,` : ''}
+        <span class="json-added json-key">"hooks"</span>: <span class="json-bracket">[{</span>
+          <span class="json-added json-key">"type"</span>: <span class="json-added json-str">"command"</span>,
+          <span class="json-added json-key">"command"</span>: <span class="json-added json-str">".claude/hooks/${script}"</span>
+        <span class="json-bracket">}]</span>
+      <span class="json-bracket">}</span>
+    <span class="json-bracket">]</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></div>`;
+  } else if (type === 'mcp' && item.server) {
+    const srv = item.server;
+    json = `<div class="json-preview">
+<span class="json-bracket">{</span>
+  <span class="json-key">"mcpServers"</span>: <span class="json-bracket">{</span>
+    <span class="json-added json-key">"${name}"</span>: <span class="json-bracket">{</span>
+      <span class="json-added json-key">"command"</span>: <span class="json-added json-str">"${srv.command}"</span>,
+      <span class="json-added json-key">"args"</span>: <span class="json-added">[${srv.args.map(a => `<span class="json-str">"${a}"</span>`).join(', ')}]</span>
+    <span class="json-bracket">}</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></div>`;
+  } else if (type === 'settings' && item.settings) {
+    const entries = Object.entries(item.settings).map(([k, v]) =>
+      `    <span class="json-added json-key">"${k}"</span>: <span class="json-added json-str">${JSON.stringify(v)}</span>`
+    ).join(',\n');
+    json = `<div class="json-preview">
+<span class="json-bracket">{</span>
+${entries}
+<span class="json-bracket">}</span></div>`;
+  }
+  return json;
+}
+
+function buildPluginJsonPreview(pid, scope, version) {
+  const scopeLabel = scope === 'user' ? '' : `, <span class="json-added json-key">"projectPath"</span>: <span class="json-added json-str">"/path/to/project"</span>`;
+  return `
+<div style="margin-top:12px;font-size:11px;color:var(--subtext);font-weight:600;text-transform:uppercase;letter-spacing:0.05em">installed_plugins.json</div>
+<div class="json-preview"><span class="json-bracket">{</span>
+  <span class="json-key">"version"</span>: <span class="json-added">2</span>,
+  <span class="json-key">"plugins"</span>: <span class="json-bracket">{</span>
+    <span class="json-added json-key">"${pid}"</span>: <span class="json-bracket">[{</span>
+      <span class="json-added json-key">"scope"</span>: <span class="json-added json-str">"${scope}"</span>${scopeLabel},
+      <span class="json-added json-key">"installPath"</span>: <span class="json-added json-str">"~/.claude/plugins/cache/.../${version}/"</span>,
+      <span class="json-added json-key">"version"</span>: <span class="json-added json-str">"${version}"</span>,
+      <span class="json-added json-key">"installedAt"</span>: <span class="json-added json-str">"2026-02-17T..."</span>
+    <span class="json-bracket">}]</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></div>
+<div style="margin-top:12px;font-size:11px;color:var(--subtext);font-weight:600;text-transform:uppercase;letter-spacing:0.05em">settings.json (${scope} scope)</div>
+<div class="json-preview"><span class="json-bracket">{</span>
+  <span class="json-key">"enabledPlugins"</span>: <span class="json-bracket">{</span>
+    <span class="json-added json-key">"${pid}"</span>: <span class="json-added">true</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></div>`;
+}
+
+// ── Helpers ──
+
+function getToolDir(tool, scope) {
+  if (scope === 'user') return TOOLS[tool].userDir;
+  return TOOLS[tool].dir;
+}
+
+function getSettingsTarget(type, scope, tool) {
+  if (type === 'mcp') {
+    return scope === 'user' ? '~/.claude.json' : '.mcp.json';
+  }
+  if (scope === 'local') return `${TOOLS[tool].dir}/settings.local.json`;
+  if (scope === 'user') return `${TOOLS[tool].userDir}/settings.json`;
+  return `${TOOLS[tool].dir}/settings.json`;
+}
+
+function line(type, label, value) {
+  const icon = type === 'check' ? `<span class="term-check">&#10003;</span>` : `<span class="term-warn">&#9888;</span>`;
+  return `<div class="term-line">${icon} <span class="term-label">${label}</span> <span class="term-value">${value}</span></div>`;
+}
+
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ── Actions ──
+
+function selectCommand(cmd) { state.command = cmd; renderCmdTabs(); renderOptions(); updateAll(); }
+function setAddScope(v) { state.add.scope = v; renderOptions(); updateAll(); }
+function setAddMethod(v) { state.add.method = v; renderOptions(); updateAll(); }
+function toggleAdd(key) { state.add[key] = !state.add[key]; renderOptions(); updateAll(); }
+function setListScope(v) { state.list.scope = v; renderOptions(); updateAll(); }
+function toggleList(key) { state.list[key] = !state.list[key]; renderOptions(); updateAll(); }
+function setRemoveScope(v) { state.remove.scope = v; renderOptions(); updateAll(); }
+function toggleRemove(key) { state.remove[key] = !state.remove[key]; renderOptions(); updateAll(); }
+
+function applyPreset(idx) {
+  const p = PRESETS[idx];
+  state.command = p.command;
+  if (p.add) state.add = { ...state.add, ...p.add };
+  renderCmdTabs();
+  renderOptions();
+  updateAll();
+}
+
+function copyCommand() {
+  const cmd = buildCommand().join(' ');
+  navigator.clipboard.writeText(cmd).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+function updateAll() {
+  renderCommand();
+  renderTerminal();
+  renderFileTree();
+  document.getElementById('dryRunBanner').style.display =
+    state.command === 'add' && state.add.dryRun ? 'flex' : 'none';
+}
+
+// ── Init ──
+renderCmdTabs();
+renderPresets();
+renderOptions();
+updateAll();
+</script>
+</body>
+</html>

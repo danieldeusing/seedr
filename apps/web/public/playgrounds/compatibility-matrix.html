@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seedr Compatibility Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --base: #000000; --surface: #262626; --surface-alt: #383838;
+  --overlay: #383838; --overlay-hover: #383838;
+  --subtext: #666666; --text: #cccccc; --text-dim: #666666;
+  --accent: #60a5fa; --active: #2e2e2e;
+  --success: #4ade80; --warning: #fbbf24; --error: #f87171;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',system-ui,sans-serif; background:var(--base); color:var(--text); min-height:100vh; }
+.header { height:45px; border-bottom:1px solid var(--overlay); background:var(--surface); display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
+.header h1 { font-size:14px; font-weight:600; }
+.header span { font-size:12px; color:var(--subtext); }
+.layout { display:grid; grid-template-columns:260px 1fr; height:calc(100vh - 45px); }
+.controls { background:var(--surface); border-right:1px solid var(--overlay); padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; }
+.preview { overflow-y:auto; display:flex; flex-direction:column; }
+.section-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--subtext); margin-bottom:6px; }
+.divider { height:1px; background:var(--overlay); margin:2px 0; }
+
+.view-tabs { display:flex; gap:4px; }
+.view-tab { flex:1; padding:6px 8px; border-radius:8px; border:1px solid var(--overlay); background:var(--surface-alt); color:var(--subtext); font-size:12px; font-weight:500; cursor:pointer; text-align:center; transition:all .15s; }
+.view-tab:hover { border-color:var(--overlay-hover); }
+.view-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+.type-chips { display:flex; flex-wrap:wrap; gap:5px; }
+.type-chip { padding:4px 10px; border-radius:6px; border:2px solid transparent; background:var(--surface-alt); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; }
+.type-chip:hover { filter:brightness(1.2); }
+.type-chip.active { border-color:currentColor; }
+
+.tool-chips { display:flex; flex-direction:column; gap:4px; }
+.tool-chip { display:flex; align-items:center; gap:8px; padding:5px 10px; border-radius:6px; border:1px solid var(--overlay); background:var(--surface-alt); font-size:12px; cursor:pointer; transition:all .15s; }
+.tool-chip:hover { border-color:var(--overlay-hover); }
+.tool-chip.active { border-color:var(--accent); background:rgba(96,165,250,.1); }
+.tool-chip .mono { font-family:'JetBrains Mono',monospace; font-size:11px; }
+
+.presets { display:flex; flex-wrap:wrap; gap:4px; }
+.preset-btn { padding:4px 10px; border-radius:6px; border:1px solid var(--overlay); background:transparent; color:var(--subtext); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; }
+.preset-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* Matrix */
+.matrix-container { padding:24px; flex:1; overflow:auto; }
+.matrix { border-collapse:separate; border-spacing:3px; }
+.matrix th { padding:8px 14px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color:var(--subtext); }
+.matrix th.tool-header { writing-mode:horizontal-tb; text-align:center; min-width:90px; }
+.matrix th.type-header { text-align:right; padding-right:12px; }
+.matrix td { text-align:center; padding:10px 14px; border-radius:6px; font-size:18px; cursor:pointer; transition:all .15s; position:relative; }
+.matrix td.supported { background:rgba(74,222,128,.08); }
+.matrix td.supported:hover { background:rgba(74,222,128,.15); }
+.matrix td.unsupported { background:rgba(248,113,113,.05); }
+.matrix td.dimmed { opacity:.2; }
+.matrix td.highlighted { box-shadow:0 0 0 2px var(--accent); }
+.matrix tr.type-row td.type-label { text-align:right; padding:8px 12px; font-size:12px; font-weight:500; cursor:default; background:transparent; }
+
+/* Detail panel */
+.detail-panel { padding:0 24px 24px; }
+.detail-card { background:var(--surface); border:1px solid var(--overlay); border-radius:8px; padding:16px; }
+.detail-title { font-size:14px; font-weight:600; margin-bottom:8px; }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+.detail-item { background:var(--base); border-radius:6px; padding:10px; }
+.detail-item-label { font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:4px; }
+.detail-item-value { font-size:13px; font-family:'JetBrains Mono',monospace; }
+
+/* Structure cards */
+.structure-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; padding:24px; }
+.struct-card { background:var(--surface); border:1px solid var(--overlay); border-radius:8px; padding:14px; transition:all .15s; }
+.struct-card.highlighted { border-color:var(--accent); box-shadow:0 0 12px rgba(96,165,250,.15); }
+.struct-card.dimmed { opacity:.3; }
+.struct-card-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.struct-card-dot { width:10px; height:10px; border-radius:50%; }
+.struct-card-title { font-size:13px; font-weight:600; }
+.struct-card-type { font-size:10px; padding:1px 6px; border-radius:4px; margin-left:auto; }
+.struct-card-body { font-size:12px; color:var(--subtext); line-height:1.6; }
+.struct-card-body code { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent); background:var(--base); padding:1px 4px; border-radius:3px; }
+.struct-card-tree { font-family:'JetBrains Mono',monospace; font-size:11px; line-height:1.6; margin-top:8px; padding:8px; background:var(--base); border-radius:6px; white-space:pre; }
+.t-new { color:var(--success); } .t-mod { color:var(--warning); } .t-dim { color:var(--text-dim); }
+
+/* Prompt */
+.prompt-bar { border-top:1px solid var(--overlay); background:var(--surface); padding:12px 16px; display:flex; align-items:flex-start; gap:12px; }
+.prompt-text { flex:1; font-size:13px; color:var(--subtext); line-height:1.5; }
+.copy-btn { padding:4px 12px; border-radius:6px; border:1px solid var(--overlay); background:var(--surface-alt); color:var(--subtext); font-size:12px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+.copy-btn.copied { border-color:var(--success); color:var(--success); }
+
+@media (max-width:768px) {
+  .layout { grid-template-columns:1fr; }
+  .controls { border-right:none; border-bottom:1px solid var(--overlay); max-height:40vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Compatibility Matrix</h1>
+  <span>What works with what</span>
+</div>
+
+<div class="layout">
+  <div class="controls">
+    <div>
+      <div class="section-label">View</div>
+      <div class="view-tabs" id="viewTabs"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Highlight Type</div>
+      <div class="type-chips" id="typeChips"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Highlight Tool</div>
+      <div class="tool-chips" id="toolChips"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Presets</div>
+      <div class="presets" id="presets"></div>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div id="mainContent"></div>
+    <div class="prompt-bar">
+      <div class="prompt-text" id="promptText"></div>
+      <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TYPES = {
+  skill:    { label:'Skill',    color:'#f472b6', structure:'directory', dir:'skills',   mainFile:'SKILL.md',   desc:'Markdown-based instructions with optional scripts and references' },
+  command:  { label:'Command',  color:'#fbbf24', structure:'directory', dir:'commands', mainFile:'COMMAND.md', desc:'Slash commands with markdown body and optional scripts' },
+  agent:    { label:'Agent',    color:'#60a5fa', structure:'file',      dir:'agents',   mainFile:'{slug}.md',  desc:'Single markdown file defining an agent persona and capabilities' },
+  hook:     { label:'Hook',     color:'#c084fc', structure:'json-merge',dir:'hooks',    mergeTarget:'settings.json', desc:'Shell script + JSON config merged into settings.json hooks field' },
+  mcp:      { label:'MCP',      color:'#14b8a6', structure:'json-merge',dir:null,       mergeTarget:'.mcp.json',     desc:'Server configuration merged into .mcp.json mcpServers field' },
+  plugin:   { label:'Plugin',   color:'#818cf8', structure:'plugin',    dir:'plugins',  desc:'Bundled package cached in ~/.claude/plugins/cache/, marketplace git-cloned, enabled via enabledPlugins in scope-dependent settings.json' },
+  settings: { label:'Settings', color:'#fb923c', structure:'json-merge',dir:null,       mergeTarget:'settings.json', desc:'Key-value pairs deep-merged into settings.json' },
+};
+
+const TOOLS = {
+  claude:   { label:'Claude Code',    short:'claude',   dir:'.claude' },
+  copilot:  { label:'GitHub Copilot', short:'copilot',  dir:'.github' },
+  gemini:   { label:'Gemini',         short:'gemini',   dir:'.gemini' },
+  codex:    { label:'OpenAI Codex',   short:'codex',    dir:'.codex' },
+  opencode: { label:'OpenCode',       short:'opencode', dir:'.opencode' },
+};
+
+const COMPAT = {
+  skill:    ['claude','copilot','gemini','codex','opencode'],
+  command:  ['claude'],
+  agent:    ['claude'],
+  hook:     ['claude'],
+  plugin:   ['claude'],
+  settings: ['claude'],
+  mcp:      ['claude'],
+};
+
+const VIEWS = ['matrix','structures'];
+const PRESETS = [
+  { label:'Full Matrix',     view:'matrix',     type:'', tool:'' },
+  { label:'Claude Only',     view:'matrix',     type:'', tool:'claude' },
+  { label:'Universal Types', view:'matrix',     type:'skill', tool:'' },
+  { label:'File Structures', view:'structures', type:'', tool:'' },
+  { label:'JSON Merge Types',view:'structures', type:'hook', tool:'' },
+];
+
+const state = { view:'matrix', type:'', tool:'' };
+
+// ── Controls ──
+
+function renderControls() {
+  document.getElementById('viewTabs').innerHTML = VIEWS.map(v => {
+    const labels = { matrix:'Matrix', structures:'Structures' };
+    return `<div class="view-tab ${state.view===v?'active':''}" onclick="setView('${v}')">${labels[v]}</div>`;
+  }).join('');
+
+  document.getElementById('typeChips').innerHTML =
+    `<div class="type-chip ${!state.type?'active':''}" style="color:var(--subtext);${!state.type?'border-color:var(--subtext)':''}" onclick="setType('')">All</div>` +
+    Object.entries(TYPES).map(([k,v]) =>
+      `<div class="type-chip ${state.type===k?'active':''}" style="color:${v.color};${state.type===k?`border-color:${v.color};background:${v.color}18`:''}" onclick="setType('${k}')">${v.label}</div>`
+    ).join('');
+
+  document.getElementById('toolChips').innerHTML =
+    `<div class="tool-chip ${!state.tool?'active':''}" onclick="setTool('')"><span>All tools</span></div>` +
+    Object.entries(TOOLS).map(([k,v]) =>
+      `<div class="tool-chip ${state.tool===k?'active':''}" onclick="setTool('${k}')"><span class="mono">${v.short}</span><span style="color:var(--text-dim);font-size:11px;margin-left:auto">${v.dir}/</span></div>`
+    ).join('');
+
+  document.getElementById('presets').innerHTML = PRESETS.map((p,i) =>
+    `<button class="preset-btn" onclick="applyPreset(${i})">${p.label}</button>`
+  ).join('');
+}
+
+// ── Matrix View ──
+
+function renderMatrix() {
+  const toolKeys = Object.keys(TOOLS);
+  const typeKeys = Object.keys(TYPES);
+
+  let html = '<div class="matrix-container"><table class="matrix"><thead><tr><th></th>';
+  toolKeys.forEach(tk => {
+    const t = TOOLS[tk];
+    const dim = state.tool && state.tool !== tk;
+    html += `<th class="tool-header" style="${dim?'opacity:.3':''}"><div>${t.label}</div><div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--text-dim);font-weight:400;margin-top:2px">${t.dir}/</div></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  typeKeys.forEach(yk => {
+    const yt = TYPES[yk];
+    const typeDim = state.type && state.type !== yk;
+    html += '<tr class="type-row">';
+    html += `<td class="type-label" style="color:${yt.color};${typeDim?'opacity:.3':''}"><span>${yt.label}</span></td>`;
+    toolKeys.forEach(tk => {
+      const supported = COMPAT[yk].includes(tk);
+      const dim = (state.type && state.type !== yk) || (state.tool && state.tool !== tk);
+      const hl = (state.type === yk && state.tool === tk) || (state.type === yk && !state.tool) || (!state.type && state.tool === tk);
+      html += `<td class="${supported?'supported':'unsupported'} ${dim?'dimmed':''} ${hl&&!dim?'highlighted':''}" onclick="selectCell('${yk}','${tk}')" title="${yt.label} + ${TOOLS[tk].label}: ${supported?'Supported':'Not supported'}">
+        ${supported ? '<span style="color:var(--success)">\u2713</span>' : '<span style="color:var(--error);opacity:.5">\u2717</span>'}
+      </td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+
+  // Detail panel when both type and tool selected
+  if (state.type && state.tool) {
+    const yt = TYPES[state.type];
+    const tt = TOOLS[state.tool];
+    const supported = COMPAT[state.type].includes(state.tool);
+    html += `<div class="detail-panel"><div class="detail-card">
+      <div class="detail-title" style="color:${supported?'var(--success)':'var(--error)'}">
+        ${yt.label} + ${tt.label} ${supported ? '— Supported' : '— Not Supported'}
+      </div>
+      ${supported ? `
+      <div style="font-size:12px;color:var(--subtext);margin-bottom:8px">${yt.desc}</div>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <div class="detail-item-label">Structure</div>
+          <div class="detail-item-value">${yt.structure}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item-label">Install Path</div>
+          <div class="detail-item-value">${yt.structure === 'json-merge' ? (yt.mergeTarget || 'settings.json') : tt.dir + '/' + (yt.dir||'') + '/'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item-label">Main File</div>
+          <div class="detail-item-value">${yt.mainFile || yt.mergeTarget || 'plugin.json'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item-label">Operation</div>
+          <div class="detail-item-value">${yt.structure === 'json-merge' ? 'Deep merge' : yt.structure === 'plugin' ? 'Cache + enable' : 'Copy or symlink'}</div>
+        </div>
+      </div>` : `
+      <div style="font-size:12px;color:var(--subtext)">${yt.label} content type is only supported by ${COMPAT[state.type].map(t => TOOLS[t].label).join(', ')}.</div>
+      `}
+    </div></div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ── Structures View ──
+
+function renderStructures() {
+  const typeKeys = Object.keys(TYPES);
+  let html = '<div class="structure-cards">';
+
+  typeKeys.forEach(k => {
+    const t = TYPES[k];
+    const dim = state.type && state.type !== k;
+    const hl = state.type === k;
+    let tree = '';
+
+    if (t.structure === 'directory') {
+      tree = `<span class="t-dim">${TOOLS[state.tool||'claude'].dir}/</span>
+<span class="t-dim">  ${t.dir}/</span>
+<span class="t-new">    {slug}/</span>
+<span class="t-new">      ${t.mainFile}</span>${k==='skill'?`
+<span class="t-new">      scripts/</span>
+<span class="t-new">      references/</span>`:`
+<span class="t-new">      scripts/</span>`}`;
+    } else if (t.structure === 'file') {
+      tree = `<span class="t-dim">${TOOLS[state.tool||'claude'].dir}/</span>
+<span class="t-dim">  ${t.dir}/</span>
+<span class="t-new">    {slug}.md</span>`;
+    } else if (t.structure === 'json-merge') {
+      if (k === 'hook') {
+        tree = `<span class="t-dim">.claude/</span>
+<span class="t-new">  hooks/{slug}.sh</span>       <span class="t-dim">\u2190 script</span>
+<span class="t-mod">  settings.json</span>          <span class="t-dim">\u2190 hooks merged</span>`;
+      } else if (k === 'mcp') {
+        tree = `<span class="t-mod">.mcp.json</span>                <span class="t-dim">\u2190 mcpServers merged</span>`;
+      } else {
+        tree = `<span class="t-dim">.claude/</span>
+<span class="t-mod">  settings.json</span>          <span class="t-dim">\u2190 settings merged</span>`;
+      }
+    } else if (t.structure === 'plugin') {
+      tree = `<span class="t-dim">~/.claude/</span>                     <span class="t-dim">\u2190 always user home</span>
+<span class="t-dim">  plugins/</span>
+<span class="t-dim">    cache/{marketplace}/</span>
+<span class="t-new">      {slug}/{version}/</span>
+<span class="t-new">        .claude-plugin/</span>       <span class="t-dim">\u2190 metadata</span>
+<span class="t-new">        skills/ agents/ ...</span>
+<span class="t-new">    marketplaces/{mp}/</span>       <span class="t-dim">\u2190 git clone</span>
+<span class="t-mod">    installed_plugins.json</span>   <span class="t-dim">\u2190 scope + path</span>
+<span class="t-mod">    known_marketplaces.json</span>
+
+<span class="t-dim">.claude/</span>                       <span class="t-dim">\u2190 scope-dependent</span>
+<span class="t-mod">  settings.json</span>               <span class="t-dim">\u2190 enabledPlugins["{name}@{mp}"] = true</span>`;
+    }
+
+    const compatTools = COMPAT[k].map(tk => TOOLS[tk].short).join(', ');
+
+    html += `<div class="struct-card ${hl?'highlighted':''} ${dim?'dimmed':''}">
+      <div class="struct-card-header">
+        <div class="struct-card-dot" style="background:${t.color}"></div>
+        <div class="struct-card-title" style="color:${t.color}">${t.label}</div>
+        <div class="struct-card-type" style="color:${t.color};background:${t.color}18">${t.structure}</div>
+      </div>
+      <div class="struct-card-body">
+        ${t.desc}
+        <br><span style="font-size:11px;color:var(--text-dim)">Tools: ${compatTools}</span>
+      </div>
+      <div class="struct-card-tree">${tree}</div>
+    </div>`;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// ── Prompt ──
+
+function renderPrompt() {
+  const parts = [];
+  if (state.view === 'matrix') {
+    parts.push('Viewing the **compatibility matrix**');
+    if (state.type && state.tool) {
+      const supported = COMPAT[state.type].includes(state.tool);
+      parts.push(`— **${TYPES[state.type].label}** ${supported ? 'is supported' : 'is not supported'} by **${TOOLS[state.tool].label}**`);
+    } else if (state.type) {
+      const tools = COMPAT[state.type].map(t => TOOLS[t].label).join(', ');
+      parts.push(`— **${TYPES[state.type].label}** works with: ${tools}`);
+    } else if (state.tool) {
+      const types = Object.entries(COMPAT).filter(([,v]) => v.includes(state.tool)).map(([k]) => TYPES[k].label).join(', ');
+      parts.push(`— **${TOOLS[state.tool].label}** supports: ${types}`);
+    }
+  } else {
+    parts.push('Viewing **file structures** for each content type');
+    if (state.type) parts.push(`— highlighting **${TYPES[state.type].label}** (${TYPES[state.type].structure})`);
+  }
+  parts.push('.');
+
+  document.getElementById('promptText').innerHTML = parts.join(' ');
+}
+
+// ── Actions ──
+
+function setView(v) { state.view = v; renderControls(); updateAll(); }
+function setType(t) { state.type = state.type === t ? '' : t; renderControls(); updateAll(); }
+function setTool(t) { state.tool = state.tool === t ? '' : t; renderControls(); updateAll(); }
+function selectCell(type, tool) { state.type = type; state.tool = tool; renderControls(); updateAll(); }
+function applyPreset(i) { const p = PRESETS[i]; Object.assign(state, p); renderControls(); updateAll(); }
+function copyPrompt() {
+  navigator.clipboard.writeText(document.getElementById('promptText').innerText).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+function updateAll() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = state.view === 'matrix' ? renderMatrix() : renderStructures();
+  renderPrompt();
+}
+
+// ── Init ──
+renderControls();
+updateAll();
+</script>
+</body>
+</html>

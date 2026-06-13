@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seedr Registry Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --base: #000000; --surface: #262626; --surface-alt: #383838;
+  --overlay: #383838; --overlay-hover: #383838;
+  --subtext: #666666; --text: #cccccc; --text-dim: #666666;
+  --accent: #60a5fa; --active: #2e2e2e;
+  --success: #4ade80; --warning: #fbbf24;
+  --skill: #f472b6; --hook: #c084fc; --agent: #60a5fa;
+  --plugin: #818cf8; --command: #fbbf24; --settings: #fb923c; --mcp: #14b8a6;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',system-ui,sans-serif; background:var(--base); color:var(--text); min-height:100vh; }
+.header { height:45px; border-bottom:1px solid var(--overlay); background:var(--surface); display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
+.header h1 { font-size:14px; font-weight:600; }
+.header span { font-size:12px; color:var(--subtext); }
+.layout { display:grid; grid-template-columns:260px 1fr; height:calc(100vh - 45px); }
+.controls { background:var(--surface); border-right:1px solid var(--overlay); padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; }
+.preview { overflow-y:auto; display:flex; flex-direction:column; }
+.section-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--subtext); margin-bottom:6px; }
+.divider { height:1px; background:var(--overlay); margin:2px 0; }
+
+.view-tabs { display:flex; gap:4px; }
+.view-tab { flex:1; padding:6px 8px; border-radius:8px; border:1px solid var(--overlay); background:var(--surface-alt); color:var(--subtext); font-size:12px; font-weight:500; cursor:pointer; text-align:center; transition:all .15s; }
+.view-tab:hover { border-color:var(--overlay-hover); }
+.view-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+.type-chips { display:flex; flex-wrap:wrap; gap:5px; }
+.type-chip { padding:4px 10px; border-radius:6px; border:2px solid transparent; background:var(--surface-alt); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; }
+.type-chip:hover { filter:brightness(1.2); }
+.type-chip.active { border-color:currentColor; }
+
+.source-chips { display:flex; gap:4px; }
+.source-chip { flex:1; padding:5px 8px; border-radius:6px; border:1px solid var(--overlay); background:var(--surface-alt); color:var(--subtext); font-size:11px; cursor:pointer; text-align:center; transition:all .15s; }
+.source-chip.active { border-color:var(--accent); color:var(--accent); background:rgba(96,165,250,.1); }
+
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:2px 0; }
+.toggle-label { font-size:12px; color:var(--subtext); }
+.toggle { width:36px; height:20px; border-radius:10px; background:var(--surface-alt); border:1px solid var(--overlay); cursor:pointer; position:relative; transition:all .15s; }
+.toggle.on { background:var(--accent); border-color:var(--accent); }
+.toggle::after { content:''; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--text); transition:all .15s; }
+.toggle.on::after { left:18px; }
+
+.presets { display:flex; flex-wrap:wrap; gap:4px; }
+.preset-btn { padding:4px 10px; border-radius:6px; border:1px solid var(--overlay); background:transparent; color:var(--subtext); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; }
+.preset-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* Canvas area */
+.canvas { flex:1; padding:24px; overflow:auto; position:relative; }
+
+/* Diagram nodes */
+.diagram { display:flex; flex-direction:column; gap:32px; min-width:700px; }
+.level { display:flex; flex-direction:column; gap:8px; }
+.level-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); }
+.level-row { display:flex; gap:12px; flex-wrap:wrap; }
+
+.node { background:var(--surface); border:1px solid var(--overlay); border-radius:8px; padding:12px; min-width:180px; cursor:pointer; transition:all .15s; position:relative; }
+.node:hover { border-color:var(--overlay-hover); background:var(--active); }
+.node.highlighted { border-color:var(--accent); box-shadow:0 0 12px rgba(96,165,250,.2); }
+.node.dimmed { opacity:.3; }
+.node-title { font-size:12px; font-weight:600; font-family:'JetBrains Mono',monospace; margin-bottom:4px; }
+.node-sub { font-size:11px; color:var(--subtext); }
+.node-badge { position:absolute; top:8px; right:8px; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:500; }
+.node-json { margin-top:8px; padding:8px; background:var(--base); border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.6; white-space:pre; overflow-x:auto; max-height:200px; overflow-y:auto; }
+
+/* Flow arrows */
+.flow-arrow { display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:18px; padding:4px 0; }
+.flow-label { font-size:11px; color:var(--text-dim); margin:0 8px; font-family:'JetBrains Mono',monospace; }
+
+/* Flow view */
+.flow-container { display:flex; flex-direction:column; gap:6px; min-width:600px; }
+.flow-step { display:flex; align-items:stretch; gap:12px; }
+.flow-node { background:var(--surface); border:1px solid var(--overlay); border-radius:8px; padding:12px 16px; flex:1; }
+.flow-node.highlighted { border-left:3px solid var(--accent); }
+.flow-node-title { font-size:12px; font-weight:600; margin-bottom:2px; }
+.flow-node-path { font-size:11px; color:var(--text-dim); font-family:'JetBrains Mono',monospace; }
+.flow-node-desc { font-size:11px; color:var(--subtext); margin-top:4px; }
+.flow-connector { display:flex; align-items:center; justify-content:center; color:var(--text-dim); padding:2px 0; font-size:16px; }
+.flow-split { display:flex; gap:12px; }
+.flow-split > * { flex:1; }
+
+/* Consumers view */
+.consumer-card { background:var(--surface); border:1px solid var(--overlay); border-radius:8px; padding:16px; margin-bottom:12px; }
+.consumer-title { font-size:14px; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.consumer-title .dot { width:8px; height:8px; border-radius:50%; }
+.consumer-step { display:flex; align-items:flex-start; gap:10px; padding:6px 0; font-size:12px; }
+.consumer-num { width:20px; height:20px; border-radius:50%; background:var(--surface-alt); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; color:var(--subtext); flex-shrink:0; }
+.consumer-code { font-family:'JetBrains Mono',monospace; color:var(--accent); font-size:11px; }
+.consumer-text { color:var(--subtext); }
+.consumer-json { background:var(--base); border-radius:6px; padding:8px; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.5; white-space:pre; overflow-x:auto; }
+
+/* Prompt bar */
+.prompt-bar { border-top:1px solid var(--overlay); background:var(--surface); padding:12px 16px; display:flex; align-items:flex-start; gap:12px; }
+.prompt-text { flex:1; font-size:13px; color:var(--subtext); line-height:1.5; }
+.copy-btn { padding:4px 12px; border-radius:6px; border:1px solid var(--overlay); background:var(--surface-alt); color:var(--subtext); font-size:12px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+.copy-btn.copied { border-color:var(--success); color:var(--success); }
+
+.jk { color:var(--accent); } .js { color:var(--success); } .jn { color:var(--warning); } .jb { color:var(--subtext); }
+
+@media (max-width:768px) {
+  .layout { grid-template-columns:1fr; }
+  .controls { border-right:none; border-bottom:1px solid var(--overlay); max-height:40vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Registry Architecture</h1>
+  <span>How seedr organizes and serves content</span>
+</div>
+
+<div class="layout">
+  <div class="controls">
+    <div>
+      <div class="section-label">View</div>
+      <div class="view-tabs" id="viewTabs"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Highlight Type</div>
+      <div class="type-chips" id="typeChips"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Source Type</div>
+      <div class="source-chips" id="sourceChips"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="toggle-row">
+        <span class="toggle-label">Show JSON content</span>
+        <div class="toggle" id="detailToggle" onclick="toggleDetail()"></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Presets</div>
+      <div class="presets" id="presets"></div>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="canvas" id="canvas"></div>
+    <div class="prompt-bar">
+      <div class="prompt-text" id="promptText"></div>
+      <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TYPES_DATA = {
+  skill:    { label:'Skill',    color:'#f472b6', count:26, file:'skills/manifest.json' },
+  plugin:   { label:'Plugin',   color:'#818cf8', count:52, file:'plugins/manifest.json' },
+  hook:     { label:'Hook',     color:'#c084fc', count:2,  file:'hooks/manifest.json' },
+  agent:    { label:'Agent',    color:'#60a5fa', count:0,  file:'agents/manifest.json' },
+  command:  { label:'Command',  color:'#fbbf24', count:0,  file:'commands/manifest.json' },
+  mcp:      { label:'MCP',      color:'#14b8a6', count:0,  file:'mcp/manifest.json' },
+  settings: { label:'Settings', color:'#fb923c', count:0,  file:'settings/manifest.json' },
+};
+
+const SOURCES = ['all','official','toolr','community'];
+const VIEWS = ['hierarchy','data-flow','consumers'];
+
+const PRESETS = [
+  { label:'Full Overview',   view:'hierarchy', type:'', source:'all', detail:false },
+  { label:'Skill Deep Dive', view:'hierarchy', type:'skill', source:'all', detail:true },
+  { label:'Data Pipeline',   view:'data-flow', type:'skill', source:'all', detail:true },
+  { label:'CLI vs Web',      view:'consumers', type:'', source:'all', detail:true },
+  { label:'Community Items',  view:'hierarchy', type:'plugin', source:'community', detail:false },
+];
+
+const state = { view:'hierarchy', type:'', source:'all', detail:false };
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Controls ──
+
+function renderControls() {
+  document.getElementById('viewTabs').innerHTML = VIEWS.map(v => {
+    const labels = { hierarchy:'Hierarchy', 'data-flow':'Data Flow', consumers:'Consumers' };
+    return `<div class="view-tab ${state.view===v?'active':''}" onclick="setView('${v}')">${labels[v]}</div>`;
+  }).join('');
+
+  document.getElementById('typeChips').innerHTML =
+    `<div class="type-chip ${!state.type?'active':''}" style="color:var(--subtext);${!state.type?'border-color:var(--subtext)':''}" onclick="setType('')">All</div>` +
+    Object.entries(TYPES_DATA).map(([k,v]) =>
+      `<div class="type-chip ${state.type===k?'active':''}" style="color:${v.color};${state.type===k?`border-color:${v.color};background:${v.color}18`:''}" onclick="setType('${k}')">${v.label}</div>`
+    ).join('');
+
+  document.getElementById('sourceChips').innerHTML = SOURCES.map(s =>
+    `<div class="source-chip ${state.source===s?'active':''}" onclick="setSource('${s}')">${s}</div>`
+  ).join('');
+
+  const tog = document.getElementById('detailToggle');
+  tog.className = 'toggle' + (state.detail ? ' on' : '');
+
+  document.getElementById('presets').innerHTML = PRESETS.map((p,i) =>
+    `<button class="preset-btn" onclick="applyPreset(${i})">${p.label}</button>`
+  ).join('');
+}
+
+// ── Views ──
+
+function renderCanvas() {
+  const el = document.getElementById('canvas');
+  if (state.view === 'hierarchy') el.innerHTML = renderHierarchy();
+  else if (state.view === 'data-flow') el.innerHTML = renderDataFlow();
+  else el.innerHTML = renderConsumers();
+}
+
+function renderHierarchy() {
+  const hl = state.type;
+  const typesArr = Object.entries(TYPES_DATA);
+  const filtered = hl ? typesArr.filter(([k]) => k === hl) : typesArr;
+
+  // Level 1: Root manifest
+  let rootJson = '';
+  if (state.detail) {
+    const entries = typesArr.map(([k,v]) => {
+      const cls = (!hl || k===hl) ? '' : 'style="opacity:.4"';
+      return `    <span ${cls}><span class="jk">"${k}"</span>: <span class="jb">{</span> <span class="jk">"file"</span>: <span class="js">"${v.file}"</span>, <span class="jk">"count"</span>: <span class="jn">${v.count}</span> <span class="jb">}</span></span>`;
+    }).join(',\n');
+    rootJson = `<div class="node-json"><span class="jb">{</span>\n  <span class="jk">"version"</span>: <span class="js">"2.0.0"</span>,\n  <span class="jk">"types"</span>: <span class="jb">{</span>\n${entries}\n  <span class="jb">}</span>\n<span class="jb">}</span></div>`;
+  }
+
+  // Level 2: Type manifests
+  const typeNodes = typesArr.map(([k,v]) => {
+    const active = !hl || k === hl;
+    const cls = active ? (k === hl ? 'highlighted' : '') : 'dimmed';
+    let json = '';
+    if (state.detail && active) {
+      json = `<div class="node-json"><span class="jb">{</span>\n  <span class="jk">"type"</span>: <span class="js">"${k}"</span>,\n  <span class="jk">"items"</span>: <span class="jb">[</span>\n    <span class="jb">{</span> <span class="jk">"slug"</span>: <span class="js">"..."</span>, <span class="jk">"name"</span>: <span class="js">"..."</span>, ... <span class="jb">}</span>\n    <span class="jb">...</span> <span class="jn">${v.count} items</span>\n  <span class="jb">]</span>\n<span class="jb">}</span></div>`;
+    }
+    return `<div class="node ${cls}" style="${k===hl?`border-color:${v.color}`:''}" onclick="setType('${k===hl?'':k}')">
+      <div class="node-title" style="color:${v.color}">${v.file}</div>
+      <div class="node-sub">${v.count} ${v.label.toLowerCase()}${v.count!==1?'s':''}</div>
+      ${json}
+    </div>`;
+  }).join('');
+
+  // Level 3: Sample items
+  const sampleTypes = hl ? [[hl, TYPES_DATA[hl]]] : [['skill',TYPES_DATA.skill],['plugin',TYPES_DATA.plugin]];
+  const sampleItems = sampleTypes.map(([k,v]) => {
+    const src = state.source !== 'all' ? state.source : 'official';
+    let json = '';
+    if (state.detail) {
+      json = `<div class="node-json"><span class="jb">{</span>
+  <span class="jk">"slug"</span>: <span class="js">"example-${k}"</span>,
+  <span class="jk">"name"</span>: <span class="js">"Example ${v.label}"</span>,
+  <span class="jk">"type"</span>: <span class="js">"${k}"</span>,
+  <span class="jk">"description"</span>: <span class="js">"..."</span>,
+  <span class="jk">"sourceType"</span>: <span class="js">"${src}"</span>,
+  <span class="jk">"compatibility"</span>: <span class="jb">[...]</span>,
+  <span class="jk">"contents"</span>: <span class="jb">{ "files": [...] }</span>
+<span class="jb">}</span></div>`;
+    }
+    return `<div class="node ${k===hl?'highlighted':''}" style="${k===hl?`border-color:${v.color}`:''}" onclick="setType('${k===hl?'':k}')">
+      <div class="node-title" style="color:${v.color}">${k}s/example-${k}/item.json</div>
+      <div class="node-sub">Source of truth for one ${v.label.toLowerCase()}</div>
+      <div class="node-badge" style="color:${v.color};background:${v.color}18">${src}</div>
+      ${json}
+    </div>`;
+  }).join('');
+
+  return `<div class="diagram">
+    <div class="level">
+      <div class="level-label">Level 1 — Root Index</div>
+      <div class="level-row">
+        <div class="node ${hl?'':'highlighted'}" style="min-width:400px">
+          <div class="node-title">registry/manifest.json</div>
+          <div class="node-sub">Points to each type manifest with item counts</div>
+          ${rootJson}
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">\u2193 <span class="flow-label">references</span></div>
+    <div class="level">
+      <div class="level-label">Level 2 — Type Manifests (one per content type)</div>
+      <div class="level-row">${typeNodes}</div>
+    </div>
+    <div class="flow-arrow">\u2191 <span class="flow-label">compiled from</span></div>
+    <div class="level">
+      <div class="level-label">Level 3 — Individual Items (source of truth)</div>
+      <div class="level-row">${sampleItems}</div>
+    </div>
+  </div>`;
+}
+
+function renderDataFlow() {
+  const t = state.type || 'skill';
+  const td = TYPES_DATA[t];
+  const color = td.color;
+
+  const steps = [
+    { title:'Source of Truth', path:`registry/${t}s/example-${t}/item.json`, desc:'Individual item files — the only thing you edit directly', color },
+    null, // arrow
+    { title:'Compile Step', path:'pnpm compile', desc:'Reads all item.json files, assembles type manifests, updates root index counts', color:'var(--warning)', isAction:true },
+    null,
+    { title:'Type Manifest', path:`registry/${t}s/manifest.json`, desc:`All ${td.count} ${td.label.toLowerCase()} items in one file`, color },
+    null,
+    { title:'Root Index', path:'registry/manifest.json', desc:'Lightweight index — version + type descriptors with counts and file paths', color:'var(--accent)' },
+    null,
+    'split',
+    { title:'CLI Consumer', path:'loadManifest() → loadTypeItems() → getItem()', desc:'Loads on demand: tries local registry first, falls back to GitHub raw URLs. Caches results.', color:'var(--success)', side:'cli' },
+    { title:'Web Consumer', path:'import skillsData from "@registry/skills/manifest.json"', desc:'Imports all type manifests at build time via Vite. Lazy-loads full item.json only for detail views.', color:'var(--accent)', side:'web' },
+  ];
+
+  let html = '<div class="flow-container">';
+  let inSplit = false;
+
+  steps.forEach((step, i) => {
+    if (step === null) {
+      if (!inSplit) html += `<div class="flow-connector">\u2193</div>`;
+      return;
+    }
+    if (step === 'split') {
+      inSplit = true;
+      html += `<div class="flow-connector">\u2193\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u2193</div><div class="flow-split">`;
+      return;
+    }
+
+    let json = '';
+    if (state.detail) {
+      if (step.path.includes('item.json')) {
+        json = `<div class="consumer-json"><span class="jb">{</span> <span class="jk">"slug"</span>: <span class="js">"pdf"</span>, <span class="jk">"type"</span>: <span class="js">"${t}"</span>, <span class="jk">"description"</span>: <span class="js">"..."</span>, ... <span class="jb">}</span></div>`;
+      } else if (step.path.includes(`${t}s/manifest`)) {
+        json = `<div class="consumer-json"><span class="jb">{</span> <span class="jk">"type"</span>: <span class="js">"${t}"</span>, <span class="jk">"items"</span>: <span class="jb">[{...}, {...}, ...]</span> <span class="jn">// ${td.count} items</span> <span class="jb">}</span></div>`;
+      } else if (step.path.includes('manifest.json') && !step.path.includes(t)) {
+        json = `<div class="consumer-json"><span class="jb">{</span> <span class="jk">"version"</span>: <span class="js">"2.0.0"</span>, <span class="jk">"types"</span>: <span class="jb">{</span> <span class="jk">"${t}"</span>: <span class="jb">{</span> <span class="jk">"count"</span>: <span class="jn">${td.count}</span> <span class="jb">} }</span> <span class="jb">}</span></div>`;
+      }
+    }
+
+    html += `<div class="flow-node${step.isAction?' highlighted':''}" style="border-left-color:${step.color}">
+      <div class="flow-node-title" style="color:${step.color}">${step.title}</div>
+      <div class="flow-node-path">${esc(step.path)}</div>
+      <div class="flow-node-desc">${step.desc}</div>
+      ${json}
+    </div>`;
+  });
+
+  if (inSplit) html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderConsumers() {
+  const t = state.type || 'skill';
+  const td = TYPES_DATA[t];
+
+  const cliSteps = [
+    { code:'loadFile(path)', text:'Try reading from local `registry/` directory first' },
+    { code:'fetch(GITHUB_RAW_URL + path)', text:'If local file not found, fetch from GitHub raw content' },
+    { code:'loadIndex()', text:'Load root `manifest.json` — get type descriptors and counts' },
+    { code:`loadTypeItems("${t}")`, text:`Load \`${td.file}\` — get all ${td.label.toLowerCase()} items` },
+    { code:`getItem("pdf", "${t}")`, text:'Look up specific item by slug (+ optional type for disambiguation)' },
+    { code:'getItemContent(item)', text:'Fetch main content file (SKILL.md, plugin.json, etc.) for installation' },
+  ];
+
+  const webSteps = [
+    { code:`import data from "@registry/${t}s/manifest.json"`, text:'Vite resolves registry alias at build time — all items bundled into the app' },
+    { code:'getAllItems()', text:'Concatenate all type manifest items into a single array' },
+    { code:'getTypeCounts()', text:'Count items per type for the browse page filter badges' },
+    { code:'getItem(slug, type?)', text:'Find item in pre-loaded array (no network request needed)' },
+    { code:'getLongDescription(slug)', text:'Lazy-load full `item.json` via `import.meta.glob` — only when detail page is opened' },
+    { code:'getFileTree(slug)', text:'Also lazy-loaded from `item.json` — shows content structure on detail page' },
+  ];
+
+  let cliJson = '', webJson = '';
+  if (state.detail) {
+    cliJson = `<div class="consumer-json"><span class="jn">// Resolution order:</span>
+<span class="jn">1.</span> <span class="js">./registry/${td.file}</span>           <span class="jn">// local (dev)</span>
+<span class="jn">2.</span> <span class="js">https://raw.githubusercontent.com/
+   danieldeusing/seedr/main/
+   registry/${td.file}</span>   <span class="jn">// remote (prod)</span></div>`;
+    webJson = `<div class="consumer-json"><span class="jn">// Vite import resolution:</span>
+<span class="jk">import</span> skillsData <span class="jk">from</span> <span class="js">"@registry/skills/manifest.json"</span>;
+<span class="jk">import</span> pluginsData <span class="jk">from</span> <span class="js">"@registry/plugins/manifest.json"</span>;
+<span class="jn">// ... other types</span>
+
+<span class="jn">// Lazy-load for detail views:</span>
+<span class="jk">const</span> loaders = <span class="jk">import</span>.meta.glob(<span class="js">"@registry/*/*/item.json"</span>);</div>`;
+  }
+
+  return `
+    <div class="consumer-card" style="border-left:3px solid var(--success)">
+      <div class="consumer-title"><div class="dot" style="background:var(--success)"></div>CLI Consumer</div>
+      <div style="font-size:12px;color:var(--subtext);margin-bottom:10px">Loads on demand at runtime. Local-first with GitHub fallback. Cached per session.</div>
+      ${cliSteps.map((s,i) => `
+        <div class="consumer-step">
+          <div class="consumer-num">${i+1}</div>
+          <div><div class="consumer-code">${esc(s.code)}</div><div class="consumer-text">${s.text}</div></div>
+        </div>
+      `).join('')}
+      ${cliJson}
+    </div>
+    <div class="consumer-card" style="border-left:3px solid var(--accent)">
+      <div class="consumer-title"><div class="dot" style="background:var(--accent)"></div>Web Consumer</div>
+      <div style="font-size:12px;color:var(--subtext);margin-bottom:10px">Imports manifests at build time via Vite. Lazy-loads full item.json only for detail views.</div>
+      ${webSteps.map((s,i) => `
+        <div class="consumer-step">
+          <div class="consumer-num">${i+1}</div>
+          <div><div class="consumer-code">${esc(s.code)}</div><div class="consumer-text">${s.text}</div></div>
+        </div>
+      `).join('')}
+      ${webJson}
+    </div>`;
+}
+
+// ── Prompt ──
+
+function renderPrompt() {
+  const parts = [];
+  const viewLabel = { hierarchy:'manifest hierarchy', 'data-flow':'data flow pipeline', consumers:'consumer comparison' }[state.view];
+  parts.push(`Viewing the seedr registry **${viewLabel}**`);
+  if (state.type) parts.push(`highlighting **${TYPES_DATA[state.type].label}** content type`);
+  if (state.source !== 'all') parts.push(`filtered to **${state.source}** sources`);
+  if (state.detail) parts.push('with expanded JSON content');
+  parts.push('.');
+
+  const context = [];
+  if (state.view === 'hierarchy') {
+    context.push('The registry uses a 3-level split manifest: root index, per-type manifests, and individual item.json files. Only item.json files are edited directly; manifests are compiled.');
+  } else if (state.view === 'data-flow') {
+    context.push('Data flows from item.json source files through `pnpm compile` into split manifests, consumed differently by CLI (on-demand loading) and Web (build-time imports with lazy detail loading).');
+  } else {
+    context.push('CLI loads registry data on demand with local-first fallback to GitHub. Web app bundles all type manifests at build time and lazy-loads full item.json only when viewing detail pages.');
+  }
+
+  document.getElementById('promptText').innerHTML = parts.join(', ') + '<br><span style="color:var(--text-dim);font-size:12px">' + context.join(' ') + '</span>';
+}
+
+// ── Actions ──
+
+function setView(v) { state.view = v; renderControls(); updateAll(); }
+function setType(t) { state.type = state.type === t ? '' : t; renderControls(); updateAll(); }
+function setSource(s) { state.source = s; renderControls(); updateAll(); }
+function toggleDetail() { state.detail = !state.detail; renderControls(); updateAll(); }
+function applyPreset(i) { const p = PRESETS[i]; Object.assign(state, p); renderControls(); updateAll(); }
+function copyPrompt() {
+  navigator.clipboard.writeText(document.getElementById('promptText').innerText).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+function updateAll() { renderCanvas(); renderPrompt(); }
+
+// ── Init ──
+renderControls();
+updateAll();
+</script>
+</body>
+</html>

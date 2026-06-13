@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seedr Installation Path Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --base: #000000;
+  --surface: #262626;
+  --surface-alt: #383838;
+  --overlay: #383838;
+  --overlay-hover: #383838;
+  --subtext: #666666;
+  --text: #cccccc;
+  --text-dim: #666666;
+  --accent: #60a5fa;
+  --active: #2e2e2e;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--base); color: var(--text); min-height: 100vh; }
+
+.header { height: 45px; border-bottom: 1px solid var(--overlay); background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.header h1 { font-size: 14px; font-weight: 600; }
+.header span { font-size: 12px; color: var(--subtext); }
+
+.layout { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 45px); }
+.controls { background: var(--surface); border-right: 1px solid var(--overlay); padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.preview { display: flex; flex-direction: column; overflow-y: auto; }
+
+.section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtext); margin-bottom: 8px; }
+.divider { height: 1px; background: var(--overlay); margin: 2px 0; }
+
+/* Type chips */
+.type-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.type-chip { padding: 5px 12px; border-radius: 8px; border: 2px solid transparent; background: var(--surface-alt); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.type-chip:hover { filter: brightness(1.2); }
+.type-chip.active { border-color: currentColor; }
+
+/* Tool checkboxes */
+.check-group { display: flex; flex-direction: column; gap: 4px; }
+.check-item { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 3px 0; }
+.check-item.disabled { opacity: 0.3; cursor: not-allowed; }
+.check-item input { accent-color: var(--accent); cursor: pointer; }
+.check-item.disabled input { cursor: not-allowed; }
+.tool-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.tool-dir { font-size: 11px; color: var(--text-dim); margin-left: auto; font-family: 'JetBrains Mono', monospace; }
+.compat-tag { font-size: 10px; color: var(--error); opacity: 0.7; margin-left: auto; }
+
+/* Radio buttons */
+.radio-group { display: flex; gap: 4px; }
+.radio-btn { flex: 1; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 12px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.15s; }
+.radio-btn:hover { border-color: var(--overlay-hover); }
+.radio-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.radio-btn.disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Presets */
+.presets { display: flex; flex-wrap: wrap; gap: 4px; }
+.preset-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--overlay); background: transparent; color: var(--subtext); font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Summary card */
+.summary-card { background: var(--surface); border: 1px solid var(--overlay); border-radius: 8px; padding: 14px 16px; margin: 16px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
+.summary-label { color: var(--subtext); }
+.summary-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.summary-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+
+/* File tree */
+.tree-section { padding: 0 16px 16px; flex: 1; }
+.tree-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtext); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--overlay); }
+.tree-content { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8; white-space: pre; }
+.t-dir { color: var(--subtext); }
+.t-new { color: var(--success); }
+.t-mod { color: var(--warning); }
+.t-sym { color: var(--accent); }
+.t-arrow { color: var(--text-dim); }
+.t-note { color: var(--text-dim); font-style: italic; font-size: 11px; }
+
+/* JSON preview */
+.json-box { background: var(--surface); border: 1px solid var(--overlay); border-radius: 8px; padding: 12px; margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; white-space: pre; }
+.jk { color: var(--accent); }
+.js { color: var(--success); }
+.jb { color: var(--subtext); }
+.ja { color: var(--success); }
+
+/* Legend */
+.legend { display: flex; gap: 16px; padding: 10px 16px; border-top: 1px solid var(--overlay); background: var(--surface); font-size: 11px; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Prompt bar */
+.prompt-bar { border-top: 1px solid var(--overlay); background: var(--surface); padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; }
+.prompt-text { flex: 1; font-size: 13px; color: var(--subtext); line-height: 1.5; }
+.copy-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-btn.copied { border-color: var(--success); color: var(--success); }
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .controls { border-right: none; border-bottom: 1px solid var(--overlay); max-height: 45vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Installation Path Visualizer</h1>
+  <span>Where does seedr put your files?</span>
+</div>
+
+<div class="layout">
+  <div class="controls">
+    <div>
+      <div class="section-label">Content Type</div>
+      <div class="type-chips" id="typeChips"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">AI Tools</div>
+      <div class="check-group" id="toolChecks"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Scope</div>
+      <div class="radio-group" id="scopeRadio"></div>
+    </div>
+    <div id="methodSection" style="display:none">
+      <div class="section-label" style="margin-top:12px">Method</div>
+      <div class="radio-group" id="methodRadio"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-label">Presets</div>
+      <div class="presets" id="presets"></div>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="summary-card" id="summaryCard"></div>
+    <div class="tree-section">
+      <div class="tree-header">File System Layout</div>
+      <div class="tree-content" id="fileTree"></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div> Created</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--warning)"></div> Modified</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> Symlink</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--subtext)"></div> Existing</div>
+    </div>
+    <div class="prompt-bar">
+      <div class="prompt-text" id="promptText"></div>
+      <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TYPES = {
+  skill:    { label: 'Skill',    color: '#f472b6', structure: 'directory', handler: 'SkillHandler',    mainFile: 'SKILL.md',   subDir: 'skills',   sampleFiles: ['SKILL.md', 'scripts/', 'references/'] },
+  command:  { label: 'Command',  color: '#fbbf24', structure: 'directory', handler: 'SkillHandler',    mainFile: 'COMMAND.md', subDir: 'commands', sampleFiles: ['COMMAND.md', 'scripts/'] },
+  agent:    { label: 'Agent',    color: '#60a5fa', structure: 'file',      handler: 'AgentHandler',    mainFile: '{slug}.md',  subDir: 'agents',   sampleFiles: [] },
+  hook:     { label: 'Hook',     color: '#c084fc', structure: 'json-merge',handler: 'HookHandler',     mergeTarget: 'settings.json', mergeField: 'hooks', subDir: 'hooks' },
+  mcp:      { label: 'MCP',      color: '#14b8a6', structure: 'json-merge',handler: 'McpHandler',      mergeTarget: '.mcp.json', mergeField: 'mcpServers', subDir: null },
+  plugin:   { label: 'Plugin',   color: '#818cf8', structure: 'plugin',    handler: 'PluginHandler',   subDir: 'plugins' },
+  settings: { label: 'Settings', color: '#fb923c', structure: 'json-merge',handler: 'SettingsHandler', mergeTarget: 'settings.json', subDir: null },
+};
+
+const TOOLS = {
+  claude:   { label: 'Claude Code',    short: 'claude',   projectDir: '.claude',   userDir: '~/.claude' },
+  copilot:  { label: 'GitHub Copilot', short: 'copilot',  projectDir: '.github',   userDir: '~/.config/github-copilot' },
+  gemini:   { label: 'Gemini',         short: 'gemini',   projectDir: '.gemini',   userDir: '~/.gemini' },
+  codex:    { label: 'OpenAI Codex',   short: 'codex',    projectDir: '.codex',    userDir: '~/.codex' },
+  opencode: { label: 'OpenCode',       short: 'opencode', projectDir: '.opencode', userDir: '~/.opencode' },
+};
+
+const COMPAT = {
+  skill: ['claude','copilot','gemini','codex','opencode'],
+  command: ['claude'],
+  agent: ['claude'],
+  hook: ['claude'],
+  plugin: ['claude'],
+  settings: ['claude'],
+  mcp: ['claude'],
+};
+
+// Tools that read .agents/ directly (no symlink needed)
+const READS_AGENTS_DIR = ['gemini', 'codex', 'opencode'];
+
+const PRESETS = [
+  { label: 'Skill \u2192 Claude',        type: 'skill',   tools: ['claude'],                  scope: 'project', method: 'copy' },
+  { label: 'Skill \u2192 3 Tools',       type: 'skill',   tools: ['claude','copilot','gemini'], scope: 'project', method: 'symlink' },
+  { label: 'Hook \u2192 Project',        type: 'hook',    tools: ['claude'],                  scope: 'project', method: 'copy' },
+  { label: 'MCP \u2192 User',            type: 'mcp',     tools: ['claude'],                  scope: 'user',    method: 'copy' },
+  { label: 'Plugin \u2192 User',         type: 'plugin',  tools: ['claude'],                  scope: 'user',    method: 'copy' },
+];
+
+const state = {
+  type: 'skill',
+  tools: ['claude'],
+  scope: 'project',
+  method: 'copy',
+};
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Controls ──
+
+function renderTypeChips() {
+  document.getElementById('typeChips').innerHTML = Object.entries(TYPES).map(([k, v]) =>
+    `<div class="type-chip ${state.type===k?'active':''}" style="color:${v.color};${state.type===k?`background:${v.color}18;border-color:${v.color}`:`background:var(--surface-alt)`}" onclick="selectType('${k}')">${v.label}</div>`
+  ).join('');
+}
+
+function renderToolChecks() {
+  const compat = COMPAT[state.type];
+  document.getElementById('toolChecks').innerHTML = Object.entries(TOOLS).map(([k, v]) => {
+    const ok = compat.includes(k);
+    const dir = state.scope === 'user' ? v.userDir : v.projectDir;
+    return `<label class="check-item ${ok?'':'disabled'}">
+      <input type="checkbox" data-tool="${k}" ${state.tools.includes(k)&&ok?'checked':''} ${ok?'':'disabled'}>
+      <span class="tool-label">${v.short}</span>
+      ${ok ? `<span class="tool-dir">${dir}/</span>` : `<span class="compat-tag">not supported</span>`}
+    </label>`;
+  }).join('');
+
+  document.querySelectorAll('[data-tool]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = [...document.querySelectorAll('[data-tool]:checked')].map(el => el.dataset.tool);
+      state.tools = checked.length ? checked : [COMPAT[state.type][0]];
+      updateAll();
+    });
+  });
+}
+
+function renderScopeRadio() {
+  const scopes = ['project', 'user', 'local'];
+  document.getElementById('scopeRadio').innerHTML = scopes.map(s =>
+    `<div class="radio-btn ${state.scope===s?'active':''}" onclick="setScope('${s}')">${s}</div>`
+  ).join('');
+}
+
+function renderMethodSection() {
+  const show = state.type === 'skill' || state.type === 'command';
+  const sec = document.getElementById('methodSection');
+  sec.style.display = show ? 'block' : 'none';
+  if (show) {
+    document.getElementById('methodRadio').innerHTML = ['copy','symlink'].map(m =>
+      `<div class="radio-btn ${state.method===m?'active':''}" onclick="setMethod('${m}')">${m}</div>`
+    ).join('');
+  }
+}
+
+function renderPresets() {
+  document.getElementById('presets').innerHTML = PRESETS.map((p, i) =>
+    `<button class="preset-btn" onclick="applyPreset(${i})">${p.label}</button>`
+  ).join('');
+}
+
+// ── Summary ──
+
+function renderSummary() {
+  const t = TYPES[state.type];
+  const color = t.color;
+  const isMulti = state.tools.length > 1;
+  const useSymlink = state.method === 'symlink' && (state.type === 'skill' || state.type === 'command');
+
+  let operation = 'Copy files';
+  if (t.structure === 'json-merge') operation = 'Deep merge into JSON';
+  else if (t.structure === 'plugin') operation = 'Cache to ~/.claude + clone marketplace + enable';
+  else if (useSymlink && isMulti) operation = 'Central copy + symlinks';
+  else if (useSymlink) operation = 'Symlink';
+
+  let fileCount = 0;
+  if (t.structure === 'directory') fileCount = (t.sampleFiles?.length || 1) * (useSymlink && isMulti ? 1 : state.tools.length);
+  else if (t.structure === 'file') fileCount = state.tools.length;
+  else if (t.structure === 'json-merge') fileCount = state.type === 'hook' ? 2 : 1;
+  else if (t.structure === 'plugin') fileCount = 7; // cache dir + marketplace clone + installed_plugins + known_marketplaces + settings
+  if (useSymlink && isMulti) fileCount += state.tools.length;
+
+  document.getElementById('summaryCard').innerHTML = `
+    <div class="summary-row">
+      <span class="summary-label">Handler</span>
+      <span class="summary-value">${t.handler}<span style="color:var(--text-dim)">.install()</span></span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Content Structure</span>
+      <span class="summary-badge" style="color:${color};background:${color}18;border:1px solid ${color}40">${t.structure}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Operation</span>
+      <span class="summary-value">${operation}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Files Affected</span>
+      <span class="summary-value">${fileCount}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Tools</span>
+      <span class="summary-value">${state.tools.map(t => TOOLS[t].short).join(', ')}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Scope</span>
+      <span class="summary-value">${state.scope}</span>
+    </div>`;
+}
+
+// ── File Tree ──
+
+function renderFileTree() {
+  const el = document.getElementById('fileTree');
+  const t = TYPES[state.type];
+  const isMulti = state.tools.length > 1;
+  const useSymlink = state.method === 'symlink' && (state.type === 'skill' || state.type === 'command');
+  const slug = 'my-item';
+  const rootName = state.scope === 'user' ? '~/' : 'my-project/';
+  const nodes = [];
+
+  if (t.structure === 'directory') {
+    if (useSymlink && isMulti) {
+      // Central storage
+      const itemFiles = (t.sampleFiles || [t.mainFile]).map(f => ({ name: f, type: f.endsWith('/') ? 'new-dir' : 'new' }));
+      nodes.push({ name: '.agents/', cls: 'dir', children: [
+        { name: t.subDir + '/', cls: 'dir', children: [
+          { name: slug + '/', cls: 'new', note: 'central copy', children: itemFiles }
+        ]}
+      ]});
+      state.tools.forEach(tool => {
+        if (READS_AGENTS_DIR.includes(tool)) return; // reads .agents/ directly
+        const dir = toolDir(tool);
+        nodes.push({ name: dir + '/', cls: 'dir', children: [
+          { name: t.subDir + '/', cls: 'dir', children: [
+            { name: slug + '/', cls: 'sym', target: `../../.agents/${t.subDir}/${slug}/` }
+          ]}
+        ]});
+      });
+    } else {
+      state.tools.forEach(tool => {
+        const dir = toolDir(tool);
+        const itemFiles = (t.sampleFiles || [t.mainFile]).map(f => ({ name: f, type: f.endsWith('/') ? 'new-dir' : 'new' }));
+        nodes.push({ name: dir + '/', cls: 'dir', children: [
+          { name: t.subDir + '/', cls: 'dir', children: [
+            { name: slug + '/', cls: 'new', children: itemFiles.map(f => ({ name: f.name, cls: 'new' })) }
+          ]}
+        ]});
+      });
+    }
+  } else if (t.structure === 'file') {
+    state.tools.forEach(tool => {
+      const dir = toolDir(tool);
+      nodes.push({ name: dir + '/', cls: 'dir', children: [
+        { name: t.subDir + '/', cls: 'dir', children: [
+          { name: slug + '.md', cls: 'new' }
+        ]}
+      ]});
+    });
+  } else if (t.structure === 'json-merge') {
+    if (state.type === 'hook') {
+      const dir = toolDir('claude');
+      const settingsFile = state.scope === 'local' ? 'settings.local.json' : 'settings.json';
+      nodes.push({ name: dir + '/', cls: 'dir', children: [
+        { name: 'hooks/', cls: 'dir', children: [
+          { name: slug + '.sh', cls: 'new', note: 'hook script' }
+        ]},
+        { name: settingsFile, cls: 'mod', note: 'hooks merged' }
+      ]});
+    } else if (state.type === 'mcp') {
+      if (state.scope === 'user') {
+        nodes.push({ name: '.claude.json', cls: 'mod', note: 'mcpServers merged' });
+      } else {
+        nodes.push({ name: '.mcp.json', cls: 'mod', note: 'mcpServers merged' });
+      }
+    } else if (state.type === 'settings') {
+      const dir = toolDir('claude');
+      const settingsFile = state.scope === 'local' ? 'settings.local.json' : 'settings.json';
+      nodes.push({ name: dir + '/', cls: 'dir', children: [
+        { name: settingsFile, cls: 'mod', note: 'settings merged' }
+      ]});
+    }
+  } else if (t.structure === 'plugin') {
+    const mp = 'marketplace';
+    const pid = slug + '@' + mp;
+
+    // Cache, marketplace clone, and registry are ALWAYS in ~/.claude/ (user home)
+    const userNodes = [{ name: '~/', cls: 'dir', children: [
+      { name: '.claude/', cls: 'dir', children: [
+        { name: 'plugins/', cls: 'dir', children: [
+          { name: 'cache/', cls: 'dir', children: [
+            { name: mp + '/', cls: 'dir', children: [
+              { name: slug + '/', cls: 'dir', children: [
+                { name: '1.0.0/', cls: 'new', note: 'cached content', children: [
+                  { name: '.claude-plugin/', cls: 'new', children: [
+                    { name: 'plugin.json', cls: 'new' },
+                    { name: 'marketplace.json', cls: 'new' },
+                  ]},
+                  { name: 'skills/', cls: 'new' },
+                  { name: 'agents/', cls: 'new' },
+                  { name: 'commands/', cls: 'new' },
+                ]}
+              ]}
+            ]}
+          ]},
+          { name: 'marketplaces/', cls: 'dir', children: [
+            { name: mp + '/', cls: 'new', note: 'git clone' },
+          ]},
+          { name: 'installed_plugins.json', cls: 'mod', note: 'scope + path' },
+          { name: 'known_marketplaces.json', cls: 'mod', note: 'marketplace source' },
+        ]},
+        ...(state.scope === 'user' ? [{ name: 'settings.json', cls: 'mod', note: `enabledPlugins["${pid}"] = true` }] : []),
+      ]}
+    ]}];
+
+    el.innerHTML = treeStr(userNodes, '');
+
+    // For project/local scope, settings.json is in the project
+    if (state.scope !== 'user') {
+      const settingsFile = state.scope === 'local' ? 'settings.local.json' : 'settings.json';
+      const projectNodes = [{ name: 'my-project/', cls: 'dir', children: [
+        { name: '.claude/', cls: 'dir', children: [
+          { name: settingsFile, cls: 'mod', note: `enabledPlugins["${pid}"] = true` },
+        ]}
+      ]}];
+      el.innerHTML += '\n' + treeStr(projectNodes, '');
+    }
+
+    // Plugin JSON previews
+    el.innerHTML += pluginJsonPreview(pid, state.scope);
+    return;
+  }
+
+  const root = [{ name: rootName, cls: 'dir', children: nodes }];
+  el.innerHTML = treeStr(root, '');
+
+  // JSON merge preview
+  if (t.structure === 'json-merge') {
+    el.innerHTML += jsonPreview();
+  }
+}
+
+function toolDir(tool) {
+  return state.scope === 'user' ? TOOLS[tool].userDir.replace('~/', '') : TOOLS[tool].projectDir;
+}
+
+function treeStr(nodes, prefix) {
+  let out = '';
+  nodes.forEach((n, i) => {
+    const last = i === nodes.length - 1;
+    const connector = prefix === '' ? '' : (last ? '\u2514\u2500\u2500 ' : '\u251C\u2500\u2500 ');
+    const childPfx = prefix === '' ? '' : prefix + (last ? '    ' : '\u2502   ');
+
+    const clsMap = { dir: 't-dir', new: 't-new', 'new-dir': 't-new', mod: 't-mod', sym: 't-sym' };
+    const cls = clsMap[n.cls] || 't-dir';
+    let line = `<span class="${cls}">${esc(n.name)}</span>`;
+    if (n.cls === 'sym' && n.target) line += ` <span class="t-arrow">\u2192</span> <span class="t-sym">${esc(n.target)}</span>`;
+    if (n.note) line += ` <span class="t-note">\u2190 ${esc(n.note)}</span>`;
+
+    out += prefix + connector + line + '\n';
+    if (n.children) out += treeStr(n.children, childPfx || '  ');
+  });
+  return out;
+}
+
+function jsonPreview() {
+  let json = '';
+  if (state.type === 'hook') {
+    json = `\n<div class="json-box"><span class="jb">{</span>
+  <span class="jk">"hooks"</span>: <span class="jb">{</span>
+    <span class="ja jk">"PreToolUse"</span>: <span class="jb">[{</span>
+      <span class="ja jk">"matcher"</span>: <span class="ja js">"Bash"</span>,
+      <span class="ja jk">"hooks"</span>: <span class="jb">[{</span>
+        <span class="ja jk">"type"</span>: <span class="ja js">"command"</span>,
+        <span class="ja jk">"command"</span>: <span class="ja js">".claude/hooks/my-item.sh"</span>
+      <span class="jb">}]</span>
+    <span class="jb">}]</span>
+  <span class="jb">}</span>
+<span class="jb">}</span></div>`;
+  } else if (state.type === 'mcp') {
+    json = `\n<div class="json-box"><span class="jb">{</span>
+  <span class="jk">"mcpServers"</span>: <span class="jb">{</span>
+    <span class="ja jk">"my-item"</span>: <span class="jb">{</span>
+      <span class="ja jk">"command"</span>: <span class="ja js">"npx"</span>,
+      <span class="ja jk">"args"</span>: <span class="jb">[</span><span class="ja js">"-y"</span>, <span class="ja js">"@scope/my-item-mcp"</span><span class="jb">]</span>
+    <span class="jb">}</span>
+  <span class="jb">}</span>
+<span class="jb">}</span></div>`;
+  } else if (state.type === 'settings') {
+    json = `\n<div class="json-box"><span class="jb">{</span>
+  <span class="ja jk">"preferredNotifyMethod"</span>: <span class="ja js">"terminal"</span>,
+  <span class="ja jk">"taskAutoArchive"</span>: <span class="ja">true</span>
+<span class="jb">}</span></div>`;
+  }
+  return json;
+}
+
+function pluginJsonPreview(pid, scope) {
+  const scopeField = scope === 'user' ? '' : `,\n      <span class="ja jk">"projectPath"</span>: <span class="ja js">"/path/to/project"</span>`;
+  return `
+<div style="margin-top:12px;font-size:11px;color:var(--subtext);font-weight:600;text-transform:uppercase;letter-spacing:0.05em">installed_plugins.json (always ~/.claude/plugins/)</div>
+<div class="json-box"><span class="jb">{</span>
+  <span class="jk">"version"</span>: <span class="ja">2</span>,
+  <span class="jk">"plugins"</span>: <span class="jb">{</span>
+    <span class="ja jk">"${pid}"</span>: <span class="jb">[{</span>
+      <span class="ja jk">"scope"</span>: <span class="ja js">"${scope}"</span>${scopeField},
+      <span class="ja jk">"installPath"</span>: <span class="ja js">"~/.claude/plugins/cache/.../1.0.0/"</span>,
+      <span class="ja jk">"version"</span>: <span class="ja js">"1.0.0"</span>
+    <span class="jb">}]</span>
+  <span class="jb">}</span>
+<span class="jb">}</span></div>
+<div style="margin-top:12px;font-size:11px;color:var(--subtext);font-weight:600;text-transform:uppercase;letter-spacing:0.05em">settings.json (${scope} scope)</div>
+<div class="json-box"><span class="jb">{</span>
+  <span class="jk">"enabledPlugins"</span>: <span class="jb">{</span>
+    <span class="ja jk">"${pid}"</span>: <span class="ja">true</span>
+  <span class="jb">}</span>
+<span class="jb">}</span></div>`;
+}
+
+// ── Prompt ──
+
+function renderPrompt() {
+  const t = TYPES[state.type];
+  const parts = [];
+  parts.push(`Installing a **${t.label.toLowerCase()}** for ${state.tools.map(k => TOOLS[k].label).join(', ')}`);
+  parts.push(`at **${state.scope}** scope`);
+  if ((state.type === 'skill' || state.type === 'command') && state.method !== 'copy') {
+    parts.push(`using **${state.method}** method`);
+  }
+  parts.push('.');
+
+  const details = [];
+  if (t.structure === 'directory' && state.method === 'symlink' && state.tools.length > 1) {
+    details.push('Files are stored centrally in `.agents/` with relative symlinks from each tool directory.');
+  } else if (t.structure === 'json-merge') {
+    details.push(`Config is deep-merged into \`${t.mergeTarget}\`${state.scope === 'local' ? ' (using settings.local.json for local scope)' : ''}.`);
+  } else if (t.structure === 'plugin') {
+    details.push('Plugin is always cached in `~/.claude/plugins/cache/`, marketplace is git-cloned to `~/.claude/plugins/marketplaces/`, and `enabledPlugins` is set in scope-dependent `settings.json`.');
+  }
+
+  document.getElementById('promptText').innerHTML = parts.join(' ') + (details.length ? '<br>' + details.join(' ') : '');
+}
+
+// ── Actions ──
+
+function selectType(type) {
+  state.type = type;
+  const compat = COMPAT[type];
+  state.tools = state.tools.filter(t => compat.includes(t));
+  if (!state.tools.length) state.tools = [compat[0]];
+  if (type !== 'skill' && type !== 'command') state.method = 'copy';
+  renderAll();
+}
+
+function setScope(s) { state.scope = s; renderAll(); }
+function setMethod(m) { state.method = m; renderAll(); }
+
+function applyPreset(i) {
+  const p = PRESETS[i];
+  state.type = p.type;
+  state.tools = [...p.tools];
+  state.scope = p.scope;
+  state.method = p.method;
+  renderAll();
+}
+
+function copyPrompt() {
+  const text = document.getElementById('promptText').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+function renderAll() {
+  renderTypeChips();
+  renderToolChecks();
+  renderScopeRadio();
+  renderMethodSection();
+  updateAll();
+}
+
+function updateAll() {
+  renderSummary();
+  renderFileTree();
+  renderPrompt();
+}
+
+// ── Init ──
+renderPresets();
+renderAll();
+</script>
+</body>
+</html>

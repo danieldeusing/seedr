@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Github, ChevronLeft, ChevronRight, History } from "lucide-react";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { Button } from "./ui/Button";
@@ -27,8 +27,6 @@ export function Header() {
     goToHistory,
   } = useNavigation();
 
-  const isHome = useLocation().pathname === "/";
-
   return (
     <header className="h-12 border-b border-border bg-card px-4">
       <div className="h-full flex items-center">
@@ -41,8 +39,7 @@ export function Header() {
         </div>
 
         {/* Center: breadcrumb path + history nav */}
-        {!isHome && (
-          <div className="w-full max-w-6xl px-4 flex items-center gap-1 min-w-0">
+        <div className="w-full max-w-6xl px-4 flex items-center gap-1 min-w-0">
             <Button
               variant="ghost"
               size="icon-xs"
@@ -84,14 +81,20 @@ export function Header() {
             <span className="text-sm truncate ml-10">
               <span className="text-muted-foreground">visitor@registry:</span>
               <span className="text-primary">~</span>
-              <span className="text-muted-foreground">/.agents</span>
+              <span className="text-muted-foreground">/</span>
+              <Link
+                to="/"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                .agents
+              </Link>
               {segments.slice(1).map(segment => (
                 <Fragment key={segment.id}>
                   <span className="text-muted-foreground">/</span>
                   {segment.onClick ? (
                     <button
                       onClick={segment.onClick}
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                      className="cursor-pointer text-muted-foreground hover:text-primary transition-colors"
                     >
                       {toPathSegment(segment.label)}
                     </button>
@@ -102,7 +105,6 @@ export function Header() {
               ))}
             </span>
           </div>
-        )}
 
         {/* Right: External links (takes remaining space) */}
         <div className="flex-1 flex items-center justify-end gap-2">

@@ -1,18 +1,6 @@
-import { Link } from "react-router-dom";
-// toolr-design-ignore-next-line
-import { ArrowLeft } from "lucide-react";
-
 export function Impressum() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link
-        to="/"
-        className="inline-flex items-center gap-1 text-subtext hover:text-text transition-colors text-sm mb-6"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </Link>
-
+    <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-lg font-bold text-text mb-6">Imprint</h1>
 
       <div className="max-w-none space-y-6">

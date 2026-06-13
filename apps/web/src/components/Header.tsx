@@ -84,6 +84,7 @@ export function Header() {
             <span className="text-sm truncate ml-10">
               <span className="text-muted-foreground">visitor@registry:</span>
               <span className="text-primary">~</span>
+              <span className="text-muted-foreground">/.agents</span>
               {segments.slice(1).map(segment => (
                 <Fragment key={segment.id}>
                   <span className="text-muted-foreground">/</span>

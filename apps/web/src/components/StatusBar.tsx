@@ -46,7 +46,7 @@ export function StatusBar() {
       <div className="h-full px-4 flex items-center justify-between gap-4">
         <span className="text-muted-foreground truncate">
           <span className="text-primary">[seedr]</span> visitor@registry:
-          <span className="text-foreground">{pathname === "/" ? "~" : `~${pathname}`}</span>
+          <span className="text-foreground">{`~/.agents${pathname === "/" ? "" : pathname}`}</span>
         </span>
         <nav className="flex items-center gap-10 shrink-0">
           <Link to="/privacy" className="link-quiet no-underline hover:underline">

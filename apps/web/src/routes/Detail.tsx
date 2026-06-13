@@ -277,7 +277,7 @@ export function Detail() {
             <tbody className="divide-y divide-overlay">
               <tr>
                 <td className="px-4 py-2 font-mono text-xs text-text whitespace-nowrap">-t, --type &lt;type&gt;</td>
-                <td className="px-4 py-2 text-subtext">Content type: <code className="text-primary">skill</code>, <code className="text-primary">agent</code>, <code className="text-primary">hook</code>, <code className="text-primary">mcp</code>, <code className="text-primary">plugin</code>, <code className="text-primary">settings</code><br /><span className="text-text-dim text-xs">We recommend always setting this, but it's only needed when the same slug exists in multiple types</span></td>
+                <td className="px-4 py-2 text-subtext">Content type: <code className="text-primary">skill</code>, <code className="text-primary">agent</code>, <code className="text-primary">hook</code>, <code className="text-primary">mcp</code>, <code className="text-primary">plugin</code>, <code className="text-primary">settings</code><br /><span className="text-text-dim text-xs">I recommend always setting this, but it's only needed when the same slug exists in multiple types</span></td>
                 <td className="px-4 py-2 text-text-dim text-xs">First match</td>
               </tr>
               <tr>

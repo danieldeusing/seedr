@@ -209,7 +209,7 @@ export function Home() {
           <div className="mt-8 text-center text-sm text-text-dim max-w-2xl mx-auto">
             <p>
               Quality over quantity. One well-crafted capability beats a thousand mediocre ones.
-              We only include official capabilities, first-party creations, and carefully
+              I only include official capabilities, first-party creations, and carefully
               vetted community contributions.
             </p>
           </div>

@@ -48,8 +48,8 @@ export function useTerminalSession(subject: unknown) {
         prompt.textContent = "";
         prompt.classList.add("term-live");
         prompt.append(typedText, caret);
-        // ~35ms per character, capped so long commands finish within ~700ms
-        const perCharMs = Math.min(38, 700 / Math.max(text.length, 1));
+        // ~30ms per character, capped so long commands finish within ~550ms
+        const perCharMs = Math.min(30, 550 / Math.max(text.length, 1));
         let typedCount = 0;
         const typeNext = () => {
           if (typedCount < text.length) {
@@ -65,18 +65,18 @@ export function useTerminalSession(subject: unknown) {
       });
 
     // command "execution" latency between the typed prompt and its output
-    const OUTPUT_DELAY_MS = 280;
+    const OUTPUT_DELAY_MS = 220;
 
     const revealOutputs = (section: HTMLElement, instant: boolean) =>
       new Promise<void>(finished => {
         const chunks = section.querySelectorAll("[data-term-out]:not(.term-show)");
-        const stagger = (index: number) => Math.min(index * 180, 720);
+        const stagger = (index: number) => Math.min(index * 140, 560);
         chunks.forEach((chunk, index) => {
           if (instant) chunk.classList.add("term-show");
           else schedule(() => chunk.classList.add("term-show"), stagger(index));
         });
         if (instant || chunks.length === 0) finished();
-        else schedule(finished, stagger(chunks.length - 1) + 300);
+        else schedule(finished, stagger(chunks.length - 1) + 250);
       });
 
     const pause = (ms: number) => new Promise<void>(resolve => schedule(resolve, ms));

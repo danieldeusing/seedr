@@ -87,7 +87,11 @@ export function Header() {
               <span className="text-muted-foreground">/</span>
               <Link
                 to="/"
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className={
+                  segments.length <= 1
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-primary transition-colors"
+                }
               >
                 .agents
               </Link>

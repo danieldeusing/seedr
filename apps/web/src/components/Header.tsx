@@ -82,6 +82,7 @@ export function Header() {
               </DropdownMenu>
             )}
             <span className="text-sm truncate ml-10">
+              <span className="text-muted-foreground">visitor@registry:</span>
               <span className="text-primary">~</span>
               {segments.slice(1).map(segment => (
                 <Fragment key={segment.id}>

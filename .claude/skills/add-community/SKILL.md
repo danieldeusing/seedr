@@ -4,8 +4,8 @@ description: |
   Add a community GitHub repository to the seedr registry.
   Trigger on: "/add-community <github-url>", "add community repo", "register community plugin/skill".
   Accepts a GitHub repo URL, fetches metadata via GitHub API (plugin.json or SKILL.md),
-  detects content type, builds a file tree, asks clarifying questions, and updates
-  registry/manifest.json. No local file copy — uses externalUrl for install-time fetching.
+  detects content type, builds a file tree, asks clarifying questions, writes its item.json, and
+  recompiles the manifests (pnpm compile). No content copy — uses externalUrl for install-time fetching.
 ---
 
 # Add Community

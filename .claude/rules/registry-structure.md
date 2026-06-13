@@ -16,6 +16,10 @@ Each item's editable source of truth is a single `item.json` file. Running `pnpm
 (`scripts/compile-manifest.ts`) reads every `item.json` and assembles the index and per-type
 manifests. The `manifest.json` files are **generated** — never hand-edit them.
 
+A `PostToolUse` hook (`.claude/hooks/compile-on-item-edit.sh`, wired in `.claude/settings.json`)
+runs `pnpm compile` automatically whenever an `item.json` is edited, so the manifests never go
+stale from a manual edit. You still run `pnpm compile` yourself in non-Claude workflows.
+
 ## Directory Layout
 
 ```

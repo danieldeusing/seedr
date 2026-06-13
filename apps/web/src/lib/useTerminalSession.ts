@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 /*
- * Live terminal session (ported from pagr): `$ command` prompts type out,
+ * Live terminal session: `$ command` prompts type out,
  * then their section's `[data-term-out]` content reveals like command output.
  * Sections play sequentially in trigger order; sections below the viewport
  * play when scrolled in. The html.term-anim gate is set pre-paint in

@@ -3,8 +3,8 @@ name: remove-community
 description: |
   Remove a community-sourced item from the seedr registry.
   Trigger on: "/remove-community <slug>", "remove community item", "delete community plugin/skill".
-  Looks up the item by slug in registry/manifest.json (sourceType: "community"), confirms with the user,
-  and removes the manifest entry. No local files to delete — community items are metadata-only.
+  Looks up the item by slug via its item.json (sourceType: "community"), confirms with the user,
+  deletes the item.json, and recompiles the manifests. No content files to delete — community items are metadata-only.
 ---
 
 # Remove Community Item

@@ -3,8 +3,8 @@ name: remove-toolr
 description: |
   Remove a toolr-sourced item from the seedr registry.
   Trigger on: "/remove-toolr <slug>", "remove toolr item", "delete toolr skill/hook/agent/plugin".
-  Looks up the item by slug in registry/manifest.json (sourceType: "toolr"), confirms with the user,
-  deletes local files from registry/<type>s/<slug>/, and removes the manifest entry.
+  Looks up the item by slug via its registry/<type>s/<slug>/item.json (sourceType: "toolr"), confirms with
+  the user, deletes the item's directory, and recompiles the manifests (pnpm compile).
 ---
 
 # Remove Toolr Item

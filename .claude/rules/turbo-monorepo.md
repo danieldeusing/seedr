@@ -27,7 +27,7 @@ pnpm build
 pnpm lint
 
 # Run task for specific package
-pnpm --filter @seedr/cli build
+pnpm --filter @danieldeusing/seedr build
 pnpm --filter @seedr/web dev
 
 # Run from package directory

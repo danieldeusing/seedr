@@ -215,6 +215,14 @@ Removes a community-sourced item by slug. Removes the manifest entry only (no lo
 - Confirms with user before removing
 - Removes manifest entry only (metadata-only items)
 
+### `registry-item-reviewer` agent — Review item quality
+
+A subagent (`.claude/agents/registry-item-reviewer.md`) that reviews `item.json` files for required fields, field consistency, and `description`/`longDescription` quality against `.claude/rules/`. Read-only — it reports findings and suggested fixes, never edits. Auto-spawns when adding/editing a registry item; invoke explicitly before committing registry changes ("use the registry-item-reviewer agent").
+
+### Auto-compile hook
+
+A `PostToolUse` hook (`.claude/hooks/compile-on-item-edit.sh`, wired in `.claude/settings.json`) runs `pnpm compile` whenever an `item.json` is edited, so the generated manifests never go stale from a manual edit.
+
 ## Key Design Decisions
 
 - **Turbo for orchestration** - Task caching and parallel execution
@@ -229,12 +237,23 @@ Each package has its own `tsconfig.json` extending `tsconfig.base.json`:
 
 ```bash
 # Type check specific package
-pnpm --filter @seedr/cli typecheck
+pnpm --filter @danieldeusing/seedr typecheck
 pnpm --filter @seedr/web typecheck
 
 # Or from package directory
 npx tsc --noEmit
 ```
+
+## CI / CD
+
+GitHub Actions workflows in `.github/workflows/`:
+
+| Workflow | Trigger | Does |
+|----------|---------|------|
+| `ci.yml` | push to `main`, any PR | `pnpm lint`, `pnpm typecheck`, `pnpm --filter @danieldeusing/seedr test` |
+| `deploy.yml` | push to `prod` | Deploy web to Cloudflare Pages + publish CLI to npm |
+| `sync.yml` | schedule / manual | Re-sync community registry items from their GitHub repos |
+| `test-email.yml` | manual | Smoke-test the SMTP sync-notification setup |
 
 ## npm Publishing
 
@@ -256,7 +275,7 @@ Publishing uses **npm Trusted Publishers (OIDC)** — no npm tokens needed. Requ
 
 ## Web Design System
 
-The web app uses local shadcn-style components (`apps/web/src/components/ui/`) on Tailwind 4 with a terminal/CRT aesthetic shared with the pagr app. Four themes (warm default, green, mono, paper) are defined as CSS variable sets in `apps/web/src/styles/index.css`, switched via `html[data-theme]` and persisted in localStorage (`theme` key, pre-paint script in `index.html`). Use semantic classes (`bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `text-primary`) — never hardcode colors; border radius is globally zero. JetBrains Mono is the only font (via `@fontsource-variable/jetbrains-mono`).
+The web app uses local shadcn-style components (`apps/web/src/components/ui/`) on Tailwind 4 with a terminal/CRT aesthetic. Four themes (warm default, green, mono, paper) are defined as CSS variable sets in `apps/web/src/styles/index.css`, switched via `html[data-theme]` and persisted in localStorage (`theme` key, pre-paint script in `index.html`). Use semantic classes (`bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `text-primary`) — never hardcode colors; border radius is globally zero. JetBrains Mono is the only font (via `@fontsource-variable/jetbrains-mono`). Font sizes never go below 12px except for card metadata (time/counts, 11px); the type scale lives in `index.css`.
 
 ## ESLint Disable Comments
 
@@ -265,6 +284,5 @@ The web app uses local shadcn-style components (`apps/web/src/components/ui/`) o
 ## Gotchas
 
 - **pnpm only** - Use `pnpm` not `npm` for all operations
-- **Turbo cache** - `pnpm clean` does NOT clear Turbo's cache. If a build serves stale output after registry-only changes, run `npx turbo run build --force` to bypass the cache
-- **Registry symlinks** - Content in `registry/` directories may be symlinks during dev
+- **Turbo cache** - `pnpm clean` does NOT clear Turbo's cache. `registry/**` is in the `build` task's `inputs` (see `turbo.json`), so registry edits do invalidate the cache; if you ever see stale output anyway, run `npx turbo run build --force` to bypass it
 - **Local vs remote** - CLI tries local registry first, falls back to GitHub raw

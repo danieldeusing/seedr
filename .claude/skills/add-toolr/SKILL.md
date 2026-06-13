@@ -4,8 +4,8 @@ description: |
   Add new content (skills, hooks, agents, plugins, MCP servers, settings, commands) to the seedr registry.
   Trigger on: "/add-toolr <path>", "add toolr item", "register this hook/skill/agent/plugin/mcp/settings".
   Accepts a filesystem path, auto-detects the content type from path segments, asks clarifying
-  questions (scope, compatibility, name, description), copies content into registry/, and updates
-  registry/manifest.json. For toolr-sourced items only.
+  questions (scope, compatibility, name, description), copies content into registry/<type>s/<slug>/,
+  writes its item.json, and recompiles the manifests (pnpm compile). For toolr-sourced items only.
 ---
 
 # Add Toolr Item
@@ -235,7 +235,7 @@ Write the item metadata as `registry/<type>s/<slug>/item.json`:
   "longDescription": "<detailed description>",
   "compatibility": ["<from user answers>"],
   "sourceType": "toolr",
-  "author": { "name": "Toolr Suite", "url": "https://github.com/toolr-suite" },
+  "author": { "name": "Daniel Deusing", "url": "https://github.com/danieldeusing" },
   "externalUrl": "https://github.com/danieldeusing/seedr/tree/main/registry/<type>s/<slug>",
   "updatedAt": "<current ISO 8601 date>",
   "contents": { "files": [<file tree>] }

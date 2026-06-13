@@ -128,7 +128,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
             by {item.sourceType === "toolr" ? "Daniel Deusing" : item.author?.name}
           </p>
         )}
-        <p className="text-subtext text-xs mb-5 flex-grow line-clamp-3">{item.description}</p>
+        <p className="text-subtext text-xs mb-5 flex-grow line-clamp-3 text-justify">{item.description}</p>
 
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap gap-1.5">

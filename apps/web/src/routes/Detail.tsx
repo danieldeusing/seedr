@@ -111,7 +111,7 @@ const scopeIcons: Record<ScopeType, LucideIcon> = {
 
 // Accent classes for the detail header badges, keyed by BadgeColor names from lib/colors
 const badgeColorClasses: Record<string, string> = {
-  amber: "border-amber-500/60 text-amber-500",
+  amber: "border-(--badge-amber)/60 text-(--badge-amber)",
   blue: "border-blue-500/60 text-blue-500",
   violet: "border-violet-500/60 text-violet-500",
   teal: "border-teal-500/60 text-teal-500",

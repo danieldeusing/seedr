@@ -12,7 +12,7 @@ const colorClasses: Record<BadgeColor, string> = {
   blue: "border-blue-500/50 text-blue-500",
   orange: "border-orange-500/50 text-orange-500",
   purple: "border-purple-500/50 text-purple-500",
-  amber: "border-amber-500/50 text-amber-500",
+  amber: "border-(--badge-amber)/50 text-(--badge-amber)",
   emerald: "border-emerald-500/50 text-emerald-500",
   indigo: "border-indigo-500/50 text-indigo-500",
   teal: "border-teal-500/50 text-teal-500",

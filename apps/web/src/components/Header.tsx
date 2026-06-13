@@ -72,7 +72,7 @@ export function Header() {
                       onSelect={() => goToHistory(index)}
                       className={index === currentHistoryIndex ? "text-primary" : undefined}
                     >
-                      {entry.map(s => s.label).join(" / ")}
+                      {`~/.agents${entry.slice(1).map(s => `/${toPathSegment(s.label)}`).join("")}`}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

@@ -124,11 +124,11 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
 
         <h3 className="text-sm font-medium text-text mb-0.5">{item.name}</h3>
         {(item.author || item.sourceType === "toolr") && (
-          <p className="text-xs text-text-dim mb-1.5">
+          <p className="text-xs text-text-dim mb-3">
             by {item.sourceType === "toolr" ? "Daniel Deusing" : item.author?.name}
           </p>
         )}
-        <p className="text-subtext text-xs mb-3 flex-grow line-clamp-2">{item.description}</p>
+        <p className="text-subtext text-xs mb-5 flex-grow line-clamp-2">{item.description}</p>
 
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap gap-1.5">

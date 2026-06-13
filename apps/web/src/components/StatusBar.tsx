@@ -42,7 +42,7 @@ export function StatusBar() {
   };
 
   return (
-    <footer className="fixed bottom-0 inset-x-0 z-50 h-8 border-t border-border bg-card text-xs">
+    <footer className="fixed bottom-0 inset-x-0 z-50 h-8 border-t border-border bg-card text-[13px]">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         <span className="text-muted-foreground truncate">
           <span className="text-primary">[seedr]</span> visitor@registry:

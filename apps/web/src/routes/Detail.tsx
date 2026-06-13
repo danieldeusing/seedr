@@ -8,7 +8,7 @@ import { FileStructureSection } from "@/components/detail/FileStructureSection";
 import { RegistryDetail, type DetailLabelData } from "@/components/detail/RegistryDetail";
 import { CodeBlock } from "@/components/ui";
 import { useAppTheme } from "@/lib/useAppTheme";
-import { typeLabels, typeTextColors, sourceToBadgeColor, sourceLabels, scopeToBadgeColor, scopeLabels, pluginTypeToBadgeColor } from "@/lib/colors";
+import { typeLabels, typeTextColors, sourceToBadgeColor, sourceLabels, scopeToBadgeColor, scopeLabels, pluginTypeToBadgeColor, pathToType } from "@/lib/colors";
 import { typeIcons } from "@/components/TypeIcon";
 import { AuthorLink } from "@/components/AuthorLink";
 import Markdown from "react-markdown";
@@ -176,7 +176,7 @@ function buildDetailLabels(item: NonNullable<ReturnType<typeof getItem>>): Detai
 
 export function Detail() {
   const { type, slug } = useParams<{ type: string; slug: string }>();
-  const componentType = type?.replace(/s$/, "") as ComponentType;
+  const componentType = (type ? pathToType(type) : undefined) as ComponentType;
   useScrollRestoration();
 
   const item = slug ? getItem(slug, componentType) : undefined;

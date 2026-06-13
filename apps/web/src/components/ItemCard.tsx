@@ -9,7 +9,7 @@ import { TypeIcon } from "./TypeIcon";
 import { SourceBadge } from "./SourceBadge";
 import { ScopeBadge } from "./ScopeBadge";
 import { formatRelativeTime } from "@/lib/text";
-import { typeLabels, typeTextColors, agentLabels, pluginTypeToBadgeColor } from "@/lib/colors";
+import { typeLabels, typeTextColors, agentLabels, pluginTypeToBadgeColor, typeToPath } from "@/lib/colors";
 import { capabilityTypes } from "@/lib/capabilityTypes";
 import type { RegistryItem, SourceType, ScopeType, CodingAgent, PluginType } from "@/lib/types";
 
@@ -70,7 +70,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
   const interactive = "cursor-pointer hover:brightness-125 transition-all";
 
   return (
-    <Link to={`/${item.type}s/${item.slug}`} state={browseType && item.type !== browseType ? { from: browseType } : undefined}>
+    <Link to={`/${typeToPath[item.type]}/${item.slug}`} state={browseType && item.type !== browseType ? { from: browseType } : undefined}>
       <Card className="h-full flex flex-col">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5">

@@ -105,12 +105,17 @@ for (const [path, loader] of Object.entries(itemJsonLoaders)) {
 // Cache for item.json data (lazy-loaded)
 const itemJsonCache = new Map<string, RegistryItem>();
 
+// registry folder per type (folders: skills, plugins, hooks, agents, commands, settings, mcp)
+function typeDir(type: ComponentType): string {
+  return type === "mcp" || type === "settings" ? type : `${type}s`;
+}
+
 async function loadItemJson(slug: string, type?: ComponentType): Promise<RegistryItem | undefined> {
-  const key = type ? `${type}s/${slug}` : slug;
+  const key = type ? `${typeDir(type)}/${slug}` : slug;
   if (itemJsonCache.has(key)) return itemJsonCache.get(key);
 
   const loader = type
-    ? loaderByKey.get(`${type}s/${slug}`)
+    ? loaderByKey.get(`${typeDir(type)}/${slug}`)
     : [...loaderByKey.entries()].find(([k]) => k.endsWith(`/${slug}`))?.[1];
   if (!loader) return undefined;
 

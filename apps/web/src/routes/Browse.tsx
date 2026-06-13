@@ -10,7 +10,7 @@ import { ItemCard } from "@/components/ItemCard";
 import { getItemsByType, fuseOptions } from "@/lib/registry";
 import { pluralize } from "@/lib/text";
 import type { ComponentType, CodingAgent, SourceType, ScopeType, PluginType, RegistryItem } from "@/lib/types";
-import { typeLabelPlural, typeTextColors } from "@/lib/colors";
+import { typeLabelPlural, typeTextColors, pathToType } from "@/lib/colors";
 import { TypeIcon } from "@/components/TypeIcon";
 
 import { agentOptions, sourceOptions, scopeOptions } from "@/lib/filterOptions";
@@ -60,7 +60,7 @@ function sortItems(items: RegistryItem[], field: string, ascending: boolean): Re
 
 export function Browse() {
   const { type } = useParams<{ type: string }>();
-  const componentType = type?.replace(/s$/, "") as ComponentType;
+  const componentType = (type ? pathToType(type) : undefined) as ComponentType;
   const { searchParams, updateParams } = useUpdateParams();
   useScrollRestoration();
 

@@ -1,8 +1,9 @@
 /**
  * Returns the plural form of a word based on count.
+ * Words that already end in "s" (e.g. "settings") stay unchanged.
  */
 export function pluralize(word: string, count: number): string {
-  return count === 1 ? word : `${word}s`;
+  return count === 1 || word.endsWith("s") ? word : `${word}s`;
 }
 
 /**

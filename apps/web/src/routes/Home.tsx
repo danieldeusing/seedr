@@ -14,7 +14,7 @@ import { typeIcons } from "@/components/TypeIcon";
 import { getAllItems, getTypeCounts, fuseOptions } from "@/lib/registry";
 import { pluralize } from "@/lib/text";
 import type { ComponentType, CodingAgent, SourceType, ScopeType } from "@/lib/types";
-import { typeTextColors, typeLabelPlural } from "@/lib/colors";
+import { typeTextColors, typeLabelPlural, typeToPath } from "@/lib/colors";
 
 // Only descriptions for types shown on home page
 const typeDescriptions: Record<ComponentType, string> = {
@@ -191,7 +191,7 @@ export function Home() {
               return (
                 <Link
                   key={type}
-                  to={`/${type}s`}
+                  to={`/${typeToPath[type]}`}
                   className="bg-surface border border-overlay rounded-lg p-3 text-center hover:border-overlay-hover hover:bg-active transition-all group"
                 >
                   <Icon className={`w-8 h-8 mx-auto mb-3 ${typeTextColors[type]} opacity-60 group-hover:opacity-100 transition-opacity`} />

@@ -40,6 +40,21 @@ export const typeLabelPlural: Record<ComponentType, string> = {
   mcp: "MCP Servers",
 };
 
+// URL path segment per type ("settings" is already plural)
+export const typeToPath: Record<ComponentType, string> = {
+  skill: "skills",
+  hook: "hooks",
+  agent: "agents",
+  plugin: "plugins",
+  command: "commands",
+  settings: "settings",
+  mcp: "mcps",
+};
+
+export function pathToType(path: string): ComponentType {
+  return (path === "settings" ? "settings" : path.replace(/s$/, "")) as ComponentType;
+}
+
 // Type to badge color mapping (matching configr's capabilityColors)
 export const typeToBadgeColor: Record<ComponentType, BadgeColor> = {
   skill: "pink",

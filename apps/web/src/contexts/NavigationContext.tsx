@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { typeLabelPlural, typeBreadcrumbIcon, typeBreadcrumbColor } from "@/lib/colors";
+import { typeLabelPlural, typeBreadcrumbIcon, typeBreadcrumbColor, typeToPath, pathToType } from "@/lib/colors";
 
 export interface BreadcrumbSegment {
   id: string;
@@ -72,7 +72,7 @@ function buildSegments(
   ];
 
   if (parts[0] && CONTENT_TYPES.includes(parts[0])) {
-    const componentType = parts[0].replace(/s$/, "") as ComponentType;
+    const componentType = pathToType(parts[0]);
     const fromType = (state as { from?: string } | null)?.from as ComponentType | undefined;
     const breadcrumbType = fromType && fromType !== componentType ? fromType : componentType;
 
@@ -81,7 +81,7 @@ function buildSegments(
       label: typeLabelPlural[breadcrumbType],
       icon: typeBreadcrumbIcon[breadcrumbType],
       color: typeBreadcrumbColor[breadcrumbType],
-      onClick: parts[1] ? () => onNavigate(`/${breadcrumbType}s`) : undefined,
+      onClick: parts[1] ? () => onNavigate(`/${typeToPath[breadcrumbType]}`) : undefined,
     });
 
     if (parts[1]) {

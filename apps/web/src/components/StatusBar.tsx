@@ -48,7 +48,7 @@ export function StatusBar() {
           <span className="text-primary">[seedr]</span> visitor@registry:
           <span className="text-foreground">{pathname === "/" ? "~" : `~${pathname}`}</span>
         </span>
-        <nav className="flex items-center gap-6 shrink-0">
+        <nav className="flex items-center gap-10 shrink-0">
           <Link to="/privacy" className="link-quiet no-underline hover:underline">
             privacy
           </Link>

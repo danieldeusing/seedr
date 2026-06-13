@@ -81,7 +81,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <span className="text-sm truncate ml-6">
+            <span className="text-sm truncate ml-10">
               <span className="text-primary">~</span>
               {segments.slice(1).map(segment => (
                 <Fragment key={segment.id}>

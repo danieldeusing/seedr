@@ -35,7 +35,7 @@ function PackageBadges({ counts }: { counts: Record<string, number> }) {
             <TooltipTrigger asChild>
               <span className="flex items-center gap-0.5">
                 <Icon className={`w-3 h-3 ${colorClass}`} />
-                <span className="text-xs text-subtext">{item.count}</span>
+                <span className="text-[11px] text-subtext">{item.count}</span>
               </span>
             </TooltipTrigger>
             <TooltipContent side="top">{`${item.count} ${item.label}`}</TooltipContent>
@@ -124,7 +124,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
 
         <h3 className="text-sm font-medium text-text mb-0.5">{item.name}</h3>
         {(item.author || item.sourceType === "toolr") && (
-          <p className="text-xs text-text-dim mb-3">
+          <p className="text-[11px] text-text-dim mb-3">
             by {item.sourceType === "toolr" ? "Daniel Deusing" : item.author?.name}
           </p>
         )}
@@ -149,7 +149,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
           {item.updatedAt && (
             <span
               {...interactiveProps(onDateClick)}
-              className={`flex items-center gap-1 text-xs text-text-dim ${onDateClick ? interactive : ""}`}
+              className={`flex items-center gap-1 text-[11px] text-text-dim ${onDateClick ? interactive : ""}`}
             >
               <Clock className="w-3 h-3" />
               {formatRelativeTime(item.updatedAt)}

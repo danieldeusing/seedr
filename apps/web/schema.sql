@@ -5,7 +5,6 @@ CREATE TABLE installs (
   tool        TEXT NOT NULL,
   scope       TEXT NOT NULL,
   cli_version TEXT NOT NULL,
-  ip          TEXT NOT NULL DEFAULT 'unknown',
   country     TEXT NOT NULL DEFAULT 'unknown',
   installed_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

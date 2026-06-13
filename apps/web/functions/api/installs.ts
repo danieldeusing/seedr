@@ -45,20 +45,21 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
-    const ip = context.request.headers.get("CF-Connecting-IP") ?? "unknown";
+    // Only the coarse country (derived by Cloudflare from the request) is kept —
+    // IP addresses are never stored (see privacy policy).
     const country = (context.request.cf?.country as string) ?? "unknown";
 
     await context.env.DB.prepare(
-      "INSERT INTO installs (slug, item_type, tool, scope, cli_version, ip, country) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO installs (slug, item_type, tool, scope, cli_version, country) VALUES (?, ?, ?, ?, ?, ?)"
     )
-      .bind(result.slug, result.type, result.tool, result.scope, result.version, ip, country)
+      .bind(result.slug, result.type, result.tool, result.scope, result.version, country)
       .run();
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error) {
+  } catch {
     return new Response(JSON.stringify({ error: "internal error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

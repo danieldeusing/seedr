@@ -1,7 +1,7 @@
 export function Impressum() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-lg font-bold text-text mb-6">Imprint</h1>
+      <h1 className="text-lg font-bold text-text mb-6">Impressum</h1>
 
       <div className="max-w-none space-y-6">
         <section>

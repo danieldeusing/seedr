@@ -4,8 +4,13 @@ import { Check } from "lucide-react";
 
 import { cn } from "../../lib/utils";
 
-function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root {...props} />;
+function DropdownMenu({
+  modal = false,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  // non-modal: no scroll lock, so the page scrollbar stays and fixed
+  // elements (status bar) don't shift when a menu opens
+  return <DropdownMenuPrimitive.Root modal={modal} {...props} />;
 }
 
 function DropdownMenuTrigger({

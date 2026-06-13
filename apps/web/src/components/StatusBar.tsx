@@ -56,7 +56,7 @@ export function StatusBar() {
             impressum
           </Link>
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors outline-none">
+            <DropdownMenuTrigger className="flex cursor-pointer items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors outline-none">
               <Circle className="size-3" fill="currentColor" />
               <span>{theme}</span>
               <span aria-hidden>▾</span>

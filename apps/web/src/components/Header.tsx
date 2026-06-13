@@ -66,15 +66,18 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  {historyEntries.map((entry, index) => (
-                    <DropdownMenuItem
-                      key={index}
-                      onSelect={() => goToHistory(index)}
-                      className={index === currentHistoryIndex ? "text-primary" : undefined}
-                    >
-                      {`~/.agents${entry.slice(1).map(s => `/${toPathSegment(s.label)}`).join("")}`}
-                    </DropdownMenuItem>
-                  ))}
+                  {historyEntries
+                    .map((entry, index) => ({ entry, index }))
+                    .reverse()
+                    .map(({ entry, index }) => (
+                      <DropdownMenuItem
+                        key={index}
+                        onSelect={() => goToHistory(index)}
+                        className={index === currentHistoryIndex ? "text-primary" : undefined}
+                      >
+                        {`~/.agents${entry.slice(1).map(s => `/${toPathSegment(s.label)}`).join("")}`}
+                      </DropdownMenuItem>
+                    ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

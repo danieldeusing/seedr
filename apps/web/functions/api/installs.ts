@@ -1,5 +1,12 @@
+interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
+}
+
 interface Env {
   DB: D1Database;
+  // Optional Cloudflare Rate Limiting binding (configured in wrangler.toml).
+  // The per-request IP is used only as a transient throttle key, never stored.
+  INSTALLS_LIMITER?: RateLimiter;
 }
 
 const VALID_TOOLS = ["claude", "copilot", "gemini", "codex", "opencode"];
@@ -35,6 +42,19 @@ function validate(body: unknown): InstallPayload | string {
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
+    // Throttle abusive clients (per source IP) so a script can't inflate the
+    // install counts. The IP is the rate key only and is not persisted.
+    if (context.env.INSTALLS_LIMITER) {
+      const ip = context.request.headers.get("CF-Connecting-IP") ?? "unknown";
+      const { success } = await context.env.INSTALLS_LIMITER.limit({ key: ip });
+      if (!success) {
+        return new Response(JSON.stringify({ error: "rate limited" }), {
+          status: 429,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const body = await context.request.json();
     const result = validate(body);
 

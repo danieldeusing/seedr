@@ -13,12 +13,16 @@ export interface ContentHandler {
 
   /**
    * Install content for the specified agents.
+   *
+   * When `force` is false, an existing destination must not be overwritten —
+   * the handler returns a failed result instead.
    */
   install(
     item: RegistryItem,
     agents: CodingAgent[],
     scope: InstallScope,
     method: InstallMethod,
+    force: boolean,
     cwd?: string
   ): Promise<InstallResult[]>;
 

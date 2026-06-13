@@ -52,7 +52,7 @@ describe("mcp handler", () => {
         compatibility: ["claude"],
       };
 
-      const results = await installMcp(item, ["claude"], "project", "copy", "/my/project");
+      const results = await installMcp(item, ["claude"], "project", "copy", true, "/my/project");
 
       expect(results).toHaveLength(1);
       expect(results[0]?.success).toBe(true);
@@ -96,7 +96,7 @@ describe("mcp handler", () => {
         compatibility: ["claude"],
       };
 
-      await installMcp(item, ["claude"], "project", "copy", "/my/project");
+      await installMcp(item, ["claude"], "project", "copy", true, "/my/project");
 
       const config = JSON.parse(vol.readFileSync("/my/project/.mcp.json", "utf-8") as string);
       expect(config.mcpServers.existing).toBeDefined();
@@ -122,7 +122,7 @@ describe("mcp handler", () => {
         compatibility: ["claude"],
       };
 
-      const results = await installMcp(item, ["claude"], "user", "copy", "/my/project");
+      const results = await installMcp(item, ["claude"], "user", "copy", true, "/my/project");
 
       expect(results[0]?.path).toBe("/home/testuser/.claude.json");
     });

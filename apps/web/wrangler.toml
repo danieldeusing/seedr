@@ -6,3 +6,12 @@ compatibility_date = "2024-12-01"
 binding = "DB"
 database_name = "seedr-analytics"
 database_id = "51d143da-fb42-4a57-8493-c45695a3637c"
+
+# Per-IP throttle for /api/installs so a script can't inflate the install
+# counts. The IP is used only as the rate key — never stored. 60 requests per
+# 60 s per source; the endpoint degrades gracefully if this binding is absent.
+[[unsafe.bindings]]
+name = "INSTALLS_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 60, period = 60 }

@@ -53,7 +53,7 @@ describe("hook handler", () => {
       vol.mkdirSync("/registry/hooks/lint-hook", { recursive: true });
       vol.writeFileSync("/registry/hooks/lint-hook/lint-hook.sh", "#!/bin/bash\npnpm lint");
 
-      const results = await installHook(item, ["claude"], "project", "copy", "/my/project");
+      const results = await installHook(item, ["claude"], "project", "copy", true, "/my/project");
 
       expect(results).toHaveLength(1);
       expect(results[0]?.success).toBe(true);
@@ -92,7 +92,7 @@ describe("hook handler", () => {
       vol.mkdirSync("/registry/hooks/test-hook", { recursive: true });
       vol.writeFileSync("/registry/hooks/test-hook/test-hook.sh", "#!/bin/bash\npnpm test");
 
-      await installHook(item, ["claude"], "project", "copy", "/my/project");
+      await installHook(item, ["claude"], "project", "copy", true, "/my/project");
 
       const settings = JSON.parse(vol.readFileSync("/my/project/.claude/settings.json", "utf-8") as string);
       // Same matcher (undefined) — appends to existing entry's hooks array
@@ -121,7 +121,7 @@ describe("hook handler", () => {
         compatibility: ["claude"],
       };
 
-      const results = await installHook(item, ["copilot"], "project", "copy", "/my/project");
+      const results = await installHook(item, ["copilot"], "project", "copy", true, "/my/project");
 
       expect(results[0]?.success).toBe(false);
       expect(results[0]?.error).toContain("only supported for Claude");
@@ -147,7 +147,7 @@ describe("hook handler", () => {
       vol.mkdirSync("/registry/hooks/ts-check-hook", { recursive: true });
       vol.writeFileSync("/registry/hooks/ts-check-hook/ts-check-hook.sh", "#!/bin/bash\ntsc --noEmit");
 
-      await installHook(item, ["claude"], "project", "copy", "/my/project");
+      await installHook(item, ["claude"], "project", "copy", true, "/my/project");
 
       const settings = JSON.parse(vol.readFileSync("/my/project/.claude/settings.json", "utf-8") as string);
       expect(settings.hooks.PreCommit).toBeDefined();

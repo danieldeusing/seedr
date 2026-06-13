@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button } from "./Button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./Tooltip";
@@ -12,11 +12,20 @@ interface CopyButtonProps {
 
 export function CopyButton({ text }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => () => clearTimeout(resetTimer.current), []);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // clipboard blocked (insecure context / permission denied) — no feedback
+      return;
+    }
     setCopied(true);
-    setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION_MS);
+    clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION_MS);
   };
 
   return (

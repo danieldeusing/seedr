@@ -52,7 +52,7 @@ describe("settings handler", () => {
       vol.mkdirSync("/my/project/.claude", { recursive: true });
       vol.writeFileSync("/my/project/.claude/settings.json", JSON.stringify({ existing: true }));
 
-      const results = await installSettings(item, ["claude"], "project", "copy", "/my/project");
+      const results = await installSettings(item, ["claude"], "project", "copy", true, "/my/project");
 
       expect(results).toHaveLength(1);
       expect(results[0]?.success).toBe(true);
@@ -93,7 +93,7 @@ describe("settings handler", () => {
         })
       );
 
-      await installSettings(item, ["claude"], "project", "copy", "/my/project");
+      await installSettings(item, ["claude"], "project", "copy", true, "/my/project");
 
       const settings = JSON.parse(vol.readFileSync("/my/project/.claude/settings.json", "utf-8") as string);
       expect(settings.editor.lineNumbers).toBe(true);
@@ -114,7 +114,7 @@ describe("settings handler", () => {
         compatibility: ["claude"],
       };
 
-      const results = await installSettings(item, ["copilot"], "project", "copy", "/my/project");
+      const results = await installSettings(item, ["copilot"], "project", "copy", true, "/my/project");
 
       expect(results[0]?.success).toBe(false);
       expect(results[0]?.error).toContain("only supported for Claude");
@@ -134,7 +134,7 @@ describe("settings handler", () => {
         compatibility: ["claude"],
       };
 
-      const results = await installSettings(item, ["claude"], "local", "copy", "/my/project");
+      const results = await installSettings(item, ["claude"], "local", "copy", true, "/my/project");
 
       expect(results[0]?.success).toBe(true);
       expect(results[0]?.path).toBe("/my/project/.claude/settings.local.json");

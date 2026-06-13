@@ -1,13 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useParams, Link } from "react-router-dom";
-import Editor, { type Monaco } from "@monaco-editor/react";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 // toolr-design-ignore-next-line
 import { Clock, Folder, Lock, Package, Plug, Puzzle, Shield, User, type LucideIcon } from "lucide-react";
 import { FileStructureSection } from "@/components/detail/FileStructureSection";
 import { RegistryDetail, type DetailLabelData } from "@/components/detail/RegistryDetail";
 import { CodeBlock } from "@/components/ui";
-import { useAppTheme } from "@/lib/useAppTheme";
 import { typeLabels, typeTextColors, sourceToBadgeColor, sourceLabels, scopeToBadgeColor, scopeLabels, pluginTypeToBadgeColor, pathToType } from "@/lib/colors";
 import { typeIcons } from "@/components/TypeIcon";
 import { AuthorLink } from "@/components/AuthorLink";
@@ -18,26 +16,11 @@ import { getItem, getLongDescription, getFileTree } from "@/lib/registry";
 import { useTerminalSession } from "@/lib/useTerminalSession";
 import type { ComponentType, FileTreeNode, ScopeType, SourceType } from "@/lib/types";
 
-const PREVIEW_THEME = "seedr-preview";
-
-const DARK_APP_THEMES = new Set(["green", "mono"]);
-
-function handleEditorWillMount(monaco: Monaco) {
-  const isDark = DARK_APP_THEMES.has(document.documentElement.dataset.theme ?? "warm");
-  const cardColor = getComputedStyle(document.documentElement).getPropertyValue("--card").trim();
-  monaco.editor.defineTheme(PREVIEW_THEME, {
-    base: isDark ? "vs-dark" : "vs",
-    inherit: true,
-    rules: [],
-    colors: {
-      "editor.background": cardColor,
-      "editorGutter.background": cardColor,
-      "scrollbar.shadow": "#00000000",
-      "scrollbarSlider.background": isDark ? "#ffffff20" : "#00000020",
-      "scrollbarSlider.hoverBackground": isDark ? "#ffffff38" : "#00000038",
-    },
-  });
-}
+// Monaco is heavy and only needed when a file preview opens — lazy-load it so it
+// stays out of the main bundle (and self-hosts rather than using a CDN).
+const MonacoPreview = lazy(() =>
+  import("@/components/detail/MonacoPreview").then((m) => ({ default: m.MonacoPreview }))
+);
 
 function getRawUrl(externalUrl: string, filePath: string): string | null {
   if (externalUrl.startsWith("local://")) {
@@ -62,41 +45,6 @@ function getRawUrl(externalUrl: string, filePath: string): string | null {
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${fullPath}`;
 }
 
-function MonacoPreview({ content, language }: { content: string; language: string }) {
-  // Re-mount the editor on app theme changes so the preview theme is re-defined
-  const appTheme = useAppTheme();
-  return (
-    <Editor
-      key={appTheme}
-      height="100%"
-      language={language}
-      value={content}
-      theme={PREVIEW_THEME}
-      beforeMount={handleEditorWillMount}
-      options={{
-        readOnly: true,
-        minimap: { enabled: false },
-        lineNumbers: "off",
-        glyphMargin: false,
-        folding: false,
-        lineDecorationsWidth: 12,
-        lineNumbersMinChars: 0,
-        renderLineHighlight: "none",
-        scrollBeyondLastLine: false,
-        overviewRulerLanes: 0,
-        overviewRulerBorder: false,
-        hideCursorInOverviewRuler: true,
-        scrollbar: { vertical: "auto", horizontal: "auto", verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
-        padding: { top: 12, bottom: 12 },
-        fontSize: 12,
-        wordWrap: "on",
-        domReadOnly: true,
-        contextmenu: false,
-      }}
-    />
-  );
-}
-
 const sourceDescriptions: Record<SourceType, string> = {
   official: "Published by the tool maker",
   toolr: "Published by Toolr Suite",
@@ -112,14 +60,14 @@ const scopeIcons: Record<ScopeType, LucideIcon> = {
 // Accent classes for the detail header badges, keyed by BadgeColor names from lib/colors
 const badgeColorClasses: Record<string, string> = {
   amber: "border-(--badge-amber)/60 text-(--badge-amber)",
-  blue: "border-blue-500/60 text-blue-500",
-  violet: "border-violet-500/60 text-violet-500",
-  teal: "border-teal-500/60 text-teal-500",
+  blue: "border-(--badge-blue)/60 text-(--badge-blue)",
+  violet: "border-(--badge-violet)/60 text-(--badge-violet)",
+  teal: "border-(--badge-teal)/60 text-(--badge-teal)",
   neutral: "text-muted-foreground",
-  red: "border-red-500/60 text-red-500",
-  emerald: "border-emerald-500/60 text-emerald-500",
-  pink: "border-pink-500/60 text-pink-500",
-  orange: "border-orange-500/60 text-orange-500",
+  red: "border-(--badge-red)/60 text-(--badge-red)",
+  emerald: "border-(--badge-emerald)/60 text-(--badge-emerald)",
+  pink: "border-(--badge-pink)/60 text-(--badge-pink)",
+  orange: "border-(--badge-orange)/60 text-(--badge-orange)",
 };
 
 const scopeDescriptions: Record<ScopeType, string> = {
@@ -186,11 +134,17 @@ export function Detail() {
   const [lazyDataSettled, setLazyDataSettled] = useState(false);
   useEffect(() => {
     if (!slug) return;
+    // Reset and guard against out-of-order resolution: when navigating quickly
+    // between items, an older fetch must not overwrite the newer item's data.
+    let cancelled = false;
     setLazyDataSettled(false);
+    setLongDescription(undefined);
+    setFileTree(undefined);
     Promise.allSettled([
-      getLongDescription(slug, componentType).then(setLongDescription),
-      getFileTree(slug, componentType).then(setFileTree),
-    ]).then(() => setLazyDataSettled(true));
+      getLongDescription(slug, componentType).then(d => { if (!cancelled) setLongDescription(d); }),
+      getFileTree(slug, componentType).then(t => { if (!cancelled) setFileTree(t); }),
+    ]).then(() => { if (!cancelled) setLazyDataSettled(true); });
+    return () => { cancelled = true; };
   }, [slug, componentType]);
 
   // Start the terminal session only once the lazy sections (tl;dr, file tree)
@@ -240,6 +194,9 @@ export function Detail() {
 
   return (
     <RegistryDetail
+      // Remount per item so the terminal-typing animation never restores a
+      // previous item's prompt text into React-reused DOM nodes.
+      key={`${item.type}/${item.slug}`}
       icon={typeIcons[item.type]}
       iconColor={typeTextColors[item.type]}
       title={item.name}
@@ -291,7 +248,11 @@ export function Detail() {
           files={fileTree}
           rootName={item.slug}
           initialHeight={500}
-          renderPreview={(content, _filePath, lang) => <MonacoPreview content={content} language={lang} />}
+          renderPreview={(content, _filePath, lang) => (
+            <Suspense fallback={<div className="h-full bg-card" />}>
+              <MonacoPreview content={content} language={lang} />
+            </Suspense>
+          )}
           onFetchContent={fetchFileContent}
         />
       )}
@@ -299,7 +260,7 @@ export function Detail() {
       {/* CLI Reference */}
       <div data-term>
         <h3 className="prompt mb-3">seedr add --help</h3>
-        <div data-term-out className="bg-surface border border-overlay rounded-lg overflow-hidden">
+        <div data-term-out className="bg-surface border border-overlay overflow-hidden">
           <table className="w-full text-sm table-fixed">
             <colgroup>
               <col className="w-[200px]" />

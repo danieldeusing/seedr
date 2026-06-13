@@ -1,6 +1,6 @@
 # Seedr
 
-CLI and web registry for browsing and installing AI coding assistant content: skills, agents, hooks, plugins, MCP servers, and settings. Part of the toolr-suite ecosystem.
+CLI and web registry for browsing and installing AI coding assistant content: skills, agents, hooks, plugins, MCP servers, and settings.
 
 ## Tech Stack
 
@@ -70,7 +70,7 @@ tsx src/cli.ts list
 tsx src/cli.ts add <skill-name> --dry-run
 
 # Web changes - verify in browser
-cd apps/web && pnpm dev  # Opens http://localhost:5173
+cd apps/web && pnpm dev  # Opens http://localhost:6200
 ```
 
 See [docs/manual-tests/dry-run-commands.md](docs/manual-tests/dry-run-commands.md) for comprehensive dry-run testing commands.
@@ -132,8 +132,8 @@ Each item has a source-of-truth `item.json` in `registry/<type>s/<slug>/`. Runni
 {
   "version": "2.0.0",
   "types": {
-    "skill": { "file": "skills/manifest.json", "count": 26 },
-    "plugin": { "file": "plugins/manifest.json", "count": 52 },
+    "skill": { "file": "skills/manifest.json", "count": 37 },
+    "plugin": { "file": "plugins/manifest.json", "count": 66 },
     "hook": { "file": "hooks/manifest.json", "count": 3 },
     "agent": { "file": "agents/manifest.json", "count": 0 }
   }
@@ -265,6 +265,6 @@ The web app uses local shadcn-style components (`apps/web/src/components/ui/`) o
 ## Gotchas
 
 - **pnpm only** - Use `pnpm` not `npm` for all operations
-- **Turbo cache** - Run `pnpm clean` if builds seem stale
+- **Turbo cache** - `pnpm clean` does NOT clear Turbo's cache. If a build serves stale output after registry-only changes, run `npx turbo run build --force` to bypass the cache
 - **Registry symlinks** - Content in `registry/` directories may be symlinks during dev
 - **Local vs remote** - CLI tries local registry first, falls back to GitHub raw

@@ -10,7 +10,7 @@ import type { RegistryItem } from "@seedr/shared";
 import { brand } from "../utils/ui.js";
 import { getItemSourcePath, fetchItemToDestination } from "../config/registry.js";
 import { getSettingsPath, CODING_AGENTS } from "../config/agents.js";
-import { installDirectory } from "../utils/fs.js";
+import { installDirectory, assertOverwritable } from "../utils/fs.js";
 import { readJson, writeJson } from "../utils/json.js";
 import type { ContentHandler, InstallResult } from "./types.js";
 
@@ -124,6 +124,7 @@ async function installPluginForAgent(
   agent: CodingAgent,
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string
 ): Promise<InstallResult> {
   const spinner = ora(
@@ -159,6 +160,12 @@ async function installPluginForAgent(
 
     // Step 3: Move to final cache path
     const cachePath = getPluginCachePath(marketplace, pluginName, version);
+    try {
+      await assertOverwritable(cachePath, force);
+    } catch (error) {
+      await rm(tmpPath, { recursive: true, force: true });
+      throw error;
+    }
     await installDirectory(tmpPath, cachePath, "copy");
     await rm(tmpPath, { recursive: true, force: true });
 
@@ -213,12 +220,13 @@ export async function installPlugin(
   agents: CodingAgent[],
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string = process.cwd()
 ): Promise<InstallResult[]> {
   const results: InstallResult[] = [];
 
   for (const agent of agents) {
-    const result = await installPluginForAgent(item, agent, scope, method, cwd);
+    const result = await installPluginForAgent(item, agent, scope, method, force, cwd);
     results.push(result);
   }
 
@@ -307,9 +315,10 @@ export const pluginHandler: ContentHandler = {
     agents: CodingAgent[],
     scope: InstallScope,
     method: InstallMethod,
+    force: boolean,
     cwd?: string
   ): Promise<InstallResult[]> {
-    return installPlugin(item, agents, scope, method, cwd);
+    return installPlugin(item, agents, scope, method, force, cwd);
   },
 
   async uninstall(

@@ -13,6 +13,9 @@ export function trackInstalls(
 ): void {
   if (process.env.SEEDR_NO_TELEMETRY) return;
 
+  // CLI_VERSION is injected by tsup at build time; under `tsx` (dev) it is undefined.
+  const version = typeof CLI_VERSION !== "undefined" ? CLI_VERSION : "dev";
+
   for (const result of results) {
     if (!result.success) continue;
 
@@ -22,9 +25,9 @@ export function trackInstalls(
       body: JSON.stringify({
         slug,
         type,
-        agent: result.agent,
+        tool: result.agent,
         scope,
-        version: CLI_VERSION,
+        version,
       }),
       signal: AbortSignal.timeout(4000),
     }).catch(() => {});

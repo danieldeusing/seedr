@@ -46,13 +46,25 @@ function PackageBadges({ counts }: { counts: Record<string, number> }) {
   );
 }
 
-/** Wraps a click handler to stop event propagation (prevents Link navigation). */
-function clickable(handler?: () => void) {
-  if (!handler) return undefined;
-  return (e: React.MouseEvent) => {
+/**
+ * Props that turn a span inside the card Link into an accessible button:
+ * stops the click from navigating, and adds keyboard (Enter/Space) + role so
+ * the filter affordance works without a mouse. Returns {} when no handler.
+ */
+function interactiveProps(handler?: () => void) {
+  if (!handler) return {};
+  const activate = (e: React.SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
     handler();
+  };
+  return {
+    role: "button" as const,
+    tabIndex: 0,
+    onClick: activate,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") activate(e);
+    },
   };
 }
 
@@ -75,27 +87,27 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5">
             {item.sourceType && (
-              <span onClick={clickable(onSourceClick ? () => onSourceClick(item.sourceType!) : undefined)} className={onSourceClick ? interactive : ""}>
+              <span {...interactiveProps(onSourceClick ? () => onSourceClick(item.sourceType!) : undefined)} className={onSourceClick ? interactive : ""}>
                 <SourceBadge source={item.sourceType} />
               </span>
             )}
             {item.pluginType === "package" && (
-              <span onClick={clickable(onPluginTypeClick ? () => onPluginTypeClick("package") : undefined)} className={onPluginTypeClick ? interactive : ""}>
+              <span {...interactiveProps(onPluginTypeClick ? () => onPluginTypeClick("package") : undefined)} className={onPluginTypeClick ? interactive : ""}>
                 <Label text="Package" accentColor={pluginTypeToBadgeColor.package} icon={Package} tooltip={{ description: "Bundles multiple capabilities (skills, hooks, agents, etc.) into a single plugin" }} />
               </span>
             )}
             {item.pluginType === "wrapper" && (
-              <span onClick={clickable(onPluginTypeClick ? () => onPluginTypeClick("wrapper") : undefined)} className={onPluginTypeClick ? interactive : ""}>
+              <span {...interactiveProps(onPluginTypeClick ? () => onPluginTypeClick("wrapper") : undefined)} className={onPluginTypeClick ? interactive : ""}>
                 <Label text="Wrapper" accentColor={pluginTypeToBadgeColor.wrapper} icon={Puzzle} tooltip={{ description: `Wraps a single ${item.wrapper} capability as a plugin` }} />
               </span>
             )}
             {item.pluginType === "integration" && (
-              <span onClick={clickable(onPluginTypeClick ? () => onPluginTypeClick("integration") : undefined)} className={onPluginTypeClick ? interactive : ""}>
+              <span {...interactiveProps(onPluginTypeClick ? () => onPluginTypeClick("integration") : undefined)} className={onPluginTypeClick ? interactive : ""}>
                 <Label text="Integration" accentColor={pluginTypeToBadgeColor.integration} icon={Plug} tooltip={{ description: "Integrates an external tool with your AI assistant. Installing adds it to enabledPlugins — the README explains how to set up the tool itself." }} />
               </span>
             )}
             {item.sourceType === "toolr" && item.targetScope && (
-              <span onClick={clickable(onScopeClick ? () => onScopeClick(item.targetScope!) : undefined)} className={onScopeClick ? interactive : ""}>
+              <span {...interactiveProps(onScopeClick ? () => onScopeClick(item.targetScope!) : undefined)} className={onScopeClick ? interactive : ""}>
                 <ScopeBadge scope={item.targetScope} />
               </span>
             )}
@@ -123,7 +135,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
             {item.compatibility.map((tool) => (
               <Tooltip key={tool}>
                 <TooltipTrigger asChild>
-                  <span onClick={clickable(onToolClick ? () => onToolClick(tool) : undefined)} className={`inline-flex ${onToolClick ? interactive : ""}`}>
+                  <span {...interactiveProps(onToolClick ? () => onToolClick(tool) : undefined)} className={`inline-flex ${onToolClick ? interactive : ""}`}>
                     <CodingAgentIcon agent={tool} size={16} />
                   </span>
                 </TooltipTrigger>
@@ -136,7 +148,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
           )}
           {item.updatedAt && (
             <span
-              onClick={clickable(onDateClick)}
+              {...interactiveProps(onDateClick)}
               className={`flex items-center gap-1 text-xss text-text-dim ${onDateClick ? interactive : ""}`}
             >
               <Clock className="w-3 h-3" />

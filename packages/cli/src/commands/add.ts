@@ -8,6 +8,7 @@ import * as ui from "../utils/ui.js";
 import { getHandler } from "../handlers/registry.js";
 import type { InstallResult } from "../handlers/types.js";
 import { handleCommandError } from "../utils/errors.js";
+import { validateScope, validateMethod, validateType } from "../utils/validate-options.js";
 import { trackInstalls } from "../utils/analytics.js";
 import { CODING_AGENTS, getContentPath } from "../config/agents.js";
 import { filterCompatibleAgents } from "../config/compatibility.js";
@@ -105,7 +106,7 @@ function printDryRunSummary(
 
   // Show central location for symlink method
   if (method === "symlink" && item.type === "skill") {
-    const centralPath = getAgentsPath("skill", item.slug, cwd);
+    const centralPath = getAgentsPath("skill", item.slug, scope, cwd);
     console.log(ui.brand("  Central storage:"));
     console.log(`    ${chalk.gray("→")} ${chalk.gray(centralPath)}`);
     console.log();
@@ -165,6 +166,15 @@ export const addCommand = new Command("add")
     try {
       ui.printLogo();
       ui.intro("Seedr");
+
+      const optionError =
+        validateType(options.type) ||
+        validateScope(options.scope) ||
+        validateMethod(options.method);
+      if (optionError) {
+        ui.error(optionError);
+        process.exit(1);
+      }
 
       const itemName = name;
       const contentType = options.type as ComponentType | undefined;
@@ -231,7 +241,7 @@ export const addCommand = new Command("add")
         // Single agent - always use copy (symlink only makes sense for shared central storage)
         method = "copy";
       } else {
-        const symlinkPath = getAgentsPath(item.type, item.slug, process.cwd());
+        const symlinkPath = getAgentsPath(item.type, item.slug, scope, process.cwd());
         const selected = await ui.selectMethod(symlinkPath);
         if (ui.prompts.isCancel(selected)) {
           ui.cancelled();
@@ -260,9 +270,14 @@ export const addCommand = new Command("add")
         }
       }
 
+      // Overwrite an existing destination only when explicitly forced, or when
+      // the user passed through the interactive confirmation above. With
+      // --yes (non-interactive) and no --force, refuse to clobber existing files.
+      const force = Boolean(options.force) || !options.yes;
+
       // Step 6: Install using the handler and print summary
       console.log();
-      const results = await handler.install(item, agents, scope, method, process.cwd());
+      const results = await handler.install(item, agents, scope, method, force, process.cwd());
       trackInstalls(item.slug, item.type, results, scope);
       printInstallSummary(results);
 

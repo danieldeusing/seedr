@@ -39,7 +39,7 @@ describe("trackInstalls", () => {
     expect(body).toEqual({
       slug: "pdf",
       type: "skill",
-      agent: "claude",
+      tool: "claude",
       scope: "project",
       version: "0.1.44",
     });
@@ -55,7 +55,7 @@ describe("trackInstalls", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
-    expect(body.agent).toBe("claude");
+    expect(body.tool).toBe("claude");
   });
 
   it("does nothing when SEEDR_NO_TELEMETRY is set", () => {

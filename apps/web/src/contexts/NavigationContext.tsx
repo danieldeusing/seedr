@@ -15,6 +15,7 @@ import type { ComponentType } from "@/lib/types";
 const CONTENT_TYPES = ["skills", "plugins", "hooks", "agents", "mcps", "settings", "commands"];
 
 interface HistoryEntry {
+  // full URL incl. search params, so back/forward restore filters and ?q=
   path: string;
   state: unknown;
   segments: BreadcrumbSegment[];
@@ -26,16 +27,35 @@ interface HistoryState {
 }
 
 type HistoryAction =
-  | { type: "push"; entry: HistoryEntry }
+  | { type: "upsert"; entry: HistoryEntry }
   | { type: "go"; index: number };
+
+function pathnameOf(path: string): string {
+  return path.split("?")[0]!;
+}
 
 function historyReducer(state: HistoryState, action: HistoryAction): HistoryState {
   switch (action.type) {
-    case "push":
+    case "upsert": {
+      const current = state.entries[state.currentIndex];
+      // Same page (pathname + nav state) with only search/filters changed, or a
+      // StrictMode double-mount: replace the current entry in place instead of
+      // pushing a duplicate, so the latest filters round-trip on back/forward.
+      const samePage =
+        current &&
+        pathnameOf(current.path) === pathnameOf(action.entry.path) &&
+        current.state === action.entry.state;
+      if (samePage) {
+        if (current.path === action.entry.path) return state;
+        const entries = state.entries.slice();
+        entries[state.currentIndex] = action.entry;
+        return { ...state, entries };
+      }
       return {
         entries: [...state.entries.slice(0, state.currentIndex + 1), action.entry].slice(-50),
         currentIndex: Math.min(state.currentIndex + 1, 49),
       };
+    }
     case "go":
       if (action.index < 0 || action.index >= state.entries.length) return state;
       return { ...state, currentIndex: action.index };
@@ -111,7 +131,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const [history, dispatch] = useReducer(historyReducer, { entries: [], currentIndex: -1 });
 
   const segments = buildSegments(location.pathname, location.state, (path) => navigate(path));
-  const locationKey = location.pathname + "|" + ((location.state as { from?: string } | null)?.from ?? "");
+  const locationKey =
+    location.pathname + location.search + "|" + ((location.state as { from?: string } | null)?.from ?? "");
 
   useEffect(() => {
     if (isHistoryNavRef.current) {
@@ -120,9 +141,9 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     }
 
     dispatch({
-      type: "push",
+      type: "upsert",
       entry: {
-        path: location.pathname,
+        path: location.pathname + location.search,
         state: location.state,
         segments: toDisplaySegments(segments),
       },

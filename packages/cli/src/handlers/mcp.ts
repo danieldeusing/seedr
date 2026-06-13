@@ -45,6 +45,7 @@ async function installMcpForAgent(
   agent: CodingAgent,
   scope: InstallScope,
   _method: InstallMethod,
+  force: boolean,
   cwd: string
 ): Promise<InstallResult> {
   const spinner = ora(
@@ -60,6 +61,12 @@ async function installMcpForAgent(
 
     // Initialize mcpServers object if needed
     config.mcpServers = config.mcpServers || {};
+
+    if (!force && mcpDef.name in config.mcpServers) {
+      throw new Error(
+        `MCP server "${mcpDef.name}" already exists in ${configPath}; pass --force to overwrite`
+      );
+    }
 
     // Add or replace the MCP server config
     config.mcpServers[mcpDef.name] = mcpDef.config;
@@ -84,12 +91,13 @@ export async function installMcp(
   agents: CodingAgent[],
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string = process.cwd()
 ): Promise<InstallResult[]> {
   const results: InstallResult[] = [];
 
   for (const agent of agents) {
-    const result = await installMcpForAgent(item, agent, scope, method, cwd);
+    const result = await installMcpForAgent(item, agent, scope, method, force, cwd);
     results.push(result);
   }
 
@@ -138,9 +146,10 @@ export const mcpHandler: ContentHandler = {
     agents: CodingAgent[],
     scope: InstallScope,
     method: InstallMethod,
+    force: boolean,
     cwd?: string
   ): Promise<InstallResult[]> {
-    return installMcp(item, agents, scope, method, cwd);
+    return installMcp(item, agents, scope, method, force, cwd);
   },
 
   async uninstall(

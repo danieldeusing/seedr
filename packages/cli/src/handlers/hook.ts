@@ -8,7 +8,7 @@ import type { RegistryItem } from "@seedr/shared";
 import { brand } from "../utils/ui.js";
 import { getItem, getItemSourcePath, fetchItemToDestination } from "../config/registry.js";
 import { getSettingsPath, CODING_AGENTS } from "../config/agents.js";
-import { exists } from "../utils/fs.js";
+import { exists, assertOverwritable } from "../utils/fs.js";
 import { readJson, writeJson } from "../utils/json.js";
 import type { ContentHandler, InstallResult } from "./types.js";
 
@@ -73,6 +73,7 @@ async function installHookForAgent(
   agent: CodingAgent,
   scope: InstallScope,
   _method: InstallMethod,
+  force: boolean,
   cwd: string
 ): Promise<InstallResult> {
   const spinner = ora(
@@ -102,6 +103,7 @@ async function installHookForAgent(
 
     const sourcePath = getItemSourcePath(item);
     const destScriptPath = join(hooksDir, scriptFile);
+    await assertOverwritable(destScriptPath, force);
 
     if (sourcePath && (await exists(sourcePath))) {
       // Local registry - copy or symlink based on method
@@ -182,12 +184,13 @@ export async function installHook(
   agents: CodingAgent[],
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string = process.cwd()
 ): Promise<InstallResult[]> {
   const results: InstallResult[] = [];
 
   for (const agent of agents) {
-    const result = await installHookForAgent(item, agent, scope, method, cwd);
+    const result = await installHookForAgent(item, agent, scope, method, force, cwd);
     results.push(result);
   }
 
@@ -311,9 +314,10 @@ export const hookHandler: ContentHandler = {
     agents: CodingAgent[],
     scope: InstallScope,
     method: InstallMethod,
+    force: boolean,
     cwd?: string
   ): Promise<InstallResult[]> {
-    return installHook(item, agents, scope, method, cwd);
+    return installHook(item, agents, scope, method, force, cwd);
   },
 
   async uninstall(

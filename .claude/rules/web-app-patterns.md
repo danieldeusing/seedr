@@ -47,12 +47,14 @@ Theming: four themes (warm/green/mono/paper) via CSS variables and `html[data-th
 
 ## Registry Integration
 
-```typescript
-import { fetchManifest, fetchItemContent } from '@/lib/registry'
+The web app imports the per-type `manifest.json` files at build time and assembles them in
+`src/lib/registry.ts`. Access the assembled data synchronously — there is no fetch:
 
-// In route component
-const manifest = await fetchManifest()
-const skills = manifest.skills
+```typescript
+import { getAllItems, getItemsByType } from "@/lib/registry"
+
+const allItems = getAllItems()
+const skills = getItemsByType("skill")
 ```
 
 ## Tailwind Styling

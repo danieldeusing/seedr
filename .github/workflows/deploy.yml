@@ -15,29 +15,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Use npm version of @toolr/ui-design
-        run: |
-          cd apps/web
-          VERSION=$(npm view @toolr/ui-design version)
-          node -e "
-            const pkg = require('./package.json');
-            pkg.dependencies['@toolr/ui-design'] = '^' + '$VERSION';
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build
         env:
@@ -49,8 +39,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          npx wrangler pages project create seedr --production-branch=prod 2>/dev/null || true
-          cd apps/web && npx wrangler pages deploy --commit-dirty=true
+          pnpm exec wrangler pages project create seedr --production-branch=prod 2>/dev/null || true
+          cd apps/web && pnpm exec wrangler pages deploy --commit-dirty=true
 
   publish-cli:
     name: Publish CLI to npm
@@ -62,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Need full history for change detection
 
@@ -70,7 +60,7 @@ jobs:
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: "pnpm"
@@ -78,18 +68,8 @@ jobs:
       - name: Upgrade npm for OIDC support
         run: npm install -g npm@latest && npm --version
 
-      - name: Use npm version of @toolr/ui-design
-        run: |
-          cd apps/web
-          VERSION=$(npm view @toolr/ui-design version)
-          node -e "
-            const pkg = require('./package.json');
-            pkg.dependencies['@toolr/ui-design'] = '^' + '$VERSION';
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Check for CLI/registry changes since last npm release
         id: changes
@@ -97,51 +77,59 @@ jobs:
           NPM_VERSION=$(npm view @danieldeusing/seedr version 2>/dev/null || echo "0.0.0")
           PACKAGE_VERSION=$(node -p "require('./packages/cli/package.json').version")
 
-          # Check if current version matches npm (no manual bump)
-          if [ "$PACKAGE_VERSION" != "$NPM_VERSION" ]; then
-            echo "Version already bumped manually ($PACKAGE_VERSION vs $NPM_VERSION)"
+          # Compare package.json version to the published npm version using semver.
+          # Only treat the package as pre-bumped when it is strictly GREATER than npm.
+          # gt=1 -> package > npm, gt=0 -> package <= npm.
+          GT=$(node -e "
+            const semverGt = (a, b) => {
+              const pa = a.split('.').map(Number);
+              const pb = b.split('.').map(Number);
+              for (let i = 0; i < 3; i++) {
+                if ((pa[i] || 0) > (pb[i] || 0)) return true;
+                if ((pa[i] || 0) < (pb[i] || 0)) return false;
+              }
+              return false;
+            };
+            process.stdout.write(semverGt('$PACKAGE_VERSION', '$NPM_VERSION') ? '1' : '0');
+          ")
+
+          if [ "$GT" = "1" ]; then
+            echo "Version manually bumped ahead of npm ($PACKAGE_VERSION > $NPM_VERSION)"
             echo "needs_bump=false" >> $GITHUB_OUTPUT
             echo "should_publish=true" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Find the commit that last changed the version
+          # package.json <= npm: decide based on whether CLI/registry changed since the
+          # commit that last touched the version. On a single-commit repo this baseline
+          # equals HEAD, so the diff is empty and we cleanly do nothing.
           LAST_VERSION_COMMIT=$(git log -1 --format="%H" -- packages/cli/package.json)
-
-          # Check if CLI or registry files changed since that commit
           CHANGED_FILES=$(git diff --name-only "$LAST_VERSION_COMMIT" HEAD -- packages/cli/ registry/ 2>/dev/null || echo "")
 
           if [ -n "$CHANGED_FILES" ]; then
-            echo "Changes detected in CLI/registry files:"
+            echo "Changes detected in CLI/registry files since $LAST_VERSION_COMMIT:"
             echo "$CHANGED_FILES"
             echo "needs_bump=true" >> $GITHUB_OUTPUT
             echo "should_publish=true" >> $GITHUB_OUTPUT
           else
-            echo "No changes to CLI or registry files"
+            echo "No changes to CLI or registry files since last version commit"
             echo "needs_bump=false" >> $GITHUB_OUTPUT
             echo "should_publish=false" >> $GITHUB_OUTPUT
           fi
+
+          # Expose npm version so the bump step starts from npm, not a stale package.json.
+          echo "npm_version=$NPM_VERSION" >> $GITHUB_OUTPUT
 
       - name: Bump patch version
         if: steps.changes.outputs.needs_bump == 'true'
         working-directory: packages/cli
         run: |
-          # Bump patch version
+          # Bump patch from the published npm version so we never collide with or fall
+          # behind an already-published release.
+          npm version "${{ steps.changes.outputs.npm_version }}" --no-git-tag-version --allow-same-version
           npm version patch --no-git-tag-version
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "Bumped version to $NEW_VERSION"
-
-      - name: Commit version bump
-        if: steps.changes.outputs.needs_bump == 'true'
-        run: |
-          NEW_VERSION=$(node -p "require('./packages/cli/package.json').version")
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add packages/cli/package.json
-          git commit -m "chore(cli): bump version to $NEW_VERSION [skip ci]"
-          # Push to main first, then sync to prod (matches local workflow)
-          git push origin HEAD:main
-          git push origin HEAD:prod
 
       - name: Build
         if: steps.changes.outputs.should_publish == 'true'
@@ -153,3 +141,19 @@ jobs:
         if: steps.changes.outputs.should_publish == 'true'
         working-directory: packages/cli
         run: npm publish --access public
+
+      - name: Commit and push version bump
+        if: steps.changes.outputs.needs_bump == 'true'
+        run: |
+          NEW_VERSION=$(node -p "require('./packages/cli/package.json').version")
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add packages/cli/package.json
+          git commit -m "chore(cli): bump version to $NEW_VERSION [skip ci]"
+          # Publish already happened above, so a push race here cannot block the release.
+          # Rebase onto the latest main/prod before pushing to survive concurrent moves.
+          git fetch origin main prod
+          git rebase origin/main
+          git push origin HEAD:main
+          git rebase origin/prod
+          git push origin HEAD:prod

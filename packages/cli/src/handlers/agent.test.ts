@@ -47,7 +47,7 @@ describe("agent handler", () => {
         sourceType: "toolr",
       };
 
-      const results = await installAgent(item, ["claude"], "project", "copy", "/my/project");
+      const results = await installAgent(item, ["claude"], "project", "copy", true, "/my/project");
 
       expect(results).toHaveLength(1);
       expect(results[0]?.success).toBe(true);
@@ -67,7 +67,7 @@ describe("agent handler", () => {
         compatibility: ["claude"],
       };
 
-      const results = await installAgent(item, ["copilot"], "project", "copy", "/my/project");
+      const results = await installAgent(item, ["copilot"], "project", "copy", true, "/my/project");
 
       expect(results[0]?.success).toBe(false);
       expect(results[0]?.error).toContain("does not support agents");

@@ -11,8 +11,9 @@ import {
   cp,
   rm,
 } from "node:fs/promises";
+import { homedir } from "node:os";
 import { dirname, join, relative, isAbsolute } from "node:path";
-import type { InstallMethod } from "../types.js";
+import type { InstallMethod, InstallScope } from "../types.js";
 
 export async function exists(path: string): Promise<boolean> {
   try {
@@ -25,6 +26,19 @@ export async function exists(path: string): Promise<boolean> {
 
 export async function ensureDir(path: string): Promise<void> {
   await mkdir(path, { recursive: true });
+}
+
+/**
+ * Refuse to overwrite an existing destination unless forced.
+ * Throws a clear error when the path already exists and `force` is false.
+ */
+export async function assertOverwritable(
+  path: string,
+  force: boolean
+): Promise<void> {
+  if (!force && (await exists(path))) {
+    throw new Error(`${path} already exists; pass --force to overwrite`);
+  }
 }
 
 export async function isSymlink(path: string): Promise<boolean> {
@@ -95,13 +109,19 @@ export function resolvePath(path: string, base?: string): string {
 /**
  * Get the central agents path for a content type.
  * Used as the canonical location when symlinking.
+ *
+ * For `user` scope the central store is anchored under the home directory so
+ * the symlink target stays valid regardless of the invocation directory.
+ * Project/local scope anchor under cwd.
  */
 export function getAgentsPath(
   contentType: string,
   slug: string,
+  scope: InstallScope,
   cwd: string
 ): string {
-  return join(cwd, ".agents", contentType + "s", slug);
+  const base = scope === "user" ? homedir() : cwd;
+  return join(base, ".agents", contentType + "s", slug);
 }
 
 /**

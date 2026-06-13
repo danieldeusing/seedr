@@ -15,29 +15,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Use npm version of @toolr/ui-design
-        run: |
-          cd apps/web
-          VERSION=$(npm view @toolr/ui-design version)
-          node -e "
-            const pkg = require('./package.json');
-            pkg.dependencies['@toolr/ui-design'] = '^' + '$VERSION';
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Sync registry
         env:
@@ -79,8 +69,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -m "chore: sync registry from Anthropic"
-          git push origin main
-          git push origin main:prod
+          # Rebase onto the latest branches before pushing to survive concurrent moves.
+          git fetch origin main prod
+          git rebase origin/main
+          git push origin HEAD:main
+          git rebase origin/prod
+          git push origin HEAD:prod
 
       - name: Trigger deploy
         if: steps.changes.outputs.changed == 'true'
@@ -90,7 +84,7 @@ jobs:
 
       - name: Send new items email
         if: steps.changes.outputs.new_items == 'true'
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@6d98ae34d733f9a723a9e04e94f2f24ba05e1402 # v6.x
         with:
           server_address: ${{ secrets.SMTP_HOST }}
           server_port: ${{ secrets.SMTP_PORT }}

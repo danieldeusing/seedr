@@ -5,19 +5,21 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./Tooltip";
 
 // Literal class strings so Tailwind's source scanner generates them.
+// Colors map to per-theme --badge-* variables (defined in index.css) so they
+// stay legible on both the light (warm/paper) and dark (green/mono) themes.
 const colorClasses: Record<BadgeColor, string> = {
-  neutral: "border-neutral-500/50 text-neutral-500",
-  green: "border-green-500/50 text-green-500",
-  red: "border-red-500/50 text-red-500",
-  blue: "border-blue-500/50 text-blue-500",
-  orange: "border-orange-500/50 text-orange-500",
-  purple: "border-purple-500/50 text-purple-500",
+  neutral: "border-border text-muted-foreground",
+  green: "border-(--badge-green)/50 text-(--badge-green)",
+  red: "border-(--badge-red)/50 text-(--badge-red)",
+  blue: "border-(--badge-blue)/50 text-(--badge-blue)",
+  orange: "border-(--badge-orange)/50 text-(--badge-orange)",
+  purple: "border-(--badge-purple)/50 text-(--badge-purple)",
   amber: "border-(--badge-amber)/50 text-(--badge-amber)",
-  emerald: "border-emerald-500/50 text-emerald-500",
-  indigo: "border-indigo-500/50 text-indigo-500",
-  teal: "border-teal-500/50 text-teal-500",
-  violet: "border-violet-500/50 text-violet-500",
-  pink: "border-pink-500/50 text-pink-500",
+  emerald: "border-(--badge-emerald)/50 text-(--badge-emerald)",
+  indigo: "border-(--badge-indigo)/50 text-(--badge-indigo)",
+  teal: "border-(--badge-teal)/50 text-(--badge-teal)",
+  violet: "border-(--badge-violet)/50 text-(--badge-violet)",
+  pink: "border-(--badge-pink)/50 text-(--badge-pink)",
 };
 
 interface LabelProps {

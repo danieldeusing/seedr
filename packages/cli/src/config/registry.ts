@@ -1,4 +1,5 @@
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
@@ -11,11 +12,63 @@ import type {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Local registry path (for development)
-const REGISTRY_PATH = join(__dirname, "../../../../registry");
+// Timeout for all network requests to the registry.
+const FETCH_TIMEOUT_MS = 15_000;
+
+/**
+ * Walk up from a starting directory to find this package's root — the directory
+ * containing its package.json. This is reliable under both `tsx` (where source
+ * lives in src/config/) and the tsup bundle (where code is flat in dist/).
+ */
+function findPackageRoot(startDir: string): string | null {
+  let dir = startDir;
+  for (;;) {
+    if (existsSync(join(dir, "package.json"))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+
+/**
+ * Resolve the local registry directory relative to THIS package's root, not the
+ * consumer's project root. The monorepo registry is a sibling of `packages/`, so
+ * from `<repo>/packages/cli` it lives at `../../registry`. When the CLI is
+ * installed from npm (only `dist/` is shipped), this path won't exist and lookups
+ * fall back to the remote registry. The manifest-shape check in `loadIndex`
+ * guards against trusting any unrelated `registry/manifest.json`.
+ */
+function resolveLocalRegistryPath(): string | null {
+  const packageRoot = findPackageRoot(__dirname);
+  if (!packageRoot) return null;
+  return join(packageRoot, "..", "..", "registry");
+}
+
+// Local registry path (for development); null when running outside the monorepo.
+const REGISTRY_PATH = resolveLocalRegistryPath();
 
 // Remote registry URL (GitHub raw content)
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main/registry";
+
+const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+
+/**
+ * Validate an item slug before using it in filesystem path joins.
+ */
+function assertValidSlug(slug: string): void {
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new Error(`Invalid item slug: "${slug}"`);
+  }
+}
+
+/**
+ * Reject file-tree node names that could escape the destination directory.
+ */
+function assertSafeNodeName(name: string): void {
+  if (name.includes("/") || name.includes("\\") || name.includes("..")) {
+    throw new Error(`Unsafe file name in registry content: "${name}"`);
+  }
+}
 
 const cache = {
   index: null as RegistryManifestIndex | null,
@@ -23,26 +76,85 @@ const cache = {
   assembled: null as RegistryManifest | null,
 };
 
-async function loadFile(filename: string): Promise<string> {
-  try {
-    return await readFile(join(REGISTRY_PATH, filename), "utf-8");
-  } catch {
-    return fetchRemote(`${GITHUB_RAW_URL}/${filename}`);
-  }
+/**
+ * Map a component type to its registry folder name.
+ * Most types are pluralized with a trailing "s", but `mcp` and `settings`
+ * live in unsuffixed folders.
+ */
+function typeDirName(type: ComponentType): string {
+  if (type === "mcp" || type === "settings") return type;
+  return `${type}s`;
 }
 
-async function fetchRemote(url: string): Promise<string> {
-  const response = await fetch(url);
+/**
+ * A local registry manifest is only trustworthy if it has the expected shape
+ * (a `types` index). A consumer project may happen to contain an unrelated
+ * `registry/manifest.json`, so without this check we could misparse it.
+ */
+function isValidManifestIndex(value: unknown): value is RegistryManifestIndex {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as RegistryManifestIndex).types === "object" &&
+    (value as RegistryManifestIndex).types !== null
+  );
+}
+
+async function loadFile(filename: string): Promise<string> {
+  if (REGISTRY_PATH) {
+    try {
+      return await readFile(join(REGISTRY_PATH, filename), "utf-8");
+    } catch {
+      // Local not available — fall through to remote fetch
+    }
+  }
+  return fetchRemote(`${GITHUB_RAW_URL}/${filename}`);
+}
+
+async function fetchResponse(url: string): Promise<Response> {
+  let response: Response;
+  try {
+    response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new Error(`Registry unreachable: timed out fetching ${url}`, { cause: error });
+    }
+    throw new Error(`Registry unreachable: ${url}`, { cause: error });
+  }
   if (!response.ok) {
     throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
   }
+  return response;
+}
+
+async function fetchRemote(url: string): Promise<string> {
+  const response = await fetchResponse(url);
   return response.text();
+}
+
+async function fetchRemoteBuffer(url: string): Promise<Buffer> {
+  const response = await fetchResponse(url);
+  return Buffer.from(await response.arrayBuffer());
 }
 
 async function loadIndex(): Promise<RegistryManifestIndex> {
   if (cache.index) return cache.index;
 
-  const content = await loadFile("manifest.json");
+  // Prefer the local manifest, but only trust it if it has the expected shape.
+  if (REGISTRY_PATH) {
+    try {
+      const localContent = await readFile(join(REGISTRY_PATH, "manifest.json"), "utf-8");
+      const parsed: unknown = JSON.parse(localContent);
+      if (isValidManifestIndex(parsed)) {
+        cache.index = parsed;
+        return parsed;
+      }
+    } catch {
+      // Local missing or unparseable — fall through to remote.
+    }
+  }
+
+  const content = await fetchRemote(`${GITHUB_RAW_URL}/manifest.json`);
   const data = JSON.parse(content) as RegistryManifestIndex;
   cache.index = data;
   return data;
@@ -109,7 +221,8 @@ export async function searchItems(query: string): Promise<RegistryItem[]> {
  * such as contents and longDescription).
  */
 export async function getItemFull(item: RegistryItem): Promise<RegistryItem> {
-  const typeDir = item.type + "s";
+  assertValidSlug(item.slug);
+  const typeDir = typeDirName(item.type);
   const itemJsonPath = `${typeDir}/${item.slug}/item.json`;
   const content = await loadFile(itemJsonPath);
   return JSON.parse(content) as RegistryItem;
@@ -132,9 +245,10 @@ function getItemBaseUrl(item: RegistryItem): { local: string | null; remote: str
   }
 
   // For local/toolr items, use the local registry path
-  const typeDir = item.type + "s";
+  assertValidSlug(item.slug);
+  const typeDir = typeDirName(item.type);
   return {
-    local: join(REGISTRY_PATH, typeDir, item.slug),
+    local: REGISTRY_PATH ? join(REGISTRY_PATH, typeDir, item.slug) : null,
     remote: `${GITHUB_RAW_URL}/${typeDir}/${item.slug}`,
   };
 }
@@ -171,7 +285,13 @@ export function getItemSourcePath(item: RegistryItem): string | null {
     return null;
   }
 
-  const typeDir = item.type + "s";
+  // No local registry available (e.g. installed from npm).
+  if (!REGISTRY_PATH) {
+    return null;
+  }
+
+  assertValidSlug(item.slug);
+  const typeDir = typeDirName(item.type);
   return join(REGISTRY_PATH, typeDir, item.slug);
 }
 
@@ -246,15 +366,17 @@ export async function fetchItemToDestination(
   await mkdir(destPath, { recursive: true });
 
   await Promise.all(filesToFetch.map(async (file) => {
-    const content = await fetchRemote(`${remote}/${file}`);
+    const content = await fetchRemoteBuffer(`${remote}/${file}`);
     const filePath = join(destPath, file);
     await mkdir(dirname(filePath), { recursive: true });
-    await writeFile(filePath, content, "utf-8");
+    await writeFile(filePath, content);
   }));
 }
 
 /**
  * Recursively fetch files from a remote file tree to a local destination.
+ * Content is written via Buffer so binary assets (images, fonts) are not
+ * corrupted by a utf-8 round-trip.
  */
 async function fetchFileTree(
   nodes: { name: string; type: string; children?: { name: string; type: string; children?: any[] }[] }[],
@@ -262,6 +384,7 @@ async function fetchFileTree(
   destPath: string
 ): Promise<void> {
   await Promise.all(nodes.map(async (node) => {
+    assertSafeNodeName(node.name);
     const nodePath = join(destPath, node.name);
 
     if (node.type === "directory") {
@@ -270,8 +393,8 @@ async function fetchFileTree(
         await fetchFileTree(node.children, `${baseUrl}/${node.name}`, nodePath);
       }
     } else {
-      const content = await fetchRemote(`${baseUrl}/${node.name}`);
-      await writeFile(nodePath, content, "utf-8");
+      const content = await fetchRemoteBuffer(`${baseUrl}/${node.name}`);
+      await writeFile(nodePath, content);
     }
   }));
 }

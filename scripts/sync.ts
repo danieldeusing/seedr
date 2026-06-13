@@ -17,26 +17,21 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { syncAnthropic } from "./sync/anthropic.js";
 import { syncCommunity } from "./sync/community.js";
-import { compileManifest, readAllItems } from "./compile-manifest.js";
+import { compileManifest, readAllItems, typeDirName } from "./compile-manifest.js";
 import type { ManifestItem } from "./sync/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const registryDir = join(__dirname, "..", "registry");
 
-function pluralizeType(type: string): string {
-  if (type === "settings") return "settings";
-  return type + "s";
-}
-
 function writeItem(item: ManifestItem): void {
-  const typeDir = pluralizeType(item.type);
+  const typeDir = typeDirName(item.type);
   const itemDir = join(registryDir, typeDir, item.slug);
   mkdirSync(itemDir, { recursive: true });
   writeFileSync(join(itemDir, "item.json"), JSON.stringify(item, null, 2) + "\n");
 }
 
 function deleteItemDir(item: ManifestItem): void {
-  const typeDir = pluralizeType(item.type);
+  const typeDir = typeDirName(item.type);
   const itemDir = join(registryDir, typeDir, item.slug);
   if (!existsSync(itemDir)) return;
 

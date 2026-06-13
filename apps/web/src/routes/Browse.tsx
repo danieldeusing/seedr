@@ -41,6 +41,14 @@ const sortFields: SortField[] = [
   { value: "updated", label: "Updated" },
 ];
 
+/** Returns the raw param only if it matches one of the allowed option values, else null. */
+function pickValid<T extends string>(
+  raw: string | null,
+  allowed: readonly { value: string }[]
+): T | null {
+  return raw && allowed.some((o) => o.value === raw) ? (raw as T) : null;
+}
+
 function sortItems(items: RegistryItem[], field: string, ascending: boolean): RegistryItem[] {
   return [...items].sort((a, b) => {
     let cmp: number;
@@ -66,15 +74,16 @@ export function Browse() {
 
   const isPlugins = componentType === "plugin";
 
-  // Read state from URL search params
+  // Read state from URL search params, validating against known values so a
+  // hand-edited URL (?tool=garbage) doesn't render a bogus active filter.
   const query = searchParams.get("q") ?? "";
-  const toolFilter = (searchParams.get("tool") as CodingAgent | null);
-  const sourceFilter = (searchParams.get("source") as SourceType | null);
-  const scopeFilter = (searchParams.get("scope") as ScopeType | null);
-  const pluginTypeFilter = (searchParams.get("pluginType") as PluginType | null);
-  const capabilityFilter = (searchParams.get("ext") as CapabilityType | null);
-  const kindFilter = (searchParams.get("kind") as ItemKind | null);
-  const sortField = searchParams.get("sortField") ?? "name";
+  const toolFilter = pickValid<CodingAgent>(searchParams.get("tool"), agentOptions);
+  const sourceFilter = pickValid<SourceType>(searchParams.get("source"), sourceOptions);
+  const scopeFilter = pickValid<ScopeType>(searchParams.get("scope"), scopeOptions);
+  const pluginTypeFilter = pickValid<PluginType>(searchParams.get("pluginType"), pluginTypeOptions);
+  const capabilityFilter = pickValid<CapabilityType>(searchParams.get("ext"), capabilityOptions);
+  const kindFilter = pickValid<ItemKind>(searchParams.get("kind"), kindOptions);
+  const sortField = pickValid<string>(searchParams.get("sortField"), sortFields) ?? "name";
   const sortAsc = searchParams.get("sortAsc") !== "false";
 
   const toParam = (value: string) => (value && value !== "all") ? value : null;

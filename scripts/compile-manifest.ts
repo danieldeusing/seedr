@@ -24,6 +24,28 @@ const SOURCE_ORDER: Record<SourceType, number> = {
   official: 2,
 };
 
+export const ALL_TYPES: ComponentType[] = ["skill", "plugin", "hook", "agent", "mcp", "settings", "command"];
+const KNOWN_TYPES = new Set<string>(ALL_TYPES);
+const KNOWN_SOURCE_TYPES = new Set<string>(Object.keys(SOURCE_ORDER));
+
+/** Folder name for a type: plural except `mcp` and `settings`, which are used as-is. */
+export function typeDirName(type: ComponentType): string {
+  return type === "settings" || type === "mcp" ? type : type + "s";
+}
+
+/** Throws with the offending file path if the item has an unknown slug/type/sourceType. */
+function validateItem(item: ManifestItem, itemJsonPath: string): void {
+  if (typeof item.slug !== "string" || item.slug.length === 0) {
+    throw new Error(`Invalid item in ${itemJsonPath}: missing or empty "slug"`);
+  }
+  if (!KNOWN_TYPES.has(item.type)) {
+    throw new Error(`Invalid item in ${itemJsonPath}: unknown type "${item.type}" (expected one of ${[...KNOWN_TYPES].join(", ")})`);
+  }
+  if (!KNOWN_SOURCE_TYPES.has(item.sourceType)) {
+    throw new Error(`Invalid item in ${itemJsonPath}: unknown sourceType "${item.sourceType}" (expected one of ${[...KNOWN_SOURCE_TYPES].join(", ")})`);
+  }
+}
+
 function collectFiles(dir: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -66,7 +88,13 @@ export function readAllItems(): ManifestItem[] {
       if (!existsSync(itemJsonPath)) continue;
 
       const content = readFileSync(itemJsonPath, "utf-8");
-      const item = JSON.parse(content) as ManifestItem;
+      let item: ManifestItem;
+      try {
+        item = JSON.parse(content) as ManifestItem;
+      } catch (err) {
+        throw new Error(`Failed to parse ${itemJsonPath}: ${(err as Error).message}`);
+      }
+      validateItem(item, itemJsonPath);
 
       // Compute content hash for toolr items from local files
       if (item.sourceType === "toolr") {
@@ -83,12 +111,6 @@ export function readAllItems(): ManifestItem[] {
   return items;
 }
 
-const ALL_TYPES: ComponentType[] = ["skill", "plugin", "hook", "agent", "mcp", "settings", "command"];
-
-function typeDirName(type: ComponentType): string {
-  return type === "settings" || type === "mcp" ? type : type + "s";
-}
-
 function typeManifestPath(type: ComponentType): string {
   return `${typeDirName(type)}/manifest.json`;
 }
@@ -96,9 +118,12 @@ function typeManifestPath(type: ComponentType): string {
 export function compileManifest(): Manifest {
   const items = readAllItems();
 
-  // Sort: by sourceType order, then alphabetically by slug
+  // Sort: by sourceType order, then alphabetically by slug.
+  // Fall back to a high order for any unknown sourceType so the comparison never
+  // produces NaN (which would leave the sort order undefined).
+  const sourceOrder = (sourceType: SourceType): number => SOURCE_ORDER[sourceType] ?? Number.MAX_SAFE_INTEGER;
   items.sort((a, b) => {
-    const orderDiff = SOURCE_ORDER[a.sourceType] - SOURCE_ORDER[b.sourceType];
+    const orderDiff = sourceOrder(a.sourceType) - sourceOrder(b.sourceType);
     if (orderDiff !== 0) return orderDiff;
     return a.slug.localeCompare(b.slug);
   });

@@ -129,4 +129,5 @@ Both workflows can be triggered manually from GitHub Actions:
 | `scripts/sync/community.ts` | Community item re-sync logic |
 | `scripts/sync/types.ts` | Shared types for sync scripts |
 | `scripts/sync/utils.ts` | Shared utilities (GitHub API, file trees) |
-| `registry/manifest.json` | Registry index (source of truth) |
+| `registry/*/*/item.json` | Per-item source of truth (editable) |
+| `registry/manifest.json` | Generated registry index (compiled from `item.json` files) |

@@ -53,7 +53,7 @@ describe("skill handler", () => {
         sourceType: "toolr",
       };
 
-      const results = await installSkill(item, ["claude"], "project", "copy", "/my/project");
+      const results = await installSkill(item, ["claude"], "project", "copy", true, "/my/project");
 
       expect(results).toHaveLength(1);
       expect(results[0]?.success).toBe(true);
@@ -78,6 +78,7 @@ describe("skill handler", () => {
         ["claude", "copilot"],
         "project",
         "copy",
+        true,
         "/my/project"
       );
 
@@ -97,7 +98,7 @@ describe("skill handler", () => {
         sourceType: "toolr",
       };
 
-      const results = await installSkill(item, ["claude"], "project", "symlink", "/my/project");
+      const results = await installSkill(item, ["claude"], "project", "symlink", true, "/my/project");
 
       expect(results[0]?.success).toBe(true);
 
@@ -126,6 +127,7 @@ describe("skill handler", () => {
         ["claude", "copilot"],
         "project",
         "symlink",
+        true,
         "/my/project"
       );
 
@@ -159,6 +161,7 @@ describe("skill handler", () => {
         ["claude", "gemini", "codex", "opencode"],
         "project",
         "symlink",
+        true,
         "/my/project"
       );
 

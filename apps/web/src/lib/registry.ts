@@ -11,7 +11,8 @@ import mcpData from "@registry/mcp/manifest.json";
 import settingsData from "@registry/settings/manifest.json";
 import commandsData from "@registry/commands/manifest.json";
 
-// Dev-only test item for testing media previews (uses local files in /public/dev-samples/)
+// Dev-only test item for testing media previews (served from apps/web/dev-samples
+// by the vite dev middleware; kept out of public/ so it isn't deployed)
 const devTestItem: RegistryItem = {
   slug: "media-preview-test",
   name: "Media Preview Test",
@@ -54,10 +55,6 @@ const baseManifest: RegistryManifest = {
 const manifest: RegistryManifest = import.meta.env.DEV
   ? { ...baseManifest, items: [devTestItem, ...baseManifest.items] }
   : baseManifest;
-
-export function getManifest(): RegistryManifest {
-  return manifest;
-}
 
 export function getAllItems(): RegistryItem[] {
   return manifest.items;
@@ -133,14 +130,6 @@ export async function getLongDescription(slug: string, type?: ComponentType): Pr
 export async function getFileTree(slug: string, type?: ComponentType): Promise<FileTreeNode[] | undefined> {
   const item = await loadItemJson(slug, type);
   return item?.contents?.files;
-}
-
-export function getFeaturedItems(): RegistryItem[] {
-  return manifest.items.filter((item) => item.featured);
-}
-
-export function getTypeCount(type: ComponentType): number {
-  return getItemsByType(type).length;
 }
 
 // Computed once at module level since manifest data is static (bundled at build time)

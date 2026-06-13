@@ -192,7 +192,7 @@ export function Home() {
                 <Link
                   key={type}
                   to={`/${typeToPath[type]}`}
-                  className="bg-surface border border-overlay rounded-lg p-3 text-center hover:border-overlay-hover hover:bg-active transition-all group"
+                  className="bg-surface border border-overlay p-3 text-center hover:border-overlay-hover hover:bg-active transition-colors group"
                 >
                   <Icon className={`w-8 h-8 mx-auto mb-3 ${typeTextColors[type]} opacity-60 group-hover:opacity-100 transition-opacity`} />
                   <div className="text-lg font-bold text-text mb-1">

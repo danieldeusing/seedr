@@ -22,7 +22,7 @@ export function Card({
 
   return (
     <div
-      className={`bg-surface border border-overlay rounded-lg p-3 transition-colors ${hoverStyles} ${typeStyles} ${className}`}
+      className={`bg-surface border border-overlay p-3 transition-colors ${hoverStyles} ${typeStyles} ${className}`}
       {...props}
     >
       {children}

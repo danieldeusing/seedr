@@ -16,6 +16,7 @@ import {
   copyDirectory,
   ensureDir,
   getAgentsPath,
+  assertOverwritable,
 } from "../utils/fs.js";
 import type { ContentHandler, InstallResult } from "./types.js";
 
@@ -26,10 +27,13 @@ import type { ContentHandler, InstallResult } from "./types.js";
 async function installToCentralLocation(
   item: RegistryItem,
   sourcePath: string | null,
+  scope: InstallScope,
+  force: boolean,
   cwd: string
 ): Promise<string> {
-  const centralPath = getAgentsPath("skill", item.slug, cwd);
+  const centralPath = getAgentsPath("skill", item.slug, scope, cwd);
 
+  await assertOverwritable(centralPath, force);
   await rm(centralPath, { recursive: true, force: true });
 
   // Copy from local or fetch from remote
@@ -63,6 +67,7 @@ async function installSkillForAgent(
   agent: CodingAgent,
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string,
   centralPath?: string
 ): Promise<InstallResult> {
@@ -77,6 +82,7 @@ async function installSkillForAgent(
     }
 
     const destPath = join(destDir, item.slug);
+    await assertOverwritable(destPath, force);
     const sourcePath = getItemSourcePath(item);
 
     if (method === "symlink" && centralPath) {
@@ -108,6 +114,7 @@ export async function installSkill(
   agents: CodingAgent[],
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string = process.cwd()
 ): Promise<InstallResult[]> {
   const results: InstallResult[] = [];
@@ -116,7 +123,7 @@ export async function installSkill(
   // For symlink mode, first install to central .agents location
   let centralPath: string | undefined;
   if (method === "symlink") {
-    centralPath = await installToCentralLocation(item, sourcePath, cwd);
+    centralPath = await installToCentralLocation(item, sourcePath, scope, force, cwd);
   }
 
   for (const agent of agents) {
@@ -134,6 +141,7 @@ export async function installSkill(
       agent,
       scope,
       method,
+      force,
       cwd,
       centralPath
     );
@@ -187,9 +195,10 @@ export const skillHandler: ContentHandler = {
     agents: CodingAgent[],
     scope: InstallScope,
     method: InstallMethod,
+    force: boolean,
     cwd?: string
   ): Promise<InstallResult[]> {
-    return installSkill(item, agents, scope, method, cwd);
+    return installSkill(item, agents, scope, method, force, cwd);
   },
 
   async uninstall(

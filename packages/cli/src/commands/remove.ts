@@ -9,6 +9,7 @@ import { parseAgentsArg } from "../utils/detection.js";
 import { promptConfirm } from "../utils/prompts.js";
 import { getHandler } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
+import { validateScope, validateType } from "../utils/validate-options.js";
 
 // Ensure handlers are registered
 import "../handlers/index.js";
@@ -66,12 +67,18 @@ export const removeCommand = new Command("remove")
   )
   .option(
     "--scope <scope>",
-    "Installation scope: project, user, or global",
+    "Installation scope: project, user, or local",
     "project"
   )
   .option("-y, --yes", "Skip confirmation prompts")
   .action(async (name, options) => {
     try {
+      const optionError = validateScope(options.scope) || validateType(options.type);
+      if (optionError) {
+        console.log(chalk.red(optionError));
+        process.exit(1);
+      }
+
       const scope: InstallScope = options.scope;
       const type: ComponentType | undefined = options.type;
 

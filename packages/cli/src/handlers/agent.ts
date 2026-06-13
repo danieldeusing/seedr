@@ -7,7 +7,7 @@ import type { RegistryItem } from "@seedr/shared";
 import { brand } from "../utils/ui.js";
 import { getItemContent, getItemSourcePath } from "../config/registry.js";
 import { getContentPath, CODING_AGENTS } from "../config/agents.js";
-import { exists, ensureDir, writeTextFile, installFile, removeFile } from "../utils/fs.js";
+import { exists, ensureDir, writeTextFile, installFile, removeFile, assertOverwritable } from "../utils/fs.js";
 import type { ContentHandler, InstallResult } from "./types.js";
 
 async function installAgentForCodingAgent(
@@ -15,6 +15,7 @@ async function installAgentForCodingAgent(
   agent: CodingAgent,
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string
 ): Promise<InstallResult> {
   const spinner = ora(
@@ -28,6 +29,7 @@ async function installAgentForCodingAgent(
     }
 
     const destPath = join(destDir, `${item.slug}.md`);
+    await assertOverwritable(destPath, force);
     const sourcePath = getItemSourcePath(item);
 
     // Try symlink for local toolr items, otherwise copy
@@ -65,12 +67,13 @@ export async function installAgent(
   agents: CodingAgent[],
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string = process.cwd()
 ): Promise<InstallResult[]> {
   const results: InstallResult[] = [];
 
   for (const agent of agents) {
-    const result = await installAgentForCodingAgent(item, agent, scope, method, cwd);
+    const result = await installAgentForCodingAgent(item, agent, scope, method, force, cwd);
     results.push(result);
   }
 
@@ -122,9 +125,10 @@ export const agentHandler: ContentHandler = {
     agents: CodingAgent[],
     scope: InstallScope,
     method: InstallMethod,
+    force: boolean,
     cwd?: string
   ): Promise<InstallResult[]> {
-    return installAgent(item, agents, scope, method, cwd);
+    return installAgent(item, agents, scope, method, force, cwd);
   },
 
   async uninstall(

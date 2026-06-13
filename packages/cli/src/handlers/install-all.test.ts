@@ -136,7 +136,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("skill")) {
       it(`${item.slug} (${item.sourceType})`, async () => {
         const { installSkill } = await import("./skill.js");
-        const results = await installSkill(item, ["claude"], "project", "copy", "/test/project");
+        const results = await installSkill(item, ["claude"], "project", "copy", true, "/test/project");
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -146,7 +146,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("plugin")) {
       it(`${item.slug} (${item.sourceType})`, async () => {
         const { installPlugin } = await import("./plugin.js");
-        const results = await installPlugin(item, ["claude"], "project", "copy", "/test/project");
+        const results = await installPlugin(item, ["claude"], "project", "copy", true, "/test/project");
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -156,7 +156,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("agent")) {
       it(`${item.slug} (${item.sourceType})`, async () => {
         const { installAgent } = await import("./agent.js");
-        const results = await installAgent(item, ["claude"], "project", "copy", "/test/project");
+        const results = await installAgent(item, ["claude"], "project", "copy", true, "/test/project");
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -166,7 +166,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("hook")) {
       it(`${item.slug} (${item.sourceType})`, async () => {
         const { installHook } = await import("./hook.js");
-        const results = await installHook(item, ["claude"], "project", "copy", "/test/project");
+        const results = await installHook(item, ["claude"], "project", "copy", true, "/test/project");
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -176,7 +176,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("mcp")) {
       it(`${item.slug} (${item.sourceType})`, async () => {
         const { installMcp } = await import("./mcp.js");
-        const results = await installMcp(item, ["claude"], "project", "copy", "/test/project");
+        const results = await installMcp(item, ["claude"], "project", "copy", true, "/test/project");
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -186,7 +186,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("settings")) {
       it(`${item.slug} (${item.sourceType})`, async () => {
         const { installSettings } = await import("./settings.js");
-        const results = await installSettings(item, ["claude"], "project", "copy", "/test/project");
+        const results = await installSettings(item, ["claude"], "project", "copy", true, "/test/project");
         expect(results[0]?.success).toBe(true);
       });
     }

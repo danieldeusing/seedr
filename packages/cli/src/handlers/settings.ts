@@ -28,6 +28,7 @@ async function installSettingsForAgent(
   agent: CodingAgent,
   scope: InstallScope,
   _method: InstallMethod,
+  _force: boolean,
   cwd: string
 ): Promise<InstallResult> {
   const spinner = ora(
@@ -68,12 +69,13 @@ export async function installSettings(
   agents: CodingAgent[],
   scope: InstallScope,
   method: InstallMethod,
+  force: boolean,
   cwd: string = process.cwd()
 ): Promise<InstallResult[]> {
   const results: InstallResult[] = [];
 
   for (const agent of agents) {
-    const result = await installSettingsForAgent(item, agent, scope, method, cwd);
+    const result = await installSettingsForAgent(item, agent, scope, method, force, cwd);
     results.push(result);
   }
 
@@ -188,9 +190,10 @@ export const settingsHandler: ContentHandler = {
     agents: CodingAgent[],
     scope: InstallScope,
     method: InstallMethod,
+    force: boolean,
     cwd?: string
   ): Promise<InstallResult[]> {
-    return installSettings(item, agents, scope, method, cwd);
+    return installSettings(item, agents, scope, method, force, cwd);
   },
 
   async uninstall(

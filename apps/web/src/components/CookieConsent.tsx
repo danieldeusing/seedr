@@ -10,11 +10,19 @@ export function CookieConsent() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) setIsVisible(true);
+    try {
+      if (!localStorage.getItem(STORAGE_KEY)) setIsVisible(true);
+    } catch {
+      /* localStorage unavailable (Safari private mode) — don't block the page */
+    }
   }, []);
 
   const handleConsent = (choice: ConsentChoice) => {
-    localStorage.setItem(STORAGE_KEY, choice);
+    try {
+      localStorage.setItem(STORAGE_KEY, choice);
+    } catch {
+      /* ignore write failures; dismissing is more important than persisting */
+    }
     setIsVisible(false);
   };
 

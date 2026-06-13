@@ -55,17 +55,6 @@ export function pathToType(path: string): ComponentType {
   return (path === "settings" ? "settings" : path.replace(/s$/, "")) as ComponentType;
 }
 
-// Type to badge color mapping (matching configr's capabilityColors)
-export const typeToBadgeColor: Record<ComponentType, BadgeColor> = {
-  skill: "pink",
-  command: "amber",
-  hook: "purple",
-  agent: "blue",
-  mcp: "teal",
-  settings: "orange",
-  plugin: "indigo",
-};
-
 // Type border colors for card indicators (using -500 to match configr)
 export const typeBorderColors: Record<ComponentType, string> = {
   skill: "border-l-pink-500",
@@ -130,15 +119,6 @@ export const agentLabels: Record<CodingAgent, string> = {
   opencode: "OpenCode",
 };
 
-// Coding agent badge colors
-export const agentToBadgeColor: Record<CodingAgent, BadgeColor> = {
-  claude: "orange",
-  copilot: "green",
-  gemini: "blue",
-  codex: "emerald",
-  opencode: "purple",
-};
-
 // Scope to badge color mapping (matches configr)
 export const scopeToBadgeColor: Record<ScopeType, BadgeColor> = {
   user: "emerald",
@@ -150,13 +130,6 @@ export const scopeLabels: Record<ScopeType, string> = {
   user: "User",
   project: "Project",
   local: "Local",
-};
-
-// Plugin type labels and colors
-export const pluginTypeLabels: Record<string, string> = {
-  package: "Package",
-  wrapper: "Wrapper",
-  integration: "Integration",
 };
 
 export const pluginTypeToBadgeColor: Record<"package" | "wrapper" | "integration", BadgeColor> = {

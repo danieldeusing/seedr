@@ -4,80 +4,105 @@ paths:
   - .claude/skills/**
   - packages/cli/src/config/registry.ts
   - apps/web/src/lib/registry.ts
+  - scripts/compile-manifest.ts
+  - scripts/sync.ts
 ---
 
 # Registry Structure
 
+## Source of Truth
+
+Each item's editable source of truth is a single `item.json` file. Running `pnpm compile`
+(`scripts/compile-manifest.ts`) reads every `item.json` and assembles the index and per-type
+manifests. The `manifest.json` files are **generated** — never hand-edit them.
+
 ## Directory Layout
 
 ```
-registry/                    # Published registry (fetched by CLI)
-├── manifest.json            # Index of all available items
-└── skills/<slug>/           # Skill source files
-    ├── SKILL.md             # Main skill definition
-    └── references/          # Supporting reference files
+registry/
+├── manifest.json              # Generated index: version + per-type { file, count }
+├── skills/
+│   ├── manifest.json          # Generated: all skill items
+│   └── <slug>/
+│       ├── item.json          # Source of truth for one item
+│       ├── SKILL.md           # Skill content (toolr items only)
+│       └── references/        # Supporting files (toolr items only)
+├── plugins/                   # Plugin item.json files + manifest.json
+├── hooks/                     # Hook content + item.json + manifest.json
+├── agents/                    # manifest.json (may be empty)
+├── mcp/                       # manifest.json (note: NOT "mcps")
+├── settings/                  # manifest.json (note: NOT "settingss")
+└── commands/                  # manifest.json
 
-.claude/skills/              # Local skill definitions (dev)
-├── lint-doctor/
-├── claude-md-doctor/
-└── ...
+.claude/skills/                # Local dev skill definitions (not the published registry)
 ```
 
-## Manifest Format
+Folder names are the type name pluralized, **except** `mcp` and `settings`, which are used
+as-is. `scripts/compile-manifest.ts` and `scripts/sync.ts` share a `typeDirName()` helper for
+this — use it rather than appending `s` by hand.
+
+## Manifest Format (v2.0.0)
+
+Three kinds of generated files:
+
+**`registry/manifest.json`** — lightweight index, never contains item data:
 
 ```json
 {
-  "version": "1.0.0",
-  "skills": [
-    {
-      "name": "rust-skills",
-      "description": "Rust development best practices",
-      "version": "1.0.0",
-      "author": "toolr",
-      "compatibility": ["claude"],
-      "path": "skills/rust-skills"
-    }
-  ],
-  "agents": [],
-  "hooks": [],
-  "mcp": []
+  "version": "2.0.0",
+  "types": {
+    "skill": { "file": "skills/manifest.json", "count": 37 },
+    "plugin": { "file": "plugins/manifest.json", "count": 66 },
+    "hook": { "file": "hooks/manifest.json", "count": 3 },
+    "agent": { "file": "agents/manifest.json", "count": 0 }
+  }
 }
 ```
 
-## Skill File Structure
+**`registry/<type>/manifest.json`** — all items of one type:
 
-Each skill directory contains:
-
-| File | Required | Purpose |
-|------|----------|---------|
-| `SKILL.md` | Yes | Main skill definition |
-| `references/*.md` | No | Supporting reference docs |
-| `metadata.json` | No | Extended metadata |
-
-## Registry Client
-
-Both CLI and web use a shared registry client pattern:
-
-```typescript
-// Load manifest
-const manifest = await fetchManifest()
-
-// Get item by name
-const skill = manifest.skills.find(s => s.name === name)
-
-// Get item content
-const content = await fetchItemContent(skill.path)
+```json
+{
+  "type": "skill",
+  "items": [{ "slug": "pdf", "name": "PDF", "type": "skill", "sourceType": "toolr", ... }]
+}
 ```
 
-## Adding New Items
+Per-type manifests strip `longDescription` (loaded on demand from `item.json`), and plugin
+manifests also strip `contents`.
 
-1. Create directory under appropriate category
-2. Add main content file (CLAUDE.md for skills)
-3. Update manifest.json with entry
-4. (Optional) Add metadata.json for extended info
+## `item.json` Fields
 
-## Development vs Production
+| Field | Required | Notes |
+|-------|----------|-------|
+| `slug` | Yes | Directory name; unique per type |
+| `name` | Yes | Display name |
+| `type` | Yes | `skill`, `plugin`, `hook`, `agent`, `mcp`, `settings`, `command` |
+| `description` | Yes | One-sentence summary |
+| `longDescription` | Yes | TL;DR for the detail page (see registry-descriptions.md) |
+| `sourceType` | Yes | `toolr`, `community`, or `official` |
+| `compatibility` | Yes | e.g. `["claude"]` |
+| `author` | Yes | `{ name, url? }` |
+| `externalUrl` | Community | GitHub URL the CLI fetches content from at install time |
 
-- **Dev**: Skills in `.claude/skills/` for local testing
-- **Prod**: Skills published to `registry/` and fetched from GitHub raw
-- **Loading**: CLI tries local path first, falls back to GitHub
+## Sync vs Compile
+
+- **`pnpm sync`** (`scripts/sync.ts`): re-fetches `community` and Anthropic `official` items
+  from their GitHub repos, writes each as `item.json`, then calls `compileManifest()`. Toolr
+  items are never touched. Do **not** run sync as part of `build`.
+- **`pnpm compile`** (`scripts/compile-manifest.ts`): assembles `item.json` files into the
+  generated manifests. Fast, offline, no network.
+
+## Adding / Removing Items
+
+Use the skills rather than editing manifests directly:
+
+- `/add-toolr <path>` — copies first-party content into `registry/<type>/<slug>/`
+- `/add-community <github-url>` — metadata-only entry with `externalUrl`
+- `/remove-toolr <slug>` / `/remove-community <slug>`
+
+## Dev vs Production
+
+- **Dev**: `.claude/skills/` holds local skill definitions for testing this repo.
+- **Web app**: imports the per-type `manifest.json` files at build time and assembles them.
+- **CLI**: tries the local registry first, falls back to GitHub raw for content.

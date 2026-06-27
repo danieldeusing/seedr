@@ -23,8 +23,14 @@ function currentTheme(): Theme {
   return theme && THEMES.includes(theme) ? theme : "warm";
 }
 
+function animEnabled(): boolean {
+  if (typeof document === "undefined") return true;
+  return !document.documentElement.classList.contains("anim-off");
+}
+
 export function StatusBar() {
   const [theme, setTheme] = useState<Theme>(currentTheme);
+  const [anim, setAnim] = useState<boolean>(animEnabled);
   const { pathname } = useLocation();
 
   const applyTheme = (next: Theme) => {
@@ -41,6 +47,26 @@ export function StatusBar() {
     setTheme(next);
   };
 
+  // Animations on/off — mirrors pagr's footer toggle. Turning off marks html.anim-off
+  // (the design system's CSS then kills every keyframe) and persists localStorage "anim",
+  // which the terminal session reads pre-paint so the choice sticks across loads.
+  const toggleAnim = () => {
+    const html = document.documentElement;
+    const turningOff = !html.classList.contains("anim-off");
+    if (turningOff) {
+      html.classList.add("anim-off");
+      html.classList.remove("term-anim");
+    } else {
+      html.classList.remove("anim-off");
+    }
+    try {
+      localStorage.setItem("anim", turningOff ? "off" : "on");
+    } catch {
+      /* private mode */
+    }
+    setAnim(!turningOff);
+  };
+
   return (
     <footer className="fixed bottom-0 inset-x-0 z-50 h-8 border-t border-border bg-card text-[11px]">
       <div className="h-full px-4 flex items-center justify-between gap-4">
@@ -48,13 +74,14 @@ export function StatusBar() {
           <span className="text-primary">[seedr]</span> visitor@registry:
           <span className="text-foreground">{`~/.agents${pathname === "/" ? "" : pathname}`}</span>
         </span>
-        <nav className="flex items-center gap-10 shrink-0">
-          <Link to="/privacy" className="link-quiet no-underline hover:underline">
+        <nav className="flex items-center gap-6 shrink-0">
+          <Link to="/privacy" className="link-quiet no-underline!">
             privacy
           </Link>
-          <Link to="/impressum" className="link-quiet no-underline hover:underline">
+          <Link to="/impressum" className="link-quiet no-underline!">
             impressum
           </Link>
+          <span className="h-3.5 w-px bg-border" aria-hidden />
           <DropdownMenu>
             <DropdownMenuTrigger className="flex cursor-pointer items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors outline-none">
               <Circle className="size-3" fill="currentColor" />
@@ -73,6 +100,18 @@ export function StatusBar() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          <button
+            type="button"
+            onClick={toggleAnim}
+            aria-pressed={anim}
+            title="Toggle animations"
+            className="flex cursor-pointer items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors outline-none"
+          >
+            <span aria-hidden className={anim ? "text-primary" : undefined}>
+              {anim ? "[x]" : "[ ]"}
+            </span>
+            <span>anim</span>
+          </button>
         </nav>
       </div>
     </footer>

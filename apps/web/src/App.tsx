@@ -2,7 +2,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NavigationProvider } from "./contexts/NavigationContext";
 import { Header } from "./components/Header";
 import { StatusBar } from "./components/StatusBar";
-import { CookieConsent } from "./components/CookieConsent";
+// CookieConsent is intentionally NOT rendered: seedr sets no cookies and runs no
+// tracking/analytics, so no consent banner is legally required (see Privacy.tsx).
+// The component is kept for open-source reuse — uncomment this import and the render
+// in App() below to re-enable a banner.
+// import { CookieConsent } from "./components/CookieConsent";
 import { Home } from "./routes/Home";
 import { Browse } from "./routes/Browse";
 import { Detail } from "./routes/Detail";
@@ -27,7 +31,7 @@ export function App() {
             </Routes>
           </main>
           {!isEmbed && <StatusBar />}
-          {!isEmbed && <CookieConsent />}
+          {/* {!isEmbed && <CookieConsent />} — disabled; see the note on the import above */}
         </div>
       </NavigationProvider>
     </BrowserRouter>

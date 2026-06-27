@@ -26,11 +26,27 @@
           .querySelector('meta[name="theme-color"]')
           ?.setAttribute("content", backgrounds[theme]);
         document.getElementById("favicon")?.setAttribute("href", "/favicon-" + theme + ".svg");
-        // gate for the terminal typing animation: set pre-paint so pending
-        // prompts/outputs are hidden from the first frame (see index.css)
-        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        // animation gate (pre-paint): an explicit footer pick (localStorage "anim")
+        // wins over the OS reduced-motion setting; otherwise reduced-motion disables it.
+        let animPref = null;
+        try {
+          animPref = localStorage.getItem("anim");
+        } catch {}
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (animPref === "off" || (animPref === null && reduce)) {
+          document.documentElement.classList.add("anim-off");
+        } else {
           document.documentElement.classList.add("term-anim");
         }
+      })();
+      // resolution-independent zoom: lay out at a 1920px reference, scale the whole
+      // view up on wider screens (a true zoom of everything, never below 1×). Pre-paint.
+      (() => {
+        const applyZoom = () => {
+          document.documentElement.style.zoom = String(Math.max(1, window.innerWidth / 1920));
+        };
+        applyZoom();
+        window.addEventListener("resize", applyZoom);
       })();
     </script>
   </head>

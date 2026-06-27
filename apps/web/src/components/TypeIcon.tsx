@@ -1,24 +1,24 @@
 // toolr-design-ignore-next-line
 import {
   Sparkles,
-  Webhook,
+  Anchor,
   Bot,
   Terminal,
   Settings,
-  Plug,
-  Package,
+  Server,
+  Puzzle,
 } from "lucide-react";
 import type { ComponentType } from "@/lib/types";
 import { typeTextColors } from "@/lib/colors";
 
 const typeIcons: Record<ComponentType, typeof Sparkles> = {
   skill: Sparkles,
-  hook: Webhook,
+  hook: Anchor,
   agent: Bot,
-  plugin: Package,
+  plugin: Puzzle,
   command: Terminal,
   settings: Settings,
-  mcp: Plug,
+  mcp: Server,
 };
 
 interface TypeIconProps {

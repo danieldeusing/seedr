@@ -16,7 +16,7 @@ export type BadgeColor =
   | "pink";
 
 // Icon names consumed by breadcrumb rendering
-export type IconName = "sparkles" | "webhook" | "bot" | "package" | "terminal" | "settings" | "plug";
+export type IconName = "sparkles" | "anchor" | "bot" | "puzzle" | "terminal" | "settings" | "server";
 
 // Type labels for display (singular)
 export const typeLabels: Record<ComponentType, string> = {
@@ -80,12 +80,12 @@ export const typeTextColors: Record<ComponentType, string> = {
 // Type to breadcrumb icon/color mapping
 export const typeBreadcrumbIcon: Record<ComponentType, IconName> = {
   skill: "sparkles",
-  hook: "webhook",
+  hook: "anchor",
   agent: "bot",
-  plugin: "package",
+  plugin: "puzzle",
   command: "terminal",
   settings: "settings",
-  mcp: "plug",
+  mcp: "server",
 };
 
 export const typeBreadcrumbColor: Record<ComponentType, string> = {

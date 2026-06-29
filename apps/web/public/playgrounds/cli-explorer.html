@@ -4,32 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Seedr CLI Explorer</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>(() => { const bg={warm:'#f5efe2',green:'#020604',mono:'#050505',paper:'#fafafa'}; let t='warm'; try{const s=localStorage.getItem('theme'); if(s&&s in bg)t=s;}catch{} document.documentElement.dataset.theme=t; })();</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.1.2/src/tokens.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.1.2/src/base.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.1.2/src/components.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.1.2/src/fonts.css">
 <style>
 :root {
-  --base: #000000;
-  --surface: #262626;
-  --surface-alt: #383838;
-  --overlay: #383838;
-  --overlay-hover: #383838;
-  --subtext: #666666;
-  --text: #cccccc;
-  --text-dim: #666666;
-  --accent: #60a5fa;
-  --active: #2e2e2e;
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --error: #f87171;
-  --skill: #f472b6;
-  --hook: #c084fc;
-  --agent: #60a5fa;
-  --plugin: #818cf8;
-  --command: #fbbf24;
-  --settings: #fb923c;
-  --mcp: #14b8a6;
+  --base: var(--background);
+  --surface: var(--card);
+  --surface-alt: var(--muted);
+  --overlay: var(--border);
+  --overlay-hover: var(--border);
+  --subtext: var(--muted-foreground);
+  --text: var(--foreground);
+  --text-dim: var(--muted-foreground);
+  --accent: var(--primary);
+  --active: var(--muted);
+  --success: #3f9a55;
+  --warning: var(--primary);
+  --error: var(--destructive);
+  --skill: var(--primary);
+  --hook: var(--primary);
+  --agent: var(--primary);
+  --plugin: var(--primary);
+  --command: var(--primary);
+  --settings: var(--primary);
+  --mcp: #3f9a55;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', system-ui, sans-serif; background: var(--base); color: var(--text); min-height: 100vh; }
+body { font-family: var(--font-mono); background: var(--base); color: var(--text); min-height: 100vh; }
 .header { height: 45px; border-bottom: 1px solid var(--overlay); background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
 .header h1 { font-size: 14px; font-weight: 600; }
 .header span { font-size: 12px; color: var(--subtext); }
@@ -40,16 +44,16 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--base); col
 
 /* Command tabs */
 .cmd-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-.cmd-tab { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.15s; }
+.cmd-tab { padding: 6px 12px; border-radius: 0; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-mono); transition: all 0.15s; }
 .cmd-tab:hover { border-color: var(--overlay-hover); color: var(--text); }
-.cmd-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cmd-tab.active { background: var(--accent); border-color: var(--accent); color: var(--primary-foreground); }
 
 /* Form controls */
 .control-group { display: flex; flex-direction: column; gap: 4px; }
-.text-input { height: 26px; padding: 0 10px; font-size: 13px; font-family: 'JetBrains Mono', monospace; background: var(--surface-alt); border: 1px solid var(--overlay); border-radius: 8px; color: var(--text); outline: none; }
+.text-input { height: 26px; padding: 0 10px; font-size: 13px; font-family: var(--font-mono); background: var(--surface-alt); border: 1px solid var(--overlay); border-radius: 0; color: var(--text); outline: none; }
 .text-input:focus { border-color: var(--accent); }
 .text-input::placeholder { color: var(--text-dim); }
-select { height: 26px; padding: 0 8px; font-size: 13px; background: var(--surface-alt); border: 1px solid var(--overlay); border-radius: 8px; color: var(--text); outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236c7086'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+select { height: 26px; padding: 0 8px; font-size: 13px; background: var(--surface-alt); border: 1px solid var(--overlay); border-radius: 0; color: var(--text); outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23808080'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
 select:focus { border-color: var(--accent); }
 select option { background: var(--surface-alt); color: var(--text); }
 
@@ -59,18 +63,18 @@ select option { background: var(--surface-alt); color: var(--text); }
 .check-item.disabled { opacity: 0.35; cursor: not-allowed; }
 .check-item input { accent-color: var(--accent); cursor: pointer; }
 .check-item.disabled input { cursor: not-allowed; }
-.tool-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.tool-label { font-family: var(--font-mono); font-size: 12px; }
 .compat-badge { font-size: 10px; color: var(--text-dim); margin-left: auto; }
 
 /* Radio group */
 .radio-group { display: flex; gap: 4px; }
-.radio-btn { flex: 1; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 12px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.15s; }
+.radio-btn { flex: 1; padding: 5px 8px; border-radius: 0; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 12px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.15s; }
 .radio-btn:hover { border-color: var(--overlay-hover); }
-.radio-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.radio-btn.active { background: var(--accent); border-color: var(--accent); color: var(--primary-foreground); }
 
 /* Toggle */
 .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; }
-.toggle-label { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--subtext); }
+.toggle-label { font-size: 13px; font-family: var(--font-mono); color: var(--subtext); }
 .toggle { width: 36px; height: 20px; border-radius: 10px; background: var(--surface-alt); border: 1px solid var(--overlay); cursor: pointer; position: relative; transition: all 0.15s; }
 .toggle.on { background: var(--accent); border-color: var(--accent); }
 .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: all 0.15s; }
@@ -78,7 +82,7 @@ select option { background: var(--surface-alt); color: var(--text); }
 
 /* Presets */
 .presets { display: flex; flex-wrap: wrap; gap: 4px; }
-.preset-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--overlay); background: transparent; color: var(--subtext); font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.preset-btn { padding: 4px 10px; border-radius: 0; border: 1px solid var(--overlay); background: transparent; color: var(--subtext); font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
 .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 /* Divider */
@@ -86,17 +90,17 @@ select option { background: var(--surface-alt); color: var(--text); }
 
 /* Preview sections */
 .cmd-bar { background: var(--surface); border-bottom: 1px solid var(--overlay); padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; }
-.cmd-text { flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+.cmd-text { flex: 1; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-all; }
 .cmd-text .dollar { color: var(--success); }
 .cmd-text .flag { color: var(--accent); }
 .cmd-text .value { color: var(--warning); }
-.copy-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
+.copy-btn { padding: 4px 12px; border-radius: 0; border: 1px solid var(--overlay); background: var(--surface-alt); color: var(--subtext); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
 .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
 .copy-btn.copied { border-color: var(--success); color: var(--success); }
 
 .terminal, .filetree { padding: 16px; flex: 1; }
 .terminal-header, .filetree-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtext); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--overlay); }
-.term-content { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; }
+.term-content { font-family: var(--font-mono); font-size: 12px; line-height: 1.7; }
 .term-line { display: flex; gap: 8px; }
 .term-check { color: var(--success); }
 .term-warn { color: var(--warning); }
@@ -107,7 +111,7 @@ select option { background: var(--surface-alt); color: var(--text); }
 .term-blank { height: 8px; }
 
 /* File tree */
-.tree-content { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; white-space: pre; }
+.tree-content { font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; }
 .tree-dir { color: var(--subtext); }
 .tree-created { color: var(--success); }
 .tree-modified { color: var(--warning); }
@@ -116,17 +120,17 @@ select option { background: var(--surface-alt); color: var(--text); }
 .tree-annotation { color: var(--text-dim); font-style: italic; font-size: 11px; }
 
 /* JSON preview */
-.json-preview { background: var(--surface); border: 1px solid var(--overlay); border-radius: 8px; padding: 12px; margin-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; }
+.json-preview { background: var(--surface); border: 1px solid var(--overlay); border-radius: 0; padding: 12px; margin-top: 8px; font-family: var(--font-mono); font-size: 11px; line-height: 1.6; }
 .json-key { color: var(--accent); }
 .json-str { color: var(--success); }
 .json-added { color: var(--success); }
 .json-bracket { color: var(--subtext); }
 
 /* Dry run banner */
-.dry-run-banner { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; padding: 8px 12px; margin: 8px 16px; font-size: 12px; color: var(--warning); display: flex; align-items: center; gap: 8px; }
+.dry-run-banner { background: var(--muted); border: 1px solid var(--border); border-radius: 0; padding: 8px 12px; margin: 8px 16px; font-size: 12px; color: var(--warning); display: flex; align-items: center; gap: 8px; }
 
 /* Type badge */
-.type-badge { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; border: 1px solid; }
+.type-badge { display: inline-block; padding: 1px 8px; border-radius: 0; font-size: 11px; font-weight: 500; border: 1px solid; }
 
 @media (max-width: 768px) {
   .layout { grid-template-columns: 1fr; }
@@ -137,7 +141,7 @@ select option { background: var(--surface-alt); color: var(--text); }
 <body>
 
 <div class="header">
-  <h1>Seedr CLI Explorer</h1>
+  <h1 class="glow">Seedr CLI Explorer</h1>
   <span>Interactive command playground</span>
 </div>
 
@@ -179,13 +183,13 @@ select option { background: var(--surface-alt); color: var(--text); }
 const COMMANDS = ['add', 'list', 'remove', 'init'];
 
 const TYPES = {
-  skill:    { label: 'Skill',    color: '#f472b6', structure: 'directory', mainFile: 'SKILL.md' },
-  command:  { label: 'Command',  color: '#fbbf24', structure: 'directory', mainFile: 'COMMAND.md' },
-  agent:    { label: 'Agent',    color: '#60a5fa', structure: 'file',      mainFile: '{slug}.md' },
-  hook:     { label: 'Hook',     color: '#c084fc', structure: 'json-merge', mergeTarget: 'settings.json', mergeField: 'hooks' },
-  mcp:      { label: 'MCP',      color: '#14b8a6', structure: 'json-merge', mergeTarget: '.mcp.json', mergeField: 'mcpServers' },
-  plugin:   { label: 'Plugin',   color: '#818cf8', structure: 'plugin' },
-  settings: { label: 'Settings', color: '#fb923c', structure: 'json-merge', mergeTarget: 'settings.json' },
+  skill:    { label: 'Skill',    color: 'var(--primary)', structure: 'directory', mainFile: 'SKILL.md' },
+  command:  { label: 'Command',  color: 'var(--primary)', structure: 'directory', mainFile: 'COMMAND.md' },
+  agent:    { label: 'Agent',    color: 'var(--primary)', structure: 'file',      mainFile: '{slug}.md' },
+  hook:     { label: 'Hook',     color: 'var(--primary)', structure: 'json-merge', mergeTarget: 'settings.json', mergeField: 'hooks' },
+  mcp:      { label: 'MCP',      color: 'var(--primary)', structure: 'json-merge', mergeTarget: '.mcp.json', mergeField: 'mcpServers' },
+  plugin:   { label: 'Plugin',   color: 'var(--primary)', structure: 'plugin' },
+  settings: { label: 'Settings', color: 'var(--primary)', structure: 'json-merge', mergeTarget: 'settings.json' },
 };
 
 const TOOLS = {
@@ -478,9 +482,9 @@ function renderTerminal() {
     const s = state.add;
     const item = SAMPLE_ITEMS[s.name];
     const typeDef = TYPES[s.type];
-    const typeColor = typeDef?.color || '#cdd6f4';
+    const typeColor = typeDef?.color || 'var(--foreground)';
 
-    lines.push(line('check', 'Resolved:', `${s.name} <span class="type-badge" style="color:${typeColor};border-color:${typeColor}60">${typeDef?.label || s.type}</span>`));
+    lines.push(line('check', 'Resolved:', `${s.name} <span class="type-badge" style="color:${typeColor};border-color:${typeColor}">${typeDef?.label || s.type}</span>`));
     if (item) lines.push(`<div class="term-desc">"${item.desc}"</div>`);
     lines.push('<div class="term-blank"></div>');
     lines.push(line('check', 'Tools:', s.agents.map(a => TOOLS[a].label).join(', ')));

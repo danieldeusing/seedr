@@ -37,21 +37,9 @@ export function Impressum() {
 
         <section className="mt-10">
           <h2 className="comment text-xs text-subtext uppercase mb-3">
-            EU dispute resolution
+            Consumer dispute resolution
           </h2>
           <p className="text-text leading-relaxed">
-            The European Commission provides a platform for online dispute
-            resolution (ODR):{" "}
-            <a
-              href="https://ec.europa.eu/consumers/odr/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link-quiet"
-            >
-              https://ec.europa.eu/consumers/odr/
-            </a>
-          </p>
-          <p className="text-text leading-relaxed mt-3">
             We are neither willing nor obliged to participate in dispute
             resolution proceedings before a consumer arbitration board.
           </p>

@@ -189,6 +189,22 @@ For third-party content hosted on GitHub. Metadata-only in the manifest (no loca
 - Adds manifest entry with `sourceType: "community"`
 - Community items are re-synced from their GitHub repos on `pnpm sync`
 
+### `/add-private <path>` — Add items to an out-of-tree private registry
+
+For content that must never enter the public repo. Same flow as `/add-toolr`, but the item
+lands in the `SEEDR_PRIVATE_REGISTRY` directory (asked for when the variable is unset) with
+`sourceType: "private"`, and no `pnpm compile` runs — the web build bundles private items
+directly (see `docs/self-hosting.md`, Step 3 Option A).
+
+```bash
+# Example: add an internal skill to the estate's private registry
+/add-private ~/.claude/skills/danieldeusing-design
+```
+
+- Author is asked, never hardcoded — private registries belong to whoever runs them
+- File tree is derived at build time from the files beside `item.json` (no `contents` field)
+- Finish by rebuilding the private instance to pick the item up
+
 ### `/remove-toolr <slug>` — Remove local toolr items
 
 Removes a toolr-sourced item by slug. Deletes local files from `registry/<type>s/<slug>/` and removes the manifest entry.

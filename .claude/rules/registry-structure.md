@@ -84,10 +84,20 @@ manifests also strip `contents`.
 | `type` | Yes | `skill`, `plugin`, `hook`, `agent`, `mcp`, `settings`, `command` |
 | `description` | Yes | One-sentence summary |
 | `longDescription` | Yes | TL;DR for the detail page (see registry-descriptions.md) |
-| `sourceType` | Yes | `toolr`, `community`, or `official` |
+| `sourceType` | Yes | `toolr`, `community`, `official`, or `private` (out-of-tree items only — see below) |
 | `compatibility` | Yes | e.g. `["claude"]` |
 | `author` | Yes | `{ name, url? }` |
 | `externalUrl` | Community | GitHub URL the CLI fetches content from at install time |
+
+## Private Items (`sourceType: "private"`)
+
+Never committed to this repo. A self-hosted instance points `SEEDR_PRIVATE_REGISTRY` at an
+out-of-tree directory shaped like `registry/` and the web build bundles those items
+(`apps/web/vite.config.ts`, `privateRegistryPlugin`). They ship complete (nothing stripped),
+derive their file tree from the files beside `item.json`, shadow a public item with the same
+`type` + `slug`, and don't use `externalUrl` or `targetScope`. Build-time validation requires
+`slug`, `name`, `description`, and directory-matching `type`/`slug`. See
+`docs/self-hosting.md`, Step 3 Option A.
 
 ## Sync vs Compile
 

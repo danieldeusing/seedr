@@ -2,26 +2,6 @@
 
 Run your own private seedr instance — your own registry, web UI, and CLI — for your team or company.
 
-## The minimal path (no fork)
-
-Four steps from zero to a private seedr serving **only your items**:
-
-```bash
-# 1. Clone the public repo (it's the build tooling — you never modify it)
-git clone https://github.com/danieldeusing/seedr.git && cd seedr && pnpm install
-
-# 2. Put your items in their own directory (ideally its own private repo),
-#    shaped like registry/: <type dir>/<slug>/item.json + content files
-mkdir -p ../our-seedr-items/skills/deploy-pipeline
-
-# 3. Build — your items only, the public registry is excluded from the bundle
-SEEDR_PRIVATE_REGISTRY=$(pwd)/../our-seedr-items pnpm --filter @seedr/web build
-
-# 4. Serve apps/web/dist/ behind your VPN / internal proxy (see Step 6b)
-```
-
-Want the public items *included* alongside yours? Add `SEEDR_INCLUDE_PUBLIC=true` to step 3. Updating later is `git pull && pnpm install && rebuild` — your checkout never diverges, so there is nothing to merge. The rest of this guide covers the details: authoring items (there's a guided `/add-private` skill if you use Claude Code), CLI distribution, deployment options, and rebranding.
-
 **Two deployment options:**
 
 | Option | Best for | Requires |
@@ -69,45 +49,6 @@ xdg-open apps/web/dist/index.html  # Linux
 You should see the seedr web UI with all registry items listed.
 
 ## Step 3: Customize Your Registry
-
-There are two ways to add your own items. **Out-of-tree is the recommended default** — it needs no fork at all and keeps your private content out of every git-tracked file.
-
-### Option A: Private registry, out-of-tree (no fork needed)
-
-Keep your items in their own directory (or their own private repo) shaped like `registry/` — the same `item.json` format, grouped by type — and point the build at it:
-
-```
-my-private-registry/
-├── skills/
-│   └── deploy-pipeline/
-│       ├── item.json
-│       └── SKILL.md
-└── hooks/
-    └── audit-log/
-        └── item.json
-```
-
-```bash
-# Your items ONLY (the default — public registry excluded from the bundle):
-SEEDR_PRIVATE_REGISTRY=/path/to/my-private-registry pnpm --filter @seedr/web build
-
-# Your items PLUS the public registry:
-SEEDR_PRIVATE_REGISTRY=/path/to/my-private-registry SEEDR_INCLUDE_PUBLIC=true pnpm --filter @seedr/web build
-```
-
-Every item in that directory is bundled into the web app:
-
-- They carry a **Private** source badge, show their own `author`, and are searchable and filterable like any other item (source filter options adapt to what the build actually contains).
-- The detail page's file tree is derived from the files sitting next to `item.json` — no `contents` field needed.
-- **Private-only is the default**: with just `SEEDR_PRIVATE_REGISTRY` set, no public manifest or item file enters the bundle or the emitted chunks at all.
-- With `SEEDR_INCLUDE_PUBLIC=true`, a private item with the same `type` + `slug` as a public one **shadows** it, so you can carry your own variant of a public entry.
-- Build **without** the variable and you get exactly the stock public site — nothing in the repo changes, so `git pull` upstream always stays clean.
-
-> File *previews* on the detail page fetch from the item's `externalUrl`. Set it to a raw URL reachable inside your network (your internal Git host) to make previews work; without it the tree still renders, only file contents aren't viewable.
-
-### Option B: Commit items into your fork
-
-If you run a private fork anyway, you can commit items straight into `registry/` — they become first-class entries served like upstream ones. The rest of this step describes that layout.
 
 ### How the registry works
 
@@ -611,8 +552,6 @@ The web app is fully static — any standard web auth approach works.
 
 | Variable | Where | Purpose |
 |----------|-------|---------|
-| `SEEDR_PRIVATE_REGISTRY` | Web build environment | Absolute path to an out-of-tree private registry directory bundled into the build (see Step 3, Option A) |
-| `SEEDR_INCLUDE_PUBLIC` | Web build environment | `true` to also bundle the public registry alongside private items; unset, a private-registry build contains only your items |
 | `GITHUB_RAW_URL` | `packages/cli/src/config/registry.ts` | Remote registry URL (hardcoded constant, not env var) |
 | `CLOUDFLARE_API_TOKEN` | CI secrets | Cloudflare Pages deployment |
 | `CLOUDFLARE_ACCOUNT_ID` | CI secrets | Cloudflare Pages deployment |

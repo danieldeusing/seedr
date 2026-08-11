@@ -148,17 +148,7 @@ See [docs/manual-tests/dry-run-commands.md](docs/manual-tests/dry-run-commands.m
 
 ## Self-Hosting
 
-Run your own seedr — the public registry plus your company's internal content, served inside your own network.
-
-The fastest path needs **no fork**: keep your items in their own directory (or private repo), shaped like `registry/` with the same `item.json` format, and point the build at it:
-
-```bash
-SEEDR_PRIVATE_REGISTRY=/path/to/your-items pnpm --filter @seedr/web build
-```
-
-That build contains **only your items** — the public registry stays out of the bundle entirely; add `SEEDR_INCLUDE_PUBLIC=true` to offer both side by side. Items carry a **Private** badge and your own author attribution, with file trees derived automatically; a build without the variable is exactly the public site. Serve the static `dist/` behind your VPN, Tailscale, or reverse proxy.
-
-See the [Self-Hosting Guide](docs/self-hosting.md) for the full walkthrough: registry customization, rebranding, CLI distribution for your team, Cloudflare Pages or Linux-server deploys, and staying in sync with upstream.
+Run your own private seedr instance. See the [Self-Hosting Guide](docs/self-hosting.md) for step-by-step instructions.
 
 ## Playgrounds
 

@@ -7,7 +7,6 @@ const sourceDescriptions: Record<SourceType, string> = {
   official: "Published by the tool maker",
   toolr: "Published by Daniel Deusing",
   community: "Community contribution",
-  private: "From this instance's private registry — not in the public seedr registry",
 };
 
 interface SourceBadgeProps {

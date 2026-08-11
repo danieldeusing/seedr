@@ -49,7 +49,6 @@ const sourceDescriptions: Record<SourceType, string> = {
   official: "Published by the tool maker",
   toolr: "Published by Toolr Suite",
   community: "Community contribution",
-  private: "From this instance's private registry — not in the public seedr registry",
 };
 
 const scopeIcons: Record<ScopeType, LucideIcon> = {

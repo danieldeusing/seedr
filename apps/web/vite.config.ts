@@ -81,6 +81,13 @@ function serveLocalFilesPlugin() {
 function privateRegistryPlugin() {
   const virtualId = "virtual:seedr-private-registry";
   const resolvedVirtualId = "\0" + virtualId;
+  const publicVirtualId = "virtual:seedr-public-registry";
+  const emptyPublicId = "\0seedr-public-registry-empty";
+  // A private-only build (private registry set, SEEDR_INCLUDE_PUBLIC not "true")
+  // swaps the public registry for an empty stub, so no public manifest or
+  // item.json ever enters the bundle or the emitted chunks.
+  const includePublic = () =>
+    !process.env.SEEDR_PRIVATE_REGISTRY || process.env.SEEDR_INCLUDE_PUBLIC === "true";
 
   const buildFileTree = (dir: string): FileTreeNode[] =>
     readdirSync(dir, { withFileTypes: true })
@@ -131,13 +138,22 @@ function privateRegistryPlugin() {
     name: "seedr-private-registry",
     resolveId(id: string) {
       if (id === virtualId) return resolvedVirtualId;
+      if (id === publicVirtualId) {
+        return includePublic() ? resolve(__dirname, "./src/lib/publicRegistry.ts") : emptyPublicId;
+      }
     },
     load(id: string) {
+      if (id === emptyPublicId) {
+        return `export default { version: "2.0.0", items: [], itemJsonLoaders: {} };`;
+      }
       if (id !== resolvedVirtualId) return;
       const registryDir = process.env.SEEDR_PRIVATE_REGISTRY;
       const items = registryDir ? loadPrivateItems(resolve(registryDir)) : [];
       if (registryDir) {
-        console.log(`seedr: private registry ${registryDir} contributed ${items.length} item(s)`);
+        console.log(
+          `seedr: private registry ${registryDir} contributed ${items.length} item(s)` +
+            (includePublic() ? " (merged with the public registry)" : " (private-only build)")
+        );
       }
       return `export default ${JSON.stringify({ items })};`;
     },

@@ -1,5 +1,5 @@
 import { agentLabels, sourceLabels, scopeLabels } from "./colors";
-import { hasPrivateItems } from "./registry";
+import { getAllItems } from "./registry";
 
 export const agentOptions = [
   { value: "claude", label: agentLabels.claude },
@@ -9,14 +9,13 @@ export const agentOptions = [
   { value: "opencode", label: agentLabels.opencode },
 ];
 
-export const sourceOptions = [
-  { value: "official", label: sourceLabels.official },
-  { value: "toolr", label: sourceLabels.toolr },
-  { value: "community", label: sourceLabels.community },
-  // Only offered when this build actually bundles private items, so the
-  // public site never shows a filter that can't match anything.
-  ...(hasPrivateItems ? [{ value: "private", label: sourceLabels.private }] : []),
-];
+// Only offer sources that exist in this build — a private-only instance
+// shouldn't show public source filters, and the public site no "Private" one.
+// The ?? "toolr" default mirrors Browse's filter matching.
+const presentSources = new Set(getAllItems().map((item) => item.sourceType ?? "toolr"));
+export const sourceOptions = (["official", "toolr", "community", "private"] as const)
+  .filter((source) => presentSources.has(source))
+  .map((source) => ({ value: source, label: sourceLabels[source] }));
 
 export const scopeOptions = [
   { value: "user", label: scopeLabels.user },

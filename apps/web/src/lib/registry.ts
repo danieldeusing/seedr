@@ -1,15 +1,11 @@
 import type { IFuseOptions } from "fuse.js";
 import type { RegistryManifest, RegistryItem, ComponentType, FileTreeNode } from "./types";
 
-// Import split manifest files (bundled at build time)
-import indexData from "@registry/manifest.json";
-import skillsData from "@registry/skills/manifest.json";
-import pluginsData from "@registry/plugins/manifest.json";
-import hooksData from "@registry/hooks/manifest.json";
-import agentsData from "@registry/agents/manifest.json";
-import mcpData from "@registry/mcp/manifest.json";
-import settingsData from "@registry/settings/manifest.json";
-import commandsData from "@registry/commands/manifest.json";
+// The public registry (manifests + lazy item.json loaders) — swapped for an
+// empty stub by the vite plugin in private-only builds (SEEDR_PRIVATE_REGISTRY
+// set without SEEDR_INCLUDE_PUBLIC=true), so public data stays out of the
+// bundle entirely. See lib/publicRegistry.ts and vite.config.ts.
+import publicRegistry from "virtual:seedr-public-registry";
 
 // Items from SEEDR_PRIVATE_REGISTRY, bundled at build time (empty when unset).
 import privateRegistry from "virtual:seedr-private-registry";
@@ -44,24 +40,13 @@ const devTestItem: RegistryItem = {
 const privateItems = privateRegistry.items;
 const shadowedKeys = new Set(privateItems.map((item) => `${item.type}/${item.slug}`));
 
-// Assemble all type manifests into a single RegistryManifest
 const allItems: RegistryItem[] = [
   ...privateItems,
-  ...([
-    ...skillsData.items,
-    ...pluginsData.items,
-    ...hooksData.items,
-    ...agentsData.items,
-    ...mcpData.items,
-    ...settingsData.items,
-    ...commandsData.items,
-  ] as RegistryItem[]).filter((item) => !shadowedKeys.has(`${item.type}/${item.slug}`)),
+  ...publicRegistry.items.filter((item) => !shadowedKeys.has(`${item.type}/${item.slug}`)),
 ];
 
-export const hasPrivateItems = privateItems.length > 0;
-
 const baseManifest: RegistryManifest = {
-  version: indexData.version,
+  version: publicRegistry.version,
   items: allItems,
 };
 
@@ -96,15 +81,9 @@ export function getItem(slug: string, type?: ComponentType): RegistryItem | unde
   return manifest.items.find((item) => item.slug === slug);
 }
 
-// Lazy-import item.json files for longDescription lookup (stripped from manifests).
-// Each entry is an async () => module, loaded only when requested.
-const itemJsonLoaders = import.meta.glob<{ default: RegistryItem }>(
-  "@registry/*/*/item.json",
-);
-
 // Build a typeDir/slug → loader map for O(1) lookup (supports duplicate slugs across types)
 const loaderByKey = new Map<string, () => Promise<{ default: RegistryItem }>>();
-for (const [path, loader] of Object.entries(itemJsonLoaders)) {
+for (const [path, loader] of Object.entries(publicRegistry.itemJsonLoaders)) {
   // path: /registry/<typeDir>/<slug>/item.json → extract typeDir and slug
   const parts = path.split("/");
   const slug = parts[parts.length - 2];

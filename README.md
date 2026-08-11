@@ -156,7 +156,7 @@ The fastest path needs **no fork**: keep your items in their own directory (or p
 SEEDR_PRIVATE_REGISTRY=/path/to/your-items pnpm --filter @seedr/web build
 ```
 
-Your items are bundled alongside the public registry with a **Private** badge, your own author attribution, and their file trees derived automatically; a build without the variable is exactly the public site. Serve the static `dist/` behind your VPN, Tailscale, or reverse proxy.
+That build contains **only your items** — the public registry stays out of the bundle entirely; add `SEEDR_INCLUDE_PUBLIC=true` to offer both side by side. Items carry a **Private** badge and your own author attribution, with file trees derived automatically; a build without the variable is exactly the public site. Serve the static `dist/` behind your VPN, Tailscale, or reverse proxy.
 
 See the [Self-Hosting Guide](docs/self-hosting.md) for the full walkthrough: registry customization, rebranding, CLI distribution for your team, Cloudflare Pages or Linux-server deploys, and staying in sync with upstream.
 

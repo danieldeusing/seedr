@@ -93,11 +93,14 @@ manifests also strip `contents`.
 
 Never committed to this repo. A self-hosted instance points `SEEDR_PRIVATE_REGISTRY` at an
 out-of-tree directory shaped like `registry/` and the web build bundles those items
-(`apps/web/vite.config.ts`, `privateRegistryPlugin`). They ship complete (nothing stripped),
-derive their file tree from the files beside `item.json`, shadow a public item with the same
-`type` + `slug`, and don't use `externalUrl` or `targetScope`. Build-time validation requires
-`slug`, `name`, `description`, and directory-matching `type`/`slug`. See
-`docs/self-hosting.md`, Step 3 Option A.
+(`apps/web/vite.config.ts`, `privateRegistryPlugin`). By default such a build contains ONLY
+the private items — the public registry (manifests and item chunks) is excluded from the
+bundle via the `virtual:seedr-public-registry` swap; `SEEDR_INCLUDE_PUBLIC=true` merges both,
+with a private item shadowing a public one of the same `type` + `slug`. Private items ship
+complete (nothing stripped), derive their file tree from the files beside `item.json`, and
+don't use `externalUrl` or `targetScope`. Build-time validation requires `slug`, `name`,
+`description`, and directory-matching `type`/`slug`. See `docs/self-hosting.md`, Step 3
+Option A.
 
 ## Sync vs Compile
 

@@ -1,12 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Circle } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "./ui/DropdownMenu";
 
 const THEMES = ["warm", "green", "mono", "paper"] as const;
 type Theme = (typeof THEMES)[number];
@@ -32,6 +26,32 @@ export function StatusBar() {
   const [theme, setTheme] = useState<Theme>(currentTheme);
   const [anim, setAnim] = useState<boolean>(animEnabled);
   const { pathname } = useLocation();
+  const themeDropdownRef = useRef<HTMLDetailsElement>(null);
+
+  // The theme menu is the design system's details.dropdown: the panel is
+  // positioned in document flow, so it stays put under the resolution zoom
+  // (html { zoom }) that throws Radix's measured popper coordinates off-screen
+  // on >1920px windows. Native <details> handles open/close; this effect adds
+  // the click-away and Escape dismissal the design runtime provides on static
+  // pages.
+  useEffect(() => {
+    const dropdown = themeDropdownRef.current;
+    if (!dropdown) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (dropdown.open && event.target instanceof Node && !dropdown.contains(event.target)) {
+        dropdown.removeAttribute("open");
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dropdown.removeAttribute("open");
+    };
+    document.addEventListener("click", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("click", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
 
   const applyTheme = (next: Theme) => {
     document.documentElement.dataset.theme = next;
@@ -82,24 +102,31 @@ export function StatusBar() {
             impressum
           </Link>
           <span className="h-3.5 w-px bg-border" aria-hidden />
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex cursor-pointer items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors outline-none">
+          <details ref={themeDropdownRef} className="dropdown">
+            <summary>
+              <span className="visually-hidden">theme </span>
               <Circle className="size-3" fill="currentColor" />
               <span>{theme}</span>
               <span aria-hidden>▾</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top">
+            </summary>
+            <ul className="dropdown-panel" role="list">
               {THEMES.map((t) => (
-                <DropdownMenuItem
-                  key={t}
-                  onSelect={() => applyTheme(t)}
-                  className={t === theme ? "text-primary" : undefined}
-                >
-                  {t}
-                </DropdownMenuItem>
+                <li key={t}>
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    data-theme-value={t}
+                    onClick={() => {
+                      applyTheme(t);
+                      themeDropdownRef.current?.removeAttribute("open");
+                    }}
+                  >
+                    {t}
+                  </button>
+                </li>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </ul>
+          </details>
           <button
             type="button"
             onClick={toggleAnim}

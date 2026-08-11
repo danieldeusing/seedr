@@ -50,6 +50,40 @@ You should see the seedr web UI with all registry items listed.
 
 ## Step 3: Customize Your Registry
 
+There are two ways to add your own items. **Out-of-tree is the recommended default** — it needs no fork at all and keeps your private content out of every git-tracked file.
+
+### Option A: Private registry, out-of-tree (no fork needed)
+
+Keep your items in their own directory (or their own private repo) shaped like `registry/` — the same `item.json` format, grouped by type — and point the build at it:
+
+```
+my-private-registry/
+├── skills/
+│   └── deploy-pipeline/
+│       ├── item.json
+│       └── SKILL.md
+└── hooks/
+    └── audit-log/
+        └── item.json
+```
+
+```bash
+SEEDR_PRIVATE_REGISTRY=/path/to/my-private-registry pnpm --filter @seedr/web build
+```
+
+Every item in that directory is bundled into the web app alongside the public registry:
+
+- They carry a **Private** source badge, show their own `author`, and are searchable and filterable like any other item (a "Private" source filter appears automatically).
+- The detail page's file tree is derived from the files sitting next to `item.json` — no `contents` field needed.
+- A private item with the same `type` + `slug` as a public one **shadows** it, so you can carry your own variant of a public entry.
+- Build **without** the variable and you get exactly the stock public site — nothing in the repo changes, so `git pull` upstream always stays clean.
+
+> File *previews* on the detail page fetch from the item's `externalUrl`. Set it to a raw URL reachable inside your network (your internal Git host) to make previews work; without it the tree still renders, only file contents aren't viewable.
+
+### Option B: Commit items into your fork
+
+If you run a private fork anyway, you can commit items straight into `registry/` — they become first-class entries served like upstream ones. The rest of this step describes that layout.
+
 ### How the registry works
 
 Each item is defined by an `item.json` file inside `registry/<type>s/<slug>/`:
@@ -552,6 +586,7 @@ The web app is fully static — any standard web auth approach works.
 
 | Variable | Where | Purpose |
 |----------|-------|---------|
+| `SEEDR_PRIVATE_REGISTRY` | Web build environment | Absolute path to an out-of-tree private registry directory bundled into the build (see Step 3, Option A) |
 | `GITHUB_RAW_URL` | `packages/cli/src/config/registry.ts` | Remote registry URL (hardcoded constant, not env var) |
 | `CLOUDFLARE_API_TOKEN` | CI secrets | Cloudflare Pages deployment |
 | `CLOUDFLARE_ACCOUNT_ID` | CI secrets | Cloudflare Pages deployment |

@@ -1,8 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { resolve } from "path";
-import { readFileSync, existsSync } from "fs";
+import { resolve, join } from "path";
+import { readFileSync, existsSync, readdirSync } from "fs";
+import type { FileTreeNode, RegistryItem } from "@seedr/shared";
+import { ALL_TYPES, typeDirName } from "../../scripts/compile-manifest";
 
 interface DevServer {
   middlewares: { use: (middleware: unknown) => void };
@@ -66,8 +68,84 @@ function serveLocalFilesPlugin() {
   };
 }
 
+/**
+ * Private registry — merge an out-of-tree item directory into the build.
+ *
+ * Point SEEDR_PRIVATE_REGISTRY at a directory shaped like registry/
+ * (<type dir>/<slug>/item.json) and every item in it is bundled into the SPA
+ * alongside the public registry, marked sourceType "private". Nothing in the
+ * repo changes: the committed manifests stay untouched, and a build without
+ * the variable is exactly the public site. This is how a company runs its own
+ * seedr with internal content without forking or publishing anything.
+ */
+function privateRegistryPlugin() {
+  const virtualId = "virtual:seedr-private-registry";
+  const resolvedVirtualId = "\0" + virtualId;
+
+  const buildFileTree = (dir: string): FileTreeNode[] =>
+    readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => !entry.name.startsWith("."))
+      .sort((a, b) =>
+        a.isDirectory() === b.isDirectory() ? a.name.localeCompare(b.name) : a.isDirectory() ? -1 : 1
+      )
+      .map((entry) =>
+        entry.isDirectory()
+          ? { name: entry.name, type: "directory", children: buildFileTree(join(dir, entry.name)) }
+          : { name: entry.name, type: "file" }
+      );
+
+  const loadPrivateItems = (registryDir: string): RegistryItem[] => {
+    const items: RegistryItem[] = [];
+    for (const type of ALL_TYPES) {
+      const typeDir = join(registryDir, typeDirName(type));
+      if (!existsSync(typeDir)) continue;
+      for (const entry of readdirSync(typeDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const itemDir = join(typeDir, entry.name);
+        const itemJsonPath = join(itemDir, "item.json");
+        if (!existsSync(itemJsonPath)) continue;
+        const item = JSON.parse(readFileSync(itemJsonPath, "utf-8")) as RegistryItem;
+        for (const field of ["slug", "name", "description"] as const) {
+          if (!item[field]) throw new Error(`${itemJsonPath}: missing required field "${field}"`);
+        }
+        if (item.type !== type) {
+          throw new Error(`${itemJsonPath}: type "${item.type}" does not match its directory (${typeDirName(type)}/)`);
+        }
+        if (item.slug !== entry.name) {
+          throw new Error(`${itemJsonPath}: slug "${item.slug}" does not match its directory name "${entry.name}"`);
+        }
+        item.sourceType ??= "private";
+        // Derive the detail page's file tree from what actually sits next to
+        // item.json, unless the item declares its own.
+        const contentFiles = buildFileTree(itemDir).filter(
+          (node) => !(node.type === "file" && node.name === "item.json")
+        );
+        item.contents ??= contentFiles.length ? { files: contentFiles } : undefined;
+        items.push(item);
+      }
+    }
+    return items;
+  };
+
+  return {
+    name: "seedr-private-registry",
+    resolveId(id: string) {
+      if (id === virtualId) return resolvedVirtualId;
+    },
+    load(id: string) {
+      if (id !== resolvedVirtualId) return;
+      const registryDir = process.env.SEEDR_PRIVATE_REGISTRY;
+      const items = registryDir ? loadPrivateItems(resolve(registryDir)) : [];
+      if (registryDir) {
+        console.log(`seedr: private registry ${registryDir} contributed ${items.length} item(s)`);
+      }
+      return `export default ${JSON.stringify({ items })};`;
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), serveLocalFilesPlugin()],
+  plugins: [react(), tailwindcss(), serveLocalFilesPlugin(), privateRegistryPlugin()],
   server: {
     port: 6200,
   },

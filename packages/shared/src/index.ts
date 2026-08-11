@@ -9,7 +9,7 @@ export type ComponentType =
   | "settings"
   | "mcp";
 
-export type SourceType = "official" | "toolr" | "community";
+export type SourceType = "official" | "toolr" | "community" | "private";
 
 export type ScopeType = "user" | "project" | "local";
 

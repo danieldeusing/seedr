@@ -11,6 +11,9 @@ import mcpData from "@registry/mcp/manifest.json";
 import settingsData from "@registry/settings/manifest.json";
 import commandsData from "@registry/commands/manifest.json";
 
+// Items from SEEDR_PRIVATE_REGISTRY, bundled at build time (empty when unset).
+import privateRegistry from "virtual:seedr-private-registry";
+
 // Dev-only test item for testing media previews (served from apps/web/dev-samples
 // by the vite dev middleware; kept out of public/ so it isn't deployed)
 const devTestItem: RegistryItem = {
@@ -36,16 +39,26 @@ const devTestItem: RegistryItem = {
   },
 };
 
+// A private item with the same type+slug as a public one shadows it, so an
+// instance can carry its own variant of a public entry.
+const privateItems = privateRegistry.items;
+const shadowedKeys = new Set(privateItems.map((item) => `${item.type}/${item.slug}`));
+
 // Assemble all type manifests into a single RegistryManifest
 const allItems: RegistryItem[] = [
-  ...skillsData.items,
-  ...pluginsData.items,
-  ...hooksData.items,
-  ...agentsData.items,
-  ...mcpData.items,
-  ...settingsData.items,
-  ...commandsData.items,
-] as RegistryItem[];
+  ...privateItems,
+  ...([
+    ...skillsData.items,
+    ...pluginsData.items,
+    ...hooksData.items,
+    ...agentsData.items,
+    ...mcpData.items,
+    ...settingsData.items,
+    ...commandsData.items,
+  ] as RegistryItem[]).filter((item) => !shadowedKeys.has(`${item.type}/${item.slug}`)),
+];
+
+export const hasPrivateItems = privateItems.length > 0;
 
 const baseManifest: RegistryManifest = {
   version: indexData.version,
@@ -108,6 +121,14 @@ function typeDir(type: ComponentType): string {
 }
 
 async function loadItemJson(slug: string, type?: ComponentType): Promise<RegistryItem | undefined> {
+  // Private items ship complete in the bundle (nothing is stripped), so there
+  // is no item.json to load — serve them straight from the manifest.
+  const bundledPrivateItem = manifest.items.find(
+    (candidate) =>
+      candidate.sourceType === "private" && candidate.slug === slug && (!type || candidate.type === type)
+  );
+  if (bundledPrivateItem) return bundledPrivateItem;
+
   const key = type ? `${typeDir(type)}/${slug}` : slug;
   if (itemJsonCache.has(key)) return itemJsonCache.get(key);
 

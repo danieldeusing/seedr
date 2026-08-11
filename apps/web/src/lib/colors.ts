@@ -103,12 +103,14 @@ export const sourceToBadgeColor: Record<SourceType, BadgeColor> = {
   official: "amber",
   toolr: "blue",
   community: "violet",
+  private: "teal",
 };
 
 export const sourceLabels: Record<SourceType, string> = {
   official: "Official",
   toolr: "Seedr",
   community: "Community",
+  private: "Private",
 };
 
 export const agentLabels: Record<CodingAgent, string> = {

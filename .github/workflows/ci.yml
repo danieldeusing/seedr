@@ -32,4 +32,62 @@ jobs:
         run: pnpm typecheck
 
       - name: Test
-        run: pnpm --filter @danieldeusing/seedr test
+        run: pnpm test
+
+      - name: Registry description gate
+        run: pnpm check-descriptions
+
+  # The registry operations are the safety argument of Seedr Studio and must hold on
+  # every OS a maintainer uses. `pnpm install` also runs scripts/setup-agents.mjs here,
+  # so the Windows junction path is exercised on every push.
+  registry-ops:
+    name: Registry ops (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test registry ops
+        run: pnpm --filter @seedr/registry-ops test
+
+      - name: Test repo scripts
+        run: pnpm test:scripts
+
+      # The Studio host: path scoping, the process executor (tree kill, watchdog,
+      # stream caps) and the source reader, on every OS.
+      - name: Linux webview dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev patchelf
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/studio/src-tauri/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('apps/studio/src-tauri/Cargo.lock') }}
+
+      - name: Test Studio host
+        run: cargo test --manifest-path apps/studio/src-tauri/Cargo.toml

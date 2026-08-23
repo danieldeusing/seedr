@@ -1,6 +1,47 @@
 # Seedr Studio — Implementation Plan
 
-> **Status:** planned, not started.
+> **Status:** P0–P6 are implemented on top of `18ee3ce` (2026-08-22/23): registry-ops,
+> the operations CLI, the agent-neutral tooling layout, Studio (Explorer, Author, Update,
+> Remove, Git status, Test), the Claude adapter and the P6 probes, and Workstream **B1**
+> (`antigravity` canonical, `gemini` a resolved alias) across CLI, web, the Pages function,
+> the sync and Studio. **Implementation notes — where reality differed from this document:**
+>
+> - §2.6: configr lives at `~/Work/twiced/toolr/configr`, not under `apps/`.
+> - §6.2: the installed agents on the implementation machine were Claude Code 2.1.226, `agy`
+>   1.1.11, Copilot 1.0.78, codex 0.147.0, opencode 1.18.16 — every row is version-pinned,
+>   re-probe before P6 work. Claude Code 2.1.x has `--json-schema`; the adapter uses it with
+>   `--max-turns 1` as the tool-free bound.
+> - §2.2: at `0cff1f0` the committed `registry/mcp/manifest.json` was hand-edited (it carries
+>   `longDescription` and lacks `contentHash`); `pnpm compile` corrects it, and that
+>   correction is committed with this work.
+> - §6.1: `@seedr/registry-ops` is **source-exported** (no build step) so `pnpm compile` and
+>   the agent hook work on a fresh clone; `paths.ts` is split from `fsPaths.ts` so the
+>   webview can import the path vocabulary and the validator via `@seedr/registry-ops/pure`.
+>   All four `typeDirName` copies are gone: the CLI and the web app import it too (the CLI
+>   bundles the package with tsup's `noExternal`, the Pages function through wrangler).
+> - §5 / B1: the CLI keeps `gemini` as an alias everywhere (`--agents gemini` installs to
+>   `.agents/` with a one-line notice, `gemini,agy` is one agent), the web app canonicalises
+>   compatibility on load, the sync still writes both ids for new items so the CLI already on
+>   npm matches them. **B2 is prepared, not run:** `scripts/migrate-agent-ids.ts` rewrites
+>   the 31 items that carry `gemini` (verified on a copy) and is to be run after the B1 CLI
+>   is published.
+> - §6.5: the Test action runs the checkout's own CLI (`node node_modules/tsx/dist/cli.mjs
+>   packages/cli/src/cli.ts add … --agents all --scope project --method copy --yes`) in a
+>   scratch directory the host creates and removes, then compares what was written with the
+>   item's files; it is offered for first-party items only — synced items install from their
+>   upstream repository, which is the network check this revision does **not** ship (§6.5's
+>   baseline design has no first-party user yet). The CLI's registry base became configurable
+>   for forks on the way (`SEEDR_REGISTRY_URL`, `SEEDR_REGISTRY_DIR`).
+> - §4 / §12: Windows remains unexecuted locally; the CI matrix runs `pnpm install`
+>   (junctions), the registry-ops suite and the Studio host's Rust tests — including the
+>   real-install test of the Test action — on windows-latest, so the first push answers it.
+> - The "real session sees every skill" acceptance was demonstrated inside the implementing
+>   session (harness re-scan of all skills, subagent launched through the link); a *fresh*
+>   `claude -p` could not authenticate from inside a session. Window captures of the running
+>   Studio proved the Explorer and the watcher; macOS later withdrew screen-capture
+>   permission from the implementing host, so the Test pane is proven by its tests only.
+>
+> Original status: planned, not started.
 > **Revision 2** (2026-08-22), rewritten in response to
 > [`seedr-studio-plan-review.md`](./seedr-studio-plan-review.md). Revision 1 was judged
 > unsafe to execute (1.75/5); its central premise — driving prose skills through five

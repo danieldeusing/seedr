@@ -1,0 +1,28 @@
+interface OnboardingProps {
+  error: string | null;
+  onChoose(): void;
+}
+
+/** First run: point Studio at a seedr registry checkout. */
+export function Onboarding({ error, onChoose }: OnboardingProps) {
+  return (
+    <main className="flex h-screen flex-col items-center justify-center gap-6 p-8">
+      <div className="card-terminal max-w-xl p-8">
+        <p className="prompt">seedr studio</p>
+        <h1 className="glow-lg mt-4 text-2xl font-bold">Choose a registry</h1>
+        <p className="mt-3 text-muted-foreground">
+          Studio works on a local checkout of a seedr repository — one with a <code className="text-primary">registry/</code> directory and the
+          operations CLI at <code className="text-primary">scripts/registry-op.ts</code>. Nothing is read outside that folder.
+        </p>
+        {error && (
+          <p className="mt-4 text-xs text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="button" onClick={onChoose} className="btn-terminal mt-6">
+          choose folder
+        </button>
+      </div>
+    </main>
+  );
+}

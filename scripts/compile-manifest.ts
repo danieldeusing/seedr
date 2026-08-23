@@ -9,14 +9,15 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "fs";
-import { basename, dirname, join, relative } from "path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { basename, dirname, join, relative, sep } from "path";
 import { fileURLToPath } from "url";
+import { findDuplicateItems, validateItem } from "./lib/validate-item.js";
+import { computeContentDigest } from "./sync/digest.js";
 import type { ComponentType, Manifest, ManifestIndex, ManifestItem, SourceType, TypeManifest } from "./sync/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const registryDir = join(__dirname, "..", "registry");
-const manifestPath = join(registryDir, "manifest.json");
+export const DEFAULT_REGISTRY_DIR = join(__dirname, "..", "registry");
 
 const SOURCE_ORDER: Record<SourceType, number> = {
   toolr: 0,
@@ -25,25 +26,10 @@ const SOURCE_ORDER: Record<SourceType, number> = {
 };
 
 export const ALL_TYPES: ComponentType[] = ["skill", "plugin", "hook", "agent", "mcp", "settings", "command"];
-const KNOWN_TYPES = new Set<string>(ALL_TYPES);
-const KNOWN_SOURCE_TYPES = new Set<string>(Object.keys(SOURCE_ORDER));
 
 /** Folder name for a type: plural except `mcp` and `settings`, which are used as-is. */
 export function typeDirName(type: ComponentType): string {
   return type === "settings" || type === "mcp" ? type : type + "s";
-}
-
-/** Throws with the offending file path if the item has an unknown slug/type/sourceType. */
-function validateItem(item: ManifestItem, itemJsonPath: string): void {
-  if (typeof item.slug !== "string" || item.slug.length === 0) {
-    throw new Error(`Invalid item in ${itemJsonPath}: missing or empty "slug"`);
-  }
-  if (!KNOWN_TYPES.has(item.type)) {
-    throw new Error(`Invalid item in ${itemJsonPath}: unknown type "${item.type}" (expected one of ${[...KNOWN_TYPES].join(", ")})`);
-  }
-  if (!KNOWN_SOURCE_TYPES.has(item.sourceType)) {
-    throw new Error(`Invalid item in ${itemJsonPath}: unknown sourceType "${item.sourceType}" (expected one of ${[...KNOWN_SOURCE_TYPES].join(", ")})`);
-  }
 }
 
 function collectFiles(dir: string): string[] {
@@ -72,8 +58,21 @@ function computeLocalContentHash(itemDir: string): string | null {
   return hash.digest("hex").slice(0, 16);
 }
 
-export function readAllItems(): ManifestItem[] {
+export interface ReadOptions {
+  registryDir?: string;
+  /**
+   * Validate every item against docs/registry-integrity.md (default true). The sync reads
+   * the pre-run registry with `validate: false` so that an invalid item on disk cannot stop
+   * it from carrying that item over unchanged; it validates the proposed registry itself.
+   */
+  validate?: boolean;
+}
+
+export function readAllItems(options: ReadOptions = {}): ManifestItem[] {
+  const registryDir = options.registryDir ?? DEFAULT_REGISTRY_DIR;
+  const validate = options.validate ?? true;
   const items: ManifestItem[] = [];
+  const violations: string[] = [];
 
   // Each top-level dir in registry/ is a type category (skills/, plugins/, hooks/, etc.)
   for (const typeDir of readdirSync(registryDir, { withFileTypes: true })) {
@@ -88,23 +87,45 @@ export function readAllItems(): ManifestItem[] {
       if (!existsSync(itemJsonPath)) continue;
 
       const content = readFileSync(itemJsonPath, "utf-8");
-      let item: ManifestItem;
+      let item: unknown;
       try {
-        item = JSON.parse(content) as ManifestItem;
+        item = JSON.parse(content);
       } catch (err) {
-        throw new Error(`Failed to parse ${itemJsonPath}: ${(err as Error).message}`);
+        throw new Error(`Failed to parse ${itemJsonPath}: ${(err as Error).message}`, { cause: err });
       }
-      validateItem(item, itemJsonPath);
+      const files = collectFiles(itemDir);
+      if (validate) {
+        violations.push(...validateItem(item, {
+          file: relative(registryDir, itemJsonPath),
+          slugDir: slugDir.name,
+          typeDir: typeDir.name,
+          diskFiles: files.map((file) => relative(itemDir, file).split(sep).join("/")),
+        }));
+      }
+      const parsed = item as ManifestItem;
 
-      // Compute content hash for toolr items from local files
-      if (item.sourceType === "toolr") {
+      // Toolr content lives in this repo: hash it from disk (legacy contentHash + contract digest)
+      if (parsed.sourceType === "toolr") {
         const contentHash = computeLocalContentHash(itemDir);
         if (contentHash) {
-          item.contentHash = contentHash;
+          parsed.contentHash = contentHash;
+        }
+        const digest = computeContentDigest(
+          files.map((file) => ({ path: relative(itemDir, file).split(sep).join("/"), bytes: readFileSync(file) })),
+        );
+        if (digest) {
+          parsed.contentDigest = digest;
         }
       }
 
-      items.push(item);
+      items.push(parsed);
+    }
+  }
+
+  if (validate) {
+    violations.push(...findDuplicateItems(items));
+    if (violations.length > 0) {
+      throw new Error(`Invalid registry (${violations.length} violation(s)):\n  ${violations.join("\n  ")}`);
     }
   }
 
@@ -115,8 +136,10 @@ function typeManifestPath(type: ComponentType): string {
   return `${typeDirName(type)}/manifest.json`;
 }
 
-export function compileManifest(): Manifest {
-  const items = readAllItems();
+export function compileManifest(options: { registryDir?: string } = {}): Manifest {
+  const registryDir = options.registryDir ?? DEFAULT_REGISTRY_DIR;
+  const manifestPath = join(registryDir, "manifest.json");
+  const items = readAllItems({ registryDir });
 
   // Sort: by sourceType order, then alphabetically by slug.
   // Fall back to a high order for any unknown sourceType so the comparison never
@@ -140,10 +163,10 @@ export function compileManifest(): Manifest {
   // Exclude longDescription and contents — they stay in item.json and are loaded on demand
   for (const type of ALL_TYPES) {
     const typeItems = (byType.get(type) ?? []).map((item) => {
-      const { longDescription, ...rest } = item;
+      const { longDescription: _longDescription, ...rest } = item;
       // Strip contents from plugins only — hooks still need contents.files and contents.triggers
       if (type === "plugin") {
-        const { contents, ...withoutContents } = rest;
+        const { contents: _contents, ...withoutContents } = rest;
         return withoutContents;
       }
       return rest;

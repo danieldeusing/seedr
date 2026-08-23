@@ -115,6 +115,10 @@ export interface RegistryItem {
   strict?: boolean;
   /** Plugins with `strict: false`: inline LSP server definitions from the marketplace entry. */
   lspServers?: Record<string, unknown>;
+  /** Plugins with `strict: false`: skill paths the marketplace entry exposes (relative to the source root). */
+  skills?: string[];
+  /** Plugins: the version declared by the marketplace entry or plugin.json. */
+  version?: string;
   /** License provenance. */
   license?: LicenseInfo;
 }

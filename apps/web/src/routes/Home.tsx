@@ -13,7 +13,7 @@ import { ItemCard } from "@/components/ItemCard";
 import { typeIcons } from "@/components/TypeIcon";
 import { getAllItems, getTypeCounts, fuseOptions } from "@/lib/registry";
 import { pluralize } from "@/lib/text";
-import type { ComponentType, CodingAgent, SourceType, ScopeType } from "@/lib/types";
+import type { ComponentType, SourceType, ScopeType } from "@/lib/types";
 import { typeTextColors, typeLabelPlural, typeToPath } from "@/lib/colors";
 
 // Only descriptions for types shown on home page
@@ -37,6 +37,7 @@ const displayTypes: ComponentType[] = [
   "mcp",
 ];
 
+import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { agentOptions, sourceOptions, scopeOptions } from "@/lib/filterOptions";
 
 export function Home() {
@@ -45,7 +46,8 @@ export function Home() {
 
   // Read state from URL search params
   const query = searchParams.get("q") ?? "";
-  const toolFilter = (searchParams.get("tool") as CodingAgent | null);
+  // an old `?tool=gemini` link still filters, as antigravity
+  const toolFilter = canonicalAgent(searchParams.get("tool"));
   const sourceFilter = (searchParams.get("source") as SourceType | null);
   const scopeFilter = (searchParams.get("scope") as ScopeType | null);
 

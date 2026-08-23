@@ -158,7 +158,7 @@ The codebase has several places that reference the upstream identity (author nam
 - `apps/web/src/routes/Detail.tsx` — same fallback for the detail page author
 - `apps/web/src/routes/Home.tsx` — header subtitle and copy
 - `apps/web/src/components/Header.tsx` — remove or replace icon links (Toolr, GitHub, etc.)
-- `.claude/skills/add-toolr/SKILL.md` — update the `author` field in the item.json template so new items get your metadata
+- `.agents/skills/add-toolr/SKILL.md` — update the `author` field in the item.json template so new items get your metadata
 
 **sourceType** (optional) — If you want to rename `"toolr"` to your own identifier (e.g., `"acme"`), search-and-replace across:
 
@@ -166,7 +166,7 @@ The codebase has several places that reference the upstream identity (author nam
 - `packages/cli/src/config/registry.ts` — routing logic for item content
 - `apps/web/` — filters, badges, components that check `sourceType`
 - `scripts/compile-manifest.ts` — manifest compilation
-- `.claude/skills/` — add-toolr and remove-toolr skill templates
+- `.agents/skills/` — add-toolr and remove-toolr skill templates
 - `registry/*/*/item.json` — all existing items with `"sourceType": "toolr"`
 
 **Install commands in the web UI** — The detail page shows `npx @danieldeusing/seedr add ...` commands. Update `apps/web/src/routes/Detail.tsx` to reference your package name and registry:

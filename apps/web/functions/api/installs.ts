@@ -1,3 +1,5 @@
+import { KNOWN_AGENTS } from "@seedr/registry-ops/pure";
+
 interface Env {
   DB: D1Database;
 }
@@ -10,7 +12,7 @@ interface Env {
 const RATE_WINDOW_SECONDS = 60;
 const RATE_MAX_PER_WINDOW = 100;
 
-const VALID_TOOLS = ["claude", "copilot", "gemini", "codex", "opencode"];
+const VALID_TOOLS: readonly string[] = KNOWN_AGENTS;
 const VALID_TYPES = ["skill", "plugin", "agent", "hook", "mcp", "command", "settings"];
 const VALID_SCOPES = ["project", "user", "local"];
 

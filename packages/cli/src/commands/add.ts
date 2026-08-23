@@ -3,6 +3,7 @@ import chalk from "chalk";
 import type { CodingAgent, InstallScope, InstallMethod, RegistryItem } from "../types.js";
 import type { ComponentType } from "@seedr/shared";
 import { listItems, getItem, searchItems } from "../config/registry.js";
+import { isLegacyAgent } from "@seedr/registry-ops/pure";
 import { parseAgentsArg } from "../utils/detection.js";
 import * as ui from "../utils/ui.js";
 import { getHandler } from "../handlers/registry.js";
@@ -77,6 +78,9 @@ function resolveAgents(
 
   if (!agentsArg) return [];
 
+  if (agentsArg.split(",").some((a) => isLegacyAgent(a.trim().toLowerCase()))) {
+    ui.warn("'gemini' is now 'antigravity' (Google Antigravity, installs to .agents/)");
+  }
   const agents = parseAgentsArg(agentsArg, typeCompatible);
 
   if (agentsArg === "all") return agents;
@@ -155,7 +159,7 @@ export const addCommand = new Command("add")
   .option("-t, --type <type>", "Content type: skill, agent, hook, mcp, plugin, settings")
   .option(
     "-a, --agents <agents>",
-    "Comma-separated coding agents or 'all' (claude,copilot,gemini,codex,opencode)"
+    "Comma-separated coding agents or 'all' (claude,copilot,antigravity,codex,opencode)"
   )
   .option("-s, --scope <scope>", "Installation scope: project, user, or local")
   .option("-m, --method <method>", "Installation method: symlink or copy")

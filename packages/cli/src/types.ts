@@ -1,5 +1,6 @@
 // Re-export shared types
 export type {
+  CanonicalCodingAgent,
   CodingAgent,
   ComponentType,
   RegistryItem,

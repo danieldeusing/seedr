@@ -15,7 +15,7 @@ import type { CodingAgent } from "../types.js";
 import type { SkillConverter, ParsedSkill, SkillFrontmatter } from "./types.js";
 import { claudeConverter } from "./claude.js";
 import { copilotConverter } from "./copilot.js";
-import { geminiConverter } from "./gemini.js";
+import { antigravityConverter } from "./antigravity.js";
 import { codexConverter } from "./codex.js";
 import { opencodeConverter } from "./opencode.js";
 
@@ -29,7 +29,8 @@ export type { SkillConverter, ParsedSkill, SkillFrontmatter } from "./types.js";
 const converters: Record<CodingAgent, SkillConverter> = {
   claude: claudeConverter,
   copilot: copilotConverter,
-  gemini: geminiConverter,
+  antigravity: antigravityConverter,
+  gemini: antigravityConverter,
   codex: codexConverter,
   opencode: opencodeConverter,
 };

@@ -2,6 +2,7 @@ import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertSlug, typeDirName } from "@seedr/registry-ops/pure";
 import type {
   RegistryManifest,
   RegistryManifestIndex,
@@ -44,22 +45,18 @@ function resolveLocalRegistryPath(): string | null {
   return join(packageRoot, "..", "..", "registry");
 }
 
-// Local registry path (for development); null when running outside the monorepo.
-const REGISTRY_PATH = resolveLocalRegistryPath();
-
-// Remote registry URL (GitHub raw content)
-const GITHUB_RAW_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main/registry";
-
-const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-
 /**
- * Validate an item slug before using it in filesystem path joins.
+ * Where items come from. A fork or a self-hosted registry points the published
+ * CLI elsewhere with two environment variables instead of a code change:
+ * `SEEDR_REGISTRY_DIR` names a local `registry/` checkout, `SEEDR_REGISTRY_URL`
+ * the base URL the split manifests and item files are served from.
  */
-function assertValidSlug(slug: string): void {
-  if (!SLUG_PATTERN.test(slug)) {
-    throw new Error(`Invalid item slug: "${slug}"`);
-  }
-}
+const DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main/registry";
+
+// Local registry path (for development); null when running outside the monorepo.
+const REGISTRY_PATH = process.env.SEEDR_REGISTRY_DIR || resolveLocalRegistryPath();
+
+const REGISTRY_URL = (process.env.SEEDR_REGISTRY_URL || DEFAULT_REGISTRY_URL).replace(/\/+$/, "");
 
 /**
  * Reject file-tree node names that could escape the destination directory.
@@ -75,16 +72,6 @@ const cache = {
   types: new Map<ComponentType, RegistryItem[]>(),
   assembled: null as RegistryManifest | null,
 };
-
-/**
- * Map a component type to its registry folder name.
- * Most types are pluralized with a trailing "s", but `mcp` and `settings`
- * live in unsuffixed folders.
- */
-function typeDirName(type: ComponentType): string {
-  if (type === "mcp" || type === "settings") return type;
-  return `${type}s`;
-}
 
 /**
  * A local registry manifest is only trustworthy if it has the expected shape
@@ -108,7 +95,7 @@ async function loadFile(filename: string): Promise<string> {
       // Local not available — fall through to remote fetch
     }
   }
-  return fetchRemote(`${GITHUB_RAW_URL}/${filename}`);
+  return fetchRemote(`${REGISTRY_URL}/${filename}`);
 }
 
 async function fetchResponse(url: string): Promise<Response> {
@@ -154,7 +141,7 @@ async function loadIndex(): Promise<RegistryManifestIndex> {
     }
   }
 
-  const content = await fetchRemote(`${GITHUB_RAW_URL}/manifest.json`);
+  const content = await fetchRemote(`${REGISTRY_URL}/manifest.json`);
   const data = JSON.parse(content) as RegistryManifestIndex;
   cache.index = data;
   return data;
@@ -221,7 +208,7 @@ export async function searchItems(query: string): Promise<RegistryItem[]> {
  * such as contents and longDescription).
  */
 export async function getItemFull(item: RegistryItem): Promise<RegistryItem> {
-  assertValidSlug(item.slug);
+  assertSlug(item.slug);
   const typeDir = typeDirName(item.type);
   const itemJsonPath = `${typeDir}/${item.slug}/item.json`;
   const content = await loadFile(itemJsonPath);
@@ -245,11 +232,11 @@ function getItemBaseUrl(item: RegistryItem): { local: string | null; remote: str
   }
 
   // For local/toolr items, use the local registry path
-  assertValidSlug(item.slug);
+  assertSlug(item.slug);
   const typeDir = typeDirName(item.type);
   return {
     local: REGISTRY_PATH ? join(REGISTRY_PATH, typeDir, item.slug) : null,
-    remote: `${GITHUB_RAW_URL}/${typeDir}/${item.slug}`,
+    remote: `${REGISTRY_URL}/${typeDir}/${item.slug}`,
   };
 }
 
@@ -290,7 +277,7 @@ export function getItemSourcePath(item: RegistryItem): string | null {
     return null;
   }
 
-  assertValidSlug(item.slug);
+  assertSlug(item.slug);
   const typeDir = typeDirName(item.type);
   return join(REGISTRY_PATH, typeDir, item.slug);
 }

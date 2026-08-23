@@ -1,4 +1,13 @@
-export type CodingAgent = "claude" | "copilot" | "gemini" | "codex" | "opencode";
+/**
+ * Coding agents. `antigravity` (Google Antigravity — CLI `agy`, project root `.agents/`)
+ * replaced `gemini` in 2026-08. `gemini` stays accepted as a deprecated alias that resolves
+ * to `antigravity` everywhere (CLI flags, registry data, converters) until a documented
+ * breaking release removes it. The runtime vocabulary lives in `@seedr/registry-ops/pure`.
+ */
+export type CanonicalCodingAgent = "claude" | "copilot" | "antigravity" | "codex" | "opencode";
+/** @deprecated alias of `"antigravity"`; resolved, never installed under its own name. */
+export type LegacyCodingAgent = "gemini";
+export type CodingAgent = CanonicalCodingAgent | LegacyCodingAgent;
 
 export type ComponentType =
   | "skill"

@@ -21,7 +21,7 @@ describe("compatibility", () => {
     it("should have skills compatible with all agents", () => {
       expect(AGENT_COMPATIBILITY.skill).toContain("claude");
       expect(AGENT_COMPATIBILITY.skill).toContain("copilot");
-      expect(AGENT_COMPATIBILITY.skill).toContain("gemini");
+      expect(AGENT_COMPATIBILITY.skill).toContain("antigravity");
       expect(AGENT_COMPATIBILITY.skill).toContain("codex");
       expect(AGENT_COMPATIBILITY.skill).toContain("opencode");
     });
@@ -51,6 +51,11 @@ describe("compatibility", () => {
       expect(isTypeSupported("agent", "copilot")).toBe(false);
       expect(isTypeSupported("hook", "gemini")).toBe(false);
       expect(isTypeSupported("plugin", "codex")).toBe(false);
+    });
+
+    it("resolves the deprecated gemini id like antigravity", () => {
+      expect(isTypeSupported("skill", "gemini")).toBe(true);
+      expect(isTypeSupported("mcp", "gemini")).toBe(true);
     });
   });
 
@@ -82,6 +87,11 @@ describe("compatibility", () => {
     it("should return empty array if no agents are compatible", () => {
       const agents = filterCompatibleAgents("agent", ["copilot", "gemini"]);
       expect(agents).toEqual([]);
+    });
+
+    it("canonicalises aliases, drops duplicates and returns canonical order", () => {
+      const agents = filterCompatibleAgents("skill", ["gemini", "antigravity", "claude"]);
+      expect(agents).toEqual(["claude", "antigravity"]);
     });
   });
 });

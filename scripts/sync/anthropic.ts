@@ -24,20 +24,16 @@ import {
 } from "./utils.js";
 import type { PluginJson } from "./utils.js";
 import type { ManifestItem, ComponentType, SourceType, GitTreeItem, PluginContents, PluginType, ParsedPluginContents } from "./types.js";
+import { CANONICAL_AGENTS, typeDirName } from "@seedr/registry-ops";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const registryDir = join(__dirname, "..", "..", "registry");
 
-function pluralizeType(type: string): string {
-  if (type === "settings") return "settings";
-  return type + "s";
-}
-
 /**
  * Read existing item.json to preserve manually-set fields like compatibility.
  */
-function readExistingItem(type: string, slug: string): ManifestItem | null {
-  const itemPath = join(registryDir, pluralizeType(type), slug, "item.json");
+function readExistingItem(type: ComponentType, slug: string): ManifestItem | null {
+  const itemPath = join(registryDir, typeDirName(type), slug, "item.json");
   if (!existsSync(itemPath)) return null;
   try {
     return JSON.parse(readFileSync(itemPath, "utf-8"));
@@ -277,7 +273,9 @@ export async function syncAnthropic(): Promise<ManifestItem[]> {
     basePath: "skills",
     type: "skill",
     sourceType: "official",
-    compatibility: ["claude", "copilot", "gemini", "codex", "opencode"],
+    // B1 (plan §5): new items carry the deprecated id too, so the CLI already on npm
+    // still matches them; `scripts/migrate-agent-ids.ts` drops it in B2.
+    compatibility: [...CANONICAL_AGENTS, "gemini"],
     defaultAuthor: "Anthropic",
     repoTree: skillsTree,
     includeFileTree: true,

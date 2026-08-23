@@ -15,7 +15,7 @@ import {
   parsePluginContents,
 } from "./utils.js";
 import type { PluginJson } from "./utils.js";
-import type { ManifestItem, PluginContents, ParsedPluginContents } from "./types.js";
+import type { ManifestItem, ParsedPluginContents } from "./types.js";
 
 interface MarketplaceJson {
   name: string;
@@ -164,7 +164,7 @@ export async function syncCommunity(items: ManifestItem[]): Promise<ManifestItem
       console.log(`  ✓ ${item.slug}${updated.updatedAt ? ` (${updated.updatedAt.split("T")[0]})` : ""}`);
       results.push(updated);
     } catch (err) {
-      throw new Error(`Failed to sync community item ${item.slug}: ${err instanceof Error ? err.message : err}`);
+      throw new Error(`Failed to sync community item ${item.slug}: ${err instanceof Error ? err.message : err}`, { cause: err });
     }
   }
 

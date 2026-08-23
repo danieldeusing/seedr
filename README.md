@@ -59,7 +59,7 @@ npx @danieldeusing/seedr add code-review --dry-run         # Preview without wri
 | Option | Description |
 |--------|-------------|
 | `-t, --type <type>` | Content type: `skill`, `agent`, `hook`, `plugin`, `mcp`, `settings` |
-| `-a, --agents <tools>` | Target AI tools: `claude`, `copilot`, `gemini`, `codex`, `opencode`, or `all` |
+| `-a, --agents <tools>` | Target AI tools: `claude`, `copilot`, `antigravity`, `codex`, `opencode`, or `all` (`gemini` still works as a deprecated alias of `antigravity`) |
 | `-s, --scope <scope>` | Installation scope: `project`, `user`, or `local` |
 | `-m, --method <method>` | Installation method: `symlink` or `copy` |
 | `-y, --yes` | Skip confirmation prompts |
@@ -100,6 +100,16 @@ npx @danieldeusing/seedr remove superpowers -t plugin -y    # Skip confirmation
 | `--scope <scope>` | Installation scope: `project`, `user`, or `global` (default: `project`) |
 | `-y, --yes` | Skip confirmation prompts |
 
+### Registry location
+
+The CLI reads the registry from this repository's `main` branch on GitHub. A fork or a self-hosted registry points it elsewhere without a code change:
+
+| Variable | Effect |
+|----------|--------|
+| `SEEDR_REGISTRY_URL` | Base URL the split manifests and item files are served from, e.g. `https://seedr.example.com/registry` |
+| `SEEDR_REGISTRY_DIR` | A local `registry/` checkout to read first; the URL is the fallback |
+| `SEEDR_NO_TELEMETRY` | Set to anything to skip the anonymous install counter |
+
 ### `init`
 
 Create AI tool configuration directories in the current project. Useful for setting up a project before installing content.
@@ -107,7 +117,7 @@ Create AI tool configuration directories in the current project. Useful for sett
 ```bash
 npx @danieldeusing/seedr init                             # Initialize for Claude (default)
 npx @danieldeusing/seedr init -a all                      # Initialize for all AI tools
-npx @danieldeusing/seedr init -a copilot,gemini           # Initialize for specific tools
+npx @danieldeusing/seedr init -a copilot,antigravity      # Initialize for specific tools
 ```
 
 | Option | Description |

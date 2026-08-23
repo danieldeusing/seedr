@@ -1,6 +1,7 @@
 import { exists } from "./fs.js";
+import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { CODING_AGENTS, ALL_AGENTS, getAgentPath } from "../config/agents.js";
-import type { CodingAgent, InstallScope } from "../types.js";
+import type { CanonicalCodingAgent, CodingAgent, InstallScope } from "../types.js";
 
 export interface DetectedAgent {
   agent: CodingAgent;
@@ -50,36 +51,35 @@ export function getAgentDisplayName(agent: CodingAgent): string {
   return CODING_AGENTS[agent].name;
 }
 
-export function parseAgentArg(arg: string): CodingAgent | null {
+/** Resolves an id or nickname to a canonical agent; the deprecated `gemini` id becomes `antigravity`. */
+export function parseAgentArg(arg: string): CanonicalCodingAgent | null {
   const normalized = arg.toLowerCase().trim();
 
-  // Direct match
-  if (ALL_AGENTS.includes(normalized as CodingAgent)) {
-    return normalized as CodingAgent;
-  }
-
-  // Alias matching
-  const aliases: Record<string, CodingAgent> = {
+  const aliases: Record<string, CanonicalCodingAgent> = {
     "claude-code": "claude",
     claudecode: "claude",
     cc: "claude",
     "github-copilot": "copilot",
     gh: "copilot",
-    "gemini-code": "gemini",
-    gca: "gemini",
+    "google-antigravity": "antigravity",
+    agy: "antigravity",
+    "gemini-code": "antigravity",
+    gca: "antigravity",
     "openai-codex": "codex",
     oc: "opencode",
   };
 
-  return aliases[normalized] ?? null;
+  return canonicalAgent(aliases[normalized] ?? normalized);
 }
 
 export function parseAgentsArg(agents: string, allAgents: CodingAgent[]): CodingAgent[] {
   if (agents === "all") {
     return allAgents;
   }
-  return agents
+  const parsed = agents
     .split(",")
     .map((a) => parseAgentArg(a.trim()))
-    .filter((a): a is CodingAgent => a !== null);
+    .filter((a): a is CanonicalCodingAgent => a !== null);
+  // "gemini,antigravity" names one agent twice; install it once.
+  return [...new Set(parsed)];
 }

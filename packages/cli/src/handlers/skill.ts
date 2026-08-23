@@ -4,6 +4,7 @@ import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
+import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { brand } from "../utils/ui.js";
 import {
   getItemSourcePath,
@@ -127,10 +128,12 @@ export async function installSkill(
   }
 
   for (const agent of agents) {
-    // Gemini, Codex, and OpenCode already read .agents/skills/, so skip
+    // Antigravity, Codex, and OpenCode already read .agents/skills/, so skip
     // the symlink when content is installed centrally. For single-agent
     // installs, copy directly to the agent's own directory instead.
-    const readsAgentsDir = agent === "gemini" || agent === "codex" || agent === "opencode";
+    const canonical = canonicalAgent(agent);
+    const readsAgentsDir =
+      canonical === "antigravity" || canonical === "codex" || canonical === "opencode";
     if (readsAgentsDir && method === "symlink" && centralPath) {
       results.push({ agent, success: true, path: centralPath });
       continue;

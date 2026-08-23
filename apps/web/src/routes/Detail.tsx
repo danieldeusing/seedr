@@ -282,7 +282,7 @@ export function Detail() {
               </tr>
               <tr>
                 <td className="px-4 py-2 font-mono text-xs text-text whitespace-nowrap">-a, --agents &lt;agents&gt;</td>
-                <td className="px-4 py-2 text-subtext">Coding agents to install for: <code className="text-primary">claude</code>, <code className="text-primary">copilot</code>, <code className="text-primary">gemini</code>, <code className="text-primary">codex</code>, <code className="text-primary">opencode</code>, or <code className="text-primary">all</code></td>
+                <td className="px-4 py-2 text-subtext">Coding agents to install for: <code className="text-primary">claude</code>, <code className="text-primary">copilot</code>, <code className="text-primary">antigravity</code>, <code className="text-primary">codex</code>, <code className="text-primary">opencode</code>, or <code className="text-primary">all</code></td>
                 <td className="px-4 py-2 text-text-dim text-xs">Prompted</td>
               </tr>
               <tr>

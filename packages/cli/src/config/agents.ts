@@ -5,6 +5,17 @@ import type { CodingAgent, ComponentType } from "@seedr/shared";
 
 const home = homedir();
 
+const SETTINGS_FILE = "settings.json";
+const JSON_MERGE = "json-merge";
+
+/** Every agent installs skills the same way: a directory holding `SKILL.md`. */
+const SKILL_DIRECTORY: ContentTypeConfig = {
+  path: "skills",
+  extension: ".md",
+  structure: "directory",
+  mainFile: "SKILL.md",
+};
+
 export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
   claude: {
     name: "Claude Code",
@@ -12,12 +23,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     projectRoot: ".claude",
     userRoot: join(home, ".claude"),
     contentTypes: {
-      skill: {
-        path: "skills",
-        extension: ".md",
-        structure: "directory",
-        mainFile: "SKILL.md",
-      },
+      skill: SKILL_DIRECTORY,
       command: {
         path: "commands",
         extension: ".md",
@@ -32,8 +38,8 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
       hook: {
         path: "",
         extension: ".json",
-        structure: "json-merge",
-        mergeTarget: "settings.json",
+        structure: JSON_MERGE,
+        mergeTarget: SETTINGS_FILE,
         mergeField: "hooks",
       },
       plugin: {
@@ -44,13 +50,13 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
       settings: {
         path: "",
         extension: ".json",
-        structure: "json-merge",
-        mergeTarget: "settings.json",
+        structure: JSON_MERGE,
+        mergeTarget: SETTINGS_FILE,
       },
       mcp: {
         path: "",
         extension: ".json",
-        structure: "json-merge",
+        structure: JSON_MERGE,
         mergeTarget: ".mcp.json",
         mergeField: "mcpServers",
       },
@@ -62,12 +68,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     projectRoot: ".github",
     userRoot: join(home, ".github"),
     contentTypes: {
-      skill: {
-        path: "skills",
-        extension: ".md",
-        structure: "directory",
-        mainFile: "SKILL.md",
-      },
+      skill: SKILL_DIRECTORY,
     },
   },
   gemini: {
@@ -76,12 +77,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     projectRoot: ".gemini",
     userRoot: join(home, ".gemini"),
     contentTypes: {
-      skill: {
-        path: "skills",
-        extension: ".md",
-        structure: "directory",
-        mainFile: "SKILL.md",
-      },
+      skill: SKILL_DIRECTORY,
     },
   },
   codex: {
@@ -90,12 +86,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     projectRoot: ".codex",
     userRoot: join(home, ".codex"),
     contentTypes: {
-      skill: {
-        path: "skills",
-        extension: ".md",
-        structure: "directory",
-        mainFile: "SKILL.md",
-      },
+      skill: SKILL_DIRECTORY,
     },
   },
   opencode: {
@@ -104,12 +95,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     projectRoot: ".opencode",
     userRoot: join(home, ".opencode"),
     contentTypes: {
-      skill: {
-        path: "skills",
-        extension: ".md",
-        structure: "directory",
-        mainFile: "SKILL.md",
-      },
+      skill: SKILL_DIRECTORY,
     },
   },
 };
@@ -183,18 +169,44 @@ export function getSettingsPath(
 }
 
 /**
- * Get the MCP config path for a given scope.
+ * Get Claude Code's MCP config path for a given scope.
  */
 export function getMcpPath(
   scope: InstallScope,
   cwd: string = process.cwd()
 ): string {
-  switch (scope) {
-    case "project":
-    case "local":
-      return join(cwd, ".mcp.json");
-    case "user":
-      return join(home, ".claude.json");
+  return getMcpConfigPath("claude", scope, cwd);
+}
+
+/**
+ * Where each agent keeps its MCP server configuration. Project and local
+ * scope share the project file; only Claude Code distinguishes them elsewhere.
+ *
+ * - claude:   `<cwd>/.mcp.json` / `~/.claude.json`
+ * - codex:    `<cwd>/.codex/config.toml` / `~/.codex/config.toml`
+ * - gemini:   `<cwd>/.gemini/settings.json` / `~/.gemini/settings.json`
+ * - opencode: `<cwd>/opencode.json` / `~/.config/opencode/opencode.json`
+ *
+ * Copilot has no verified MCP format and is not listed; `undefined` means
+ * "no known configuration file".
+ */
+export function getMcpConfigPath(
+  agent: CodingAgent,
+  scope: InstallScope,
+  cwd: string = process.cwd()
+): string {
+  const isUser = scope === "user";
+  switch (agent) {
+    case "claude":
+      return isUser ? join(home, ".claude.json") : join(cwd, ".mcp.json");
+    case "codex":
+      return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
+    case "gemini":
+      return isUser ? join(home, ".gemini", SETTINGS_FILE) : join(cwd, ".gemini", SETTINGS_FILE);
+    case "opencode":
+      return isUser ? join(home, ".config", "opencode", "opencode.json") : join(cwd, "opencode.json");
+    case "copilot":
+      throw new Error("GitHub Copilot has no verified MCP configuration format");
   }
 }
 

@@ -1,6 +1,6 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { dirname } from "node:path";
-import { ensureDir } from "./fs.js";
+import { ensureDir, writeFileAtomic } from "./fs.js";
 
 /**
  * Read and parse a JSON file. Returns empty object if file doesn't exist.
@@ -19,15 +19,30 @@ export async function readJson<T = Record<string, unknown>>(
   }
 }
 
+async function existingFileMode(path: string): Promise<number | undefined> {
+  try {
+    return (await stat(path)).mode & 0o777;
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw error;
+  }
+}
+
 /**
  * Write an object to a JSON file with pretty formatting.
+ *
+ * The write is atomic: the document goes to a temporary file in the same
+ * directory and is renamed over the target, so a crash or a failing write
+ * never leaves a truncated `settings.json` behind. An existing file keeps
+ * its permission bits.
  */
 export async function writeJson(
   path: string,
   data: unknown
 ): Promise<void> {
   await ensureDir(dirname(path));
-  await writeFile(path, JSON.stringify(data, null, 2) + "\n", "utf-8");
+  const mode = await existingFileMode(path);
+  await writeFileAtomic(path, JSON.stringify(data, null, 2) + "\n", { mode });
 }
 
 /**

@@ -74,6 +74,27 @@ export function parseAgentArg(arg: string): CodingAgent | null {
   return aliases[normalized] ?? null;
 }
 
+/**
+ * Parse a comma-separated agent list without dropping anything silently:
+ * every name that is not a known agent or alias is reported in `unknown`.
+ * "all" is not expanded here — callers decide what "all" means for them.
+ */
+export function parseAgentsArgStrict(agents: string): { agents: CodingAgent[]; unknown: string[] } {
+  const parsed: CodingAgent[] = [];
+  const unknown: string[] = [];
+  for (const raw of agents.split(",")) {
+    const trimmed = raw.trim();
+    if (trimmed === "") continue;
+    const agent = parseAgentArg(trimmed);
+    if (agent === null) {
+      unknown.push(trimmed);
+    } else if (!parsed.includes(agent)) {
+      parsed.push(agent);
+    }
+  }
+  return { agents: parsed, unknown };
+}
+
 export function parseAgentsArg(agents: string, allAgents: CodingAgent[]): CodingAgent[] {
   if (agents === "all") {
     return allAgents;

@@ -4,6 +4,7 @@ import {
   isTypeSupported,
   getCompatibleAgents,
   filterCompatibleAgents,
+  describeIncompatibility,
 } from "./compatibility.js";
 
 describe("compatibility", () => {
@@ -34,9 +35,15 @@ describe("compatibility", () => {
       expect(AGENT_COMPATIBILITY.command).toEqual(["claude"]);
     });
 
-    it("should have MCP compatible with all agents", () => {
-      expect(AGENT_COMPATIBILITY.mcp).toContain("claude");
-      expect(AGENT_COMPATIBILITY.mcp).toContain("copilot");
+    it("should have MCP compatible with every agent whose format is verified", () => {
+      expect(AGENT_COMPATIBILITY.mcp).toEqual(["claude", "gemini", "codex", "opencode"]);
+    });
+
+    it("should exclude copilot from MCP and say why", () => {
+      expect(AGENT_COMPATIBILITY.mcp).not.toContain("copilot");
+      expect(isTypeSupported("mcp", "copilot")).toBe(false);
+      expect(describeIncompatibility("mcp", "copilot")).toMatch(/could not be verified/);
+      expect(describeIncompatibility("hook", "gemini")).toBe("gemini does not support hook content");
     });
   });
 

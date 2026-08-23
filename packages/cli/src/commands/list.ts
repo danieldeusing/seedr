@@ -1,15 +1,26 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import type { ComponentType } from "../types.js";
+import type { CodingAgent, ComponentType, InstallScope } from "../types.js";
 import { brand } from "../utils/ui.js";
 import { listItems } from "../config/registry.js";
 import { ALL_AGENTS, CODING_AGENTS } from "../config/agents.js";
-import { getInstalledSkills } from "../handlers/skill.js";
+import { getHandler, getRegisteredTypes } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
+import { parseAgentsArgStrict } from "../utils/detection.js";
+import { validateScope, validateType } from "../utils/validate-options.js";
+
+// Ensure handlers are registered
+import "../handlers/index.js";
 
 // Display constants
 const SEPARATOR_WIDTH = 40;
 const SLUG_COLUMN_WIDTH = 24;
+
+/**
+ * Settings items are deep-merged into settings.json and leave no marker
+ * behind, so there is nothing to discover after the fact.
+ */
+export const SETTINGS_NOT_DISCOVERABLE = "settings items cannot be discovered (they are merged into settings.json)";
 
 // Type-to-color mapping for consistent styling
 const TYPE_COLORS: Record<ComponentType, (s: string) => string> = {
@@ -22,19 +33,95 @@ const TYPE_COLORS: Record<ComponentType, (s: string) => string> = {
   mcp: chalk.hex("#2dd4bf"),
 };
 
+export interface ListOptions {
+  type?: string;
+  installed?: boolean;
+  agents?: string;
+  scope?: string;
+}
+
+export interface InstalledGroup {
+  type: ComponentType;
+  agent: CodingAgent;
+  slugs: string[];
+}
+
+/**
+ * Ask every registered handler what is installed, for the requested types,
+ * agents and scope. Groups are ordered by type, then agent; empty groups are
+ * omitted.
+ */
+export async function collectInstalledItems(params: {
+  types?: ComponentType[];
+  agents?: CodingAgent[];
+  scope: InstallScope;
+  cwd: string;
+}): Promise<InstalledGroup[]> {
+  const types = params.types ?? getRegisteredTypes();
+  const agents = params.agents ?? ALL_AGENTS;
+  const groups: InstalledGroup[] = [];
+
+  for (const type of types) {
+    const handler = getHandler(type);
+    if (!handler) continue;
+    for (const agent of agents) {
+      const slugs = await handler.listInstalled(agent, params.scope, params.cwd);
+      if (slugs.length > 0) {
+        groups.push({ type, agent, slugs: [...slugs].sort() });
+      }
+    }
+  }
+
+  return groups;
+}
+
+function resolveListAgents(agentsArg: string | undefined): CodingAgent[] | string {
+  if (!agentsArg || agentsArg === "all") return [...ALL_AGENTS];
+  const { agents, unknown } = parseAgentsArgStrict(agentsArg);
+  if (unknown.length > 0) {
+    return `Unknown agent(s): ${unknown.join(", ")}. Valid agents: ${ALL_AGENTS.join(", ")} or "all"`;
+  }
+  return agents;
+}
+
+/**
+ * The `list` flow without the commander wrapper. Returns the exit code.
+ */
+export async function runList(options: ListOptions, cwd: string = process.cwd()): Promise<number> {
+  const optionError = validateType(options.type) || validateScope(options.scope);
+  if (optionError) {
+    console.log(chalk.red(optionError));
+    return 1;
+  }
+
+  const type = options.type as ComponentType | undefined;
+  if (!options.installed) {
+    await listAvailable(type);
+    return 0;
+  }
+
+  const agents = resolveListAgents(options.agents);
+  if (typeof agents === "string") {
+    console.log(chalk.red(agents));
+    return 1;
+  }
+
+  const scope = (options.scope ?? "project") as InstallScope;
+  await listInstalled({ types: type ? [type] : undefined, agents, scope, cwd });
+  return 0;
+}
+
 export const listCommand = new Command("list")
   .alias("ls")
-  .description("List available or installed skills")
-  .option("-t, --type <type>", "Filter by type (skill, hook, agent, plugin)")
+  .description("List available or installed items")
+  .option("-t, --type <type>", "Filter by type (skill, hook, agent, plugin, mcp, settings)")
   .option("-i, --installed", "Show only installed items")
-  .option("--scope <scope>", "Scope for installed check (project, user)", "project")
-  .action(async (options) => {
+  .option("-a, --agents <agents>", "Comma-separated coding agents or 'all' (installed check)", "all")
+  .option("--scope <scope>", "Scope for installed check (project, user, local)", "project")
+  .action(async (options: ListOptions) => {
     try {
-      if (options.installed) {
-        await listInstalled(options.scope);
-      } else {
-        await listAvailable(options.type as ComponentType | undefined);
-      }
+      const exitCode = await runList(options);
+      if (exitCode !== 0) process.exit(exitCode);
     } catch (error) {
       handleCommandError(error);
     }
@@ -74,28 +161,38 @@ async function listAvailable(type?: ComponentType): Promise<void> {
   );
 }
 
-async function listInstalled(scope: string): Promise<void> {
-  console.log(brand(`\nInstalled skills (${scope} scope):\n`));
+async function listInstalled(params: {
+  types?: ComponentType[];
+  agents: CodingAgent[];
+  scope: InstallScope;
+  cwd: string;
+}): Promise<void> {
+  console.log(brand(`\nInstalled items (${params.scope} scope):\n`));
 
+  const groups = await collectInstalledItems(params);
   let total = 0;
-  for (const agent of ALL_AGENTS) {
-    const installed = await getInstalledSkills(
-      agent,
-      scope as "project" | "user"
-    );
+  let currentType: ComponentType | null = null;
 
-    if (installed.length > 0) {
-      console.log(chalk.blue(CODING_AGENTS[agent].name));
-      for (const skill of installed) {
-        console.log(`  ${chalk.white(skill)}`);
-        total++;
-      }
-      console.log("");
+  for (const group of groups) {
+    if (group.type !== currentType) {
+      currentType = group.type;
+      const colorFn = TYPE_COLORS[group.type] ?? chalk.white;
+      console.log(colorFn(`${group.type.toUpperCase()}S`));
     }
+    console.log(chalk.blue(`  ${CODING_AGENTS[group.agent].name}`));
+    for (const slug of group.slugs) {
+      console.log(`    ${chalk.white(slug)}`);
+      total++;
+    }
+    console.log("");
+  }
+
+  if (!params.types || params.types.includes("settings")) {
+    console.log(chalk.gray(`Note: ${SETTINGS_NOT_DISCOVERABLE}`));
   }
 
   if (total === 0) {
-    console.log(chalk.yellow("No skills installed"));
+    console.log(chalk.yellow("No items installed"));
   } else {
     console.log(chalk.gray(`Total: ${total} installed`));
   }

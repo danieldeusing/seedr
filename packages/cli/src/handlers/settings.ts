@@ -7,7 +7,10 @@ import { getItem, getItemContent } from "../config/registry.js";
 import { getSettingsPath, CODING_AGENTS } from "../config/agents.js";
 import { exists } from "../utils/fs.js";
 import { readJson, writeJson, deepMerge } from "../utils/json.js";
-import type { ContentHandler, InstallResult } from "./types.js";
+import { assertValidSlug } from "../utils/slug.js";
+import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
+
+const CLAUDE_ONLY_ERROR = "Settings are only supported for Claude Code";
 
 type SettingsJson = Record<string, unknown>;
 
@@ -37,7 +40,7 @@ async function installSettingsForAgent(
 
   try {
     if (agent !== "claude") {
-      throw new Error("Settings are only supported for Claude Code");
+      throw new Error(CLAUDE_ONLY_ERROR);
     }
 
     const content = await getItemContent(item);
@@ -137,6 +140,7 @@ export async function uninstallSettings(
   scope: InstallScope,
   cwd: string = process.cwd()
 ): Promise<boolean> {
+  assertValidSlug(slug, "settings slug");
   if (agent !== "claude") return false;
 
   // Look up the registry item to get the settings content
@@ -179,6 +183,28 @@ export async function getInstalledSettings(
   return [];
 }
 
+export async function planSettings(
+  item: RegistryItem,
+  agents: CodingAgent[],
+  scope: InstallScope,
+  _method: InstallMethod,
+  cwd: string
+): Promise<PlannedChange[]> {
+  const changes: PlannedChange[] = [];
+  for (const agent of agents) {
+    if (agent !== "claude") throw new Error(CLAUDE_ONLY_ERROR);
+    const keys = Object.keys(parseSettings(await getItemContent(item)));
+    const settingsPath = getSettingsPath(scope, cwd);
+    changes.push({
+      agent,
+      kind: (await exists(settingsPath)) ? "modify" : "create",
+      path: settingsPath,
+      detail: `deep-merge keys: ${keys.join(", ") || "(none)"}`,
+    });
+  }
+  return changes;
+}
+
 /**
  * Settings content handler implementing the ContentHandler interface.
  */
@@ -212,4 +238,6 @@ export const settingsHandler: ContentHandler = {
   ): Promise<string[]> {
     return getInstalledSettings(agent, scope, cwd);
   },
+
+  plan: planSettings,
 };

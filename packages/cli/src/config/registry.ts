@@ -1,5 +1,6 @@
-import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
+import { readFile, readdir, writeFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
@@ -9,6 +10,11 @@ import type {
   ComponentType,
   TypeManifest,
 } from "../types.js";
+import type { FileTreeNode, LicenseInfo } from "@seedr/shared";
+import { assertValidSlug } from "../utils/slug.js";
+import { canonicalFileSet, computeContentDigest, flattenFileTree } from "../utils/digest.js";
+import { moveDirectory, removePathEntry } from "../utils/fs.js";
+import { resolveItemSource } from "./source.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -47,26 +53,24 @@ function resolveLocalRegistryPath(): string | null {
 // Local registry path (for development); null when running outside the monorepo.
 const REGISTRY_PATH = resolveLocalRegistryPath();
 
-// Remote registry URL (GitHub raw content)
-const GITHUB_RAW_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main/registry";
-
-const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-
 /**
- * Validate an item slug before using it in filesystem path joins.
+ * The registry's own files — the manifest index, the per-type manifests and
+ * each item's `item.json` — are served from the seedr repository's `main`
+ * branch. They are the trust root of every install and therefore the one
+ * thing that stays mutable: the CLI trusts whatever the registry says an item
+ * is, and then pins and verifies the *content* it downloads from third-party
+ * hosts (`sourceRevision` + `contentDigest`, see docs/registry-integrity.md).
+ * First-party (`toolr`) content is fetched from this same URL.
  */
-function assertValidSlug(slug: string): void {
-  if (!SLUG_PATTERN.test(slug)) {
-    throw new Error(`Invalid item slug: "${slug}"`);
-  }
-}
+const REGISTRY_REPO_RAW_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main";
+const GITHUB_RAW_URL = `${REGISTRY_REPO_RAW_URL}/registry`;
 
 /**
  * Reject file-tree node names that could escape the destination directory.
  */
 function assertSafeNodeName(name: string): void {
-  if (name.includes("/") || name.includes("\\") || name.includes("..")) {
-    throw new Error(`Unsafe file name in registry content: "${name}"`);
+  if (name === "" || name === "." || name.includes("/") || name.includes("\\") || name.includes("..")) {
+    throw new Error(`Unsafe file name in registry content: ${JSON.stringify(name)}`);
   }
 }
 
@@ -81,7 +85,7 @@ const cache = {
  * Most types are pluralized with a trailing "s", but `mcp` and `settings`
  * live in unsuffixed folders.
  */
-function typeDirName(type: ComponentType): string {
+export function typeDirName(type: ComponentType): string {
   if (type === "mcp" || type === "settings") return type;
   return `${type}s`;
 }
@@ -219,6 +223,12 @@ export async function searchItems(query: string): Promise<RegistryItem[]> {
 /**
  * Load the full item.json for an item (includes fields stripped from compiled manifests,
  * such as contents and longDescription).
+ *
+ * This is registry metadata, so it comes from the registry trust root (the
+ * local checkout or the seedr repository's `main` branch) and not from the
+ * item's pinned upstream source — the upstream repository does not contain
+ * it. The content it describes is still fetched at the pinned revision and
+ * verified against `contentDigest`.
  */
 export async function getItemFull(item: RegistryItem): Promise<RegistryItem> {
   assertValidSlug(item.slug);
@@ -228,41 +238,54 @@ export async function getItemFull(item: RegistryItem): Promise<RegistryItem> {
   return JSON.parse(content) as RegistryItem;
 }
 
+interface ItemLocation {
+  /** Local registry directory (development checkout only). */
+  local: string | null;
+  /** Raw URL of the item's directory. */
+  remote: string;
+  /** Raw URL of the source repository root at the same revision. */
+  rootUrl: string;
+  /** Pinned commit, or null for first-party / legacy items. */
+  revision: string | null;
+}
+
 /**
- * Get the base URL for fetching item content.
- * Items have an externalUrl pointing to their GitHub directory.
+ * Where an item's content lives. First-party (`toolr`) items come from the
+ * registry itself; everything else resolves to its pinned upstream commit
+ * (see `resolveItemSource`).
  */
-function getItemBaseUrl(item: RegistryItem): { local: string | null; remote: string } {
-  // For external items (Anthropic repos), extract raw URL from externalUrl
-  if (item.externalUrl) {
-    // Convert tree URL to raw URL
-    // https://github.com/anthropics/skills/tree/main/skills/pdf
-    // → https://raw.githubusercontent.com/anthropics/skills/main/skills/pdf
-    const rawUrl = item.externalUrl
-      .replace("github.com", "raw.githubusercontent.com")
-      .replace("/tree/", "/");
-    return { local: null, remote: rawUrl };
+function getItemBaseUrl(item: RegistryItem): ItemLocation {
+  if (item.sourceType === "toolr") {
+    assertValidSlug(item.slug);
+    const typeDir = typeDirName(item.type);
+    return {
+      local: REGISTRY_PATH ? join(REGISTRY_PATH, typeDir, item.slug) : null,
+      remote: `${GITHUB_RAW_URL}/${typeDir}/${item.slug}`,
+      rootUrl: REGISTRY_REPO_RAW_URL,
+      revision: null,
+    };
   }
 
-  // For local/toolr items, use the local registry path
-  assertValidSlug(item.slug);
-  const typeDir = typeDirName(item.type);
-  return {
-    local: REGISTRY_PATH ? join(REGISTRY_PATH, typeDir, item.slug) : null,
-    remote: `${GITHUB_RAW_URL}/${typeDir}/${item.slug}`,
-  };
+  const source = resolveItemSource(item);
+  return { local: null, remote: source.baseUrl, rootUrl: source.rootUrl, revision: source.revision };
+}
+
+/** The main content file of a single-file item type (e.g. `SKILL.md`, `mcp.md`). */
+export function mainFileName(type: ComponentType): string {
+  return type === "skill" ? "SKILL.md" : `${type}.md`;
 }
 
 /**
  * Fetch the main content file for an item (e.g., SKILL.md).
+ *
+ * A local checkout is read directly. Remote content goes through
+ * `fetchItemToDestination` into a temporary directory so it is subject to the
+ * same pinning and digest verification as a full install.
  */
 export async function getItemContent(item: RegistryItem): Promise<string> {
-  const { local, remote } = getItemBaseUrl(item);
+  const { local } = getItemBaseUrl(item);
+  const mainFile = mainFileName(item.type);
 
-  // Determine the main file based on type
-  const mainFile = item.type === "skill" ? "SKILL.md" : `${item.type}.md`;
-
-  // Try local first (for development with toolr items)
   if (local) {
     try {
       return await readFile(join(local, mainFile), "utf-8");
@@ -271,8 +294,33 @@ export async function getItemContent(item: RegistryItem): Promise<string> {
     }
   }
 
-  // Fetch from remote
-  return fetchRemote(`${remote}/${mainFile}`);
+  const tempRoot = await mkdtemp(join(tmpdir(), "seedr-content-"));
+  try {
+    const destination = join(tempRoot, "item");
+    await fetchItemToDestination(item, destination);
+    return await readFile(join(destination, mainFile), "utf-8");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Read one file of an item as text, for informational output only (e.g. the
+ * `plan()` of a dry run). The read is NOT digest-verified — never use it to
+ * install content; `fetchItemToDestination` is the verified path.
+ */
+export async function fetchItemFile(item: RegistryItem, relativePath: string): Promise<string> {
+  const segments = relativePath.split("/");
+  for (const segment of segments) assertSafeNodeName(segment);
+  const { local, remote } = getItemBaseUrl(item);
+  if (local) {
+    try {
+      return await readFile(join(local, ...segments), "utf-8");
+    } catch {
+      // Local not available — fall through to remote fetch
+    }
+  }
+  return fetchRemote(`${remote}/${relativePath}`);
 }
 
 /**
@@ -331,70 +379,141 @@ export function clearCache(): void {
   cache.assembled = null;
 }
 
-/**
- * Fetch an item's content from remote and write to a destination directory.
- * Used when local registry is not available (e.g., running via npx).
- */
-export async function fetchItemToDestination(
-  item: RegistryItem,
-  destPath: string
-): Promise<void> {
-  const { remote } = getItemBaseUrl(item);
+// ---------------------------------------------------------------------------
+// Verified content download
+// ---------------------------------------------------------------------------
 
-  // For items with a file tree (plugins, hooks, etc.), fetch the entire structure.
-  // The compiled manifest strips contents from plugins to save space,
-  // so load the full item.json on demand when contents is missing.
-  let files = item.contents?.files;
+export interface FetchedItemContent {
+  /** Commit the content was fetched at; `null` for first-party and legacy items. */
+  sourceRevision: string | null;
+  /** The digest the content was verified against; `null` when the item carried none. */
+  contentDigest: string | null;
+  /** Relative paths written into the destination. */
+  files: string[];
+}
+
+function integrityError(item: RegistryItem, detail: string): Error {
+  return new Error(`Registry integrity error: ${item.type} "${item.slug}" — ${detail}`);
+}
+
+interface ItemFileSet {
+  /** Every path to download, in tree order. */
+  paths: string[];
+  /** Expected digest, or null when the registry recorded none. */
+  digest: string | null;
+  /** `license.installAs` when it has to be materialised from `license.file`. */
+  licenseExtra: { installAs: string; file: string } | null;
+}
+
+function legacyFileList(item: RegistryItem): string[] {
+  if (item.type === "skill") return ["SKILL.md"];
+  if (item.type === "plugin") return [".claude-plugin/plugin.json"];
+  return [mainFileName(item.type)];
+}
+
+/**
+ * Work out the canonical file set (§2) and the expected digest. Compiled
+ * manifests strip `contents` from plugins, so the full item.json is loaded on
+ * demand; when both the manifest entry and item.json carry a digest they must
+ * agree.
+ */
+async function resolveFileSet(item: RegistryItem): Promise<ItemFileSet> {
+  let files: FileTreeNode[] | undefined = item.contents?.files;
+  let license: LicenseInfo | undefined = item.license;
+  let digest: string | null = item.contentDigest ?? null;
+
   if (!files && item.type === "plugin") {
     const full = await getItemFull(item);
     files = full.contents?.files;
+    license ??= full.license;
+    if (full.contentDigest) {
+      if (digest !== null && full.contentDigest !== digest) {
+        throw integrityError(item, `manifest digest ${digest} disagrees with item.json digest ${full.contentDigest}`);
+      }
+      digest = full.contentDigest;
+    }
   }
-  if (files) {
-    await mkdir(destPath, { recursive: true });
-    await fetchFileTree(files, remote, destPath);
-    return;
+
+  if (!files) {
+    return { paths: legacyFileList(item), digest, licenseExtra: null };
   }
 
-  // Determine files to fetch based on item type
-  const filesToFetch =
-    item.type === "skill"
-      ? ["SKILL.md"]
-      : item.type === "plugin"
-        ? [".claude-plugin/plugin.json"]
-        : [`${item.type}.md`];
+  const treePaths = flattenFileTree(files);
+  const paths = canonicalFileSet(files, license);
+  let licenseExtra: ItemFileSet["licenseExtra"] = null;
+  if (license?.installAs && !treePaths.includes(license.installAs)) {
+    if (!license.file) {
+      throw integrityError(item, `license.installAs "${license.installAs}" is set without license.file`);
+    }
+    licenseExtra = { installAs: license.installAs, file: license.file };
+  }
+  return { paths, digest, licenseExtra };
+}
 
-  await mkdir(destPath, { recursive: true });
+async function downloadFileSet(
+  location: ItemLocation,
+  fileSet: ItemFileSet,
+  stagingDir: string
+): Promise<void> {
+  await Promise.all(fileSet.paths.map(async (relativePath) => {
+    const segments = relativePath.split("/");
+    for (const segment of segments) assertSafeNodeName(segment);
 
-  await Promise.all(filesToFetch.map(async (file) => {
-    const content = await fetchRemoteBuffer(`${remote}/${file}`);
-    const filePath = join(destPath, file);
+    const url =
+      fileSet.licenseExtra && relativePath === fileSet.licenseExtra.installAs
+        ? `${location.rootUrl}/${fileSet.licenseExtra.file}`
+        : `${location.remote}/${relativePath}`;
+
+    const content = await fetchRemoteBuffer(url);
+    const filePath = join(stagingDir, ...segments);
     await mkdir(dirname(filePath), { recursive: true });
     await writeFile(filePath, content);
   }));
 }
 
 /**
- * Recursively fetch files from a remote file tree to a local destination.
- * Content is written via Buffer so binary assets (images, fonts) are not
- * corrupted by a utf-8 round-trip.
+ * Download an item's complete file set into `destPath`, verifying it first.
+ *
+ * The files are fetched from the item's pinned revision into a temporary
+ * directory created with `mkdtemp` next to the destination. The content
+ * digest is recomputed there and compared with the registry's
+ * `contentDigest`; on a mismatch — or when a non-first-party item carries no
+ * digest at all — nothing is installed and the temporary directory is
+ * removed. Only a verified tree is moved into place (an existing entry at
+ * `destPath` is replaced; the caller must have proven that path is contained).
+ *
+ * First-party (`toolr`) items are verified whenever they carry a digest;
+ * those compiled before digests existed are installed unverified from the
+ * registry trust root.
  */
-async function fetchFileTree(
-  nodes: { name: string; type: string; children?: { name: string; type: string; children?: any[] }[] }[],
-  baseUrl: string,
+export async function fetchItemToDestination(
+  item: RegistryItem,
   destPath: string
-): Promise<void> {
-  await Promise.all(nodes.map(async (node) => {
-    assertSafeNodeName(node.name);
-    const nodePath = join(destPath, node.name);
+): Promise<FetchedItemContent> {
+  const location = getItemBaseUrl(item);
+  const fileSet = await resolveFileSet(item);
 
-    if (node.type === "directory") {
-      await mkdir(nodePath, { recursive: true });
-      if (node.children) {
-        await fetchFileTree(node.children, `${baseUrl}/${node.name}`, nodePath);
+  if (fileSet.digest === null && item.sourceType !== "toolr") {
+    throw integrityError(item, "the registry entry carries no contentDigest; refusing to install unverifiable content");
+  }
+
+  await mkdir(dirname(destPath), { recursive: true });
+  const stagingDir = await mkdtemp(join(dirname(destPath), ".seedr-staging-"));
+  try {
+    await downloadFileSet(location, fileSet, stagingDir);
+
+    if (fileSet.digest !== null) {
+      const actual = await computeContentDigest(stagingDir, fileSet.paths);
+      if (actual !== fileSet.digest) {
+        throw integrityError(item, `content digest mismatch (expected ${fileSet.digest}, actual ${actual})`);
       }
-    } else {
-      const content = await fetchRemoteBuffer(`${baseUrl}/${node.name}`);
-      await writeFile(nodePath, content);
     }
-  }));
+
+    await removePathEntry(destPath);
+    await moveDirectory(stagingDir, destPath);
+  } finally {
+    await rm(stagingDir, { recursive: true, force: true });
+  }
+
+  return { sourceRevision: location.revision, contentDigest: fileSet.digest, files: fileSet.paths };
 }

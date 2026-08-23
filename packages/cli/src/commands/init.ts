@@ -3,64 +3,20 @@ import chalk from "chalk";
 import ora from "ora";
 import { join } from "node:path";
 import { brand } from "../utils/ui.js";
+import type { CodingAgent } from "../types.js";
 import { ALL_AGENTS, CODING_AGENTS, getAgentPath } from "../config/agents.js";
-import { parseAgentsArg } from "../utils/detection.js";
+import { parseAgentsArgStrict } from "../utils/detection.js";
 import { promptConfirm } from "../utils/prompts.js";
 import { ensureDir, exists, writeTextFile } from "../utils/fs.js";
 import { handleCommandError } from "../utils/errors.js";
 
-export const initCommand = new Command("init")
-  .description("Initialize coding agent configuration directories")
-  .option(
-    "-a, --agents <agents>",
-    "Comma-separated coding agents or 'all'",
-    "claude"
-  )
-  .option("-y, --yes", "Skip confirmation prompts")
-  .action(async (options) => {
-    try {
-      // Determine which agents to initialize
-      const agents = parseAgentsArg(options.agents, ALL_AGENTS);
+export interface InitOptions {
+  agents?: string;
+  yes?: boolean;
+}
 
-      if (agents.length === 0) {
-        console.error(chalk.red("No valid agents specified"));
-        process.exit(1);
-      }
-
-      console.log(brand("\nWill initialize configuration for:"));
-      for (const agent of agents) {
-        const path = getAgentPath(agent, "project");
-        console.log(`  - ${CODING_AGENTS[agent].name} → ${path}`);
-      }
-      console.log("");
-
-      if (!options.yes) {
-        const confirmed = await promptConfirm("Proceed?");
-        if (!confirmed) {
-          console.log(chalk.yellow("Cancelled"));
-          process.exit(0);
-        }
-      }
-
-      for (const agent of agents) {
-        const spinner = ora(`Initializing ${CODING_AGENTS[agent].name}...`).start();
-
-        const path = getAgentPath(agent, "project");
-
-        if (await exists(path)) {
-          spinner.info(
-            chalk.gray(`${CODING_AGENTS[agent].name} already initialized`)
-          );
-          continue;
-        }
-
-        await ensureDir(path);
-
-        // Create a placeholder/readme file
-        const readmePath = join(path, "README.md");
-        await writeTextFile(
-          readmePath,
-          `# ${CODING_AGENTS[agent].name} Configuration
+export function readmeFor(agent: CodingAgent): string {
+  return `# ${CODING_AGENTS[agent].name} Configuration
 
 This directory contains AI configuration files for ${CODING_AGENTS[agent].name}.
 
@@ -70,16 +26,80 @@ npx @danieldeusing/seedr add <skill-name> --agents ${agent}
 \`\`\`
 
 Browse available skills at https://seedr.danieldeusing.de
-`
-        );
+`;
+}
 
-        spinner.succeed(brand(`Initialized ${CODING_AGENTS[agent].name}`));
-      }
+/** Create an agent's project directory with a README; returns false when it already existed. */
+export async function initializeAgent(agent: CodingAgent, cwd: string): Promise<boolean> {
+  const path = getAgentPath(agent, "project", cwd);
+  if (await exists(path)) return false;
+  await ensureDir(path);
+  await writeTextFile(join(path, "README.md"), readmeFor(agent));
+  return true;
+}
 
-      console.log("");
-      console.log(
-        brand("Done! Use 'npx @danieldeusing/seedr add <skill>' to install skills.")
-      );
+/**
+ * The `init` flow without the commander wrapper. Returns the exit code.
+ */
+export async function runInit(options: InitOptions, cwd: string = process.cwd()): Promise<number> {
+  const agentsArg = options.agents ?? "claude";
+  let agents: CodingAgent[];
+  if (agentsArg === "all") {
+    agents = [...ALL_AGENTS];
+  } else {
+    const parsed = parseAgentsArgStrict(agentsArg);
+    if (parsed.unknown.length > 0) {
+      console.error(chalk.red(`Unknown agent(s): ${parsed.unknown.join(", ")}. Valid agents: ${ALL_AGENTS.join(", ")} or "all"`));
+      return 1;
+    }
+    agents = parsed.agents;
+  }
+
+  if (agents.length === 0) {
+    console.error(chalk.red("No valid agents specified"));
+    return 1;
+  }
+
+  console.log(brand("\nWill initialize configuration for:"));
+  for (const agent of agents) {
+    console.log(`  - ${CODING_AGENTS[agent].name} → ${getAgentPath(agent, "project", cwd)}`);
+  }
+  console.log("");
+
+  if (!options.yes) {
+    const confirmed = await promptConfirm("Proceed?");
+    if (!confirmed) {
+      console.log(chalk.yellow("Cancelled"));
+      return 0;
+    }
+  }
+
+  for (const agent of agents) {
+    const spinner = ora(`Initializing ${CODING_AGENTS[agent].name}...`).start();
+    if (await initializeAgent(agent, cwd)) {
+      spinner.succeed(brand(`Initialized ${CODING_AGENTS[agent].name}`));
+    } else {
+      spinner.info(chalk.gray(`${CODING_AGENTS[agent].name} already initialized`));
+    }
+  }
+
+  console.log("");
+  console.log(brand("Done! Use 'npx @danieldeusing/seedr add <skill>' to install skills."));
+  return 0;
+}
+
+export const initCommand = new Command("init")
+  .description("Initialize coding agent configuration directories")
+  .option(
+    "-a, --agents <agents>",
+    "Comma-separated coding agents or 'all'",
+    "claude"
+  )
+  .option("-y, --yes", "Skip confirmation prompts")
+  .action(async (options: InitOptions) => {
+    try {
+      const exitCode = await runInit(options);
+      if (exitCode !== 0) process.exit(exitCode);
     } catch (error) {
       handleCommandError(error);
     }

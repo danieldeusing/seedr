@@ -497,26 +497,28 @@ Certbot modifies your Nginx config to add SSL and sets up auto-renewal.
 
 ## Step 7: CI/CD (Optional)
 
-The upstream repo has two workflows you can adapt:
+The upstream repo ships three workflows built on one shared validation pipeline — see
+[`release-process.md`](release-process.md) for the full description:
 
-### Deploy workflow (`.github/workflows/deploy.yml`)
+| Workflow | Trigger | What it does |
+|----------|---------|--------------|
+| `validate.yml` | called by the others | lint, typecheck, all test suites, build, registry gates, dependency audit, browser tests |
+| `ci.yml` | push to `main`, PRs | validation only |
+| `sync.yml` | nightly / manual | re-syncs upstream items on a candidate branch, validates it, then promotes to `main` and `prod` |
+| `deploy.yml` | push to `prod` / manual | validates, deploys the web app to Cloudflare Pages, publishes the CLI (version committed and tagged *before* publishing) |
 
-Triggers on push to `prod`. Builds the app and deploys to Cloudflare Pages, then publishes the CLI to npm. To adapt:
+To adapt them for your fork:
 
-1. Copy the workflow to your fork.
-2. Set repository secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
-3. Remove the `publish-cli` job if you don't publish to npm.
-4. Change the branch trigger if you use a different deployment branch.
-
-### Sync workflow (`.github/workflows/sync.yml`)
-
-Runs daily to sync community items from their GitHub repos. To adapt:
-
-1. Keep it if you want to pull upstream community items automatically.
-2. Remove or disable it if your registry is fully self-managed.
-3. Adjust the cron schedule (`0 6 * * *` = daily at 6:00 UTC) to your preference.
-
-See [docs/scheduler/README.md](scheduler/README.md) for details on the sync mechanism.
+1. Keep `validate.yml` and `ci.yml` as they are.
+2. In `deploy.yml`, set repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`,
+   create the GitHub environment `production` (add reviewers if you want a manual gate), and
+   remove the `publish-cli` job unless you publish your own package (which needs npm trusted
+   publishing configured for your repository).
+3. In `sync.yml`, keep it only if you want to pull upstream community/official items
+   automatically; set the repository variables `NOTIFY_EMAIL` and `SITE_URL` and the `SMTP_*`
+   secrets for the notification email, or delete the `notify` job. The sync fails closed: a
+   source that cannot be read is carried over unchanged, and more than `SYNC_MAX_DELETIONS`
+   (default 5) removals abort the run.
 
 ## Step 8: Keeping in Sync with Upstream
 

@@ -1,0 +1,105 @@
+# The single validation pipeline. CI, the registry sync and the production deploy
+# all call this workflow, so what "validated" means cannot drift between them.
+name: Validate
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref (branch or SHA) to validate
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  checks:
+    name: Lint, typecheck, tests, build, registry, audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: CLI unit tests with coverage thresholds
+        run: pnpm --filter @danieldeusing/seedr test:coverage
+
+      - name: Registry script tests
+        run: pnpm test:scripts
+
+      - name: Web unit and API tests
+        run: pnpm --filter @seedr/web test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Registry descriptions
+        run: pnpm check-descriptions
+
+      - name: Generated manifests are in sync with item.json sources
+        run: |
+          pnpm compile
+          git diff --exit-code -- registry/ || {
+            echo "::error::registry/*/manifest.json differ from the compiled output — run 'pnpm compile' and commit"
+            exit 1
+          }
+
+      - name: Production dependency audit
+        run: pnpm audit --prod --audit-level=moderate
+
+      - name: CLI package contents
+        working-directory: packages/cli
+        run: npm pack --dry-run --cache "$RUNNER_TEMP/npm-cache"
+
+  browser:
+    name: Browser tests (responsive, navigation, a11y, routing)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm --filter @seedr/web exec playwright install --with-deps chromium
+
+      - name: Build web
+        run: pnpm --filter @seedr/web build
+
+      - name: Browser tests
+        run: pnpm --filter @seedr/web test:e2e

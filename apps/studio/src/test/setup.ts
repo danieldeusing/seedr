@@ -4,6 +4,14 @@ import { afterEach, vi } from "vitest";
 import { createElement } from "react";
 import { invoke, listen, resetIpc } from "./mockIpc";
 
+// jsdom has no ResizeObserver; panes observe their width to decide stacking.
+class QuietResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver ??= QuietResizeObserver as unknown as typeof ResizeObserver;
+
 // Monaco needs a real browser (canvas, workers); under jsdom the preview is a
 // <pre> carrying the same content, so every test asserts on what would be shown.
 vi.mock("@/features/explorer/MonacoPreview", () => ({

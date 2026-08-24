@@ -21,7 +21,7 @@ describe("App", () => {
     expect(await screen.findByRole("heading", { name: "Choose a registry" })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "choose folder" }));
-    expect(await screen.findByText(/repo · 3 items/)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /skills\/ 2/ })).toBeInTheDocument();
     expect(screen.getByText("Select an item, or add a capability.")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /PDF$/ }));
@@ -36,8 +36,12 @@ describe("App", () => {
 
     render(<App />);
     await userEvent.click(await screen.findByRole("button", { name: "add capability" }));
-    expect(await screen.findByText("add-local")).toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog", { name: /add-local/ });
+    expect(dialog).toBeInTheDocument();
     expect(await screen.findByText(/not installed or not on PATH/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /close registry-op run/ }));
+    expect(screen.queryByRole("dialog")).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: /PDF$/ }));
     expect(await screen.findByRole("heading", { name: "PDF" })).toBeInTheDocument();

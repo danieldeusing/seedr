@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDown, ChevronUp, Palette } from "lucide-react";
 
 const THEMES = ["warm", "green", "mono", "paper"] as const;
 type Theme = (typeof THEMES)[number];
@@ -18,8 +19,11 @@ const currentTheme = (): Theme => {
   return theme && THEMES.includes(theme) ? theme : "warm";
 };
 
-/** The estate theme picker as a dropdown menu; index.html applies the stored one before first paint. */
-export function ThemeMenu() {
+/**
+ * The estate theme picker as a dropdown menu (configr keeps it in the explorer
+ * footer); index.html applies the stored choice before first paint.
+ */
+export function ThemeMenu({ direction = "down" }: { direction?: "up" | "down" }) {
   const [theme, setTheme] = useState<Theme>(currentTheme);
 
   const choose = (next: Theme) => (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -34,10 +38,14 @@ export function ThemeMenu() {
     event.currentTarget.closest("details")?.removeAttribute("open");
   };
 
+  const Chevron = direction === "up" ? ChevronUp : ChevronDown;
   return (
     <details className="dropdown">
-      <summary className="btn-terminal btn-terminal--ghost btn-terminal--compact">theme: {theme}</summary>
-      <div className="dropdown-panel dropdown-panel--down" role="menu" aria-label="theme">
+      <summary aria-label={`theme: ${theme}`} data-tip="Switch the estate colour theme" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
+        <Palette className="size-3.5" aria-hidden="true" />
+        <Chevron className="size-3" aria-hidden="true" />
+      </summary>
+      <div className={`dropdown-panel ${direction === "down" ? "dropdown-panel--down" : ""}`} role="menu" aria-label="theme">
         {THEMES.map((option) => (
           <button key={option} type="button" role="menuitem" className="dropdown-item" aria-current={option === theme ? "true" : undefined} onClick={choose(option)}>
             <span

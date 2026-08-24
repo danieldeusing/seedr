@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { useRowStyle } from "@/core/rowStyle";
 import { fs } from "@/api/fs";
 import { mockFs } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
@@ -8,6 +9,10 @@ import { Explorer } from "./Explorer";
 import { loadRegistry } from "./registry";
 
 const SEARCH = "search capabilities";
+
+beforeEach(() => {
+  useRowStyle.setState({ style: "icons" });
+});
 
 describe("Explorer", () => {
   test("renders a real empty state for a fresh fork", () => {
@@ -28,11 +33,18 @@ describe("Explorer", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("1 unreadable item file(s)");
     expect(screen.getByLabelText("1 validation problems")).toBeInTheDocument();
 
-    // the row carries `r--`/`rw-` ownership and the fixed-slot agent matrix
+    // icons view (the default): read-only eye vs editable pencil, and the brand marks
     const pdf = screen.getByRole("button", { name: /PDF$/ });
     expect(pdf).toHaveAttribute("aria-current", "true");
-    expect(pdf).toHaveTextContent("r--");
-    expect(pdf).toHaveTextContent("c----");
+    expect(within(pdf).getByLabelText("read-only")).toBeInTheDocument();
+    expect(within(pdf).getByAltText("Claude Code")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: /Playwright$/ })).getByLabelText("editable")).toBeInTheDocument();
+
+    // the footer switch flips every row to the `rw-`/`cgaxo` text form
+    await userEvent.click(screen.getByLabelText(/row style: icons/));
+    await userEvent.click(screen.getByRole("menuitem", { name: /text \(rw-/ }));
+    expect(screen.getByRole("button", { name: /PDF$/ })).toHaveTextContent("r--");
+    expect(screen.getByRole("button", { name: /PDF$/ })).toHaveTextContent("c----");
     expect(screen.getByRole("button", { name: /Playwright$/ })).toHaveTextContent("rw-");
 
     await userEvent.click(screen.getByRole("button", { name: /Playwright$/ }));

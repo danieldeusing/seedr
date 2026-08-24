@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileTreeNode } from "@seedr/shared";
 import { formatErrors } from "@seedr/registry-ops/pure";
 import { fs, openPath } from "@/api/fs";
 import { useExternalLink } from "@/core/externalUrl";
+import { PaneResizeHandle } from "@/core/PaneResizeHandle";
 import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
 import { testRefusal } from "@/features/test/testStore";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 interface DetailProps {
   item: StudioItem;
@@ -34,9 +36,26 @@ function ExternalValue({ url, label }: { url: string; label: string }) {
 }
 
 /** One item: its metadata, its validation state, its files — read-only. */
+/** Below this pane width the meta column stacks on top of the files. */
+const STACK_BELOW_PX = 860;
+
 export function Detail({ item, onEdit, onTest }: DetailProps) {
   const [tree, setTree] = useState<FileTreeNode[] | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
+  const [metaWidth, setMetaWidth] = useState(340);
+  const [metaCollapsed, setMetaCollapsed] = useState(false);
+  const [stacked, setStacked] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setStacked(entry.contentRect.width < STACK_BELOW_PX);
+    });
+    observer.observe(body);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +86,16 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
             <h1 className="glow mt-2 text-xl font-bold">{item.item.name ?? item.slug}</h1>
           </div>
           <span className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMetaCollapsed((collapsed) => !collapsed)}
+              aria-pressed={metaCollapsed}
+              aria-label={metaCollapsed ? "show metadata" : "hide metadata"}
+              data-tip={metaCollapsed ? "show metadata" : "hide metadata"}
+              className="text-muted-foreground hover:text-primary"
+            >
+              {metaCollapsed ? <PanelLeftOpen className="size-3.5" aria-hidden="true" /> : <PanelLeftClose className="size-3.5" aria-hidden="true" />}
+            </button>
             {onTest && !testRefusal(item) && (
               <button type="button" onClick={onTest} className="btn-terminal btn-terminal--ghost btn-terminal--compact">
                 test install
@@ -84,8 +113,13 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           </p>
         )}
       </header>
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)] overflow-hidden">
-        <div className="overflow-y-auto border-r border-border p-6">
+      <div ref={bodyRef} className={`flex min-h-0 flex-1 overflow-hidden ${stacked ? "flex-col" : ""}`}>
+        {!metaCollapsed && (
+          <div
+            style={stacked ? undefined : { width: metaWidth }}
+            className={`shrink-0 overflow-y-auto p-6 ${stacked ? "max-h-[45%] border-b border-border" : "border-r border-border"}`}
+            data-testid="meta-pane"
+          >
           <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-xs">
             {FIELDS.map((field) => (
               <div key={field} className="contents">
@@ -116,8 +150,10 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
               <p className="mt-2 text-xs whitespace-pre-wrap text-muted-foreground">{item.item.longDescription}</p>
             </section>
           )}
-        </div>
-        <div className="min-h-0 overflow-hidden p-4">
+          </div>
+        )}
+        {!metaCollapsed && !stacked && <PaneResizeHandle label="resize metadata" onResize={(delta) => setMetaWidth((width) => Math.max(240, Math.min(560, width + delta)))} />}
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-4">
           {treeError ? (
             <p className="text-xs text-destructive" role="alert">
               {treeError}

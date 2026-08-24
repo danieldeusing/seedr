@@ -12,9 +12,14 @@ import {
   FolderOpen,
   FolderTree,
   Loader2,
+  ExternalLink,
+  FileText,
   Type,
 } from "lucide-react";
 import { useAppTheme } from "@/core/useAppTheme";
+import { ContextMenu, ContextMenuItem, type ContextMenuPosition } from "@/core/ContextMenu";
+import { PaneResizeHandle } from "@/core/PaneResizeHandle";
+import { FormattedPreview } from "./FormattedPreview";
 
 // Monaco is ~3 MB and only needed once a file preview opens; it stays out of the
 // main bundle and loads on first use.
@@ -34,7 +39,9 @@ export function getLanguageFromPath(filePath: string): string {
   return map[ext] || "plaintext";
 }
 
-type PreviewMode = "syntax" | "plain";
+type PreviewMode = "syntax" | "formatted" | "plain";
+
+const isMarkdown = (path: string) => path.toLowerCase().endsWith(".md");
 
 interface FileExplorerProps {
   files: FileTreeNode[];
@@ -84,6 +91,8 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [mode, setMode] = useState<PreviewMode>("syntax");
+  const [menu, setMenu] = useState<{ position: ContextMenuPosition; relativePath: string } | null>(null);
+  const [treeWidth, setTreeWidth] = useState(240);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [fetchedFilePath, setFetchedFilePath] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -130,14 +139,16 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
   const selectedFileName = effectiveFilePath?.split("/").pop() ?? "";
   const allCollapsed = expandedPaths.size === 0;
 
-  const modeOptions: { value: PreviewMode; icon: ReactNode; label: string }[] = [
+  const modeOptions: { value: PreviewMode; icon: ReactNode; label: string; disabled?: boolean }[] = [
     { value: "syntax", icon: <Code2 className="size-3" />, label: "syntax highlighting" },
+    { value: "formatted", icon: <FileText className="size-3" />, label: "formatted", disabled: !relativePath || !isMarkdown(relativePath) },
     { value: "plain", icon: <Type className="size-3" />, label: "plain text" },
   ];
+  const effectiveMode: PreviewMode = mode === "formatted" && (!relativePath || !isMarkdown(relativePath)) ? "syntax" : mode;
 
   return (
-    <div className="flex h-full min-h-0 gap-3">
-      <div className="flex w-1/3 shrink-0 flex-col overflow-hidden border border-border bg-card">
+    <div className="flex h-full min-h-0">
+      <div style={{ width: treeWidth }} className="flex shrink-0 flex-col overflow-hidden border border-border bg-card">
         <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
           <FolderTree className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
           <span className="flex-1 truncate text-xs text-foreground">Files</span>
@@ -159,10 +170,16 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
               onSelectFile={setSelectedFilePath}
               expandedPaths={expandedPaths}
               onTogglePath={togglePath}
+              onFileContextMenu={(path, position) => {
+                const rel = path.startsWith(`${rootName}/`) ? path.slice(rootName.length + 1) : path;
+                setMenu({ position, relativePath: rel });
+              }}
             />
           </ul>
         </div>
       </div>
+
+      <PaneResizeHandle onResize={(delta) => setTreeWidth((width) => Math.max(180, Math.min(480, width + delta)))} label="resize file tree" />
 
       {effectiveFilePath && relativePath && (
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden border border-border bg-card">
@@ -175,43 +192,92 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
                   key={option.value}
                   type="button"
                   aria-label={option.label}
-                  aria-pressed={mode === option.value}
-                  data-tip={option.label}
-                  className={`flex size-5 items-center justify-center ${mode === option.value ? "bg-secondary text-primary" : "text-muted-foreground hover:text-primary"}`}
+                  aria-pressed={effectiveMode === option.value}
+                  disabled={option.disabled}
+                  data-tip={option.disabled ? `${option.label} — markdown files only` : option.label}
+                  className={`flex size-5 items-center justify-center ${effectiveMode === option.value ? "bg-secondary text-primary" : "text-muted-foreground hover:text-primary"} disabled:opacity-40`}
                   onClick={() => setMode(option.value)}
                 >
                   {option.icon}
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => onOpenFile(relativePath)} className="btn-terminal btn-terminal--ghost btn-terminal--compact">
-              open with default app
-            </button>
           </div>
           <div className="min-h-0 flex-1 overflow-auto">
-            {fileIsLoading ? (
-              <div className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-                loading…
-              </div>
-            ) : fileError ? (
-              <p className="flex items-center gap-2 p-3 text-xs text-destructive" role="alert">
-                <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
-                {fileError}
-              </p>
-            ) : fileContent !== null && mode === "syntax" ? (
-              <Suspense fallback={<p className="p-3 text-xs text-muted-foreground">loading editor…</p>}>
-                <MonacoPreview content={fileContent} language={getLanguageFromPath(relativePath)} appTheme={appTheme} />
-              </Suspense>
-            ) : fileContent !== null ? (
-              <pre className="p-3 text-xs leading-relaxed whitespace-pre-wrap text-foreground" data-testid="file-content">
-                <code>{fileContent}</code>
-              </pre>
-            ) : null}
+            <PreviewBody loading={fileIsLoading} error={fileError} content={fileContent} mode={effectiveMode} relativePath={relativePath} appTheme={appTheme} />
           </div>
         </div>
       )}
+
+      {menu && (
+        <ContextMenu position={menu.position} onClose={() => setMenu(null)}>
+          <ContextMenuItem
+            onSelect={() => {
+              setMenu(null);
+              onOpenFile(menu.relativePath);
+            }}
+          >
+            <ExternalLink className="size-3" aria-hidden="true" /> open with default app
+          </ContextMenuItem>
+          <div className="mx-2 my-1 border-t border-border" role="separator" />
+          {modeOptions.map((option) => (
+            <ContextMenuItem
+              key={option.value}
+              disabled={option.value === "formatted" && !isMarkdown(menu.relativePath)}
+              onSelect={() => {
+                setMode(option.value);
+                setSelectedFilePath(`${rootName}/${menu.relativePath}`);
+                setMenu(null);
+              }}
+            >
+              {option.icon} view as {option.label}
+            </ContextMenuItem>
+          ))}
+        </ContextMenu>
+      )}
     </div>
+  );
+}
+
+interface PreviewBodyProps {
+  loading: boolean;
+  error: string | null;
+  content: string | null;
+  mode: PreviewMode;
+  relativePath: string;
+  appTheme: string;
+}
+
+function PreviewBody({ loading, error, content, mode, relativePath, appTheme }: PreviewBodyProps) {
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
+        <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+        loading…
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <p className="flex items-center gap-2 p-3 text-xs text-destructive" role="alert">
+        <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
+        {error}
+      </p>
+    );
+  }
+  if (content === null) return null;
+  if (mode === "syntax") {
+    return (
+      <Suspense fallback={<p className="p-3 text-xs text-muted-foreground">loading editor…</p>}>
+        <MonacoPreview content={content} language={getLanguageFromPath(relativePath)} appTheme={appTheme} />
+      </Suspense>
+    );
+  }
+  if (mode === "formatted") return <FormattedPreview content={content} />;
+  return (
+    <pre className="p-3 text-xs leading-relaxed whitespace-pre-wrap text-foreground" data-testid="file-content">
+      <code>{content}</code>
+    </pre>
   );
 }
 
@@ -222,6 +288,7 @@ interface TreeNodeProps {
   onSelectFile(path: string): void;
   expandedPaths: Set<string>;
   onTogglePath(path: string): void;
+  onFileContextMenu(path: string, position: ContextMenuPosition): void;
 }
 
 function rowGlyphs(isDir: boolean, expanded: boolean): ReactNode {
@@ -243,7 +310,7 @@ function rowGlyphs(isDir: boolean, expanded: boolean): ReactNode {
   );
 }
 
-function TreeNode({ node, path, selectedPath, onSelectFile, expandedPaths, onTogglePath }: TreeNodeProps) {
+function TreeNode({ node, path, selectedPath, onSelectFile, expandedPaths, onTogglePath, onFileContextMenu }: TreeNodeProps) {
   const isDir = node.type === "directory";
   const expanded = expandedPaths.has(path);
   const isSelected = !isDir && path === selectedPath;
@@ -252,6 +319,14 @@ function TreeNode({ node, path, selectedPath, onSelectFile, expandedPaths, onTog
       <button
         type="button"
         onClick={isDir ? () => onTogglePath(path) : () => onSelectFile(path)}
+        onContextMenu={
+          isDir
+            ? undefined
+            : (event) => {
+                event.preventDefault();
+                onFileContextMenu(path, { x: event.clientX, y: event.clientY });
+              }
+        }
         className={`flex w-full items-center gap-1.5 overflow-hidden px-1 py-0.5 text-xs whitespace-nowrap ${isSelected ? "bg-secondary text-primary" : "text-foreground hover:bg-muted hover:text-primary"}`}
       >
         {rowGlyphs(isDir, expanded)}
@@ -268,6 +343,7 @@ function TreeNode({ node, path, selectedPath, onSelectFile, expandedPaths, onTog
               onSelectFile={onSelectFile}
               expandedPaths={expandedPaths}
               onTogglePath={onTogglePath}
+              onFileContextMenu={onFileContextMenu}
             />
           ))}
         </ul>

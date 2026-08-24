@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import { fs } from "@/api/fs";
@@ -30,8 +30,11 @@ describe("Detail", () => {
     await userEvent.click(screen.getByRole("button", { name: "mcp.md" }));
     expect(await screen.findByTestId("file-content")).toHaveTextContent("config");
 
-    await userEvent.click(screen.getByRole("button", { name: /open with default app/ }));
+    // open-with lives in the file's right-click menu now, configr-style
+    fireEvent.contextMenu(screen.getByRole("button", { name: "mcp.md" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /open with default app/ }));
     expect(invoke).toHaveBeenCalledWith("open_path", { rel: "registry/mcp/playwright/mcp.md" });
+    expect(screen.queryByRole("menu")).toBeNull();
   });
 
   test("states validation problems and the absence of content files", async () => {

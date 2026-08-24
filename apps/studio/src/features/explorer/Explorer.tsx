@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Eye, Pencil, Rows3, Search, X } from "lucide-react";
+import { CodingAgentIcon } from "@/core/CodingAgentIcon";
+import { useRowStyle, type RowStyle } from "@/core/rowStyle";
+import { ThemeMenu } from "@/core/ThemeMenu";
 import { countByType, type StudioItem } from "./registry";
 import type { Selection } from "./store";
 
@@ -32,9 +35,40 @@ export function agentMatrix(compatibility: readonly unknown[]): { text: string; 
 }
 
 /** `rw-` when the item is this registry's own (editable); `r--` when a sync owns it. */
-export function sourceMode(sourceType: string | undefined): { text: string; tip: string } {
-  if (sourceType === "toolr") return { text: "rw-", tip: "toolr — this registry's own item; editable here" };
-  return { text: "r--", tip: `${sourceType ?? "synced"} — refreshed by the sync; read-only here` };
+export function sourceMode(sourceType: string | undefined): { text: string; editable: boolean; tip: string } {
+  if (sourceType === "toolr") return { text: "rw-", editable: true, tip: "toolr — this registry's own item; editable here" };
+  return { text: "r--", editable: false, tip: `${sourceType ?? "synced"} — refreshed by the sync; read-only here` };
+}
+
+/** The row's two indicators, as brand marks or as the `rw-`/`cgaxo` text. */
+function RowIndicators({ item, style }: { item: StudioItem["item"]; style: RowStyle }) {
+  const mode = sourceMode(item.sourceType);
+  if (style === "text") {
+    const agents = agentMatrix(item.compatibility ?? []);
+    return (
+      <>
+        <span data-tip={mode.tip} className="shrink-0 text-muted-foreground/75">
+          {mode.text}
+        </span>
+        <span data-tip={agents.tip} className="shrink-0 text-muted-foreground/75">
+          {agents.text}
+        </span>
+      </>
+    );
+  }
+  const supported = new Set(canonicalAgents(item.compatibility ?? []));
+  return (
+    <>
+      <span data-tip={mode.tip} className="shrink-0 text-muted-foreground">
+        {mode.editable ? <Pencil className="size-3" aria-label="editable" /> : <Eye className="size-3" aria-label="read-only" />}
+      </span>
+      <span className="flex w-16 shrink-0 items-center gap-0.5">
+        {CANONICAL_AGENTS.filter((agent) => supported.has(agent)).map((agent) => (
+          <CodingAgentIcon key={agent} agent={agent} />
+        ))}
+      </span>
+    </>
+  );
 }
 
 const matches = (item: StudioItem, query: string): boolean => {
@@ -51,6 +85,8 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
   const counts = countByType(items);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<ComponentType>>(new Set());
+  const rowStyle = useRowStyle((s) => s.style);
+  const setRowStyle = useRowStyle((s) => s.setStyle);
 
   const populatedTypes = useMemo(() => ALL_TYPES.filter((type) => items.some((i) => i.type === type)), [items]);
   const searching = query.trim().length > 0;
@@ -100,7 +136,10 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          className="w-full pr-6 pl-6 text-xs"
+          // inline padding: the design system's own input rule is unlayered and
+          // outweighs utility classes, and the glass sits inside this inset
+          style={{ paddingInlineStart: "1.6rem", paddingInlineEnd: "1.4rem" }}
+          className="w-full text-xs"
         />
         {query && (
           <button
@@ -144,8 +183,6 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
                 <ul>
                   {ofType.map(({ slug, item, errors }) => {
                     const active = sameKey(selected, type, slug);
-                    const mode = sourceMode(item.sourceType);
-                    const agents = agentMatrix(item.compatibility ?? []);
                     return (
                       <li key={slug}>
                         <button
@@ -154,12 +191,7 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
                           onClick={() => onSelect({ type, slug })}
                           className={`flex w-full items-center gap-2 px-2 py-0.5 text-left text-xs hover:bg-muted ${active ? "bg-muted text-primary" : ""}`}
                         >
-                          <span data-tip={mode.tip} className="shrink-0 text-muted-foreground/75">
-                            {mode.text}
-                          </span>
-                          <span data-tip={agents.tip} className="shrink-0 text-muted-foreground/75">
-                            {agents.text}
-                          </span>
+                          <RowIndicators item={item} style={rowStyle} />
                           <span className="truncate">{item.name ?? slug}</span>
                           {errors.length > 0 && (
                             <span className="text-destructive" data-tip={`${errors.length} validation problem(s)`} aria-label={`${errors.length} validation problems`}>
@@ -178,6 +210,32 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
         {searching && populatedTypes.every((type) => items.filter((i) => i.type === type).filter((i) => matches(i, query.trim())).length === 0) && (
           <p className="p-3 text-xs text-muted-foreground">No capability matches “{query.trim()}”.</p>
         )}
+      </div>
+      <div className="flex h-[36px] shrink-0 items-center gap-1 border-t border-border px-2">
+        <details className="dropdown">
+          <summary aria-label={`row style: ${rowStyle}`} data-tip="How rows show ownership and agents" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
+            <Rows3 className="size-3.5" aria-hidden="true" />
+            <ChevronDown className="size-3 rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="dropdown-panel" role="menu" aria-label="row style">
+            {(["icons", "text"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                role="menuitem"
+                className="dropdown-item"
+                aria-current={option === rowStyle ? "true" : undefined}
+                onClick={(event) => {
+                  setRowStyle(option);
+                  event.currentTarget.closest("details")?.removeAttribute("open");
+                }}
+              >
+                {option === "icons" ? "icons" : "text (rw- · cgaxo)"}
+              </button>
+            ))}
+          </div>
+        </details>
+        <ThemeMenu direction="up" />
       </div>
     </nav>
   );

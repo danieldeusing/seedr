@@ -30,14 +30,13 @@ beforeEach(() => {
 describe("ThemeMenu", () => {
   test("offers all four themes in a dropdown, applies and persists the choice", async () => {
     render(<ThemeMenu />);
-    await userEvent.click(screen.getByText("theme: warm"));
-    const menu = screen.getByRole("menu", { name: "theme" });
-    expect(menu).toBeInTheDocument();
+    const summary = screen.getByText((_, el) => el?.tagName === "SUMMARY" && el.getAttribute("aria-label") === "theme: warm");
+    await userEvent.click(summary);
+    expect(screen.getByRole("menu", { name: "theme" })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("menuitem", { name: "green" }));
     expect(document.documentElement.dataset.theme).toBe("green");
     expect(stored.get("theme")).toBe("green");
-    expect(screen.getByText("theme: green")).toBeInTheDocument();
   });
 });
 
@@ -81,16 +80,13 @@ describe("ExternalLinkDialog", () => {
 });
 
 describe("AppHeader", () => {
-  test("names the window, shows the checkout, and wires the three controls", async () => {
+  test("names the window and wires the three controls", async () => {
     const onAdd = vi.fn();
     const onGit = vi.fn();
     const onSwitch = vi.fn();
-    render(
-      <AppHeader repo={{ root: "/repo", name: "repo" }} itemCount={5} loading={false} onAddCapability={onAdd} onGitStatus={onGit} onSwitchRepo={onSwitch} />
-    );
+    render(<AppHeader onAddCapability={onAdd} onGitStatus={onGit} onSwitchRepo={onSwitch} />);
 
     expect(screen.getByText("seedr-studio")).toBeInTheDocument();
-    expect(screen.getByTestId("repo-line")).toHaveTextContent("repo · 5 items");
 
     await userEvent.click(screen.getByRole("button", { name: "add capability" }));
     await userEvent.click(screen.getByRole("button", { name: "git status" }));

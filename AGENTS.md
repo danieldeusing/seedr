@@ -211,14 +211,17 @@ rather than from a constant — a fork attributes its items to its own owner.
 ### Seedr Studio (`apps/studio`)
 
 A desktop capability manager for a seedr checkout, wearing the estate look on configr's
-structure: an overlay title bar (the strip IS the macOS title bar), a searchable explorer
-with collapsible type groups where every row carries its ownership mode (`rw-` = toolr,
-editable; `r--` = synced) and a fixed-slot agent matrix (`cgaxo` = claude, copilot,
-antigravity, codex, opencode), a Monaco-based file preview (self-hosted, read-only, with a
-plain-text toggle) beside each item's metadata, `data-tip` hovers instead of inline notes, a
-theme dropdown, and a confirmation dialog in front of every external link (scheme-gated in
-both the webview and the host's `open_external`). Files can still be opened with the OS
-default app. Run from source — there are no
+structure: an overlay title bar (the strip IS the macOS title bar), and a searchable
+explorer with collapsible type groups whose rows show ownership (pencil = toolr/editable,
+eye = synced/read-only) and the supported agents' brand marks — a footer dropdown flips the
+rows to the text form (`rw-` · `cgaxo`), next to the theme dropdown. Each item's detail
+pairs a resizable, collapsible metadata pane (stacking on narrow panes) with a Monaco file
+preview (self-hosted, read-only) offering syntax, formatted-markdown and plain views; a
+file's right-click menu carries "open with default app" and the view modes. Everything
+else — add capability, edit, test install, git status — opens as a dialog over the
+workspace, `data-tip` hovers replace inline notes, and every external link (markdown links
+included) goes through a confirmation dialog, scheme-gated in both the webview and the
+host's `open_external`. Run from source — there are no
 installers:
 
 ```bash

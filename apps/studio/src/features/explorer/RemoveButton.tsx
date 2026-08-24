@@ -18,10 +18,16 @@ export function RemoveButton({ item }: { item: StudioItem }) {
   }, [item.type, item.slug, reset]);
 
   if (refusal) {
+    // The reason lives in the hover (estate rule: data-tip, no inline furniture);
+    // the disabled bin still names itself and carries the reason for readers too.
     return (
-      <span className="text-xs text-muted-foreground" title={refusal}>
-        <button type="button" className="btn-terminal btn-terminal--ghost btn-terminal--destructive" aria-label={`remove ${item.slug}`} disabled />
-        {refusal}
+      <span data-tip={refusal}>
+        <button
+          type="button"
+          className="btn-terminal btn-terminal--ghost btn-terminal--destructive"
+          aria-label={`remove ${item.slug} — ${refusal}`}
+          disabled
+        />
       </span>
     );
   }

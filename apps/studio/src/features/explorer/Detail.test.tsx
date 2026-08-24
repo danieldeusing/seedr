@@ -8,7 +8,7 @@ import { Detail } from "./Detail";
 import { loadRegistry } from "./registry";
 
 describe("Detail", () => {
-  test("shows metadata, the file tree, a file's text, and opens it with the default app", async () => {
+  test("shows metadata, the file tree, the first file's preview, and opens it with the default app", async () => {
     mockFs(registryFiles());
     onCommand("open_path", () => undefined);
     const { items } = await loadRegistry(fs);
@@ -18,13 +18,20 @@ describe("Detail", () => {
 
     expect(screen.getByRole("heading", { name: "Playwright" })).toBeInTheDocument();
     expect(screen.getByText("toolr")).toBeInTheDocument();
-    expect(await screen.findByText("docs/")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "docs" })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "notes.md" }));
-    expect(await screen.findByTestId("file-content")).toHaveTextContent("notes");
+    // the first file is selected on its own and previewed (Monaco under jsdom is a <pre>)
+    expect(await screen.findByTestId("monaco-preview")).toHaveTextContent("notes");
+
+    // the plain-text toggle drops to the raw <pre>
+    await userEvent.click(screen.getByRole("button", { name: "plain text" }));
+    expect(screen.getByTestId("file-content")).toHaveTextContent("notes");
+
+    await userEvent.click(screen.getByRole("button", { name: "mcp.md" }));
+    expect(await screen.findByTestId("file-content")).toHaveTextContent("config");
 
     await userEvent.click(screen.getByRole("button", { name: /open with default app/ }));
-    expect(invoke).toHaveBeenCalledWith("open_path", { rel: "registry/mcp/playwright/docs/notes.md" });
+    expect(invoke).toHaveBeenCalledWith("open_path", { rel: "registry/mcp/playwright/mcp.md" });
   });
 
   test("states validation problems and the absence of content files", async () => {
@@ -45,5 +52,19 @@ describe("Detail", () => {
     render(<Detail item={items.find((i) => i.slug === "playwright")!} />);
     await userEvent.click(await screen.findByRole("button", { name: "mcp.md" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("too large");
+  });
+
+  test("the externalUrl is a forward link that asks before opening the browser", async () => {
+    mockFs(registryFiles());
+    onCommand("open_external", () => undefined);
+    const { items } = await loadRegistry(fs);
+    render(<Detail item={items.find((i) => i.slug === "pdf")!} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /github\.com\/anthropics/ }));
+    // nothing opened yet — the dialog owns the decision (rendered by App; the store holds the URL)
+    expect(invoke).not.toHaveBeenCalledWith("open_external", expect.anything());
+    const { useExternalLink } = await import("@/core/externalUrl");
+    expect(useExternalLink.getState().pending).toMatch(/^https:\/\/github\.com\/anthropics/);
+    useExternalLink.getState().cancel();
   });
 });

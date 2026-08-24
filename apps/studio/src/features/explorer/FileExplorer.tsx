@@ -1,0 +1,277 @@
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { FileTreeNode } from "@seedr/shared";
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Code2,
+  FileCode,
+  Folder,
+  FolderOpen,
+  FolderTree,
+  Loader2,
+  Type,
+} from "lucide-react";
+import { useAppTheme } from "@/core/useAppTheme";
+
+// Monaco is ~3 MB and only needed once a file preview opens; it stays out of the
+// main bundle and loads on first use.
+const MonacoPreview = lazy(() => import("./MonacoPreview").then((m) => ({ default: m.MonacoPreview })));
+
+/** Language for Monaco from the file extension; ported from apps/web. */
+export function getLanguageFromPath(filePath: string): string {
+  const ext = filePath.split(".").pop()?.toLowerCase() || "";
+  const map: Record<string, string> = {
+    js: "javascript", ts: "typescript", jsx: "javascript", tsx: "typescript",
+    json: "json", md: "markdown", yml: "yaml", yaml: "yaml",
+    sh: "shell", bash: "shell",
+    rs: "rust", py: "python", rb: "ruby", go: "go",
+    html: "html", css: "css", scss: "scss",
+    toml: "ini", xml: "xml", sql: "sql",
+  };
+  return map[ext] || "plaintext";
+}
+
+type PreviewMode = "syntax" | "plain";
+
+interface FileExplorerProps {
+  files: FileTreeNode[];
+  rootName: string;
+  /** Fetches file content by path relative to the item root. Must be memoized. */
+  onFetchContent: (relativePath: string) => Promise<string>;
+  /** Opens the file with the OS default app (the path for anything Monaco cannot show). */
+  onOpenFile: (relativePath: string) => void;
+}
+
+const nodeHasFiles = (node: FileTreeNode): boolean =>
+  node.type === "file" || (node.children ?? []).some(nodeHasFiles);
+
+function collectDirPaths(nodes: FileTreeNode[], prefix: string, into: string[]): void {
+  for (const node of nodes) {
+    if (node.type !== "directory") continue;
+    const path = `${prefix}/${node.name}`;
+    into.push(path);
+    collectDirPaths(node.children ?? [], path, into);
+  }
+}
+
+function firstFilePath(nodes: FileTreeNode[], prefix: string): string | null {
+  for (const node of nodes) {
+    if (node.type === "file") return `${prefix}/${node.name}`;
+    const nested = firstFilePath(node.children ?? [], `${prefix}/${node.name}`);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+/**
+ * The tree-plus-preview split from apps/web's FileStructureSection, adapted to
+ * the desktop pane: it fills its container instead of carrying its own height
+ * and resize handle, tooltips are the estate's `data-tip`, and content arrives
+ * through the injected fetcher (Studio's scoped filesystem IPC).
+ */
+export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: FileExplorerProps) {
+  const appTheme = useAppTheme();
+  const visibleFiles = useMemo(() => files.filter(nodeHasFiles), [files]);
+  const allDirPaths = useMemo(() => {
+    const paths: string[] = [rootName];
+    collectDirPaths(visibleFiles, rootName, paths);
+    return paths;
+  }, [visibleFiles, rootName]);
+
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
+  const [mode, setMode] = useState<PreviewMode>("syntax");
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [fetchedFilePath, setFetchedFilePath] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setExpandedPaths(new Set(allDirPaths));
+    setSelectedFilePath(null);
+  }, [allDirPaths]);
+
+  const effectiveFilePath = selectedFilePath ?? firstFilePath(visibleFiles, rootName);
+  const relativePath = effectiveFilePath?.startsWith(`${rootName}/`) ? effectiveFilePath.slice(rootName.length + 1) : effectiveFilePath;
+
+  useEffect(() => {
+    if (!relativePath || !effectiveFilePath) return;
+    let cancelled = false;
+    setFileError(null);
+    onFetchContent(relativePath).then(
+      (content) => {
+        if (cancelled) return;
+        setFileContent(content);
+        setFetchedFilePath(effectiveFilePath);
+      },
+      (error: Error) => {
+        if (cancelled) return;
+        setFileError(error.message);
+        setFetchedFilePath(effectiveFilePath);
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [relativePath, effectiveFilePath, onFetchContent]);
+
+  const togglePath = useCallback((path: string) => {
+    setExpandedPaths((current) => {
+      const next = new Set(current);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
+
+  const fileIsLoading = effectiveFilePath !== null && fetchedFilePath !== effectiveFilePath;
+  const selectedFileName = effectiveFilePath?.split("/").pop() ?? "";
+  const allCollapsed = expandedPaths.size === 0;
+
+  const modeOptions: { value: PreviewMode; icon: ReactNode; label: string }[] = [
+    { value: "syntax", icon: <Code2 className="size-3" />, label: "syntax highlighting" },
+    { value: "plain", icon: <Type className="size-3" />, label: "plain text" },
+  ];
+
+  return (
+    <div className="flex h-full min-h-0 gap-3">
+      <div className="flex w-1/3 shrink-0 flex-col overflow-hidden border border-border bg-card">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+          <FolderTree className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+          <span className="flex-1 truncate text-xs text-foreground">Files</span>
+          <button
+            type="button"
+            aria-label={allCollapsed ? "expand all" : "collapse all"}
+            onClick={() => setExpandedPaths(allCollapsed ? new Set(allDirPaths) : new Set())}
+            className="text-muted-foreground hover:text-primary"
+          >
+            {allCollapsed ? <ChevronsUpDown className="size-3.5" /> : <ChevronsDownUp className="size-3.5" />}
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <ul role="tree" className="space-y-0.5">
+            <TreeNode
+              node={{ name: rootName, type: "directory", children: visibleFiles }}
+              path={rootName}
+              selectedPath={effectiveFilePath}
+              onSelectFile={setSelectedFilePath}
+              expandedPaths={expandedPaths}
+              onTogglePath={togglePath}
+            />
+          </ul>
+        </div>
+      </div>
+
+      {effectiveFilePath && relativePath && (
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden border border-border bg-card">
+          <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+            <FileCode className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate text-xs text-foreground">{selectedFileName}</span>
+            <div className="flex items-center border border-border">
+              {modeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-label={option.label}
+                  aria-pressed={mode === option.value}
+                  data-tip={option.label}
+                  className={`flex size-5 items-center justify-center ${mode === option.value ? "bg-secondary text-primary" : "text-muted-foreground hover:text-primary"}`}
+                  onClick={() => setMode(option.value)}
+                >
+                  {option.icon}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={() => onOpenFile(relativePath)} className="btn-terminal btn-terminal--ghost btn-terminal--compact">
+              open with default app
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-auto">
+            {fileIsLoading ? (
+              <div className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                loading…
+              </div>
+            ) : fileError ? (
+              <p className="flex items-center gap-2 p-3 text-xs text-destructive" role="alert">
+                <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
+                {fileError}
+              </p>
+            ) : fileContent !== null && mode === "syntax" ? (
+              <Suspense fallback={<p className="p-3 text-xs text-muted-foreground">loading editor…</p>}>
+                <MonacoPreview content={fileContent} language={getLanguageFromPath(relativePath)} appTheme={appTheme} />
+              </Suspense>
+            ) : fileContent !== null ? (
+              <pre className="p-3 text-xs leading-relaxed whitespace-pre-wrap text-foreground" data-testid="file-content">
+                <code>{fileContent}</code>
+              </pre>
+            ) : null}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface TreeNodeProps {
+  node: FileTreeNode;
+  path: string;
+  selectedPath: string | null;
+  onSelectFile(path: string): void;
+  expandedPaths: Set<string>;
+  onTogglePath(path: string): void;
+}
+
+function rowGlyphs(isDir: boolean, expanded: boolean): ReactNode {
+  if (!isDir) {
+    return (
+      <>
+        <span className="w-3 shrink-0" />
+        <FileCode className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+      </>
+    );
+  }
+  const Chevron = expanded ? ChevronDown : ChevronRight;
+  const FolderGlyph = expanded ? FolderOpen : Folder;
+  return (
+    <>
+      <Chevron className="size-3 shrink-0" aria-hidden="true" />
+      <FolderGlyph className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+    </>
+  );
+}
+
+function TreeNode({ node, path, selectedPath, onSelectFile, expandedPaths, onTogglePath }: TreeNodeProps) {
+  const isDir = node.type === "directory";
+  const expanded = expandedPaths.has(path);
+  const isSelected = !isDir && path === selectedPath;
+  return (
+    <li role="treeitem" aria-expanded={isDir ? expanded : undefined} aria-selected={isSelected}>
+      <button
+        type="button"
+        onClick={isDir ? () => onTogglePath(path) : () => onSelectFile(path)}
+        className={`flex w-full items-center gap-1.5 overflow-hidden px-1 py-0.5 text-xs whitespace-nowrap ${isSelected ? "bg-secondary text-primary" : "text-foreground hover:bg-muted hover:text-primary"}`}
+      >
+        {rowGlyphs(isDir, expanded)}
+        <span className="truncate">{node.name}</span>
+      </button>
+      {isDir && expanded && node.children && (
+        <ul role="group" className="ml-4 space-y-0.5">
+          {node.children.filter(nodeHasFiles).map((child) => (
+            <TreeNode
+              key={`${path}/${child.name}`}
+              node={child}
+              path={`${path}/${child.name}`}
+              selectedPath={selectedPath}
+              onSelectFile={onSelectFile}
+              expandedPaths={expandedPaths}
+              onTogglePath={onTogglePath}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}

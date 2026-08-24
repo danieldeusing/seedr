@@ -85,11 +85,12 @@ describe("RemoveButton", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("removed");
   });
 
-  test("is disabled with the reason for an official item", async () => {
+  test("is disabled, with the reason in the hover and the accessible name", async () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs);
     render(<RemoveButton item={items.find((i) => i.slug === "pdf")!} />);
-    expect(screen.getByRole("button", { name: "remove pdf" })).toBeDisabled();
-    expect(screen.getByText(/daily sync would restore/)).toBeInTheDocument();
+    const bin = screen.getByRole("button", { name: /remove pdf — official items cannot be removed/ });
+    expect(bin).toBeDisabled();
+    expect(bin.closest("[data-tip]")).toHaveAttribute("data-tip", expect.stringContaining("daily sync would restore"));
   });
 });

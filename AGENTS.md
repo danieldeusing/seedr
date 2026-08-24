@@ -210,8 +210,15 @@ rather than from a constant — a fork attributes its items to its own owner.
 
 ### Seedr Studio (`apps/studio`)
 
-A desktop capability manager for a seedr checkout: explore the registry by type, read an
-item's metadata and files, open a file with the OS default app. Run from source — there are no
+A desktop capability manager for a seedr checkout, wearing the estate look on configr's
+structure: an overlay title bar (the strip IS the macOS title bar), a searchable explorer
+with collapsible type groups where every row carries its ownership mode (`rw-` = toolr,
+editable; `r--` = synced) and a fixed-slot agent matrix (`cgaxo` = claude, copilot,
+antigravity, codex, opencode), a Monaco-based file preview (self-hosted, read-only, with a
+plain-text toggle) beside each item's metadata, `data-tip` hovers instead of inline notes, a
+theme dropdown, and a confirmation dialog in front of every external link (scheme-gated in
+both the webview and the host's `open_external`). Files can still be opened with the OS
+default app. Run from source — there are no
 installers:
 
 ```bash

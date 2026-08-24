@@ -24,7 +24,7 @@ describe("App", () => {
     expect(await screen.findByText(/repo · 3 items/)).toBeInTheDocument();
     expect(screen.getByText("Select an item, or add a capability.")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /^PDF$/ }));
+    await userEvent.click(screen.getByRole("button", { name: /PDF$/ }));
     expect(await screen.findByRole("heading", { name: "PDF" })).toBeInTheDocument();
   });
 
@@ -39,7 +39,7 @@ describe("App", () => {
     expect(await screen.findByText("add-local")).toBeInTheDocument();
     expect(await screen.findByText(/not installed or not on PATH/)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /^PDF$/ }));
+    await userEvent.click(screen.getByRole("button", { name: /PDF$/ }));
     expect(await screen.findByRole("heading", { name: "PDF" })).toBeInTheDocument();
   });
 

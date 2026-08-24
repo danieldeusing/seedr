@@ -163,6 +163,21 @@ fn open_path(rel: String, repo: State<Repo>) -> Result<(), String> {
     tauri_plugin_opener::open_path(path, None::<&str>).map_err(|e| e.to_string())
 }
 
+/// The schemes a registry item may send to the system browser. Item metadata is
+/// third-party input, so the gate sits here rather than in the renderer:
+/// `javascript:`, `file:` and `data:` never reach the shell however they were
+/// spelled (the webview shows a confirmation dialog first; this is the backstop).
+fn safe_external_url(raw: &str) -> Option<url::Url> {
+    let parsed = url::Url::parse(raw).ok()?;
+    matches!(parsed.scheme(), "http" | "https" | "mailto").then_some(parsed)
+}
+
+#[tauri::command]
+fn open_external(url: String) -> Result<(), String> {
+    let parsed = safe_external_url(&url).ok_or_else(|| format!("{url}: not a link this app opens"))?;
+    tauri_plugin_opener::open_url(parsed.as_str(), None::<&str>).map_err(|e| e.to_string())
+}
+
 /// Watch `registry/` recursively and emit `registry-changed` on every event;
 /// the webview coalesces bursts. Calling it again replaces the watcher.
 #[tauri::command]
@@ -277,6 +292,7 @@ pub fn run() {
             read_text,
             path_exists,
             open_path,
+            open_external,
             watch_registry,
             run_process,
             cancel_process,
@@ -309,6 +325,17 @@ mod tests {
         let path = scoped(&root, "registry/skills/pdf/item.json").expect("inside");
         assert!(path.ends_with("item.json"));
         assert!(scoped(&root, "registry/not-yet-there").is_ok(), "a missing path is allowed so exists() can answer");
+    }
+
+    #[test]
+    fn external_urls_pass_only_on_scheme_and_never_on_spelling() {
+        assert!(safe_external_url("https://github.com/x").is_some());
+        assert!(safe_external_url("mailto:a@b.c").is_some());
+        assert!(safe_external_url("javascript:alert(1)").is_none());
+        assert!(safe_external_url("JaVaScRiPt:alert(1)").is_none());
+        assert!(safe_external_url("file:///etc/passwd").is_none());
+        assert!(safe_external_url("data:text/html,x").is_none());
+        assert!(safe_external_url("not a url").is_none());
     }
 
     #[test]

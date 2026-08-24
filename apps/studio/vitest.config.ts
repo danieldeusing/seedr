@@ -15,7 +15,9 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/main.tsx"],
+      // MonacoPreview runs only in a real browser (canvas, workers); jsdom tests
+      // substitute it, so its lines cannot execute here.
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/main.tsx", "src/features/explorer/MonacoPreview.tsx", "src/types/**"],
       thresholds: { lines: 80, functions: 80, branches: 75, statements: 80 },
     },
   },

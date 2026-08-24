@@ -3,7 +3,8 @@ import type { ComponentType } from "@seedr/shared";
 import { AuthorForm } from "./features/author/AuthorForm";
 import { Detail } from "./features/explorer/Detail";
 import { Explorer } from "./features/explorer/Explorer";
-import { ThemeSwitch } from "./core/ThemeSwitch";
+import { AppHeader } from "./core/AppHeader";
+import { ExternalLinkDialog } from "./core/ExternalLinkDialog";
 import { selectedItem, useStudio } from "./features/explorer/store";
 import type { StudioItem } from "./features/explorer/registry";
 import { GitPanel } from "./features/git/GitPanel";
@@ -69,23 +70,14 @@ export function App() {
 
   return (
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)]">
-      <header className="flex items-center gap-4 border-b border-border bg-card px-4 py-2 text-xs">
-        <span className="font-bold text-primary">seedr studio</span>
-        <span className="truncate text-muted-foreground" title={repo.root}>
-          {repo.name} · {items.length} items{loading ? " · refreshing…" : ""}
-        </span>
-        <span className="flex-1" />
-        <button type="button" onClick={() => setPane("author")} className="link-quiet" aria-pressed={pane === "author"}>
-          add capability
-        </button>
-        <button type="button" onClick={() => setPane("git")} className="link-quiet" aria-pressed={pane === "git"}>
-          git status
-        </button>
-        <ThemeSwitch />
-        <button type="button" onClick={() => void chooseRepo()} className="link-quiet">
-          switch repo
-        </button>
-      </header>
+      <AppHeader
+        repo={repo}
+        itemCount={items.length}
+        loading={loading}
+        onAddCapability={() => setPane("author")}
+        onGitStatus={() => setPane("git")}
+        onSwitchRepo={() => void chooseRepo()}
+      />
       <div className="grid min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
           {error && (
@@ -107,6 +99,7 @@ export function App() {
           <Workspace pane={pane} current={current} onAdded={onAdded} setPane={setPane} />
         </section>
       </div>
+      <ExternalLinkDialog />
     </div>
   );
 }

@@ -28,13 +28,13 @@ export function Modal({ title, onClose, size = "lg", children }: ModalProps) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/70 p-6" role="presentation" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/60 p-6 backdrop-blur-md" role="presentation" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
-        className={`flex min-h-0 flex-col overflow-hidden border border-border bg-card ${size === "full" ? "h-[88vh] w-[86vw] max-w-[1400px]" : "max-h-[85vh] w-full max-w-3xl"}`}
+        className={`flex min-h-0 flex-col overflow-hidden border border-primary/40 bg-card shadow-[0_0_40px_var(--glow-soft)] ${size === "full" ? "h-[88vh] w-[86vw] max-w-[1400px]" : "max-h-[85vh] w-full max-w-3xl"}`}
       >
         <div className="flex h-[36px] shrink-0 items-center gap-2 border-b border-border px-4">
           <p className="prompt min-w-0 flex-1 truncate text-xs">{title}</p>

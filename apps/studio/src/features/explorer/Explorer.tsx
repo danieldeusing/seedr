@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Eye, Pencil, Rows3, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Pencil, Rows3, Search, X } from "lucide-react";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
 import { useRowStyle, type RowStyle } from "@/core/rowStyle";
 import { ThemeMenu } from "@/core/ThemeMenu";
@@ -59,8 +59,9 @@ function RowIndicators({ item, style }: { item: StudioItem["item"]; style: RowSt
   const supported = new Set(canonicalAgents(item.compatibility ?? []));
   return (
     <>
-      <span data-tip={mode.tip} className="shrink-0 text-muted-foreground">
-        {mode.editable ? <Pencil className="size-3" aria-label="editable" /> : <Eye className="size-3" aria-label="read-only" />}
+      {/* only the editable state is marked; read-only is the unmarked default */}
+      <span data-tip={mode.editable ? mode.tip : undefined} className="w-3 shrink-0 text-muted-foreground">
+        {mode.editable && <Pencil className="size-3" aria-label="editable" />}
       </span>
       <span className="flex w-16 shrink-0 items-center gap-0.5">
         {CANONICAL_AGENTS.filter((agent) => supported.has(agent)).map((agent) => (
@@ -212,7 +213,7 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
         )}
       </div>
       <div className="flex h-[36px] shrink-0 items-center gap-1 border-t border-border px-2">
-        <details className="dropdown">
+        <details className="dropdown dropup-left">
           <summary aria-label={`row style: ${rowStyle}`} data-tip="How rows show ownership and agents" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
             <Rows3 className="size-3.5" aria-hidden="true" />
             <ChevronDown className="size-3 rotate-180" aria-hidden="true" />
@@ -235,7 +236,7 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
             ))}
           </div>
         </details>
-        <ThemeMenu direction="up" />
+        <ThemeMenu direction="up" align="left" />
       </div>
     </nav>
   );

@@ -23,7 +23,7 @@ const currentTheme = (): Theme => {
  * The estate theme picker as a dropdown menu (configr keeps it in the explorer
  * footer); index.html applies the stored choice before first paint.
  */
-export function ThemeMenu({ direction = "down" }: { direction?: "up" | "down" }) {
+export function ThemeMenu({ direction = "down", align = "right" }: { direction?: "up" | "down"; align?: "left" | "right" }) {
   const [theme, setTheme] = useState<Theme>(currentTheme);
 
   const choose = (next: Theme) => (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -40,7 +40,7 @@ export function ThemeMenu({ direction = "down" }: { direction?: "up" | "down" })
 
   const Chevron = direction === "up" ? ChevronUp : ChevronDown;
   return (
-    <details className="dropdown">
+    <details className={`dropdown ${align === "left" ? "dropup-left" : ""}`}>
       <summary aria-label={`theme: ${theme}`} data-tip="Switch the estate colour theme" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
         <Palette className="size-3.5" aria-hidden="true" />
         <Chevron className="size-3" aria-hidden="true" />

@@ -8,7 +8,7 @@ import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
 import { testRefusal } from "@/features/test/testStore";
-import { PanelLeftClose, PanelLeftOpen, PanelRightOpen } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
 
 interface DetailProps {
   item: StudioItem;
@@ -165,9 +165,17 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           <PaneResizeHandle label="resize metadata" onResize={(delta) => setMetaWidth((width) => Math.max(240, width + delta))} />
         )}
         {filesCollapsed ? (
-          <CollapsedStrip side="right" label="files" tip="show files" stacked={stacked} onExpand={() => setFilesCollapsed(false)} />
+          <CollapsedStrip side="right" label="content" tip="show content" stacked={stacked} onExpand={() => setFilesCollapsed(false)} />
         ) : (
-        <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="flex h-[28px] shrink-0 items-center gap-2 border-b border-border px-3">
+            <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">content</span>
+            <span className="flex-1" />
+            <button type="button" onClick={() => setFilesCollapsed(true)} aria-label="hide content" data-tip="hide content" className="text-muted-foreground hover:text-primary">
+              <PanelRightClose className="size-3.5" aria-hidden="true" />
+            </button>
+          </div>
+          <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-4">
           {treeError ? (
             <p className="text-xs text-destructive" role="alert">
               {treeError}
@@ -177,8 +185,9 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           ) : tree.length === 0 ? (
             <p className="text-xs text-muted-foreground">metadata only — no content files</p>
           ) : (
-            <FileExplorer files={tree} rootName={item.slug} onFetchContent={fetchContent} onOpenFile={(rel) => void openPath(`${item.dir}/${rel}`)} onCollapse={() => setFilesCollapsed(true)} />
+            <FileExplorer files={tree} rootName={item.slug} onFetchContent={fetchContent} onOpenFile={(rel) => void openPath(`${item.dir}/${rel}`)} />
           )}
+          </div>
         </div>
         )}
       </div>

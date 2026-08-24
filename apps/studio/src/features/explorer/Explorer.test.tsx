@@ -33,10 +33,11 @@ describe("Explorer", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("1 unreadable item file(s)");
     expect(screen.getByLabelText("1 validation problems")).toBeInTheDocument();
 
-    // icons view (the default): read-only eye vs editable pencil, and the brand marks
+    // icons view (the default): only the editable pencil is marked — read-only is
+    // the unmarked default — plus the brand marks of the supported agents
     const pdf = screen.getByRole("button", { name: /PDF$/ });
     expect(pdf).toHaveAttribute("aria-current", "true");
-    expect(within(pdf).getByLabelText("read-only")).toBeInTheDocument();
+    expect(within(pdf).queryByLabelText("editable")).toBeNull();
     expect(within(pdf).getByAltText("Claude Code")).toBeInTheDocument();
     expect(within(screen.getByRole("button", { name: /Playwright$/ })).getByLabelText("editable")).toBeInTheDocument();
 

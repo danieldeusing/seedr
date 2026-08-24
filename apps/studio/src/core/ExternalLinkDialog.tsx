@@ -23,7 +23,7 @@ export function ExternalLinkDialog() {
 
   if (!pending) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70" role="presentation" onClick={cancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md" role="presentation" onClick={cancel}>
       <div
         role="dialog"
         aria-modal="true"

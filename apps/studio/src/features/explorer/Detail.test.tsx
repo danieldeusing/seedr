@@ -68,9 +68,9 @@ describe("Detail", () => {
     await userEvent.click(screen.getByRole("button", { name: "show metadata" }));
     expect(screen.getByTestId("meta-pane")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "hide files" }));
+    await userEvent.click(screen.getByRole("button", { name: "hide content" }));
     expect(screen.queryByRole("tree")).toBeNull();
-    await userEvent.click(screen.getByRole("button", { name: "show files" }));
+    await userEvent.click(screen.getByRole("button", { name: "show content" }));
     expect(await screen.findByRole("tree")).toBeInTheDocument();
   });
 

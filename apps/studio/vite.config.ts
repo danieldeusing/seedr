@@ -12,7 +12,8 @@ export default defineConfig({
   server: {
     port: 6300,
     strictPort: true,
-    watch: { ignored: ["**/src-tauri/**"] },
+    // src-tauri: cargo artifacts; coverage: vitest output — neither may reload the app
+    watch: { ignored: ["**/src-tauri/**", "**/coverage/**"] },
   },
   build: { outDir: "dist" },
 });

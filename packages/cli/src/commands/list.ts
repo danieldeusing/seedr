@@ -144,9 +144,7 @@ async function listAvailable(type?: ComponentType): Promise<void> {
     console.log(chalk.gray("─".repeat(SEPARATOR_WIDTH)));
 
     for (const item of typeItems) {
-      const compatIcons = item.compatibility
-        .map((a) => CODING_AGENTS[a].shortName)
-        .join(" ");
+      const compatIcons = [...new Set(item.compatibility.map((a) => CODING_AGENTS[a].shortName))].join(" ");
       const featured = item.featured ? chalk.yellow("★ ") : "  ";
       console.log(
         `${featured}${chalk.white(item.slug.padEnd(SLUG_COLUMN_WIDTH))} ${chalk.gray(compatIcons)}`

@@ -124,12 +124,14 @@ pnpm build
 
 ## Step 4: Configure the CLI
 
-The CLI resolves registry content by trying a local path first, then falling back to a remote URL. To point it at your own instance, edit the `GITHUB_RAW_URL` constant in `packages/cli/src/config/registry.ts`:
+The CLI resolves registry content by trying a local path first, then falling back to a remote URL. Point it at your own instance with environment variables — no code change:
 
-```typescript
-// Change this to your own raw content URL
-const GITHUB_RAW_URL = "https://raw.githubusercontent.com/YOUR-ORG/seedr/main/registry";
+```bash
+SEEDR_REGISTRY_URL=https://seedr.your-company.example/registry npx @your-scope/seedr list
+SEEDR_REGISTRY_DIR=/path/to/your/seedr/registry npx @your-scope/seedr add my-skill
 ```
+
+To change the fork's *default* (so your users need no variable), edit `DEFAULT_REGISTRY_URL` in `packages/cli/src/config/registry.ts`.
 
 If you're serving the registry from your own domain (e.g., via Nginx), you can point it there instead:
 
@@ -158,15 +160,14 @@ The codebase has several places that reference the upstream identity (author nam
 - `apps/web/src/routes/Detail.tsx` — same fallback for the detail page author
 - `apps/web/src/routes/Home.tsx` — header subtitle and copy
 - `apps/web/src/components/Header.tsx` — remove or replace icon links (Toolr, GitHub, etc.)
-- `.agents/skills/add-toolr/SKILL.md` — update the `author` field in the item.json template so new items get your metadata
+- New items need no change: the add/update skills, Seedr Studio and `scripts/registry-op.ts identity` all derive the author and `externalUrl` from your clone's own git remote and `user.name`
 
 **sourceType** (optional) — If you want to rename `"toolr"` to your own identifier (e.g., `"acme"`), search-and-replace across:
 
 - `packages/shared/` — the `SourceType` type definition
+- `packages/registry-ops/src/validate.ts` — `KNOWN_SOURCE_TYPES`, which the validator, the operations and Seedr Studio all share
 - `packages/cli/src/config/registry.ts` — routing logic for item content
 - `apps/web/` — filters, badges, components that check `sourceType`
-- `scripts/compile-manifest.ts` — manifest compilation
-- `.agents/skills/` — add-toolr and remove-toolr skill templates
 - `registry/*/*/item.json` — all existing items with `"sourceType": "toolr"`
 
 **Install commands in the web UI** — The detail page shows `npx @danieldeusing/seedr add ...` commands. Update `apps/web/src/routes/Detail.tsx` to reference your package name and registry:

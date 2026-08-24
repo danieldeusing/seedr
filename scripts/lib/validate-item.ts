@@ -12,10 +12,10 @@ import {
   flattenFileTree,
   isSafeNodeName,
   structuralErrors,
+  typeDirName,
   validateItem as validateStructured,
 } from "@seedr/registry-ops/pure";
 import type { ComponentType, FileTreeNode } from "../sync/types.js";
-import { typeDirName } from "../compile-manifest.js";
 
 export { SLUG_PATTERN, MAX_SLUG_LENGTH, flattenFileTree, isSafeNodeName, findDuplicateItems };
 export const CODING_AGENTS = KNOWN_AGENTS;

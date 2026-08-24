@@ -132,6 +132,21 @@ mod tests {
         assert_eq!(&command[3..], ["add", "my-skill", "--type", "skill", "--agents", "all", "--scope", "project", "--method", "copy", "--yes"]);
     }
 
+    #[test]
+    fn removes_the_scratch_dir_when_the_install_fails() {
+        let root = checkout();
+        if !root.join("node_modules").join("tsx").is_dir() {
+            eprintln!("skipped: no node_modules in the checkout");
+            return;
+        }
+        let request = TestInstallRequest { task_id: "test-install-fail".into(), item_type: "skill".into(), slug: "no-such-item-xyz".into(), timeout_ms: 120_000 };
+        let outcome = run(&Registry::default(), &root, request, quiet()).expect("run");
+
+        assert_eq!(outcome.run.status, RunStatus::Failed, "stdout: {}", outcome.run.stdout);
+        assert_eq!(outcome.cleanup_error, None);
+        assert!(!Path::new(&outcome.scratch_dir).exists(), "scratch dir was not removed after failure");
+    }
+
     /// A first-party skill from this checkout's registry, if it has one.
     fn local_skill(root: &Path) -> Option<String> {
         let skills = fs::read_dir(root.join("registry").join("skills")).ok()?;

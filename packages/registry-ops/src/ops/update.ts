@@ -1,6 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, relative, resolve } from "node:path";
+import { existsSync, lstatSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, resolve, sep } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
+import { canonicalAgents } from "../agents.js";
 import { itemStateHash } from "../hash.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
 import { fileTree, readItem } from "../read.js";
@@ -9,12 +10,25 @@ import { formatErrors, validateItem } from "../validate.js";
 import { today } from "./addLocal.js";
 import type { OpResult, UpdateOp } from "./types.js";
 
-/** Resolve an edit path inside the item directory, refusing anything that escapes it. */
+/**
+ * Resolve an edit path inside the item directory, refusing anything that could
+ * land outside it: absolute paths, `..`, backslashes and drive letters (which
+ * `resolve` would send to another drive on Windows), and any existing symlink
+ * on the way — a link would carry the write out of the repository.
+ */
 function insideItemDir(dir: string, editPath: string): string {
-  const target = resolve(dir, editPath);
-  const rel = relative(dir, target);
-  if (rel === "" || rel.startsWith("..") || resolve(dir, rel) !== target) {
+  const segments = editPath.split("/");
+  const plainSegments = segments.every((s) => s !== "" && s !== "." && s !== ".." && !s.includes("\\") && !s.includes(":"));
+  const root = resolve(dir);
+  const target = resolve(root, editPath);
+  if (!plainSegments || !target.startsWith(root + sep)) {
     throw new Error(`Content edit path escapes the item directory: ${editPath}`);
+  }
+  for (let walked = root, i = 0; i < segments.length; i++) {
+    walked = resolve(walked, segments[i] as string);
+    if (existsSync(walked) && lstatSync(walked).isSymbolicLink()) {
+      throw new Error(`Content edit path goes through a symlink: ${editPath}`);
+    }
   }
   return target;
 }
@@ -39,6 +53,8 @@ export function update(registryDir: string, op: UpdateOp): OpResult {
   const edits = (op.contentEdits ?? []).map((edit) => ({ target: insideItemDir(dir, edit.path), content: edit.content }));
 
   const next: RegistryItem = { ...omit(current, "contentHash"), ...op.patch, updatedAt: today() };
+  // A patch names what changes inside contents (usually triggers); the file list stays.
+  if (op.patch.contents) next.contents = { ...current.contents, ...op.patch.contents };
   // Content edits change the file tree; validate against the tree they will produce.
   const errors = validateItem(next, { expectedType: op.type, expectedSlug: op.slug });
   if (errors.length > 0) throw new Error(`Item would be invalid: ${formatErrors(errors)}`);
@@ -47,6 +63,9 @@ export function update(registryDir: string, op: UpdateOp): OpResult {
     mkdirSync(dirname(edit.target), { recursive: true });
     writeFileSync(edit.target, edit.content);
   }
+  // Written canonically (a stored `gemini` leaves on the first edit); the raw
+  // list was validated above so an unknown id still names itself.
+  next.compatibility = canonicalAgents(next.compatibility);
   const item: RegistryItem = edits.length > 0 ? { ...next, contents: { ...next.contents, files: fileTree(dir) } } : next;
   writeFileSync(itemJsonPath(registryDir, op.type, op.slug), JSON.stringify(item, null, 2) + "\n");
   return { kind: op.kind, type: op.type, slug: op.slug, item };

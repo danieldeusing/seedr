@@ -7,7 +7,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { typeDirName } from "../compile-manifest.js";
+import { typeDirName } from "@seedr/registry-ops";
 import type { GitTreeItem, ManifestItem } from "../sync/types.js";
 
 export type FakeFile = string | Buffer | { symlink: string };

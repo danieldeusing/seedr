@@ -22,10 +22,12 @@ function gitHost(status: string, diff = "") {
 }
 
 describe("parsePorcelain", () => {
-  test("keeps the two status columns, unquotes paths and follows renames", () => {
-    expect(parsePorcelain(' M registry/mcp/manifest.json\n?? "new file.md"\nR  old.md -> new.md\n')).toEqual([
+  test("keeps the two status columns, takes -z paths verbatim and follows renames", () => {
+    // -z records: NUL-separated, no quoting; a rename's source is its own record.
+    expect(parsePorcelain(" M registry/mcp/manifest.json\0?? new file.md\0?? naïve – path.md\0R  new.md\0old.md\0")).toEqual([
       { status: " M", path: "registry/mcp/manifest.json" },
       { status: "??", path: "new file.md" },
+      { status: "??", path: "naïve – path.md" },
       { status: "R ", path: "new.md" },
     ]);
     expect(parsePorcelain("")).toEqual([]);
@@ -34,7 +36,7 @@ describe("parsePorcelain", () => {
 
 describe("GitPanel", () => {
   test("shows branch, head, the changed paths, a tracked diff and an untracked file's content", async () => {
-    gitHost(" M registry/mcp/manifest.json\n?? registry/skills/new/item.json\n", "--- a/x\n+++ b/x\n+changed");
+    gitHost(" M registry/mcp/manifest.json\0?? registry/skills/new/item.json\0", "--- a/x\n+++ b/x\n+changed");
     mockFs({ "registry/skills/new/item.json": '{"slug":"new"}' });
     render(<GitPanel />);
 

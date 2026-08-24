@@ -14,8 +14,6 @@ import { fileURLToPath } from "node:url";
 import { ALL_TYPES, collectItems, compileRegistry, listItemsRaw, typeDirName } from "@seedr/registry-ops";
 import type { Manifest, ManifestItem } from "./sync/types.js";
 
-export { ALL_TYPES, typeDirName };
-
 export const DEFAULT_REGISTRY_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "registry");
 
 export interface CompileOptions {

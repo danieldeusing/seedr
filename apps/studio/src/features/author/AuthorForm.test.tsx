@@ -15,7 +15,7 @@ beforeEach(() => {
   onCommand("run_process", (args) => {
     const request = args?.request as RunRequest;
     if (request.program === "claude" && request.args[0] === "--version") return ok(request, "2.1.226");
-    if (request.program === "claude") return ok(request, "--output-format --json-schema --max-turns");
+    if (request.program === "claude") return ok(request, "--output-format --json-schema --tools");
     if (request.args.includes("identity")) return ok(request, JSON.stringify({ owner: "acme", authorName: "Acme" }));
     return ok(request, JSON.stringify({ ok: true, kind: "add-local", type: "skill", slug: "pdf", item: {}, changedPaths: ["registry/skills/pdf/item.json", "registry/skills/manifest.json"], headBefore: "abc1234def" }));
   });

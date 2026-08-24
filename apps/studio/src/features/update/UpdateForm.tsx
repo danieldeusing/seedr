@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import type { ScopeType } from "@seedr/shared";
-import { CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
+import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
 import type { StudioItem } from "@/features/explorer/registry";
 import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
@@ -17,18 +17,26 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const draftErrors = useUpdate((s) => s.draftErrors);
   const error = useUpdate((s) => s.error);
   const outcome = useUpdate((s) => s.outcome);
+  const target = useUpdate((s) => s.target);
   const { start, setField, toggleAgent, redraft, apply, reset } = useUpdate.getState();
 
   useEffect(() => {
-    void start(item);
-    return () => reset();
-  }, [item, start, reset]);
+    // The watcher rebuilds every StudioItem object on any registry event; the form
+    // (and its open-time hash guard) restarts only when a different item is opened.
+    if (target?.type !== item.type || target?.slug !== item.slug) void start(item);
+  }, [item, target, start]);
+
+  const close = () => {
+    reset();
+    onDone();
+  };
 
   const refusal = updateRefusal(item);
   const problems = useMemo(() => formProblems(item, form), [item, form]);
   const changed = useMemo(() => Object.keys(toPatch(item, form)), [item, form]);
   const busy = phase === "drafting" || phase === "applying";
-  const input = "w-full border border-border bg-muted px-2 py-1 text-xs";
+  // the design system styles text inputs, selects and textareas itself
+  const input = "w-full text-xs";
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
 
   if (phase === "done" && outcome) {
@@ -43,7 +51,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
             <li key={path}>{path}</li>
           ))}
         </ul>
-        <button type="button" onClick={onDone} className="btn-terminal btn-terminal--ghost btn-terminal--compact mt-4">
+        <button type="button" onClick={close} className="btn-terminal btn-terminal--ghost btn-terminal--compact mt-4">
           back to the item
         </button>
       </section>
@@ -82,7 +90,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
         <div className="field-val">
           {CANONICAL_AGENTS.map((agent) => (
             <label key={agent} className="mr-3">
-              <input type="checkbox" checked={form.compatibility.includes(agent)} onChange={() => toggleAgent(agent)} /> {agent}
+              <input type="checkbox" checked={form.compatibility.includes(agent)} onChange={() => toggleAgent(agent)} /> {AGENT_LABELS[agent]}
             </label>
           ))}
         </div>
@@ -132,9 +140,12 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
         <button type="submit" className="btn-terminal btn-terminal--compact" disabled={busy || !!refusal || changed.length === 0 || problems.length > 0}>
           {phase === "applying" ? "applying…" : changed.length === 0 ? "nothing changed" : `apply ${changed.length} change${changed.length === 1 ? "" : "s"}`}
         </button>
-        <button type="button" onClick={onDone} className="link-quiet">
+        <button type="button" onClick={close} className="link-quiet">
           cancel
         </button>
+        <span className="text-muted-foreground" role="status">
+          {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : ""}
+        </span>
       </div>
       {draftErrors.length > 0 && (
         <p className="mt-3 text-destructive" role="alert">
@@ -152,5 +163,5 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
 
 function Problems({ errors }: { errors: { field: string; message: string }[] }) {
   if (errors.length === 0) return null;
-  return <p className="mb-2 pl-[8.5rem] text-destructive">{formatErrors(errors)}</p>;
+  return <p className="mb-2 pl-[var(--field-label-w)] text-destructive">{formatErrors(errors)}</p>;
 }

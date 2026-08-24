@@ -3,8 +3,10 @@ paths:
   - registry/**
   - .agents/skills/**
   - .claude/skills/**
+  - packages/registry-ops/**
   - packages/cli/src/config/registry.ts
   - apps/web/src/lib/registry.ts
+  - scripts/registry-op.ts
   - scripts/compile-manifest.ts
   - scripts/sync.ts
 ---

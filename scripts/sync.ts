@@ -23,7 +23,8 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { DEFAULT_REGISTRY_DIR, compileManifest, readAllItems, typeDirName } from "./compile-manifest.js";
+import { typeDirName } from "@seedr/registry-ops";
+import { DEFAULT_REGISTRY_DIR, compileManifest, readAllItems } from "./compile-manifest.js";
 import { findDuplicateItems, validateItem } from "./lib/validate-item.js";
 import { syncOfficialPlugins, syncOfficialSkills, type SourceContext } from "./sync/anthropic.js";
 import { syncCommunityItem } from "./sync/community.js";

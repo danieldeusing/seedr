@@ -7,6 +7,7 @@
  * zero results. Dependent parameters (`scope` needs `source=toolr`, `ext` needs
  * `pluginType=wrapper`) are cleared together with the parameter they depend on.
  */
+import { canonicalAgent } from "@seedr/registry-ops/pure";
 import type { CodingAgent, ComponentType, PluginType, RegistryItem, ScopeType, SourceType } from "./types";
 import { agentOptions, scopeOptions, sourceOptions } from "./filterOptions";
 import { agentLabels, scopeLabels, sourceLabels } from "./colors";
@@ -86,20 +87,21 @@ export function parseBrowseParams(params: URLSearchParams, context: BrowseContex
   const dropped: DroppedParam[] = [];
   const isPlugins = context.componentType === "plugin";
 
-  const read = <T extends string>(key: FilterParamKey, allowed: readonly FilterOption[], applies: boolean, irrelevantReason: string): T | null => {
+  const read = <T extends string>(key: FilterParamKey, allowed: readonly FilterOption[], applies: boolean, irrelevantReason: string, normalize: (raw: string) => string = (raw) => raw): T | null => {
     const raw = params.get(key);
     if (raw === null || raw === "" || raw === "all") return null;
     if (!applies) {
       dropped.push({ key, value: raw, reason: irrelevantReason });
       return null;
     }
-    const valid = pickValid<T>(raw, allowed);
+    const valid = pickValid<T>(normalize(raw), allowed);
     if (valid === null) dropped.push({ key, value: raw, reason: `"${raw}" is not a known ${key}` });
     return valid;
   };
 
   const query = params.get("q") ?? "";
-  const tool = read<CodingAgent>("tool", agentOptions, true, "");
+  // canonicalised first, so an old `?tool=gemini` link still filters (as antigravity)
+  const tool = read<CodingAgent>("tool", agentOptions, true, "", (raw) => canonicalAgent(raw) ?? raw);
   const source = read<SourceType>("source", sourceOptions, true, "");
   const scope = read<ScopeType>("scope", scopeOptions, source === "toolr", "scope only applies to Seedr-sourced items");
   const pluginType = read<PluginType>("pluginType", pluginTypeOptions, isPlugins, "plugin type only applies to the plugins page");

@@ -119,7 +119,9 @@ export function readTypeManifest(registryDir: string, type: ComponentType): Type
 /** The file tree under `dir`, directories first, sorted, item.json excluded. */
 export function fileTree(dir: string): FileTreeNode[] {
   return readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => !(entry.isFile() && entry.name === "item.json"))
+    // item.json is metadata, and a symlink is not content — following one could
+    // leave the item directory entirely.
+    .filter((entry) => !entry.isSymbolicLink() && !(entry.isFile() && entry.name === "item.json"))
     .sort((a, b) => (a.isDirectory() === b.isDirectory() ? a.name.localeCompare(b.name) : a.isDirectory() ? -1 : 1))
     .map((entry) =>
       entry.isDirectory()

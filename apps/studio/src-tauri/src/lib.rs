@@ -90,13 +90,6 @@ fn repo_info(path: &Path) -> Result<RepoInfo, String> {
     Ok(RepoInfo { root: path.display().to_string(), name })
 }
 
-#[tauri::command]
-fn set_repo_root(path: String, repo: State<Repo>) -> Result<RepoInfo, String> {
-    let path = PathBuf::from(path);
-    let info = repo_info(&path)?;
-    *repo.0.lock().map_err(|e| e.to_string())? = Some(path);
-    Ok(info)
-}
 
 #[tauri::command]
 async fn pick_repo(app: AppHandle, repo: State<'_, Repo>) -> Result<Option<RepoInfo>, String> {
@@ -187,11 +180,18 @@ fn watch_registry(app: AppHandle, repo: State<Repo>, watcher: State<RegistryWatc
     Ok(())
 }
 
+/// Everything the webview may run: the registry CLI (`npx`), the probed coding
+/// agent, and read-only `git`. A compromised webview must not become a shell.
+const RUNNABLE_PROGRAMS: [&str; 3] = ["npx", "claude", "git"];
+
 /// Run a bounded child process with its working directory inside the repo.
 /// Output lines stream to the webview as `process-output` events.
 #[tauri::command]
 async fn run_process(app: AppHandle, mut request: RunRequest, repo: State<'_, Repo>, registry: State<'_, Registry>) -> Result<RunOutcome, String> {
     let root = current_root(&repo)?;
+    if !RUNNABLE_PROGRAMS.contains(&request.program.as_str()) {
+        return Err(format!("{}: not a program Studio runs", request.program));
+    }
     request.cwd = Some(match request.cwd.as_deref().and_then(|p| p.to_str()) {
         Some(rel) if !rel.is_empty() => scoped(&root, rel)?,
         _ => root,
@@ -205,8 +205,14 @@ async fn run_process(app: AppHandle, mut request: RunRequest, repo: State<'_, Re
 
 #[tauri::command]
 fn cancel_process(task_id: String, registry: State<Registry>) -> bool {
+    // Marked before the kill so the dying run reads its flag, unmarked again when
+    // nothing was running — a stale flag would label the task's NEXT run cancelled.
     executor::mark_cancelled(&task_id);
-    registry.cancel(&task_id)
+    let cancelled = registry.cancel(&task_id);
+    if !cancelled {
+        executor::clear_cancel_flag(&task_id);
+    }
+    cancelled
 }
 
 /// A native picker; the chosen absolute path is remembered so `read_source_files` may read under it.
@@ -222,7 +228,8 @@ async fn pick_path(kind: String, app: AppHandle, picked: State<'_, PickedPaths>)
 
 #[tauri::command]
 fn read_source_files(path: String, picked: State<PickedPaths>) -> Result<SourceFiles, String> {
-    let path = PathBuf::from(path);
+    // Canonical first: `<picked>/../elsewhere` shares the prefix but not the tree.
+    let path = PathBuf::from(&path).canonicalize().map_err(|e| format!("{path}: {e}"))?;
     if !picked.allows(&path) {
         return Err("Only paths chosen through the picker in this session can be read".to_string());
     }
@@ -244,9 +251,13 @@ async fn test_install(app: AppHandle, request: TestInstallRequest, repo: State<'
 /// `SEEDR_STUDIO_REPO=<path>` launches straight into that checkout (it still has
 /// to pass `repo_info`); otherwise the first screen asks for one.
 fn preselected_repo() -> Repo {
-    let picked = std::env::var_os("SEEDR_STUDIO_REPO")
-        .map(PathBuf::from)
-        .filter(|path| repo_info(path).is_ok());
+    let picked = std::env::var_os("SEEDR_STUDIO_REPO").map(PathBuf::from).filter(|path| match repo_info(path) {
+        Ok(_) => true,
+        Err(reason) => {
+            eprintln!("SEEDR_STUDIO_REPO ignored: {reason}");
+            false
+        }
+    });
     Repo(Mutex::new(picked))
 }
 
@@ -260,7 +271,6 @@ pub fn run() {
         .manage(Registry::default())
         .manage(PickedPaths::default())
         .invoke_handler(tauri::generate_handler![
-            set_repo_root,
             pick_repo,
             get_repo,
             list_dir,

@@ -21,7 +21,8 @@
 
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, join, sep } from "node:path";
-import { DEFAULT_REGISTRY_DIR, readAllItems, typeDirName } from "./compile-manifest.js";
+import { typeDirName } from "@seedr/registry-ops";
+import { DEFAULT_REGISTRY_DIR, readAllItems } from "./compile-manifest.js";
 import { flattenFileTree } from "./lib/validate-item.js";
 import { MARKETPLACE_FILE, PLUGIN_JSON } from "./sync/anthropic.js";
 import { computeContentDigest } from "./sync/digest.js";

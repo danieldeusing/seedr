@@ -36,7 +36,9 @@ Determine which items to review, in this order:
   `externalUrl`.
 - **Consistency** — `type` matches the parent folder (e.g. `skill` ↔ `registry/skills/`), `slug`
   matches the directory name, `sourceType` is one of `toolr`/`community`/`official`. For `toolr`
-  items, `author.name` is "Daniel Deusing" and `author.url` is `https://github.com/danieldeusing`.
+  items, `author` matches this checkout's own identity — compare against `npx tsx
+  scripts/registry-op.ts identity` (a fork attributes its items to its own owner, never to
+  the upstream author).
 - **`description` quality** — exactly one sentence; leads with what the item *does* (verb-first,
   not "A tool that…"); no trigger instructions ("Use when…"); no title restatement ("X plugin for
   Claude"); scannable at a glance.

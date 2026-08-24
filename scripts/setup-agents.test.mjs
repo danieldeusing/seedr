@@ -89,8 +89,15 @@ describe("setupAgents", () => {
     writeFileSync(join(root, ".gitignore"), ".claude/skills/\n.claude/rules/\n.claude/agents/\n");
     setupAgents(root);
     const status = gitStatus(root);
-    assert.match(status, /\?\? \.claude\/rules/);
-    assert.match(status, /\?\? \.claude\/agents/);
+    if (process.platform === "win32") {
+      // A junction is a directory to git, so even the trailing-slash form hides it —
+      // the trap this repo's no-trailing-slash .gitignore guards against is Unix-only,
+      // where a symlink is a file and `dir/` patterns miss it.
+      assert.doesNotMatch(status, /\.claude\/(rules|agents)/);
+    } else {
+      assert.match(status, /\?\? \.claude\/rules/);
+      assert.match(status, /\?\? \.claude\/agents/);
+    }
   });
 
   test("replaces a dangling link", () => {

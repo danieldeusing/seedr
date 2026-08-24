@@ -123,10 +123,10 @@ describe("TestPanel", () => {
     const onDone = vi.fn();
     render(<TestPanel item={notes} onDone={onDone} />);
 
-    expect(await screen.findByRole("status")).toHaveTextContent("failed: scripts/run.py was installed with different content");
+    expect(await screen.findByTestId("test-verdict")).toHaveTextContent("failed: scripts/run.py was installed with different content");
+    expect(screen.getByRole("status")).toHaveTextContent("ok in 220 ms");
     expect(screen.getByRole("list", { name: "written files" })).toHaveTextContent(".claude/skills/notes/SKILL.md");
     expect(screen.getByTestId("test-output")).toHaveTextContent("Installed for 2 agent(s)");
-    expect(screen.getByText(/ok in 220 ms/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "back" }));
     expect(onDone).toHaveBeenCalled();

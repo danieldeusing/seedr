@@ -17,7 +17,8 @@ function scriptedRun(answers: Partial<RunOutcome>[]) {
   return { run, requests };
 }
 
-const HELP = "--output-format <format> ... --json-schema <schema> ... --max-turns <n>";
+// What 2.1.226 actually prints: --max-turns is accepted but NOT listed.
+const HELP = "--output-format <format> ... --json-schema <schema> ... --tools <tools...>";
 
 describe("probeClaude", () => {
   test("enables the adapter only for a new-enough binary with the flags it needs", async () => {
@@ -60,6 +61,9 @@ describe("draftWithClaude", () => {
     expect(requests[0]?.program).toBe("claude");
     expect(requests[0]?.args).toEqual(claudeDraftArgs());
     expect(requests[0]?.args).toContain("--max-turns");
+    const toolsFlag = requests[0]?.args.indexOf("--tools") ?? -1;
+    expect(toolsFlag).toBeGreaterThan(-1);
+    expect(requests[0]?.args[toolsFlag + 1]).toBe("");
     expect(requests[0]?.stdin).toContain("### SKILL.md");
   });
 

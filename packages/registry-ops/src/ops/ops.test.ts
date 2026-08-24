@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -7,7 +8,7 @@ import { readItem } from "../read.js";
 import { LONG, makeRegistry, FIXTURE_SHA, FIXTURE_DIGEST } from "../test/fixtures.js";
 import { applyOp } from "./apply.js";
 import { parseOp } from "./parse.js";
-import type { AddLocalOp, AddRemoteOp, RegistryOp, RemoveOp, UpdateOp } from "./types.js";
+import type { AddLocalOp, AddRemoteOp, RemoveOp, UpdateOp } from "./types.js";
 
 function makeSource(): string {
   const dir = mkdtempSync(join(tmpdir(), "seedr-source-"));
@@ -192,8 +193,92 @@ describe("remove", () => {
     expect(existsSync(join(registry, "skills", "alpha"))).toBe(true);
   });
 
-  test("applyOp is exhaustive over the op kinds", () => {
-    const kinds: RegistryOp["kind"][] = ["add-local", "add-remote", "update", "remove"];
-    expect(kinds).toHaveLength(4);
+  test("copies symlinked sources as real files and writes canonical agent ids", () => {
+    const registry = makeRegistry();
+    const source = makeSource();
+    writeFileSync(join(source, "real.md"), "real\n");
+    symlinkSync(join(source, "real.md"), join(source, "linked.md"));
+
+    const result = applyOp(registry, addLocalOp({ slug: "deref", sourcePath: source, compatibility: ["gemini", "claude", "gemini"] }));
+
+    const copied = join(registry, "skills", "deref", "linked.md");
+    expect(lstatSync(copied).isSymbolicLink()).toBe(false);
+    expect(readFileSync(copied, "utf8")).toBe("real\n");
+    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "antigravity"]);
+  });
+
+  test("drops files git ignores from the copy, the tree and the hash", () => {
+    const repo = mkdtempSync(join(tmpdir(), "seedr-ignore-"));
+    execFileSync("git", ["init", "-q"], { cwd: repo });
+    writeFileSync(join(repo, ".gitignore"), ".DS_Store\nnode_modules/\n");
+    const registry = join(repo, "registry");
+    mkdirSync(join(registry, "skills"), { recursive: true });
+
+    const source = makeSource();
+    writeFileSync(join(source, ".DS_Store"), "finder noise");
+    mkdirSync(join(source, "node_modules", "x"), { recursive: true });
+    writeFileSync(join(source, "node_modules", "x", "index.js"), "noise");
+
+    const result = applyOp(registry, addLocalOp({ slug: "tidy", sourcePath: source }));
+
+    expect(existsSync(join(registry, "skills", "tidy", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(registry, "skills", "tidy", ".DS_Store"))).toBe(false);
+    expect(existsSync(join(registry, "skills", "tidy", "node_modules"))).toBe(false);
+    const names = JSON.stringify((result.item as { contents: { files: unknown } }).contents.files);
+    expect(names).not.toContain("DS_Store");
+    expect(names).not.toContain("node_modules");
+  });
+
+  test("update refuses drive letters, backslashes and symlinked edit paths", () => {
+    const registry = makeRegistry();
+    const hash = () => itemStateHash(registry, "skill", "alpha") as string;
+    const edit = (path: string) => ({ v: 1, kind: "update", type: "skill", slug: "alpha", expectedHash: hash(), patch: {}, contentEdits: [{ path, content: "x" }] }) as UpdateOp;
+
+    expect(() => applyOp(registry, edit("C:/evil.md"))).toThrow(/escapes the item directory/);
+    expect(() => applyOp(registry, edit("docs\\evil.md"))).toThrow(/escapes the item directory/);
+    expect(() => applyOp(registry, edit("../evil.md"))).toThrow(/escapes the item directory/);
+
+    const outside = mkdtempSync(join(tmpdir(), "seedr-outside-"));
+    writeFileSync(join(outside, "target.md"), "original\n");
+    symlinkSync(outside, join(registry, "skills", "alpha", "escape"));
+    expect(() => applyOp(registry, edit("escape/target.md"))).toThrow(/through a symlink/);
+    expect(readFileSync(join(outside, "target.md"), "utf8")).toBe("original\n");
+  });
+
+  test("patching contents.triggers keeps the file list", () => {
+    const registry = makeRegistry();
+    const before = readItem(registry, "skill", "alpha");
+    expect(before.contents?.files?.length).toBeGreaterThan(0);
+    const result = applyOp(registry, { v: 1, kind: "update", type: "skill", slug: "alpha", expectedHash: itemStateHash(registry, "skill", "alpha") as string, patch: { contents: { triggers: [{ event: "PostToolUse" }] } } });
+    const contents = (result.item as { contents: { files: unknown[]; triggers: unknown[] } }).contents;
+    expect(contents.files).toEqual(before.contents?.files);
+    expect(contents.triggers).toEqual([{ event: "PostToolUse" }]);
+  });
+
+  test("update writes canonical agent ids over a stored alias", () => {
+    const registry = makeRegistry();
+    writeFileSync(join(registry, "skills", "alpha", "item.json"), JSON.stringify({ ...readItem(registry, "skill", "alpha"), compatibility: ["gemini"] }, null, 2) + "\n");
+    const result = applyOp(registry, { v: 1, kind: "update", type: "skill", slug: "alpha", expectedHash: itemStateHash(registry, "skill", "alpha") as string, patch: { name: "Alpha 2" } });
+    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["antigravity"]);
+  });
+
+  test("applyOp dispatches every op kind to its implementation", () => {
+    const registry = makeRegistry();
+    const source = makeSource();
+    const slug = "dispatch-local";
+
+    const added = applyOp(registry, { v: 1, kind: "add-local", type: "skill", slug, sourcePath: source, name: "Local", description: "Adds locally.", longDescription: LONG, compatibility: ["claude"], author: { name: "T" } });
+    expect(added.kind).toBe("add-local");
+    expect(existsSync(join(registry, "skills", slug, "SKILL.md"))).toBe(true);
+
+    const remote = applyOp(registry, { v: 1, kind: "add-remote", type: "plugin", slug: "dispatch-remote", name: "Remote", description: "Adds remotely.", longDescription: LONG, compatibility: ["claude"], author: { name: "T" }, externalUrl: "https://github.com/x/y/tree/main/z", sourceRevision: FIXTURE_SHA, contentDigest: FIXTURE_DIGEST, pluginSource: { kind: "github", url: "https://github.com/x/y.git", sha: FIXTURE_SHA } });
+    expect(remote.kind).toBe("add-remote");
+
+    const updated = applyOp(registry, { v: 1, kind: "update", type: "skill", slug, expectedHash: itemStateHash(registry, "skill", slug) as string, patch: { name: "Local 2" } });
+    expect((updated.item as { name: string }).name).toBe("Local 2");
+
+    const removed = applyOp(registry, { v: 1, kind: "remove", type: "skill", slug, sourceType: "toolr", expectedHash: itemStateHash(registry, "skill", slug) as string });
+    expect(removed.kind).toBe("remove");
+    expect(existsSync(join(registry, "skills", slug))).toBe(false);
   });
 });

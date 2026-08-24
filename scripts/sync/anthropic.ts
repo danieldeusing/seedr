@@ -13,7 +13,6 @@
  * widening that is a product decision.
  */
 
-import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { validateItem } from "../lib/validate-item.js";
 import { classifyPlugin, collectContent, findEntry, parseJsonEntry, withDeclaredLicense } from "./content.js";
 import type { GitHubClient } from "./github.js";
@@ -89,9 +88,11 @@ async function buildOfficialSkill(ctx: SourceContext, slug: string, sha: string,
       name: formatName(frontmatter.name),
       type: "skill",
       description: frontmatter.description ?? "",
-      // B1 (Studio plan §5): new items carry the deprecated id too, so the CLI
-      // already on npm still matches them; scripts/migrate-agent-ids.ts drops it in B2.
-      compatibility: [...CANONICAL_AGENTS, "gemini"],
+      // B1 (Studio plan §5): keep writing exactly the ids the CLI already on npm
+      // (0.1.87) understands — an `antigravity` entry would crash its `list`. After
+      // that CLI ships, `scripts/migrate-agent-ids.ts` rewrites the data and B2
+      // switches this line to `[...CANONICAL_AGENTS]`.
+      compatibility: ["claude", "copilot", "gemini", "codex", "opencode"],
       sourceType: "official",
       author: { name: "Anthropic" },
       externalUrl: treeUrl(SKILLS_REPO, sha, path),

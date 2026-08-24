@@ -15,7 +15,7 @@ export interface TransactionOptions {
   /** Defaults to `<repoRoot>/registry`. */
   registryDir?: string;
   git?: GitRunner;
-  /** Defaults to `<repoRoot>/.git/seedr-ops.lock`. */
+  /** Defaults to `seedr-ops.lock` in the repo's git directory (worktrees have their own). */
   lockPath?: string;
   /** A lock older than this is considered abandoned. */
   lockStaleMs?: number;
@@ -103,7 +103,9 @@ export async function runRegistryTransaction(rawOp: unknown, options: Transactio
   const registryRel = toPosix(relative(repoRoot, registryDir));
   if (registryRel.startsWith("..")) throw new TransactionError("registryDir must be inside repoRoot", "precondition");
 
-  const release = acquireLock(options.lockPath ?? join(repoRoot, ".git", "seedr-ops.lock"), options.lockStaleMs ?? DEFAULT_LOCK_STALE_MS);
+  // `.git` is a file in a linked worktree; ask git where the real directory is.
+  const lockPath = options.lockPath ?? join(await git(["rev-parse", "--absolute-git-dir"], repoRoot), "seedr-ops.lock");
+  const release = acquireLock(lockPath, options.lockStaleMs ?? DEFAULT_LOCK_STALE_MS);
   try {
     const dirty = await git(["status", "--porcelain", "--untracked-files=all"], repoRoot);
     if (dirty) {
@@ -114,9 +116,14 @@ export async function runRegistryTransaction(rawOp: unknown, options: Transactio
     const rollback = async (cause: unknown, phase: TransactionError["phase"]): Promise<never> => {
       try {
         await git(["checkout", "--", registryRel], repoRoot);
-        await git(["clean", "-fdq", "--", registryRel], repoRoot);
+        // -x removes gitignored strays too: rollback means exactly HEAD, nothing else.
+        await git(["clean", "-fdqx", "--", registryRel], repoRoot);
       } catch (rollbackError) {
-        throw new TransactionError(`Rollback failed after ${phase} error: ${(rollbackError as Error).message}`, "rollback", { cause });
+        throw new TransactionError(
+          `Rollback failed: ${(rollbackError as Error).message} — after ${phase} error: ${(cause as Error).message}`,
+          "rollback",
+          { cause }
+        );
       }
       if (cause instanceof TransactionError) throw cause;
       throw new TransactionError(`${phase} failed: ${(cause as Error).message}`, phase, { cause });

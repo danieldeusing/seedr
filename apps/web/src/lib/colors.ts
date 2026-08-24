@@ -1,3 +1,4 @@
+import { AGENT_LABELS } from "@seedr/registry-ops/pure";
 import type { ComponentType, CodingAgent, SourceType, ScopeType } from "./types";
 
 // Tailwind color names used by badge accents (see Label in components/ui/Label.tsx)
@@ -112,13 +113,9 @@ export const sourceLabels: Record<SourceType, string> = {
 };
 
 export const agentLabels: Record<CodingAgent, string> = {
-  claude: "Claude Code",
-  copilot: "GitHub Copilot",
-  antigravity: "Google Antigravity",
+  ...AGENT_LABELS,
   // deprecated id; items are canonicalised on load, so it never reaches the UI
-  gemini: "Google Antigravity",
-  codex: "Codex",
-  opencode: "OpenCode",
+  gemini: AGENT_LABELS.antigravity,
 };
 
 // Scope to badge color mapping (matches configr)

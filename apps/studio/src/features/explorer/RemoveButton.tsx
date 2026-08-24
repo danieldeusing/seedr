@@ -7,6 +7,7 @@ export function RemoveButton({ item }: { item: StudioItem }) {
   const [armed, setArmed] = useState(false);
   const phase = useMutations((s) => s.phase);
   const error = useMutations((s) => s.error);
+  const arm = useMutations((s) => s.arm);
   const remove = useMutations((s) => s.remove);
   const reset = useMutations((s) => s.reset);
   const refusal = removalRefusal(item);
@@ -26,7 +27,11 @@ export function RemoveButton({ item }: { item: StudioItem }) {
   }
   return (
     <span className="flex items-center gap-2 text-xs">
-      {armed ? (
+      {phase === "done" ? (
+        <span className="text-primary" role="status">
+          removed
+        </span>
+      ) : armed ? (
         <>
           <button type="button" onClick={() => void remove(item)} className="btn-terminal btn-terminal--compact" disabled={phase === "removing"}>
             {phase === "removing" ? "removing…" : `confirm remove ${item.type}/${item.slug}`}
@@ -36,7 +41,15 @@ export function RemoveButton({ item }: { item: StudioItem }) {
           </button>
         </>
       ) : (
-        <button type="button" onClick={() => setArmed(true)} className="btn-terminal btn-terminal--ghost btn-terminal--destructive" aria-label={`remove ${item.slug}`} />
+        <button
+          type="button"
+          onClick={() => {
+            setArmed(true);
+            void arm(item);
+          }}
+          className="btn-terminal btn-terminal--ghost btn-terminal--destructive"
+          aria-label={`remove ${item.slug}`}
+        />
       )}
       {error && (
         <span className="text-destructive" role="alert">

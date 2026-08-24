@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { fs, openPath } from "./fs";
-import { getRepo, pickRepo, setRepoRoot } from "./repo";
+import { getRepo, pickRepo } from "./repo";
 import { onRegistryChanged, REGISTRY_CHANGED, watchRegistry } from "./watch";
 import { emit, invoke, listen, onCommand } from "@/test/mockIpc";
 
@@ -27,13 +27,10 @@ describe("IPC serialisation", () => {
 
   test("repo commands", async () => {
     onCommand("pick_repo", () => ({ root: "/r", name: "r" }));
-    onCommand("set_repo_root", (args) => ({ root: String(args?.path), name: "r" }));
     onCommand("get_repo", () => null);
 
     expect(await pickRepo()).toEqual({ root: "/r", name: "r" });
-    expect(await setRepoRoot("/x")).toEqual({ root: "/x", name: "r" });
     expect(await getRepo()).toBeNull();
-    expect(invoke).toHaveBeenCalledWith("set_repo_root", { path: "/x" });
   });
 
   test("an unknown command rejects instead of resolving undefined", async () => {

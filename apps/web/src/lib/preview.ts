@@ -259,7 +259,10 @@ export async function loadPreview(
   }
   const category = categoryFromExtension(path);
   const contentType = response.headers.get("content-type");
-  const declaredLength = Number(response.headers.get("content-length"));
+  // `Number(null)` is 0, so an ABSENT header would report a confident "0 B";
+  // the one case that must read as unknown is the one that produced a number.
+  const rawLength = response.headers.get("content-length");
+  const declaredLength = rawLength === null ? Number.NaN : Number(rawLength);
   const declared = Number.isFinite(declaredLength) && declaredLength >= 0 ? declaredLength : undefined;
   if (category === "binary") {
     // the metadata panel needs no bytes — don't download an archive or a PDF

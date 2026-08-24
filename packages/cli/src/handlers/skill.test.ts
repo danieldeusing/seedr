@@ -180,6 +180,38 @@ describe("skill handler", () => {
       expect(vol.readdirSync("/outside")).toEqual([]);
     });
 
+    it("refuses a central .agents/skills directory that is a symlink escaping the project", async () => {
+      const { installSkill } = await import("./skill.js");
+      vol.mkdirSync(`${PROJECT}/.agents`, { recursive: true });
+      vol.mkdirSync("/outside", { recursive: true });
+      vol.symlinkSync("/outside", `${PROJECT}/.agents/skills`);
+
+      // Containment must be rooted at the project, not at `.agents/skills`
+      // itself — resolveContained deliberately allows a symlinked root, so
+      // rooting there let a symlink install (and --force delete) outside.
+      // Fails closed before anything is written, rather than per-agent.
+      await expect(installSkill(skillItem(), ["codex"], "project", "symlink", true, PROJECT)).rejects.toThrow(
+        /Refusing path outside \/my\/project/
+      );
+      expect(vol.readdirSync("/outside")).toEqual([]);
+    });
+
+    it("keeps symlink installs for agents that read .agents/skills visible to list and remove", async () => {
+      const { installSkill, getInstalledSkills, uninstallSkill } = await import("./skill.js");
+
+      const results = await installSkill(skillItem(), ["codex", "opencode"], "project", "symlink", true, PROJECT);
+      expect(results.map((r) => r.success)).toEqual([true, true]);
+
+      // The content lives only in the shared directory for these agents, so
+      // that is where "installed" has to be looked for — otherwise the copy is
+      // an orphan no seedr command can find or delete.
+      expect(await getInstalledSkills("codex", "project", PROJECT)).toContain(TEST_SKILL);
+      expect(await getInstalledSkills("opencode", "project", PROJECT)).toContain(TEST_SKILL);
+
+      expect(await uninstallSkill(TEST_SKILL, "codex", "project", PROJECT)).toBe(true);
+      expect(await getInstalledSkills("codex", "project", PROJECT)).not.toContain(TEST_SKILL);
+    });
+
     it("rejects an invalid slug before writing anything", async () => {
       const { installSkill } = await import("./skill.js");
       await expect(installSkill(skillItem({ slug: "../escape" }), ["claude"], "project", "copy", true, PROJECT)).rejects.toThrow(/Invalid skill slug/);

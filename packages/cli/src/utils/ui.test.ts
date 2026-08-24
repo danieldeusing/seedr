@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { RegistryItem } from "@seedr/shared";
 
 const CANCEL = Symbol("cancel");
@@ -15,8 +15,46 @@ vi.mock("@clack/prompts", () => ({
 
 const ITEM: RegistryItem = { slug: "pdf", name: "PDF", type: "skill", description: "Read PDFs", compatibility: ["claude"] };
 
+describe("assertInteractive", () => {
+  const realIsTTY = process.stdin.isTTY;
+  afterEach(() => {
+    process.stdin.isTTY = realIsTTY;
+  });
+
+  it("refuses every prompt without a terminal, naming the flag that avoids it", async () => {
+    const ui = await import("./ui.js");
+    process.stdin.isTTY = false;
+
+    // Without this the clack promise never settles: node drains the event loop
+    // and exits 0, so a scripted `seedr add <name>` installed nothing and
+    // reported success.
+    expect(() => ui.assertInteractive("Choosing coding agents", "--agents")).toThrow(
+      "Choosing coding agents requires a terminal — pass --agents to run non-interactively"
+    );
+    await expect(ui.selectAgents(["claude"])).rejects.toThrow(/--agents/);
+    await expect(ui.selectScope()).rejects.toThrow(/--scope/);
+    await expect(ui.selectMethod("/tmp/x")).rejects.toThrow(/--method/);
+    await expect(ui.confirm("Proceed?")).rejects.toThrow(/--yes/);
+    await expect(ui.selectSkill([ITEM])).rejects.toThrow(/requires a terminal/);
+  });
+
+  it("allows prompts when stdin is a terminal", async () => {
+    const ui = await import("./ui.js");
+    process.stdin.isTTY = true;
+    expect(() => ui.assertInteractive("Confirmation", "--yes")).not.toThrow();
+  });
+});
+
 describe("clack ui", () => {
+  // Prompt helpers refuse without a terminal (see assertInteractive); these
+  // tests exercise the interactive path, so they declare one.
+  const realIsTTY = process.stdin.isTTY;
+  afterEach(() => {
+    process.stdin.isTTY = realIsTTY;
+  });
+
   beforeEach(() => {
+    process.stdin.isTTY = true;
     vi.clearAllMocks();
     vi.spyOn(console, "log").mockImplementation(() => undefined);
   });

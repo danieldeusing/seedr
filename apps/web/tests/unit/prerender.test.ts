@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { collectRoutes, readRegistry, renderHead, renderRobots, renderSitemap } from "../../scripts/prerender-meta.mjs";
-import { SITE_ORIGIN, TYPE_LABELS_PLURAL, TYPE_PATHS, categoryMeta, homeMeta, itemMeta, notFoundMeta } from "../../scripts/site-meta.mjs";
+import { SITE_ORIGIN, TYPE_LABELS_PLURAL, TYPE_PATHS, categoryMeta, homeMeta, itemMeta, itemsInCategory, notFoundMeta } from "../../scripts/site-meta.mjs";
 import { typeLabelPlural, typeToPath } from "../../src/lib/colors";
 
 const TEMPLATE = `<!DOCTYPE html>
@@ -20,6 +20,38 @@ const TEMPLATE = `<!DOCTYPE html>
 `;
 
 describe("site-meta", () => {
+  it("counts a category the way the app lists it — wrapper plugins included", () => {
+    const items = [
+      { type: "skill", slug: "a" },
+      { type: "plugin", slug: "b", pluginType: "wrapper", wrapper: "skill" },
+      { type: "plugin", slug: "c", pluginType: "package" },
+    ];
+    // A wrapper plugin is listed on the page of the capability it wraps, so a
+    // raw per-type count would advertise "0 agents" on a page showing one.
+    expect(itemsInCategory(items, "skill").map((i) => i.slug)).toEqual(["a", "b"]);
+    // ...but the plugins page lists plugins only, never the wrapped capability.
+    expect(itemsInCategory(items, "plugin").map((i) => i.slug)).toEqual(["b", "c"]);
+    expect(itemsInCategory(items, "agent")).toEqual([]);
+  });
+
+  it("prerenders the cross-listed count, not the raw per-type length", () => {
+    const itemsByType = readRegistry();
+    const allItems = Object.values(itemsByType).flat();
+    const routes = collectRoutes(itemsByType);
+
+    // The bug this pins: using `itemsByType[type].length` shipped
+    // "Browse 0 agents" on a page that lists a wrapper plugin.
+    let sawCrossListed = false;
+    for (const type of Object.keys(TYPE_PATHS) as (keyof typeof TYPE_PATHS)[]) {
+      const route = routes.find((r) => r.path === `/${TYPE_PATHS[type]}`);
+      const expected = itemsInCategory(allItems, type).length;
+      expect(route?.description).toContain(`Browse ${expected} `);
+      if (expected !== (itemsByType[type] ?? []).length) sawCrossListed = true;
+    }
+    // Guards the guard: if no type cross-lists today, the loop proves nothing.
+    expect(sawCrossListed).toBe(true);
+  });
+
   it("mirrors the app's type maps (one source of truth for titles)", () => {
     expect(TYPE_PATHS).toEqual(typeToPath);
     expect(TYPE_LABELS_PLURAL).toEqual(typeLabelPlural);

@@ -144,7 +144,8 @@ async function listAvailable(type?: ComponentType): Promise<void> {
     console.log(chalk.gray("─".repeat(SEPARATOR_WIDTH)));
 
     for (const item of typeItems) {
-      const compatIcons = [...new Set(item.compatibility.map((a) => CODING_AGENTS[a].shortName))].join(" ");
+      // An id a newer registry knows and this build does not must not crash `list`.
+      const compatIcons = [...new Set(item.compatibility.map((a) => CODING_AGENTS[a]?.shortName ?? a))].join(" ");
       const featured = item.featured ? chalk.yellow("★ ") : "  ";
       console.log(
         `${featured}${chalk.white(item.slug.padEnd(SLUG_COLUMN_WIDTH))} ${chalk.gray(compatIcons)}`

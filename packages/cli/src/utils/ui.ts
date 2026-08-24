@@ -3,6 +3,18 @@ import chalk from "chalk";
 import type { CodingAgent, InstallScope, InstallMethod, RegistryItem } from "../types.js";
 import { CODING_AGENTS } from "../config/agents.js";
 
+/**
+ * Prompts need a terminal. Without one (CI, a pipe, an agent shell) @clack's
+ * promise never settles: the event loop drains and node exits 0 having done
+ * nothing, so a scripted `seedr add <name>` looked like a success that
+ * installed no files. Refuse loudly instead, naming the flag that answers the
+ * question non-interactively.
+ */
+export function assertInteractive(question: string, flag: string): void {
+  if (process.stdin.isTTY) return;
+  throw new Error(`${question} requires a terminal — pass ${flag} to run non-interactively`);
+}
+
 export const brand = chalk.hex("#22c55e");
 export const bgBrand = chalk.bgHex("#22c55e").black;
 
@@ -31,6 +43,7 @@ export function printHeader(text: string): void {
 }
 
 export async function selectSkill(items: RegistryItem[]): Promise<RegistryItem | symbol> {
+  assertInteractive("Choosing an item", "the item name as an argument");
   const result = await p.select({
     message: "Select a skill to install",
     options: items.map((item) => ({
@@ -43,6 +56,7 @@ export async function selectSkill(items: RegistryItem[]): Promise<RegistryItem |
 }
 
 export async function selectAgents(compatible: CodingAgent[]): Promise<CodingAgent[] | symbol> {
+  assertInteractive("Choosing coding agents", "--agents");
   const allOption = await p.select({
     message: "Which coding agents do you want to install for?",
     options: [
@@ -69,6 +83,7 @@ export async function selectAgents(compatible: CodingAgent[]): Promise<CodingAge
 }
 
 export async function selectScope(includeLocal = false): Promise<InstallScope | symbol> {
+  assertInteractive("Choosing an installation scope", "--scope");
   const options: { label: string; value: InstallScope; hint: string }[] = [
     { label: "Project", value: "project", hint: includeLocal ? "current directory, settings.json" : "current directory" },
     { label: "User", value: "user", hint: "home directory" },
@@ -81,6 +96,7 @@ export async function selectScope(includeLocal = false): Promise<InstallScope | 
 }
 
 export async function selectMethod(symlinkPath: string): Promise<InstallMethod | symbol> {
+  assertInteractive("Choosing an installation method", "--method");
   const result = await p.select({
     message: "Installation method",
     options: [
@@ -92,6 +108,7 @@ export async function selectMethod(symlinkPath: string): Promise<InstallMethod |
 }
 
 export async function confirm(message: string): Promise<boolean | symbol> {
+  assertInteractive("Confirmation", "--yes");
   return p.confirm({ message });
 }
 

@@ -15,6 +15,10 @@ export function homeMeta(): RouteMeta;
 export function privacyMeta(): RouteMeta;
 export function impressumMeta(): RouteMeta;
 export function notFoundMeta(): RouteMeta;
+export function itemsInCategory<T extends { type: string; pluginType?: string; wrapper?: string }>(
+  items: readonly T[],
+  type: RegistryType
+): T[];
 export function categoryMeta(type: RegistryType, count: number): RouteMeta;
 export function itemMeta(item: { type: RegistryType; slug: string; name: string; description: string }): RouteMeta;
 export function canonicalUrl(path: string): string;

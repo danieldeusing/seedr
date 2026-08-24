@@ -10,6 +10,9 @@ import { readJson, writeJson, deepMerge } from "../utils/json.js";
 import { assertValidSlug } from "../utils/slug.js";
 import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
 
+export const SETTINGS_NOT_DISCOVERABLE =
+  "settings items cannot be discovered (they are merged into settings.json)";
+
 const CLAUDE_ONLY_ERROR = "Settings are only supported for Claude Code";
 
 type SettingsJson = Record<string, unknown>;
@@ -169,17 +172,16 @@ export async function uninstallSettings(
   return changed;
 }
 
+/**
+ * Settings are deep-merged into settings.json and leave no per-item trace, so
+ * an installed one cannot be discovered by slug. Always empty — callers must
+ * not read that as "not installed" (see SETTINGS_NOT_DISCOVERABLE).
+ */
 export async function getInstalledSettings(
-  agent: CodingAgent,
-  scope: InstallScope,
-  cwd: string = process.cwd()
+  _agent: CodingAgent,
+  _scope: InstallScope,
+  _cwd: string = process.cwd()
 ): Promise<string[]> {
-  if (agent !== "claude") return [];
-
-  const settingsPath = getSettingsPath(scope, cwd);
-  if (!(await exists(settingsPath))) return [];
-
-  // Settings don't have discrete "installed" items — can't detect by slug
   return [];
 }
 

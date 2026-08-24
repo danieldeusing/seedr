@@ -42,6 +42,11 @@ const displayTypes: ComponentType[] = [
 import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { agentOptions, sourceOptions, scopeOptions } from "@/lib/filterOptions";
 
+/** A URL value is used only when it names one of the offered options. */
+function pickValid<T extends string>(raw: string | null, allowed: readonly { value: string }[]): T | null {
+  return raw !== null && allowed.some((option) => option.value === raw) ? (raw as T) : null;
+}
+
 export function Home() {
   const { searchParams, setSearchParams, updateParams } = useUpdateParams();
   useScrollRestoration();
@@ -51,8 +56,12 @@ export function Home() {
   const query = searchParams.get("q") ?? "";
   // an old `?tool=gemini` link still filters, as antigravity
   const toolFilter = canonicalAgent(searchParams.get("tool"));
-  const sourceFilter = (searchParams.get("source") as SourceType | null);
-  const scopeFilter = (searchParams.get("scope") as ScopeType | null);
+  // Validated, not cast: an unknown `?source=Toolr` used to match nothing and
+  // render "0 results" with the bogus value shown as the active filter, and
+  // `?scope=` applied without `source=toolr` filtered with its control hidden.
+  const sourceFilter = pickValid<SourceType>(searchParams.get("source"), sourceOptions);
+  const rawScope = pickValid<ScopeType>(searchParams.get("scope"), scopeOptions);
+  const scopeFilter = sourceFilter === "toolr" ? rawScope : null;
 
   const setQuery = (value: string) => {
     // When clearing query, also clear filters

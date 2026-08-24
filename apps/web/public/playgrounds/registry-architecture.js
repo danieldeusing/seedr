@@ -419,7 +419,12 @@
   };
   document.body.addEventListener("click", (event) => {
     const control = event.target.closest("[data-action]");
-    if (control) ACTIONS[control.dataset.action](control.dataset.value);
+    if (!control) return;
+    // A data-action this page does not implement is a typo, not a crash: an
+    // unchecked lookup threw "ACTIONS[...] is not a function" on any stray
+    // [data-action] elsewhere in the document.
+    const action = ACTIONS[control.dataset.action];
+    if (typeof action === "function") action(control.dataset.value);
   });
   document.getElementById("detailToggle").addEventListener("click", toggleDetail);
   document.getElementById("copyBtn").addEventListener("click", copyPrompt);

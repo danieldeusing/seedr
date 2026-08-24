@@ -20,7 +20,8 @@ const SLUG_COLUMN_WIDTH = 24;
  * Settings items are deep-merged into settings.json and leave no marker
  * behind, so there is nothing to discover after the fact.
  */
-export const SETTINGS_NOT_DISCOVERABLE = "settings items cannot be discovered (they are merged into settings.json)";
+export { SETTINGS_NOT_DISCOVERABLE } from "../handlers/settings.js";
+import { SETTINGS_NOT_DISCOVERABLE } from "../handlers/settings.js";
 
 // Type-to-color mapping for consistent styling
 const TYPE_COLORS: Record<ComponentType, (s: string) => string> = {

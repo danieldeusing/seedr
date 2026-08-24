@@ -1,4 +1,5 @@
-import { canonicalAgent } from "@seedr/registry-ops/pure";
+import { canonicalAgent, isValidSlug, itemKey } from "@seedr/registry-ops/pure";
+import type { ComponentType } from "@seedr/shared";
 import { REGISTRY_KEYS } from "../registry-keys.generated";
 
 /*
@@ -41,7 +42,6 @@ export const MAX_BODY_BYTES = 1024;
 const VALID_TYPES = new Set(["skill", "plugin", "agent", "hook", "mcp", "command", "settings"]);
 const VALID_SCOPES = new Set(["project", "user", "local"]);
 const VERSION_PATTERN = /^[0-9A-Za-z.+-]{1,20}$/;
-const SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]{0,99}$/;
 
 export type ErrorCode =
   | "method_not_allowed"
@@ -74,7 +74,7 @@ function fail(status: number, code: ErrorCode, error: string, extraHeaders: Reco
 export function validatePayload(body: unknown): InstallPayload | string {
   if (!body || typeof body !== "object" || Array.isArray(body)) return "body must be a JSON object";
   const { slug, type, tool, scope, version } = body as Record<string, unknown>;
-  if (typeof slug !== "string" || !SLUG_PATTERN.test(slug)) return "slug must be a lowercase identifier (1-100 chars)";
+  if (typeof slug !== "string" || !isValidSlug(slug)) return "slug must be a lowercase identifier (1-100 chars)";
   if (typeof type !== "string" || !VALID_TYPES.has(type)) return `type must be one of: ${[...VALID_TYPES].join(", ")}`;
   const canonicalTool = typeof tool === "string" ? canonicalAgent(tool) : null;
   if (canonicalTool === null) return "tool is not a known coding agent";
@@ -84,7 +84,9 @@ export function validatePayload(body: unknown): InstallPayload | string {
 }
 
 export function registryKey(type: string, slug: string): string {
-  return `${type}/${slug}`;
+  // The generator builds the allowlist with this same function; a divergence
+  // here would 404 every event and nothing would report it.
+  return itemKey(type as ComponentType, slug);
 }
 
 /** SHA-256 of IP + daily salt, hex. The same client hashes the same within a day and differently tomorrow. */

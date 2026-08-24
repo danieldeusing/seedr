@@ -11,9 +11,10 @@ vi.mock("node:os", () => ({
 }));
 
 const promptConfirmMock = vi.fn(async () => true);
-vi.mock("../utils/prompts.js", () => ({
-  promptConfirm: (...args: unknown[]) => promptConfirmMock(...(args as [])),
-}));
+vi.mock("../utils/ui.js", async () => {
+  const actual = await vi.importActual<typeof import("../utils/ui.js")>("../utils/ui.js");
+  return { ...actual, confirm: (...args: unknown[]) => promptConfirmMock(...(args as [])) };
+});
 
 const PROJECT = "/my/project";
 

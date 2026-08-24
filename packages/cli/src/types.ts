@@ -16,21 +16,15 @@ export type InstallScope = "project" | "user" | "local";
 
 export type InstallMethod = "symlink" | "copy";
 
-export type ContentStructure = "directory" | "file" | "json-merge" | "plugin";
-
 export interface ContentTypeConfig {
-  /** Relative path from agent root (e.g., "skills", "agents") */
+  /**
+   * Relative path from the agent root (e.g. "skills"). The only field anything
+   * reads — `getContentPath` is the sole consumer. Layout facts that looked
+   * configurable here (extension, structure, mergeTarget, mergeField) were
+   * never read: each handler owns its own format, so the table said one thing
+   * and the code did another.
+   */
   path: string;
-  /** File extension (e.g., ".md") */
-  extension: string;
-  /** How content is installed */
-  structure: ContentStructure;
-  /** Main file for directories (e.g., "SKILL.md") */
-  mainFile?: string;
-  /** For json-merge: target file to merge into */
-  mergeTarget?: string;
-  /** For json-merge: field to merge into (e.g., "hooks", "mcpServers") */
-  mergeField?: string;
 }
 
 export interface CodingAgentConfig {

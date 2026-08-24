@@ -14,9 +14,10 @@ vi.mock("node:os", () => ({
 }));
 
 const promptConfirmMock = vi.fn(async () => true);
-vi.mock("../utils/prompts.js", () => ({
-  promptConfirm: (...args: unknown[]) => promptConfirmMock(...(args as [])),
-}));
+vi.mock("../utils/ui.js", async () => {
+  const actual = await vi.importActual<typeof import("../utils/ui.js")>("../utils/ui.js");
+  return { ...actual, confirm: (...args: unknown[]) => promptConfirmMock(...(args as [])) };
+});
 
 const HOOK: RegistryItem = {
   slug: "lint-hook",
@@ -165,9 +166,18 @@ describe("runRemove", () => {
     expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/No handler found for type "command"/));
   });
 
-  it("reports 'Nothing to remove' when explicitly named agents have nothing", async () => {
+  it("exits non-zero when named agents yielded nothing, so a script can tell", async () => {
     const { runRemove } = await import("./remove.js");
-    expect(await runRemove(TEST_SKILL, { type: "skill", yes: true, agents: "all" }, PROJECT)).toBe(0);
+    // The user named agents and asked for a removal that did not happen —
+    // exit 0 here let scripts read "we could not tell" as success.
+    expect(await runRemove(TEST_SKILL, { type: "skill", yes: true, agents: "all" }, PROJECT)).toBe(1);
     expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/Nothing to remove/));
+  });
+
+  it("says why settings cannot be auto-detected instead of claiming not installed", async () => {
+    const { runRemove } = await import("./remove.js");
+    expect(await runRemove("some-settings", { type: "settings", yes: true }, PROJECT)).toBe(1);
+    expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/cannot be discovered/));
+    expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/--agents claude/));
   });
 });

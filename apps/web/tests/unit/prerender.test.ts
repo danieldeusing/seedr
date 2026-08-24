@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { collectRoutes, readRegistry, renderHead, renderRobots, renderSitemap } from "../../scripts/prerender-meta.mjs";
-import { SITE_ORIGIN, TYPE_LABELS_PLURAL, TYPE_PATHS, categoryMeta, homeMeta, itemMeta, itemsInCategory, notFoundMeta } from "../../scripts/site-meta.mjs";
-import { typeLabelPlural, typeToPath } from "../../src/lib/colors";
+import { SITE_ORIGIN, TYPE_LABELS, TYPE_LABELS_PLURAL, TYPE_PATHS, categoryMeta, homeMeta, itemMeta, itemsInCategory, notFoundMeta } from "../../scripts/site-meta.mjs";
+import { typeLabelPlural, typeLabels, typeToPath } from "../../src/lib/colors";
 
 const TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
@@ -55,6 +55,9 @@ describe("site-meta", () => {
   it("mirrors the app's type maps (one source of truth for titles)", () => {
     expect(TYPE_PATHS).toEqual(typeToPath);
     expect(TYPE_LABELS_PLURAL).toEqual(typeLabelPlural);
+    // The singular table was uncompared: renaming a label in colors.ts changed
+    // the heading while <title> and the prerendered <head> kept the old name.
+    expect(TYPE_LABELS).toEqual(typeLabels);
   });
 
   it("builds titles, descriptions and clips long descriptions at 160 characters", () => {

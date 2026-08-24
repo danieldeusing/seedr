@@ -16,6 +16,13 @@ export function checkBundleBudget(distDir) {
     .map((name) => ({ name, bytes: statSync(join(assetsDir, name)).size }))
     .sort((a, b) => b.bytes - a.bytes);
   const problems = [];
+  // A gate that measures nothing used to report "OK": no top-level .js (a moved
+  // assetsDir, a subfolder, .mjs output) produced an empty list and a pass.
+  if (chunks.length === 0) problems.push(`${assetsDir}: no .js chunks found — nothing was weighed`);
+  if (!chunks.some((chunk) => /^index-[\w-]+\.js$/.test(chunk.name))) {
+    // Otherwise the entry silently falls back to the looser chunk budget.
+    problems.push("no index-*.js entry chunk found — entry budget was never applied");
+  }
   for (const chunk of chunks) {
     if (/monaco|editor/i.test(chunk.name)) problems.push(`${chunk.name}: editor chunk in the bundle`);
     const isEntry = /^index-[\w-]+\.js$/.test(chunk.name);

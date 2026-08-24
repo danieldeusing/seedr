@@ -1,12 +1,13 @@
 import { Command } from "commander";
+import * as ui from "../utils/ui.js";
 import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope } from "../types.js";
 import { brand } from "../utils/ui.js";
 import type { ComponentType } from "@seedr/shared";
+import { SETTINGS_NOT_DISCOVERABLE } from "../handlers/settings.js";
 import { ALL_AGENTS, CODING_AGENTS } from "../config/agents.js";
 import { parseAgentsArgStrict } from "../utils/detection.js";
-import { promptConfirm } from "../utils/prompts.js";
 import { getHandler } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
 import { isValidSlug, MAX_SLUG_LENGTH, SLUG_PATTERN } from "../utils/slug.js";
@@ -118,6 +119,12 @@ export async function runRemove(name: string, options: RemoveOptions, cwd: strin
   }
 
   if (agents.length === 0) {
+    if (type === "settings") {
+      // Auto-detection cannot see settings, so "not installed" would be a guess.
+      console.log(chalk.yellow(`Cannot detect where "${name}" is installed: ${SETTINGS_NOT_DISCOVERABLE}`));
+      console.log(chalk.gray("Name the agents explicitly, e.g. --agents claude"));
+      return 1;
+    }
     console.log(chalk.yellow(`${type} "${name}" is not installed in ${scope} scope`));
     return 0;
   }
@@ -130,7 +137,8 @@ export async function runRemove(name: string, options: RemoveOptions, cwd: strin
     }
     console.log("");
 
-    const confirmed = await promptConfirm("Proceed with removal?");
+    const answer = await ui.confirm("Proceed with removal?");
+    const confirmed = !ui.prompts.isCancel(answer) && answer;
     if (!confirmed) {
       console.log(chalk.yellow("Removal cancelled"));
       return 0;
@@ -143,10 +151,12 @@ export async function runRemove(name: string, options: RemoveOptions, cwd: strin
   console.log("");
   if (successCount > 0) {
     console.log(brand(`Successfully removed from ${successCount} agent(s)`));
-  } else {
-    console.log(chalk.yellow("Nothing to remove"));
+    return 0;
   }
-  return 0;
+  // Agents were detected or named, yet nothing came off: report the failure
+  // rather than letting a script read silence as success.
+  console.log(chalk.yellow("Nothing to remove"));
+  return 1;
 }
 
 export const removeCommand = new Command("remove")

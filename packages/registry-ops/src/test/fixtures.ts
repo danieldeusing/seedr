@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { makeTempDir } from "./tempDir.js";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
 import { compileRegistry } from "../compile.js";
@@ -84,7 +84,7 @@ export function writeItem(registryDir: string, typeDir: string, item: RegistryIt
 
 /** A temp registry with four items across skills, plugins and mcp. Returns the registry dir. */
 export function makeRegistry(): string {
-  const registryDir = join(mkdtempSync(join(tmpdir(), "seedr-registry-ops-")), "registry");
+  const registryDir = join(makeTempDir("seedr-registry-ops-"), "registry");
   mkdirSync(registryDir);
   writeItem(registryDir, "skills", toolrSkill, { "SKILL.md": "# Alpha\n", "references/notes.md": "notes\n" });
   writeItem(registryDir, "plugins", communityPlugin);

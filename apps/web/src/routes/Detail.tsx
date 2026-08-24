@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
+import { PLUGIN_TYPE_BADGES } from "@/lib/pluginBadges";
 import { useParams } from "react-router-dom";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { NotFound } from "@/routes/NotFound";
 import { itemMeta, notFoundMeta } from "../../scripts/site-meta.mjs";
 // toolr-design-ignore-next-line
-import { Clock, Folder, Lock, Package, Plug, Puzzle, Shield, User, type LucideIcon } from "lucide-react";
+import { Clock, Folder, Lock, Shield, User, type LucideIcon } from "lucide-react";
 import { FileStructureSection } from "@/components/detail/FileStructureSection";
 import { RegistryDetail, type DetailLabelData } from "@/components/detail/RegistryDetail";
 import { CodeBlock } from "@/components/ui";
@@ -24,7 +25,7 @@ const MarkdownText = lazy(() => import("@/components/detail/MarkdownText").then(
 
 const sourceDescriptions: Record<SourceType, string> = {
   official: "Published by the tool maker",
-  toolr: "Published by Toolr Suite",
+  toolr: "Published by Seedr",
   community: "Community contribution",
 };
 
@@ -63,28 +64,14 @@ function buildDetailLabels(item: NonNullable<ReturnType<typeof getItem>>): Detai
       tooltip: { title: sourceLabels[item.sourceType], description: sourceDescriptions[item.sourceType] },
     });
   }
-  if (item.pluginType === "package") {
+  const pluginBadge = item.pluginType ? PLUGIN_TYPE_BADGES[item.pluginType] : undefined;
+  if (pluginBadge) {
+    const BadgeIcon = pluginBadge.icon;
     labels.push({
-      text: "Package",
-      className: badgeColorClasses[pluginTypeToBadgeColor.package],
-      icon: <Package className="size-3" />,
-      tooltip: { description: "Bundles multiple capabilities (skills, hooks, agents, etc.) into a single plugin" },
-    });
-  }
-  if (item.pluginType === "wrapper") {
-    labels.push({
-      text: "Wrapper",
-      className: badgeColorClasses[pluginTypeToBadgeColor.wrapper],
-      icon: <Puzzle className="size-3" />,
-      tooltip: { description: `Wraps a single ${item.wrapper} capability as a plugin` },
-    });
-  }
-  if (item.pluginType === "integration") {
-    labels.push({
-      text: "Integration",
-      className: badgeColorClasses[pluginTypeToBadgeColor.integration],
-      icon: <Plug className="size-3" />,
-      tooltip: { description: "Integrates an external tool with your AI assistant. Installing adds it to enabledPlugins — the README explains how to set up the tool itself." },
+      text: pluginBadge.text,
+      className: badgeColorClasses[pluginTypeToBadgeColor[item.pluginType!]],
+      icon: <BadgeIcon className="size-3" />,
+      tooltip: { description: pluginBadge.description(item) },
     });
   }
   if (item.sourceType === "toolr" && item.targetScope) {
@@ -110,18 +97,30 @@ export function Detail() {
   const [longDescription, setLongDescription] = useState<string>();
   const [fileTree, setFileTree] = useState<FileTreeNode[]>();
   const [lazyDataSettled, setLazyDataSettled] = useState(false);
+  const [lazyLoadFailed, setLazyLoadFailed] = useState(false);
   useEffect(() => {
     if (!slug) return;
     // Reset and guard against out-of-order resolution: when navigating quickly
     // between items, an older fetch must not overwrite the newer item's data.
     let cancelled = false;
     setLazyDataSettled(false);
+    setLazyLoadFailed(false);
     setLongDescription(undefined);
     setFileTree(undefined);
     Promise.allSettled([
       getLongDescription(slug, componentType).then(d => { if (!cancelled) setLongDescription(d); }),
       getFileTree(slug, componentType).then(t => { if (!cancelled) setFileTree(t); }),
-    ]).then(() => { if (!cancelled) setLazyDataSettled(true); });
+    ]).then((results) => {
+      if (cancelled) return;
+      // These are lazily-fetched per-item chunks: across a deploy, or on a CDN
+      // miss, they 404. Discarding the rejection rendered the page as an item
+      // that simply has no TL;DR and no files — indistinguishable from one that
+      // genuinely ships neither.
+      const failed = results.filter((result) => result.status === "rejected");
+      for (const result of failed) console.error("detail: lazy item data failed to load", result.reason);
+      setLazyLoadFailed(failed.length > 0);
+      setLazyDataSettled(true);
+    });
     return () => { cancelled = true; };
   }, [slug, componentType]);
 
@@ -151,7 +150,7 @@ export function Detail() {
   const subtitle = (item.author || item.sourceType === "toolr") ? (
     <div className="flex items-center gap-2 text-sm text-subtext">
       <AuthorLink
-        author={item.sourceType === "toolr" ? { name: "Daniel Deusing" } : item.author!}
+        author={item.author!}
       />
       {item.updatedAt && (
         <>
@@ -177,7 +176,11 @@ export function Detail() {
       subtitle={subtitle}
       description={item.description}
       longDescription={
-        longDescription ? (
+        lazyLoadFailed ? (
+          <p role="alert" className="text-md text-destructive">
+            This item&apos;s details could not be loaded. Reload the page to try again.
+          </p>
+        ) : longDescription ? (
           <Suspense fallback={<p className="text-md text-muted-foreground">{longDescription}</p>}>
             <MarkdownText>{longDescription}</MarkdownText>
           </Suspense>

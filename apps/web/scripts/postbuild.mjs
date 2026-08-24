@@ -23,7 +23,10 @@ const headersText = readFileSync(headersPath, "utf8");
 const listed = headersScriptHashes(headersText);
 if (listed.length !== 1 || listed[0] !== builtHash) {
   writeFileSync(headersPath, withScriptHash(headersText, builtHash));
-  console.warn(`dist/_headers: script-src hash pinned to ${builtHash} — update public/_headers to match (tests/unit/headers.test.ts enforces it)`);
+  // Exiting 0 here meant `pnpm build` alone never failed on a CSP drift, and
+  // the unit test checks different inputs (source index.html vs public/_headers).
+  console.error(`dist/_headers: script-src hash pinned to ${builtHash} — update public/_headers to match`);
+  process.exit(1);
 } else {
   console.log(`dist/_headers: script-src hash ${builtHash} matches the built inline script`);
 }

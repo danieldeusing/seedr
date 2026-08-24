@@ -6,14 +6,8 @@ import type { CodingAgent, ComponentType } from "@seedr/shared";
 
 const home = homedir();
 
-const SETTINGS_FILE = "settings.json";
-const JSON_MERGE = "json-merge" as const;
-
 const SKILL_DIRECTORY: ContentTypeConfig = {
   path: "skills",
-  extension: ".md",
-  structure: "directory",
-  mainFile: "SKILL.md",
 };
 
 // Google Antigravity (CLI `agy`) reads the agent-neutral `.agents/` tree — the
@@ -40,39 +34,21 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
       skill: SKILL_DIRECTORY,
       command: {
         path: "commands",
-        extension: ".md",
-        structure: "directory",
-        mainFile: "COMMAND.md",
       },
       agent: {
         path: "agents",
-        extension: ".md",
-        structure: "file",
       },
       hook: {
         path: "",
-        extension: ".json",
-        structure: JSON_MERGE,
-        mergeTarget: SETTINGS_FILE,
-        mergeField: "hooks",
       },
       plugin: {
         path: "plugins/cache",
-        extension: "",
-        structure: "plugin",
       },
       settings: {
         path: "",
-        extension: ".json",
-        structure: JSON_MERGE,
-        mergeTarget: SETTINGS_FILE,
       },
       mcp: {
         path: "",
-        extension: ".json",
-        structure: JSON_MERGE,
-        mergeTarget: ".mcp.json",
-        mergeField: "mcpServers",
       },
     },
   },
@@ -212,7 +188,7 @@ export function getMcpConfigPath(
   }
 }
 
-// Legacy compatibility - will be removed
+/** The agent's skills directory. Used by detection and `init`. */
 export function getAgentPath(
   agent: CodingAgent,
   scope: "project" | "user",

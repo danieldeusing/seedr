@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { makeTempDir } from "../test/tempDir.js";
+import { existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { itemStateHash } from "../hash.js";
@@ -11,7 +11,7 @@ import { parseOp } from "./parse.js";
 import type { AddLocalOp, AddRemoteOp, RemoveOp, UpdateOp } from "./types.js";
 
 function makeSource(): string {
-  const dir = mkdtempSync(join(tmpdir(), "seedr-source-"));
+  const dir = makeTempDir("seedr-source-");
   mkdirSync(join(dir, "references"));
   writeFileSync(join(dir, "SKILL.md"), "# New skill\n");
   writeFileSync(join(dir, "references", "guide.md"), "guide\n");
@@ -71,7 +71,7 @@ describe("add-local", () => {
 
   test("places a single source file inside the item directory, keeping hook triggers", () => {
     const registry = makeRegistry();
-    const script = join(mkdtempSync(join(tmpdir(), "seedr-hook-")), "guard.sh");
+    const script = join(makeTempDir("seedr-hook-"), "guard.sh");
     writeFileSync(script, "#!/bin/sh\n");
     const result = applyOp(registry, addLocalOp({ type: "hook", slug: "guard", sourcePath: script, triggers: [{ event: "PreToolUse", matcher: "Bash" }] }));
     expect(existsSync(join(registry, "hooks", "guard", "guard.sh"))).toBe(true);
@@ -209,7 +209,7 @@ describe("remove", () => {
   });
 
   test("drops files git ignores from the copy, the tree and the hash", () => {
-    const repo = mkdtempSync(join(tmpdir(), "seedr-ignore-"));
+    const repo = makeTempDir("seedr-ignore-");
     execFileSync("git", ["init", "-q"], { cwd: repo });
     writeFileSync(join(repo, ".gitignore"), ".DS_Store\nnode_modules/\n");
     const registry = join(repo, "registry");
@@ -239,7 +239,7 @@ describe("remove", () => {
     expect(() => applyOp(registry, edit("docs\\evil.md"))).toThrow(/escapes the item directory/);
     expect(() => applyOp(registry, edit("../evil.md"))).toThrow(/escapes the item directory/);
 
-    const outside = mkdtempSync(join(tmpdir(), "seedr-outside-"));
+    const outside = makeTempDir("seedr-outside-");
     writeFileSync(join(outside, "target.md"), "original\n");
     symlinkSync(outside, join(registry, "skills", "alpha", "escape"));
     expect(() => applyOp(registry, edit("escape/target.md"))).toThrow(/through a symlink/);

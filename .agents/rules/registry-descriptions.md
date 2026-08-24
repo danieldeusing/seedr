@@ -2,6 +2,12 @@
 
 Every `item.json` has two description fields. Both are mandatory for all registry items.
 
+**A missing or under-length `longDescription` is yours to fix, immediately and without asking**
+(standing instruction, 2026-08-24): read the item's own content (`SKILL.md`, the plugin README),
+draft the TL;DR by the rules below, write it into the item.json, recompile. This applies to
+synced items too — the sync preserves `longDescription` across runs, and the nightly sync job
+fails on the gate until every item has one. Never park it as a to-do or skip the item.
+
 ## `description` — "What does this do?"
 
 A single sentence that tells the user what the item does.

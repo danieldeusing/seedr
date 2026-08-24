@@ -109,15 +109,32 @@ async function fetchSkillMd(repo: string, basePath: string, slug: string): Promi
   if (!match) return null;
 
   const frontmatter = match[1];
-  const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
-  const descMatch = frontmatter.match(/^description:\s*(.+)$/m);
+  const name = frontmatterValue(frontmatter, "name");
+  if (!name) return null;
 
-  if (!nameMatch) return null;
+  return { name, description: frontmatterValue(frontmatter, "description") ?? "" };
+}
 
-  return {
-    name: nameMatch[1].trim(),
-    description: descMatch ? descMatch[1].trim() : "",
-  };
+/**
+ * One frontmatter value, including YAML block scalars (`description: >` /
+ * `|`): those fold the following indented lines — a naive line regex would
+ * take the literal `>` as the description.
+ */
+function frontmatterValue(frontmatter: string, key: string): string | null {
+  const match = new RegExp(`^${key}:[ \\t]*(.*)$`, "m").exec(frontmatter);
+  if (!match) return null;
+  const inline = (match[1] ?? "").trim();
+  if (!/^[>|][+-]?$/.test(inline)) return inline || null;
+  const folded: string[] = [];
+  for (const line of frontmatter.slice((match.index ?? 0) + match[0].length).split("\n")) {
+    if (line.trim() === "") {
+      if (folded.length > 0) break;
+      continue;
+    }
+    if (!/^[ \t]/.test(line)) break;
+    folded.push(line.trim());
+  }
+  return folded.length > 0 ? folded.join(" ") : null;
 }
 
 interface FetchItemsOptions {

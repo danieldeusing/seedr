@@ -47,7 +47,7 @@ describe("runInit", () => {
 
     expect(await runInit({ agents: "all", yes: true }, PROJECT)).toBe(0);
 
-    for (const dir of [".claude", ".github", ".gemini", ".codex", ".opencode"]) {
+    for (const dir of [".claude", ".github", ".agents", ".codex", ".opencode"]) {
       expect(vol.existsSync(`/my/project/${dir}/skills`)).toBe(true);
     }
     expect(vol.existsSync("/my/project/.codex/skills/README.md")).toBe(false);

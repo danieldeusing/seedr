@@ -22,7 +22,7 @@ describe("compatibility", () => {
     it("should have skills compatible with all agents", () => {
       expect(AGENT_COMPATIBILITY.skill).toContain("claude");
       expect(AGENT_COMPATIBILITY.skill).toContain("copilot");
-      expect(AGENT_COMPATIBILITY.skill).toContain("gemini");
+      expect(AGENT_COMPATIBILITY.skill).toContain("antigravity");
       expect(AGENT_COMPATIBILITY.skill).toContain("codex");
       expect(AGENT_COMPATIBILITY.skill).toContain("opencode");
     });
@@ -36,14 +36,14 @@ describe("compatibility", () => {
     });
 
     it("should have MCP compatible with every agent whose format is verified", () => {
-      expect(AGENT_COMPATIBILITY.mcp).toEqual(["claude", "gemini", "codex", "opencode"]);
+      expect(AGENT_COMPATIBILITY.mcp).toEqual(["claude", "codex", "opencode"]);
     });
 
     it("should exclude copilot from MCP and say why", () => {
       expect(AGENT_COMPATIBILITY.mcp).not.toContain("copilot");
       expect(isTypeSupported("mcp", "copilot")).toBe(false);
       expect(describeIncompatibility("mcp", "copilot")).toMatch(/could not be verified/);
-      expect(describeIncompatibility("hook", "gemini")).toBe("gemini does not support hook content");
+      expect(describeIncompatibility("hook", "gemini")).toBe("antigravity does not support hook content");
     });
   });
 
@@ -58,6 +58,13 @@ describe("compatibility", () => {
       expect(isTypeSupported("agent", "copilot")).toBe(false);
       expect(isTypeSupported("hook", "gemini")).toBe(false);
       expect(isTypeSupported("plugin", "codex")).toBe(false);
+    });
+
+    it("resolves the deprecated gemini id like antigravity", () => {
+      expect(isTypeSupported("skill", "gemini")).toBe(true);
+      // antigravity's MCP format is unverified, so the alias is refused the same way
+      expect(isTypeSupported("mcp", "antigravity")).toBe(false);
+      expect(isTypeSupported("mcp", "gemini")).toBe(false);
     });
   });
 
@@ -89,6 +96,11 @@ describe("compatibility", () => {
     it("should return empty array if no agents are compatible", () => {
       const agents = filterCompatibleAgents("agent", ["copilot", "gemini"]);
       expect(agents).toEqual([]);
+    });
+
+    it("canonicalises aliases, drops duplicates and returns canonical order", () => {
+      const agents = filterCompatibleAgents("skill", ["gemini", "antigravity", "claude"]);
+      expect(agents).toEqual(["claude", "antigravity"]);
     });
   });
 });

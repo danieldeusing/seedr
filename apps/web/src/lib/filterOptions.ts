@@ -1,12 +1,7 @@
+import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { agentLabels, sourceLabels, scopeLabels } from "./colors";
 
-export const agentOptions = [
-  { value: "claude", label: agentLabels.claude },
-  { value: "copilot", label: agentLabels.copilot },
-  { value: "gemini", label: agentLabels.gemini },
-  { value: "codex", label: agentLabels.codex },
-  { value: "opencode", label: agentLabels.opencode },
-];
+export const agentOptions = CANONICAL_AGENTS.map((agent) => ({ value: agent, label: agentLabels[agent] }));
 
 export const sourceOptions = [
   { value: "official", label: sourceLabels.official },

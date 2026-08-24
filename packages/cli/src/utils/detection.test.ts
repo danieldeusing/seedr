@@ -1,3 +1,4 @@
+import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { vol } from "memfs";
 import {
@@ -30,8 +31,8 @@ describe("agent argument parsing", () => {
     ["cc", "claude"],
     ["github-copilot", "copilot"],
     ["gh", "copilot"],
-    ["gemini-code", "gemini"],
-    ["gca", "gemini"],
+    ["gemini-code", "antigravity"],
+    ["gca", "antigravity"],
     ["openai-codex", "codex"],
     ["oc", "opencode"],
     [" opencode ", "opencode"],
@@ -66,7 +67,7 @@ describe("agent detection", () => {
     vol.fromJSON({
       "/my/project/.claude/skills/.keep": "",
       "/my/project/.codex/skills/.keep": "",
-      "/home/testuser/.gemini/skills/.keep": "",
+      "/home/testuser/.agents/skills/.keep": "",
     });
   });
 
@@ -76,7 +77,7 @@ describe("agent detection", () => {
     const detected = await detectInstalledAgents(PROJECT);
     expect(detected).toEqual([
       { agent: "claude", scope: "project", path: "/my/project/.claude/skills" },
-      { agent: "gemini", scope: "user", path: "/home/testuser/.gemini/skills" },
+      { agent: "antigravity", scope: "user", path: "/home/testuser/.agents/skills" },
       { agent: "codex", scope: "project", path: "/my/project/.codex/skills" },
     ]);
   });
@@ -88,7 +89,56 @@ describe("agent detection", () => {
   it("isAgentInstalled treats local scope like project", async () => {
     expect(await isAgentInstalled("claude", "local", PROJECT)).toBe(true);
     expect(await isAgentInstalled("claude", "user", PROJECT)).toBe(false);
-    expect(await isAgentInstalled("gemini", "user", PROJECT)).toBe(true);
+    expect(await isAgentInstalled("antigravity", "user", PROJECT)).toBe(true);
     expect(await isAgentInstalled("opencode", "project", PROJECT)).toBe(false);
+  });
+});
+
+
+describe("parseAgentArg", () => {
+  it("accepts every canonical id, whatever the case or padding", () => {
+    for (const agent of CANONICAL_AGENTS) {
+      expect(parseAgentArg(agent)).toBe(agent);
+      expect(parseAgentArg(` ${agent.toUpperCase()} `)).toBe(agent);
+    }
+  });
+
+  it("resolves nicknames to canonical ids", () => {
+    expect(parseAgentArg("cc")).toBe("claude");
+    expect(parseAgentArg("claude-code")).toBe("claude");
+    expect(parseAgentArg("gh")).toBe("copilot");
+    expect(parseAgentArg("agy")).toBe("antigravity");
+    expect(parseAgentArg("google-antigravity")).toBe("antigravity");
+    expect(parseAgentArg("openai-codex")).toBe("codex");
+    expect(parseAgentArg("oc")).toBe("opencode");
+  });
+
+  it("maps the deprecated gemini id and its old nicknames to antigravity", () => {
+    expect(parseAgentArg("gemini")).toBe("antigravity");
+    expect(parseAgentArg("gemini-code")).toBe("antigravity");
+    expect(parseAgentArg("gca")).toBe("antigravity");
+  });
+
+  it("rejects unknown ids", () => {
+    expect(parseAgentArg("cursor")).toBeNull();
+    expect(parseAgentArg("")).toBeNull();
+  });
+});
+
+describe("parseAgentsArg", () => {
+  it("expands 'all' to the given list", () => {
+    expect(parseAgentsArg("all", ["claude", "codex"])).toEqual(["claude", "codex"]);
+  });
+
+  it("parses a comma-separated list, dropping unknown entries", () => {
+    expect(parseAgentsArg("claude, gemini,nope,oc", [...CANONICAL_AGENTS])).toEqual([
+      "claude",
+      "antigravity",
+      "opencode",
+    ]);
+  });
+
+  it("names an agent once when an alias repeats it", () => {
+    expect(parseAgentsArg("gemini,agy,antigravity", [...CANONICAL_AGENTS])).toEqual(["antigravity"]);
   });
 });

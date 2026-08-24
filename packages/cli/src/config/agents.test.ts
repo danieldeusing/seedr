@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { CANONICAL_AGENTS, KNOWN_AGENTS } from "@seedr/registry-ops/pure";
 import {
   CODING_AGENTS,
   ALL_AGENTS,
@@ -20,13 +21,26 @@ vi.mock("node:os", () => ({
 
 describe("agents", () => {
   describe("CODING_AGENTS", () => {
-    it("should have all 5 agents defined", () => {
-      expect(Object.keys(CODING_AGENTS)).toHaveLength(5);
-      expect(CODING_AGENTS).toHaveProperty("claude");
-      expect(CODING_AGENTS).toHaveProperty("copilot");
-      expect(CODING_AGENTS).toHaveProperty("gemini");
-      expect(CODING_AGENTS).toHaveProperty("codex");
-      expect(CODING_AGENTS).toHaveProperty("opencode");
+    it("has a layout for every known agent id, aliases included", () => {
+      expect(Object.keys(CODING_AGENTS).sort()).toEqual([...KNOWN_AGENTS].sort());
+    });
+
+    it("expands 'all' to the canonical agents only", () => {
+      expect(ALL_AGENTS).toEqual([...CANONICAL_AGENTS]);
+      expect(ALL_AGENTS).not.toContain("gemini");
+    });
+
+    it("installs Antigravity skills into the agent-neutral .agents tree", () => {
+      const antigravity = CODING_AGENTS.antigravity;
+      expect(antigravity.name).toBe("Google Antigravity");
+      expect(antigravity.projectRoot).toBe(".agents");
+      expect(antigravity.userRoot).toBe("/home/testuser/.agents");
+      expect(Object.keys(antigravity.contentTypes)).toEqual(["skill"]);
+    });
+
+    it("treats the deprecated gemini id as Antigravity", () => {
+      expect(CODING_AGENTS.gemini).toBe(CODING_AGENTS.antigravity);
+      expect(getAgentConfig("gemini").shortName).toBe("antigravity");
     });
 
     it("should have correct structure for claude", () => {
@@ -96,7 +110,8 @@ describe("agents", () => {
 
     it("should use correct project root for each agent", () => {
       expect(getAgentRoot("copilot", "project", "/project")).toBe("/project/.github");
-      expect(getAgentRoot("gemini", "project", "/project")).toBe("/project/.gemini");
+      expect(getAgentRoot("antigravity", "project", "/project")).toBe("/project/.agents");
+      expect(getAgentRoot("gemini", "project", "/project")).toBe("/project/.agents");
       expect(getAgentRoot("codex", "project", "/project")).toBe("/project/.codex");
       expect(getAgentRoot("opencode", "project", "/project")).toBe("/project/.opencode");
     });

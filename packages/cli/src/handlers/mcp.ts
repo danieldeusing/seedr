@@ -83,25 +83,6 @@ function definedEntries<T extends object>(object: T): Partial<T> {
 // Translations into each agent's schema
 // ---------------------------------------------------------------------------
 
-/** Gemini CLI `settings.json` → `mcpServers.<name>`: `httpUrl` for http, `url` for sse. */
-export function toGeminiServer(config: McpServerConfig): Record<string, unknown> {
-  const transport = transportOf(config);
-  if (transport === "http") {
-    return definedEntries({ httpUrl: config.url, headers: config.headers, timeout: config.timeout, trust: config.trust });
-  }
-  if (transport === "sse") {
-    return definedEntries({ url: config.url, headers: config.headers, timeout: config.timeout, trust: config.trust });
-  }
-  return definedEntries({
-    command: config.command,
-    args: config.args,
-    env: config.env,
-    cwd: config.cwd,
-    timeout: config.timeout,
-    trust: config.trust,
-  });
-}
-
 /** OpenCode `opencode.json` → `mcp.<name>`: `local` with a command array, or `remote`. */
 export function toOpenCodeServer(config: McpServerConfig): Record<string, unknown> {
   if (transportOf(config) === "stdio") {
@@ -250,7 +231,6 @@ const codexAdapter: McpAdapter = {
 
 const ADAPTERS: Partial<Record<CodingAgent, McpAdapter>> = {
   claude: jsonAdapter("claude", MCP_SERVERS_KEY, (config) => ({ ...config })),
-  gemini: jsonAdapter("gemini", MCP_SERVERS_KEY, toGeminiServer),
   opencode: jsonAdapter("opencode", "mcp", toOpenCodeServer, { $schema: "https://opencode.ai/config.json" }),
   codex: codexAdapter,
 };

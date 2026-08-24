@@ -43,6 +43,7 @@ function writeFixtures(): void {
     [`${PROJECT}/.claude/settings.local.json`]: JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: "command", command: ".claude/hooks/local-hook.sh" }] }] } }),
     // user scope
     [`${HOME}/.claude/skills/user-skill/SKILL.md`]: "x",
+    // the retired gemini MCP adapter must not pick this up anymore
     [`${HOME}/.gemini/settings.json`]: JSON.stringify({ mcpServers: { "gemini-only": {} } }),
     [`${HOME}/.claude/plugins/installed_plugins.json`]: JSON.stringify({
       version: 2,
@@ -108,7 +109,6 @@ describe("collectInstalledItems", () => {
 
     expect(groups).toEqual([
       { type: "skill", agent: "claude", slugs: ["user-skill"] },
-      { type: "mcp", agent: "gemini", slugs: ["gemini-only"] },
       { type: "plugin", agent: "claude", slugs: ["feature-dev"] },
     ]);
   });

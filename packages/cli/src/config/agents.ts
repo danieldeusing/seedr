@@ -1,14 +1,14 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { CANONICAL_AGENTS, canonicalAgent } from "@seedr/registry-ops/pure";
 import type { CodingAgentConfig, InstallScope, ContentTypeConfig } from "../types.js";
 import type { CodingAgent, ComponentType } from "@seedr/shared";
 
 const home = homedir();
 
 const SETTINGS_FILE = "settings.json";
-const JSON_MERGE = "json-merge";
+const JSON_MERGE = "json-merge" as const;
 
-/** Every agent installs skills the same way: a directory holding `SKILL.md`. */
 const SKILL_DIRECTORY: ContentTypeConfig = {
   path: "skills",
   extension: ".md",
@@ -16,6 +16,20 @@ const SKILL_DIRECTORY: ContentTypeConfig = {
   mainFile: "SKILL.md",
 };
 
+// Google Antigravity (CLI `agy`) reads the agent-neutral `.agents/` tree — the
+// same convention this repo's own tooling uses — and `~/.agents` at user scope.
+const ANTIGRAVITY: CodingAgentConfig = {
+  name: "Google Antigravity",
+  shortName: "antigravity",
+  projectRoot: ".agents",
+  userRoot: join(home, ".agents"),
+  contentTypes: { skill: SKILL_DIRECTORY },
+};
+
+/**
+ * Where each agent keeps what. The deprecated `gemini` id shares Antigravity's
+ * layout, so an old flag or an unmigrated item still installs to the right place.
+ */
 export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
   claude: {
     name: "Claude Code",
@@ -67,40 +81,28 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     shortName: "copilot",
     projectRoot: ".github",
     userRoot: join(home, ".github"),
-    contentTypes: {
-      skill: SKILL_DIRECTORY,
-    },
+    contentTypes: { skill: SKILL_DIRECTORY },
   },
-  gemini: {
-    name: "Gemini Code Assist",
-    shortName: "gemini",
-    projectRoot: ".gemini",
-    userRoot: join(home, ".gemini"),
-    contentTypes: {
-      skill: SKILL_DIRECTORY,
-    },
-  },
+  antigravity: ANTIGRAVITY,
+  gemini: ANTIGRAVITY,
   codex: {
     name: "OpenAI Codex CLI",
     shortName: "codex",
     projectRoot: ".codex",
     userRoot: join(home, ".codex"),
-    contentTypes: {
-      skill: SKILL_DIRECTORY,
-    },
+    contentTypes: { skill: SKILL_DIRECTORY },
   },
   opencode: {
     name: "OpenCode",
     shortName: "opencode",
     projectRoot: ".opencode",
     userRoot: join(home, ".opencode"),
-    contentTypes: {
-      skill: SKILL_DIRECTORY,
-    },
+    contentTypes: { skill: SKILL_DIRECTORY },
   },
 };
 
-export const ALL_AGENTS = Object.keys(CODING_AGENTS) as CodingAgent[];
+/** The agents `--agents all` expands to: canonical ids only. */
+export const ALL_AGENTS: CodingAgent[] = [...CANONICAL_AGENTS];
 
 export function getAgentConfig(agent: CodingAgent): CodingAgentConfig {
   return CODING_AGENTS[agent];
@@ -114,7 +116,7 @@ export function getContentTypeConfig(
   agent: CodingAgent,
   type: ComponentType
 ): ContentTypeConfig | undefined {
-  return CODING_AGENTS[agent].contentTypes[type];
+  return getAgentConfig(agent).contentTypes[type];
 }
 
 /**
@@ -125,7 +127,7 @@ export function getAgentRoot(
   scope: InstallScope,
   cwd: string = process.cwd()
 ): string {
-  const config = CODING_AGENTS[agent];
+  const config = getAgentConfig(agent);
   switch (scope) {
     case "project":
     case "local":
@@ -184,11 +186,11 @@ export function getMcpPath(
  *
  * - claude:   `<cwd>/.mcp.json` / `~/.claude.json`
  * - codex:    `<cwd>/.codex/config.toml` / `~/.codex/config.toml`
- * - gemini:   `<cwd>/.gemini/settings.json` / `~/.gemini/settings.json`
  * - opencode: `<cwd>/opencode.json` / `~/.config/opencode/opencode.json`
  *
- * Copilot has no verified MCP format and is not listed; `undefined` means
- * "no known configuration file".
+ * Copilot and Antigravity have no verified MCP configuration format and are
+ * not listed (`undefined` means "no known configuration file"); the deprecated
+ * `gemini` id resolves to antigravity before it ever reaches this table.
  */
 export function getMcpConfigPath(
   agent: CodingAgent,
@@ -196,17 +198,17 @@ export function getMcpConfigPath(
   cwd: string = process.cwd()
 ): string {
   const isUser = scope === "user";
-  switch (agent) {
+  switch (canonicalAgent(agent) ?? agent) {
     case "claude":
       return isUser ? join(home, ".claude.json") : join(cwd, ".mcp.json");
     case "codex":
       return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
-    case "gemini":
-      return isUser ? join(home, ".gemini", SETTINGS_FILE) : join(cwd, ".gemini", SETTINGS_FILE);
     case "opencode":
       return isUser ? join(home, ".config", "opencode", "opencode.json") : join(cwd, "opencode.json");
-    case "copilot":
-      throw new Error("GitHub Copilot has no verified MCP configuration format");
+    default:
+      // copilot and antigravity: the mcp handler refuses these before ever
+      // resolving a path (MCP_UNSUPPORTED_REASONS in config/compatibility.ts).
+      throw new Error(`${agent} has no verified MCP configuration format`);
   }
 }
 

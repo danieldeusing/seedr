@@ -348,7 +348,7 @@ describe("runSync", () => {
       // docx carried over from the failed source still lacks provenance — that must stop the run
       expect(outcome.ok).toBe(false);
       expect(outcome.abortReason).toMatch(/validation violation/);
-      expect(outcome.abortReason).toMatch(/skills\/docx\/item\.json: synced items must carry "sourceRevision"/);
+      expect(outcome.abortReason).toMatch(/skills\/docx\/item\.json: sourceRevision: synced items must carry "sourceRevision"/);
       expect(snapshotRegistry(world.registryDir)).toEqual(before);
       expect(before["skills/pdf/item.json"]).toBeDefined();
     }, 10_000);
@@ -359,7 +359,7 @@ describe("runSync", () => {
       const outcome = await sync();
       expect(outcome.ok).toBe(false); // docx on disk is pre-migration, so carrying it over is itself invalid
       expect(outcome.abortReason).toMatch(/skills\/docx\/item\.json/);
-      expect(logLines.join("\n")).toMatch(/✗ docx: built item is invalid:\s+skill\/docx\/item\.json: "description" must be a non-empty string/);
+      expect(logLines.join("\n")).toMatch(/✗ docx: built item is invalid:\s+skill\/docx\/item\.json: description: is missing 'description'/);
     });
   });
 

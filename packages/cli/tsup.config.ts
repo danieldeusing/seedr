@@ -9,6 +9,8 @@ export default defineConfig({
   dts: true,
   clean: true,
   shims: true,
+  // Workspace packages are TypeScript source and never published: bundle them.
+  noExternal: ["@seedr/shared", "@seedr/registry-ops"],
   define: {
     CLI_VERSION: JSON.stringify(version),
   },

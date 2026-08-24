@@ -1,0 +1,39 @@
+[package]
+name = "seedr-studio"
+version = "0.1.0"
+description = "Seedr Studio — a desktop capability manager for a seedr registry"
+edition = "2021"
+rust-version = "1.82"
+publish = false
+
+[lib]
+name = "seedr_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6", features = [] }
+
+[dependencies]
+# The host is a deliberately small, root-scoped filesystem bridge plus a watcher.
+# Registry semantics live in TypeScript (@seedr/registry-ops); nothing here
+# knows what an item is.
+notify = "8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2.11", features = [] }
+tauri-plugin-dialog = "2.7"
+tauri-plugin-opener = "2.5"
+
+[target.'cfg(windows)'.dependencies]
+# Job Object with kill-on-close: the only way to end a whole process tree on
+# Windows, where process groups do not exist (plan §6.2, trap 15).
+win32job = "2"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+dbg_macro = "warn"
+todo = "warn"

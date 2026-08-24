@@ -1,37 +1,31 @@
-import type { CodingAgent, ComponentType } from "@seedr/shared";
+import { canonicalAgent, canonicalAgents } from "@seedr/registry-ops/pure";
+import type { CanonicalCodingAgent, CodingAgent, ComponentType } from "@seedr/shared";
 
 /**
  * Maps content types to the coding agents that support them.
- *
- * Skills are cross-platform. MCP servers are supported for every agent whose
- * configuration format could be verified against primary documentation:
- * Claude Code (`.mcp.json` / `~/.claude.json`), Codex (`config.toml`), Gemini
- * CLI (`settings.json`) and OpenCode (`opencode.json`). GitHub Copilot is
- * deliberately absent from `mcp` — its MCP configuration could not be
- * verified, and writing Claude's schema into a Copilot file is worse than
- * refusing (see `MCP_UNSUPPORTED_REASONS`). Everything else is Claude-only.
+ * Skills are cross-platform; MCP servers are written only for agents whose
+ * configuration format was verified against primary documentation (Claude,
+ * Codex, OpenCode) — Copilot's and Antigravity's could not be, so they are
+ * refused rather than guessed at. Everything else is Claude-only.
+ * Canonical ids only; inputs are resolved through `canonicalAgent`, so the
+ * deprecated `gemini` alias behaves exactly like `antigravity`.
  */
-export const AGENT_COMPATIBILITY: Record<ComponentType, CodingAgent[]> = {
-  skill: ["claude", "copilot", "gemini", "codex", "opencode"],
+export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> = {
+  skill: ["claude", "copilot", "antigravity", "codex", "opencode"],
   command: ["claude"],
   agent: ["claude"],
   hook: ["claude"],
   plugin: ["claude"],
   settings: ["claude"],
-  mcp: ["claude", "gemini", "codex", "opencode"],
-};
-
-/** Why a type/agent pair is refused, when there is more to say than "not supported". */
-export const MCP_UNSUPPORTED_REASONS: Partial<Record<CodingAgent, string>> = {
-  copilot:
-    "GitHub Copilot's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
+  mcp: ["claude", "codex", "opencode"],
 };
 
 /**
  * Check if a content type is supported by a specific agent.
  */
 export function isTypeSupported(type: ComponentType, agent: CodingAgent): boolean {
-  return AGENT_COMPATIBILITY[type].includes(agent);
+  const canonical = canonicalAgent(agent);
+  return canonical !== null && AGENT_COMPATIBILITY[type].includes(canonical);
 }
 
 /**
@@ -43,22 +37,29 @@ export function getCompatibleAgents(type: ComponentType): CodingAgent[] {
 
 /**
  * Filter agents to only those that support the given content type.
+ * The result is canonical: an alias in the input comes out as its canonical id.
  */
 export function filterCompatibleAgents(
   type: ComponentType,
   agents: CodingAgent[]
 ): CodingAgent[] {
   const compatible = AGENT_COMPATIBILITY[type];
-  return agents.filter((a) => compatible.includes(a));
+  return canonicalAgents(agents).filter((a) => compatible.includes(a));
 }
 
-/**
- * Explain why an agent cannot take a content type: a specific reason when one
- * is recorded, otherwise a generic one.
- */
+/** Why a type/agent pair is refused, when there is more to say than "not supported". */
+export const MCP_UNSUPPORTED_REASONS: Partial<Record<CanonicalCodingAgent, string>> = {
+  copilot:
+    "GitHub Copilot's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
+  antigravity:
+    "Google Antigravity's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
+};
+
+/** A sentence explaining why `agent` cannot take `type` content. */
 export function describeIncompatibility(type: ComponentType, agent: CodingAgent): string {
-  if (type === "mcp" && MCP_UNSUPPORTED_REASONS[agent]) {
-    return MCP_UNSUPPORTED_REASONS[agent]!;
+  const canonical = canonicalAgent(agent);
+  if (type === "mcp" && canonical !== null && MCP_UNSUPPORTED_REASONS[canonical]) {
+    return MCP_UNSUPPORTED_REASONS[canonical];
   }
-  return `${agent} does not support ${type} content`;
+  return `${canonical ?? agent} does not support ${type} content`;
 }

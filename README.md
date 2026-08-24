@@ -2,7 +2,7 @@
 
 Seed your Coding Agents with capabilities.
 
-Seedr is a CLI tool and web registry for AI coding assistant content. Install curated skills, agents, hooks, plugins, MCP servers, and settings for Claude Code, GitHub Copilot, Gemini, Codex, and OpenCode with a single command.
+Seedr is a CLI tool and web registry for AI coding assistant content. Install curated skills, agents, hooks, plugins, MCP servers, and settings for Claude Code, GitHub Copilot, Google Antigravity, Codex, and OpenCode with a single command.
 
 **Browse the registry** at [seedr.danieldeusing.de](https://seedr.danieldeusing.de) — search, filter by type, and preview items before installing.
 
@@ -36,7 +36,7 @@ npx @danieldeusing/seedr list
 | **Agents** | Single-file agent definitions | Claude only |
 | **Hooks** | Event-triggered automation | Claude only |
 | **Plugins** | Extended functionality packages | Claude only |
-| **MCP Servers** | Model Context Protocol integrations | Claude, Codex, Gemini, OpenCode — each written in that tool's own config format ([details](#mcp-server-targets)) |
+| **MCP Servers** | Model Context Protocol integrations | Claude, Codex, OpenCode — each written in that tool's own config format ([details](#mcp-server-targets)) |
 | **Settings** | Configuration presets | Claude only |
 
 Browse all content at [seedr.danieldeusing.de](https://seedr.danieldeusing.de)
@@ -59,7 +59,7 @@ npx @danieldeusing/seedr add code-review --dry-run         # Preview without wri
 | Option | Description |
 |--------|-------------|
 | `-t, --type <type>` | Content type: `skill`, `agent`, `hook`, `plugin`, `mcp`, `settings` |
-| `-a, --agents <tools>` | Target AI tools: `claude`, `copilot`, `gemini`, `codex`, `opencode`, or `all` |
+| `-a, --agents <tools>` | Target AI tools: `claude`, `copilot`, `antigravity`, `codex`, `opencode`, or `all` (`gemini` still works as a deprecated alias of `antigravity`) |
 | `-s, --scope <scope>` | Installation scope: `project`, `user`, or `local` |
 | `-m, --method <method>` | Installation method: `symlink` or `copy` |
 | `-y, --yes` | Skip confirmation prompts |
@@ -101,6 +101,16 @@ npx @danieldeusing/seedr remove superpowers -t plugin -y    # Skip confirmation
 | `--scope <scope>` | Installation scope: `project`, `user`, or `local` (default: `project`) |
 | `-y, --yes` | Skip confirmation prompts |
 
+### Registry location
+
+The CLI reads the registry from this repository's `main` branch on GitHub. A fork or a self-hosted registry points it elsewhere without a code change:
+
+| Variable | Effect |
+|----------|--------|
+| `SEEDR_REGISTRY_URL` | Base URL the split manifests and item files are served from, e.g. `https://seedr.example.com/registry` |
+| `SEEDR_REGISTRY_DIR` | A local `registry/` checkout to read first; the URL is the fallback |
+| `SEEDR_NO_TELEMETRY` | Set to anything to skip the anonymous install counter |
+
 ### `init`
 
 Create AI tool configuration directories in the current project. Useful for setting up a project before installing content.
@@ -108,7 +118,7 @@ Create AI tool configuration directories in the current project. Useful for sett
 ```bash
 npx @danieldeusing/seedr init                             # Initialize for Claude (default)
 npx @danieldeusing/seedr init -a all                      # Initialize for all AI tools
-npx @danieldeusing/seedr init -a copilot,gemini           # Initialize for specific tools
+npx @danieldeusing/seedr init -a copilot,antigravity      # Initialize for specific tools
 ```
 
 | Option | Description |
@@ -125,11 +135,10 @@ configuration format — never one tool's schema into another tool's file:
 |------|---------------|------------|
 | Claude Code | `.mcp.json` (`mcpServers`) | `~/.claude.json` (`mcpServers`) |
 | OpenAI Codex | `.codex/config.toml` (`[mcp_servers.<name>]`) | `~/.codex/config.toml` |
-| Gemini | `.gemini/settings.json` (`mcpServers`) | `~/.gemini/settings.json` |
 | OpenCode | `opencode.json` (`mcp`) | `~/.config/opencode/opencode.json` |
 
-GitHub Copilot is not an MCP target: its CLI's MCP configuration format could not be verified
-against primary documentation, so seedr refuses rather than guessing.
+GitHub Copilot and Google Antigravity are not MCP targets: their MCP configuration formats
+could not be verified against primary documentation, so seedr refuses rather than guessing.
 
 ## Registry Integrity
 

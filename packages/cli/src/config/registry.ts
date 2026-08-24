@@ -3,6 +3,8 @@ import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { typeDirName } from "@seedr/registry-ops/pure";
+export { typeDirName };
 import type {
   RegistryManifest,
   RegistryManifestIndex,
@@ -51,7 +53,8 @@ function resolveLocalRegistryPath(): string | null {
 }
 
 // Local registry path (for development); null when running outside the monorepo.
-const REGISTRY_PATH = resolveLocalRegistryPath();
+// A fork or self-hosted registry overrides it with SEEDR_REGISTRY_DIR.
+const REGISTRY_PATH = process.env.SEEDR_REGISTRY_DIR || resolveLocalRegistryPath();
 
 /**
  * The registry's own files — the manifest index, the per-type manifests and
@@ -62,8 +65,15 @@ const REGISTRY_PATH = resolveLocalRegistryPath();
  * hosts (`sourceRevision` + `contentDigest`, see docs/registry-integrity.md).
  * First-party (`toolr`) content is fetched from this same URL.
  */
-const REGISTRY_REPO_RAW_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main";
-const GITHUB_RAW_URL = `${REGISTRY_REPO_RAW_URL}/registry`;
+const DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main/registry";
+
+// A fork or self-hosted registry points the published CLI elsewhere with
+// SEEDR_REGISTRY_URL instead of a code change (see docs/self-hosting.md).
+const REGISTRY_URL = (process.env.SEEDR_REGISTRY_URL || DEFAULT_REGISTRY_URL).replace(/\/+$/, "");
+
+// First-party licenses at the registry repository root: the registry URL minus
+// its conventional trailing /registry segment.
+const REGISTRY_ROOT_URL = REGISTRY_URL.replace(/\/registry$/, "");
 
 /**
  * Reject file-tree node names that could escape the destination directory.
@@ -80,15 +90,6 @@ const cache = {
   assembled: null as RegistryManifest | null,
 };
 
-/**
- * Map a component type to its registry folder name.
- * Most types are pluralized with a trailing "s", but `mcp` and `settings`
- * live in unsuffixed folders.
- */
-export function typeDirName(type: ComponentType): string {
-  if (type === "mcp" || type === "settings") return type;
-  return `${type}s`;
-}
 
 /**
  * A local registry manifest is only trustworthy if it has the expected shape
@@ -112,7 +113,7 @@ async function loadFile(filename: string): Promise<string> {
       // Local not available — fall through to remote fetch
     }
   }
-  return fetchRemote(`${GITHUB_RAW_URL}/${filename}`);
+  return fetchRemote(`${REGISTRY_URL}/${filename}`);
 }
 
 async function fetchResponse(url: string): Promise<Response> {
@@ -158,7 +159,7 @@ async function loadIndex(): Promise<RegistryManifestIndex> {
     }
   }
 
-  const content = await fetchRemote(`${GITHUB_RAW_URL}/manifest.json`);
+  const content = await fetchRemote(`${REGISTRY_URL}/manifest.json`);
   const data = JSON.parse(content) as RegistryManifestIndex;
   cache.index = data;
   return data;
@@ -260,8 +261,8 @@ function getItemBaseUrl(item: RegistryItem): ItemLocation {
     const typeDir = typeDirName(item.type);
     return {
       local: REGISTRY_PATH ? join(REGISTRY_PATH, typeDir, item.slug) : null,
-      remote: `${GITHUB_RAW_URL}/${typeDir}/${item.slug}`,
-      rootUrl: REGISTRY_REPO_RAW_URL,
+      remote: `${REGISTRY_URL}/${typeDir}/${item.slug}`,
+      rootUrl: REGISTRY_ROOT_URL,
       revision: null,
     };
   }

@@ -61,6 +61,10 @@ pattern `^[a-z0-9][a-z0-9-]*$`, folder/type/slug agreement, `(type, slug)` uniqu
 descriptions). CI recompiles the manifests and fails when the generated files differ from
 the committed ones.
 
+A community item that was just added by hand (`/add-community`) has no pinned revision or
+digest yet; the next sync run pins and digests it. Until then the CLI refuses to install it —
+fail closed — so run `pnpm sync` (or wait for the nightly run) after adding one.
+
 ## 5. Sync fail-closed rules
 
 The sync stages a complete proposed registry in memory before touching the working tree.

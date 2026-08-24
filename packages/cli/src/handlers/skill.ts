@@ -5,6 +5,7 @@ import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
+import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { brand } from "../utils/ui.js";
 import {
   getItemSourcePath,
@@ -26,7 +27,7 @@ import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
 const SLUG_LABEL = "skill slug";
 
 /** Agents that read `.agents/skills/` directly and need no per-agent link. */
-const READS_CENTRAL_DIR: ReadonlySet<CodingAgent> = new Set(["gemini", "codex", "opencode"]);
+const READS_CENTRAL_DIR: ReadonlySet<CodingAgent> = new Set(["antigravity", "codex", "opencode"]);
 
 function getScopeRoot(scope: InstallScope, cwd: string): string {
   return scope === "user" ? homedir() : cwd;
@@ -159,7 +160,7 @@ export async function installSkill(
     // Gemini, Codex, and OpenCode already read .agents/skills/, so skip
     // the symlink when content is installed centrally. For single-agent
     // installs, copy directly to the agent's own directory instead.
-    if (READS_CENTRAL_DIR.has(agent) && central) {
+    if (READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent) && central) {
       results.push({ agent, success: true, path: central.centralPath });
       continue;
     }
@@ -231,7 +232,7 @@ export async function planSkill(
   let centralPath: string | undefined;
   if (method === "symlink") {
     centralPath = await resolveCentralPath(item.slug, scope, cwd);
-    const sharedBy = agents.filter((agent) => READS_CENTRAL_DIR.has(agent));
+    const sharedBy = agents.filter((agent) => READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent));
     changes.push({
       agent: "shared",
       kind: await kindFor(centralPath),
@@ -241,7 +242,7 @@ export async function planSkill(
   }
 
   for (const agent of agents) {
-    if (centralPath && READS_CENTRAL_DIR.has(agent)) continue;
+    if (centralPath && READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent)) continue;
     const destPath = await resolveAgentSkillPath(agent, item.slug, scope, cwd);
     if (!destPath) throw new Error(`${CODING_AGENTS[agent].name} does not support skills`);
     changes.push({

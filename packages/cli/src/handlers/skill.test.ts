@@ -108,14 +108,14 @@ describe("skill handler", () => {
 
     it("should skip symlink for tools that read .agents/ directly", async () => {
       const { installSkill } = await import("./skill.js");
-      const agents = ["claude", "gemini", "codex", "opencode"] as const;
+      const agents = ["claude", "antigravity", "codex", "opencode"] as const;
 
       const results = await installSkill(skillItem({ compatibility: [...agents] }), [...agents], "project", "symlink", true, PROJECT);
 
       expect(results.every((r) => r.success)).toBe(true);
       expect(vol.existsSync(`${CENTRAL_SKILL}/${SKILL_MD}`)).toBe(true);
       expect(vol.lstatSync(CLAUDE_SKILL).isSymbolicLink()).toBe(true);
-      for (const tool of ["gemini", "codex", "opencode"] as const) {
+      for (const tool of ["antigravity", "codex", "opencode"] as const) {
         expect(vol.existsSync(`${PROJECT}/.${tool}/skills/test-skill`)).toBe(false);
         expect(results.find((r) => r.agent === tool)?.path).toBe(CENTRAL_SKILL);
       }
@@ -214,7 +214,7 @@ describe("skill handler", () => {
         // The central copy existed before (replaced under --force), so it is not removed on failure.
         expect(vol.existsSync(`${CENTRAL_SKILL}/${SKILL_MD}`)).toBe(true);
 
-        const results = await installSkill(skillItem({ compatibility: ["claude", "gemini"] }), ["claude", "gemini"], "project", "symlink", true, PROJECT);
+        const results = await installSkill(skillItem({ compatibility: ["claude", "antigravity"] }), ["claude", "antigravity"], "project", "symlink", true, PROJECT);
         expect(results.map((r) => r.success)).toEqual([true, true]);
         expect(vol.existsSync(`${CENTRAL_SKILL}/${SKILL_MD}`)).toBe(true);
       });
@@ -321,10 +321,10 @@ describe("skill handler", () => {
       const { planSkill } = await import("./skill.js");
       vol.mkdirSync(CLAUDE_SKILL, { recursive: true });
 
-      const plan = await planSkill(skillItem(), ["claude", "copilot", "gemini"], "project", "symlink", PROJECT);
+      const plan = await planSkill(skillItem(), ["claude", "copilot", "antigravity"], "project", "symlink", PROJECT);
 
       expect(plan).toEqual([
-        { agent: "shared", kind: "create", path: CENTRAL_SKILL, detail: "central copy, read directly by gemini" },
+        { agent: "shared", kind: "create", path: CENTRAL_SKILL, detail: "central copy, read directly by antigravity" },
         { agent: "claude", kind: "modify", path: CLAUDE_SKILL, detail: `symlink → ${CENTRAL_SKILL}` },
         { agent: "copilot", kind: "create", path: `${PROJECT}/.github/skills/test-skill`, detail: `symlink → ${CENTRAL_SKILL}` },
       ]);

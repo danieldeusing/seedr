@@ -1,3 +1,4 @@
+import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { REGISTRY_KEYS } from "../registry-keys.generated";
 
 /*
@@ -34,7 +35,9 @@ export const RETENTION_DAYS = 90;
 export const RETENTION_DELETE_BATCH = 200;
 export const MAX_BODY_BYTES = 1024;
 
-const VALID_TOOLS = new Set(["claude", "copilot", "gemini", "codex", "opencode"]);
+// Tool ids are validated and canonicalised by the shared agent vocabulary:
+// deprecated ids sent by older CLIs (gemini) are stored under their canonical
+// name (antigravity), so the counts stay one series per tool.
 const VALID_TYPES = new Set(["skill", "plugin", "agent", "hook", "mcp", "command", "settings"]);
 const VALID_SCOPES = new Set(["project", "user", "local"]);
 const VERSION_PATTERN = /^[0-9A-Za-z.+-]{1,20}$/;
@@ -73,10 +76,11 @@ export function validatePayload(body: unknown): InstallPayload | string {
   const { slug, type, tool, scope, version } = body as Record<string, unknown>;
   if (typeof slug !== "string" || !SLUG_PATTERN.test(slug)) return "slug must be a lowercase identifier (1-100 chars)";
   if (typeof type !== "string" || !VALID_TYPES.has(type)) return `type must be one of: ${[...VALID_TYPES].join(", ")}`;
-  if (typeof tool !== "string" || !VALID_TOOLS.has(tool)) return `tool must be one of: ${[...VALID_TOOLS].join(", ")}`;
+  const canonicalTool = typeof tool === "string" ? canonicalAgent(tool) : null;
+  if (canonicalTool === null) return "tool is not a known coding agent";
   if (typeof scope !== "string" || !VALID_SCOPES.has(scope)) return `scope must be one of: ${[...VALID_SCOPES].join(", ")}`;
   if (typeof version !== "string" || !VERSION_PATTERN.test(version)) return "version must be a version string (1-20 chars)";
-  return { slug, type, tool, scope, version };
+  return { slug, type, tool: canonicalTool, scope, version };
 }
 
 export function registryKey(type: string, slug: string): string {

@@ -114,7 +114,9 @@ export const sourceLabels: Record<SourceType, string> = {
 export const agentLabels: Record<CodingAgent, string> = {
   claude: "Claude Code",
   copilot: "GitHub Copilot",
-  gemini: "Gemini",
+  antigravity: "Google Antigravity",
+  // deprecated id; items are canonicalised on load, so it never reaches the UI
+  gemini: "Google Antigravity",
   codex: "Codex",
   opencode: "OpenCode",
 };

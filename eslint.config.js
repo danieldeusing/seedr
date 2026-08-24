@@ -15,9 +15,18 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
+  // Root Node scripts and agent hooks: plain ESM that Node runs directly, so the
+  // runtime globals they use are declared here instead of pulling in `globals`.
+  {
+    files: ["scripts/**/*.mjs", ".agents/hooks/**/*.mjs"],
+    languageOptions: {
+      globals: { process: "readonly", console: "readonly" },
+    },
+  },
+
   // Shared rules for all packages
   {
-    files: ["**/*.{js,ts,jsx,tsx}"],
+    files: ["**/*.{js,mjs,ts,jsx,tsx}"],
     plugins: {
       sonarjs,
       unicorn,
@@ -48,9 +57,9 @@ export default tseslint.config(
     },
   },
 
-  // React-specific config for web app
+  // React-specific config for the React apps
   {
-    files: ["apps/web/**/*.{jsx,tsx}"],
+    files: ["apps/web/**/*.{jsx,tsx}", "apps/studio/**/*.{jsx,tsx}"],
     ...reactRefresh.configs.vite,
     plugins: {
       "react-hooks": reactHooks,

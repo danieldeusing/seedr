@@ -211,47 +211,28 @@ describe("mcp handler", () => {
     });
   });
 
-  describe("gemini adapter", () => {
-    it("writes stdio servers under mcpServers in .gemini/settings.json", async () => {
-      await serveDefinition({ name: "github", config: { ...GITHUB_STDIO.config, cwd: "/work", timeout: 5000, trust: true, type: "stdio" } });
+  describe("retired gemini adapter", () => {
+    it("refuses the gemini alias because Antigravity's MCP format is unverified", async () => {
+      await serveDefinition(GITHUB_STDIO);
       const { installMcp } = await import("./mcp.js");
-      vol.mkdirSync("/my/project/.gemini", { recursive: true });
-      vol.writeFileSync(GEMINI_PROJECT_FILE, JSON.stringify({ theme: "dark", mcpServers: { keep: { command: "k" } } }));
 
       const results = await installMcp(mcpItem(), ["gemini"], "project", "copy", true, PROJECT);
 
-      expect(results[0]?.path).toBe(GEMINI_PROJECT_FILE);
-      const config = readJsonFile(GEMINI_PROJECT_FILE);
-      expect(config.theme).toBe("dark");
-      expect(config.mcpServers.keep).toEqual({ command: "k" });
-      expect(config.mcpServers.github).toEqual({
-        command: NPX,
-        args: ["-y", GITHUB_PACKAGE],
-        env: { GITHUB_TOKEN: GITHUB_TOKEN_REF },
-        cwd: "/work",
-        timeout: 5000,
-        trust: true,
-      });
-      expect(config.mcpServers.github.type).toBeUndefined();
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toMatch(/MCP servers are not supported for Google Antigravity/);
+      expect(vol.existsSync(GEMINI_PROJECT_FILE)).toBe(false);
     });
 
-    it("maps http to httpUrl and sse to url", async () => {
-      const { toGeminiServer } = await import("./mcp.js");
-      expect(toGeminiServer({ type: "http", url: "https://h", headers: { A: "b" } })).toEqual({ httpUrl: "https://h", headers: { A: "b" } });
-      expect(toGeminiServer({ type: "sse", url: "https://s" })).toEqual({ url: "https://s" });
-      expect(toGeminiServer({ url: "https://implicit" })).toEqual({ httpUrl: "https://implicit" });
-    });
-
-    it("uses ~/.gemini/settings.json at user scope and supports uninstall/list", async () => {
+    it("refuses antigravity the same way at user scope", async () => {
       await serveDefinition(GITHUB_STDIO);
-      const { installMcp, uninstallMcp, getInstalledMcpServers } = await import("./mcp.js");
+      const { installMcp, getInstalledMcpServers } = await import("./mcp.js");
 
-      await installMcp(mcpItem(), ["gemini"], "user", "copy", true, PROJECT);
-      expect(readJsonFile("/home/testuser/.gemini/settings.json").mcpServers.github.command).toBe(NPX);
-      expect(await getInstalledMcpServers("gemini", "user", PROJECT)).toEqual(["github"]);
-      expect(await uninstallMcp("github", "gemini", "user", PROJECT)).toBe(true);
-      expect(readJsonFile("/home/testuser/.gemini/settings.json").mcpServers).toEqual({});
-      expect(await uninstallMcp("github", "gemini", "user", PROJECT)).toBe(false);
+      const results = await installMcp(mcpItem(), ["antigravity"], "user", "copy", true, PROJECT);
+
+      expect(results[0]?.success).toBe(false);
+      expect(vol.existsSync("/home/testuser/.gemini/settings.json")).toBe(false);
+      // list scans every agent, so unsupported ones report empty instead of throwing
+      expect(await getInstalledMcpServers("gemini", "user", PROJECT)).toEqual([]);
     });
   });
 
@@ -315,19 +296,15 @@ describe("mcp handler", () => {
     it("never writes one agent's schema into another agent's file", async () => {
       await serveDefinition(GITHUB_STDIO);
       const { installMcp } = await import("./mcp.js");
-      const agents: CodingAgent[] = ["claude", "codex", "gemini", "opencode"];
+      const agents: CodingAgent[] = ["claude", "codex", "opencode"];
 
       const results = await installMcp(mcpItem(), agents, "project", "copy", true, PROJECT);
-      expect(results.map((r) => r.success)).toEqual([true, true, true, true]);
-      expect(results.map((r) => r.path)).toEqual([CLAUDE_PROJECT_FILE, CODEX_PROJECT_FILE, GEMINI_PROJECT_FILE, OPENCODE_PROJECT_FILE]);
+      expect(results.map((r) => r.success)).toEqual([true, true, true]);
+      expect(results.map((r) => r.path)).toEqual([CLAUDE_PROJECT_FILE, CODEX_PROJECT_FILE, OPENCODE_PROJECT_FILE]);
 
       const claude = readJsonFile(CLAUDE_PROJECT_FILE);
       expect(claude.mcp).toBeUndefined();
       expect(claude.mcpServers.github.command).toBe(NPX);
-
-      const gemini = readJsonFile(GEMINI_PROJECT_FILE);
-      expect(gemini.mcp).toBeUndefined();
-      expect(gemini.mcpServers.github.command).toBe(NPX);
 
       const opencode = readJsonFile(OPENCODE_PROJECT_FILE);
       expect(opencode.mcpServers).toBeUndefined();
@@ -409,16 +386,16 @@ describe("mcp handler", () => {
       vol.mkdirSync(PROJECT, { recursive: true });
       vol.writeFileSync(CLAUDE_PROJECT_FILE, JSON.stringify({ mcpServers: { github: { command: "old" } } }));
 
-      const plan = await planMcp(mcpItem(), ["claude", "codex", "gemini", "opencode"], "project", "copy", PROJECT);
+      const plan = await planMcp(mcpItem(), ["claude", "codex", "opencode"], "project", "copy", PROJECT);
 
       expect(plan).toEqual([
         { agent: "claude", kind: "modify", path: CLAUDE_PROJECT_FILE, detail: "mcpServers.github (replaces existing entry)" },
         { agent: "codex", kind: "create", path: CODEX_PROJECT_FILE, detail: "[mcp_servers.github]" },
-        { agent: "gemini", kind: "create", path: GEMINI_PROJECT_FILE, detail: "mcpServers.github" },
         { agent: "opencode", kind: "create", path: OPENCODE_PROJECT_FILE, detail: "mcp.github" },
       ]);
       expect(vol.existsSync(CODEX_PROJECT_FILE)).toBe(false);
       expect(readJsonFile(CLAUDE_PROJECT_FILE).mcpServers.github.command).toBe("old");
+      await expect(planMcp(mcpItem(), ["gemini"], "project", "copy", PROJECT)).rejects.toThrow(/not supported for Google Antigravity/);
     });
   });
 

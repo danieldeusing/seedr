@@ -1,4 +1,5 @@
 import type { IFuseOptions } from "fuse.js";
+import { canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
 import type { RegistryManifest, RegistryItem, ComponentType, FileTreeNode } from "./types";
 
 // Import split manifest files (bundled at build time)
@@ -36,16 +37,20 @@ const devTestItem: RegistryItem = {
   },
 };
 
-// Assemble all type manifests into a single RegistryManifest
-const allItems: RegistryItem[] = [
-  ...skillsData.items,
-  ...pluginsData.items,
-  ...hooksData.items,
-  ...agentsData.items,
-  ...mcpData.items,
-  ...settingsData.items,
-  ...commandsData.items,
-] as RegistryItem[];
+// Assemble all type manifests into a single RegistryManifest. Compatibility is
+// canonicalised here, so a not-yet-migrated `gemini` entry filters and renders
+// as `antigravity` everywhere downstream.
+const allItems: RegistryItem[] = (
+  [
+    ...skillsData.items,
+    ...pluginsData.items,
+    ...hooksData.items,
+    ...agentsData.items,
+    ...mcpData.items,
+    ...settingsData.items,
+    ...commandsData.items,
+  ] as RegistryItem[]
+).map((item) => ({ ...item, compatibility: canonicalAgents(item.compatibility) }));
 
 const baseManifest: RegistryManifest = {
   version: indexData.version,
@@ -102,17 +107,12 @@ for (const [path, loader] of Object.entries(itemJsonLoaders)) {
 // Cache for item.json data (lazy-loaded)
 const itemJsonCache = new Map<string, RegistryItem>();
 
-// registry folder per type (folders: skills, plugins, hooks, agents, commands, settings, mcp)
-function typeDir(type: ComponentType): string {
-  return type === "mcp" || type === "settings" ? type : `${type}s`;
-}
-
 async function loadItemJson(slug: string, type?: ComponentType): Promise<RegistryItem | undefined> {
-  const key = type ? `${typeDir(type)}/${slug}` : slug;
+  const key = type ? `${typeDirName(type)}/${slug}` : slug;
   if (itemJsonCache.has(key)) return itemJsonCache.get(key);
 
   const loader = type
-    ? loaderByKey.get(`${typeDir(type)}/${slug}`)
+    ? loaderByKey.get(`${typeDirName(type)}/${slug}`)
     : [...loaderByKey.entries()].find(([k]) => k.endsWith(`/${slug}`))?.[1];
   if (!loader) return undefined;
 

@@ -84,7 +84,7 @@ describe("resolveRequestedAgents", () => {
 
   it("'all' means every compatible agent and never errors on the incompatible rest", async () => {
     const { resolveRequestedAgents } = await import("./add.js");
-    expect(resolveRequestedAgents("all", SKILL)).toEqual({ ok: true, agents: ["claude", "copilot", "gemini"], explicit: true });
+    expect(resolveRequestedAgents("all", SKILL)).toEqual({ ok: true, agents: ["claude", "copilot", "antigravity"], explicit: true });
     // copilot is in the item's compatibility but not MCP-capable: dropped silently for 'all'
     expect(resolveRequestedAgents("all", MCP_MULTI)).toEqual({ ok: true, agents: ["claude", "codex"], explicit: true });
   });
@@ -118,8 +118,9 @@ describe("resolveRequestedAgents", () => {
     const result = resolveRequestedAgents("claude,gemini,codex", MCP);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toMatch(/for gemini, codex\. Compatible agents: claude/);
-      expect(result.error).toMatch(/gemini: the registry lists "playwright" for claude only; codex: the registry lists "playwright" for claude only/);
+      expect(result.error).toMatch(/for antigravity, codex\. Compatible agents: claude/);
+      expect(result.error).toMatch(/antigravity: Google Antigravity's MCP configuration format could not be verified/);
+      expect(result.error).toMatch(/codex: the registry lists "playwright" for claude only/);
     }
   });
 
@@ -137,7 +138,18 @@ describe("resolveRequestedAgents", () => {
     const result = resolveRequestedAgents("gemini", HOOK);
     expect(result).toEqual({
       ok: false,
-      error: 'Cannot install hook "lint-hook" for gemini. Compatible agents: claude. gemini: gemini does not support hook content',
+      error: 'Cannot install hook "lint-hook" for antigravity. Compatible agents: claude. antigravity: antigravity does not support hook content',
+    });
+  });
+
+  it("resolves the deprecated gemini alias to antigravity with a warning", async () => {
+    const { resolveRequestedAgents } = await import("./add.js");
+    const result = resolveRequestedAgents("gemini", SKILL);
+    expect(result).toEqual({
+      ok: true,
+      agents: ["antigravity"],
+      explicit: true,
+      deprecationWarning: "'gemini' is now 'antigravity' (Google Antigravity, installs to .agents/)",
     });
   });
 
@@ -145,7 +157,7 @@ describe("resolveRequestedAgents", () => {
     const { resolveRequestedAgents } = await import("./add.js");
     expect(resolveRequestedAgents("claude,cursor", SKILL)).toEqual({
       ok: false,
-      error: 'Unknown agent(s): cursor. Valid agents: claude, copilot, gemini, codex, opencode or "all"',
+      error: 'Unknown agent(s): cursor. Valid agents: claude, copilot, antigravity, codex, opencode or "all"',
     });
     expect(resolveRequestedAgents(",", SKILL)).toEqual({ ok: false, error: "No agents given" });
   });

@@ -66,8 +66,8 @@ describe("compileManifest", () => {
       author: { name: "A" },
     });
     expect(() => compileManifest({ registryDir })).toThrow(/Invalid registry \(\d+ violation\(s\)\)/);
-    expect(() => readAllItems({ registryDir })).toThrow(/"slug" must match/);
-    expect(() => readAllItems({ registryDir })).toThrow(/"name" must be a non-empty string/);
+    expect(() => readAllItems({ registryDir })).toThrow(/slug: must match/);
+    expect(() => readAllItems({ registryDir })).toThrow(/name: must be a non-empty string/);
     expect(() => readAllItems({ registryDir })).toThrow(/synced items must carry "sourceRevision"/);
     expect(readAllItems({ registryDir, validate: false })).toHaveLength(1);
   });
@@ -85,7 +85,7 @@ describe("compileManifest", () => {
       contents: { files: [] },
     });
     writeFileSync(join(dir, "item.json"), readFileSync(join(dir, "item.json"), "utf-8").replace('"slug": "one"', '"slug": "two"'));
-    expect(() => readAllItems({ registryDir })).toThrow(/directory name "one" does not match slug "two"/);
+    expect(() => readAllItems({ registryDir })).toThrow(/slug: is "two" but the directory is "one"/);
   });
 
   it("refuses the pre-integrity fixture registry and accepts it once synced (covered by sync tests)", () => {

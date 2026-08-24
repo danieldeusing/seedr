@@ -13,6 +13,7 @@
  * widening that is a product decision.
  */
 
+import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { validateItem } from "../lib/validate-item.js";
 import { classifyPlugin, collectContent, findEntry, parseJsonEntry, withDeclaredLicense } from "./content.js";
 import type { GitHubClient } from "./github.js";
@@ -39,7 +40,6 @@ export const OFFICIAL_MARKETPLACE_NAME = "claude-plugins-official";
 export const MARKETPLACE_FILE = ".claude-plugin/marketplace.json";
 export const PLUGIN_JSON = ".claude-plugin/plugin.json";
 
-const ALL_AGENTS = ["claude", "copilot", "gemini", "codex", "opencode"];
 const ITEM_CONCURRENCY = 4;
 
 export interface SourceContext {
@@ -89,7 +89,9 @@ async function buildOfficialSkill(ctx: SourceContext, slug: string, sha: string,
       name: formatName(frontmatter.name),
       type: "skill",
       description: frontmatter.description ?? "",
-      compatibility: ALL_AGENTS,
+      // B1 (Studio plan §5): new items carry the deprecated id too, so the CLI
+      // already on npm still matches them; scripts/migrate-agent-ids.ts drops it in B2.
+      compatibility: [...CANONICAL_AGENTS, "gemini"],
       sourceType: "official",
       author: { name: "Anthropic" },
       externalUrl: treeUrl(SKILLS_REPO, sha, path),

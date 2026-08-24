@@ -1,23 +1,23 @@
 import { useEffect } from "react";
 import type { StudioItem } from "@/features/explorer/registry";
+import { RotateCw } from "lucide-react";
+import { IconButton } from "@/core/ui/IconButton";
 import { useTest } from "./testStore";
 
 interface TestPanelProps {
   item: StudioItem;
-  onDone(): void;
 }
 
 const bytes = (text: string): string => `${new TextEncoder().encode(text).length} B`;
 
 /** A real install of one item into a scratch directory, and what it wrote. */
-export function TestPanel({ item, onDone }: TestPanelProps) {
+export function TestPanel({ item }: TestPanelProps) {
   const target = useTest((s) => s.target);
   const phase = useTest((s) => s.phase);
   const outcome = useTest((s) => s.outcome);
   const verdict = useTest((s) => s.verdict);
   const error = useTest((s) => s.error);
   const run = useTest((s) => s.run);
-  const reset = useTest((s) => s.reset);
 
   useEffect(() => {
     // Runs once per opened item — never again because the registry watcher
@@ -36,19 +36,7 @@ export function TestPanel({ item, onDone }: TestPanelProps) {
           {phase === "done" && outcome && `${outcome.run.status} in ${outcome.run.durationMs} ms`}
         </span>
         <span className="flex-1" />
-        <button type="button" onClick={() => void run(item)} className="btn-terminal btn-terminal--ghost btn-terminal--compact" disabled={phase === "running"}>
-          run again
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            reset();
-            onDone();
-          }}
-          className="btn-terminal btn-terminal--ghost btn-terminal--compact"
-        >
-          back
-        </button>
+        <IconButton icon={RotateCw} ariaLabel="run again" tip="run the test install again" onClick={() => void run(item)} disabled={phase === "running"} spin={phase === "running"} />
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
         {error && (

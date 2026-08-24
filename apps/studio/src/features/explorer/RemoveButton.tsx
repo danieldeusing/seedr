@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { StudioItem } from "./registry";
+import { Check, Trash2, X } from "lucide-react";
+import { IconButton } from "@/core/ui/IconButton";
 import { removalRefusal, useMutations } from "./mutations";
 
 /** A two-step remove: the first press arms it, the second runs the transaction. */
@@ -22,39 +24,40 @@ export function RemoveButton({ item }: { item: StudioItem }) {
     // the disabled bin still names itself and carries the reason for readers too.
     return (
       <span data-tip={refusal}>
-        <button
-          type="button"
-          className="btn-terminal btn-terminal--ghost btn-terminal--destructive"
-          aria-label={`remove ${item.slug} — ${refusal}`}
-          disabled
-        />
+        <IconButton icon={Trash2} ariaLabel={`remove ${item.slug} — ${refusal}`} accentColor="red" disabled />
       </span>
     );
   }
   return (
     <span className="flex items-center gap-2 text-xs">
       {phase === "done" ? (
-        <span className="text-primary" role="status">
+        <span className="text-sm text-green-400" role="status">
           removed
         </span>
       ) : armed ? (
         <>
-          <button type="button" onClick={() => void remove(item)} className="btn-terminal btn-terminal--compact" disabled={phase === "removing"}>
-            {phase === "removing" ? "removing…" : `confirm remove ${item.type}/${item.slug}`}
-          </button>
-          <button type="button" onClick={() => setArmed(false)} className="btn-terminal btn-terminal--ghost btn-terminal--compact" disabled={phase === "removing"}>
-            keep
-          </button>
+          <IconButton
+            icon={Check}
+            ariaLabel={`confirm remove ${item.type}/${item.slug}`}
+            tip={`confirm remove ${item.type}/${item.slug}`}
+            accentColor="red"
+            active
+            onClick={() => void remove(item)}
+            disabled={phase === "removing"}
+            spin={phase === "removing"}
+          />
+          <IconButton icon={X} ariaLabel="keep" tip="keep the item" onClick={() => setArmed(false)} disabled={phase === "removing"} />
         </>
       ) : (
-        <button
-          type="button"
+        <IconButton
+          icon={Trash2}
+          ariaLabel={`remove ${item.slug}`}
+          tip="remove from the registry"
+          accentColor="red"
           onClick={() => {
             setArmed(true);
             void arm(item);
           }}
-          className="btn-terminal btn-terminal--ghost btn-terminal--destructive"
-          aria-label={`remove ${item.slug}`}
         />
       )}
       {error && (

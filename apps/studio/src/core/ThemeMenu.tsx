@@ -39,18 +39,20 @@ export function ThemeMenu({ direction = "down", align = "right" }: { direction?:
   };
 
   const Chevron = direction === "up" ? ChevronUp : ChevronDown;
+  const panelSide = align === "left" ? "left-0" : "right-0";
+  const panelEdge = direction === "up" ? "bottom-full mb-2" : "top-full mt-2";
   return (
-    <details className={`dropdown ${align === "left" ? "dropup-left" : ""}`}>
-      <summary aria-label={`theme: ${theme}`} data-tip="Switch the estate colour theme" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
+    <details className="dropdown relative">
+      <summary aria-label={`theme: ${theme}`} data-tip="Switch the estate colour theme" className="flex h-7 w-9 cursor-pointer list-none items-center justify-center gap-0.5 border border-neutral-500/30 text-neutral-400 transition-colors hover:border-neutral-500/40 hover:bg-neutral-500/20 hover:text-neutral-300">
         <Palette className="size-3.5" aria-hidden="true" />
         <Chevron className="size-3" aria-hidden="true" />
       </summary>
-      <div className={`dropdown-panel ${direction === "down" ? "dropdown-panel--down" : ""}`} role="menu" aria-label="theme">
+      <div className={`absolute ${panelSide} ${panelEdge} z-[9999] overflow-hidden border border-neutral-600 bg-[var(--popover)] py-1 whitespace-nowrap shadow-xl`} role="menu" aria-label="theme">
         {THEMES.map((option) => (
-          <button key={option} type="button" role="menuitem" className="dropdown-item" aria-current={option === theme ? "true" : undefined} onClick={choose(option)}>
+          <button key={option} type="button" role="menuitem" className={`flex w-full cursor-pointer items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors hover:bg-neutral-700 ${option === theme ? "bg-violet-500/20 text-neutral-200" : "text-neutral-400"}`} aria-current={option === theme ? "true" : undefined} onClick={choose(option)}>
             <span
               aria-hidden="true"
-              className="mr-2 inline-block size-2.5 border align-middle"
+              className="inline-block size-2.5 shrink-0 rounded-full border"
               style={{ backgroundColor: SWATCHES[option].bg, borderColor: SWATCHES[option].accent }}
             />
             {option}

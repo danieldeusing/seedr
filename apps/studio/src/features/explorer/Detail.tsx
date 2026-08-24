@@ -8,7 +8,8 @@ import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
 import { testRefusal } from "@/features/test/testStore";
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { FlaskConical, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Pencil } from "lucide-react";
+import { IconButton } from "@/core/ui/IconButton";
 
 interface DetailProps {
   item: StudioItem;
@@ -118,12 +119,10 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           </div>
           <span className="flex items-center gap-3">
             {onTest && !testRefusal(item) && (
-              <button type="button" onClick={onTest} className="btn-terminal btn-terminal--ghost btn-terminal--compact">
-                test install
-              </button>
+              <IconButton icon={FlaskConical} ariaLabel={`test install ${item.slug}`} tip="test install — the real CLI, into a scratch directory" onClick={onTest} />
             )}
             {onEdit && item.item.sourceType === "toolr" && (
-              <button type="button" onClick={onEdit} className="btn-terminal btn-terminal--ghost btn-terminal--compact btn-terminal--edit" aria-label={`edit ${item.slug}`} />
+              <IconButton icon={Pencil} ariaLabel={`edit ${item.slug}`} tip="edit this item" onClick={onEdit} />
             )}
             <RemoveButton item={item} />
           </span>
@@ -176,23 +175,41 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
             </button>
           </div>
           <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-4">
-          {treeError ? (
-            <p className="text-xs text-destructive" role="alert">
-              {treeError}
-            </p>
-          ) : tree === null ? (
-            <p className="text-xs text-muted-foreground">loading…</p>
-          ) : tree.length === 0 ? (
-            <p className="text-xs text-muted-foreground">metadata only — no content files</p>
-          ) : (
-            <FileExplorer files={tree} rootName={item.slug} onFetchContent={fetchContent} onOpenFile={(rel) => void openPath(`${item.dir}/${rel}`)} />
-          )}
+          <ContentBody
+            tree={tree}
+            treeError={treeError}
+            slug={item.slug}
+            onFetchContent={fetchContent}
+            onOpenFile={(rel) => void openPath(`${item.dir}/${rel}`)}
+          />
           </div>
         </div>
         )}
       </div>
     </article>
   );
+}
+
+interface ContentBodyProps {
+  tree: FileTreeNode[] | null;
+  treeError: string | null;
+  slug: string;
+  onFetchContent(relativePath: string): Promise<string>;
+  onOpenFile(relativePath: string): void;
+}
+
+/** The content zone's four states: error, loading, metadata-only, or the explorer. */
+function ContentBody({ tree, treeError, slug, onFetchContent, onOpenFile }: ContentBodyProps) {
+  if (treeError) {
+    return (
+      <p className="text-sm text-red-400" role="alert">
+        {treeError}
+      </p>
+    );
+  }
+  if (tree === null) return <p className="text-sm text-neutral-500">loading…</p>;
+  if (tree.length === 0) return <p className="text-sm text-neutral-500">metadata only — no content files</p>;
+  return <FileExplorer files={tree} rootName={slug} onFetchContent={onFetchContent} onOpenFile={onOpenFile} />;
 }
 
 interface CollapsedStripProps {

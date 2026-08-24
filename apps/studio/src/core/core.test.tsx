@@ -67,7 +67,7 @@ describe("ExternalLinkDialog", () => {
     expect(invoke).not.toHaveBeenCalledWith("open_external", expect.anything());
 
     useExternalLink.getState().request(PAGE);
-    await userEvent.click(await screen.findByRole("button", { name: "open" }));
+    await userEvent.click(await screen.findByRole("button", { name: "open in browser" }));
     expect(invoke).toHaveBeenCalledWith("open_external", { url: PAGE });
     expect(screen.queryByRole("dialog")).toBeNull();
   });

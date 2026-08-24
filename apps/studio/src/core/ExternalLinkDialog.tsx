@@ -1,4 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { ExternalLink } from "lucide-react";
+import { FormActions } from "./ui/FormActions";
 import { useExternalLink } from "./externalUrl";
 
 /**
@@ -9,11 +11,8 @@ export function ExternalLinkDialog() {
   const pending = useExternalLink((s) => s.pending);
   const confirm = useExternalLink((s) => s.confirm);
   const cancel = useExternalLink((s) => s.cancel);
-  const cancelRef = useRef<HTMLButtonElement>(null);
-
   useEffect(() => {
     if (!pending) return;
-    cancelRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") cancel();
     };
@@ -23,23 +22,15 @@ export function ExternalLinkDialog() {
 
   if (!pending) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md" role="presentation" onClick={cancel}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="open in browser"
-        className="card-terminal w-full max-w-xl text-xs"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <p className="prompt">open in your browser?</p>
-        <p className="mt-3 break-all text-muted-foreground">{pending}</p>
-        <div className="mt-4 flex items-center gap-2">
-          <button type="button" onClick={() => void confirm()} className="btn-terminal btn-terminal--compact">
-            open
-          </button>
-          <button ref={cancelRef} type="button" onClick={cancel} className="btn-terminal btn-terminal--ghost btn-terminal--compact">
-            cancel
-          </button>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-label="open in browser">
+      <div className="absolute inset-0 bg-[var(--dialog-backdrop)] backdrop-blur-sm" onClick={cancel} />
+      <div className="relative mx-4 w-full max-w-md border border-neutral-700 bg-neutral-980 shadow-2xl">
+        <div className="border-b border-neutral-960 px-6 py-4">
+          <h3 className="text-lg font-semibold text-white">Open in your browser?</h3>
+        </div>
+        <div className="px-6 py-4">
+          <p className="break-all text-neutral-300">{pending}</p>
+          <FormActions border={false} confirmLabel="open in browser" confirmIcon={ExternalLink} onConfirm={() => void confirm()} cancelLabel="stay here" onCancel={cancel} />
         </div>
       </div>
     </div>

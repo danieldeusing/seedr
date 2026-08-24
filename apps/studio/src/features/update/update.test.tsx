@@ -115,8 +115,9 @@ describe("UpdateForm", () => {
     const onDone = vi.fn();
     render(<UpdateForm item={playwright} onDone={onDone} />);
 
-    const submit = await screen.findByRole("button", { name: "nothing changed" });
+    const submit = await screen.findByRole("button", { name: "apply 0 changes" });
     expect(submit).toBeDisabled();
+    expect(screen.getByText("nothing changed yet")).toBeInTheDocument();
     await userEvent.clear(screen.getByLabelText("name"));
     await userEvent.type(screen.getByLabelText("name"), "Playwright MCP");
     await userEvent.click(screen.getByRole("button", { name: "apply 1 change" }));

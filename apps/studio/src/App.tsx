@@ -95,7 +95,7 @@ export function App() {
       )}
       {dialog === "test" && current && (
         <Modal title={`test install ${itemKey}`} onClose={close} size="full">
-          <TestPanel key={itemKey} item={current} onDone={close} />
+          <TestPanel key={itemKey} item={current} />
         </Modal>
       )}
       <ExternalLinkDialog />

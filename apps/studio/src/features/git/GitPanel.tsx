@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { RotateCw } from "lucide-react";
+import { IconButton } from "@/core/ui/IconButton";
 import { fs } from "@/api/fs";
 import { gitDiff, gitSummary, type GitSummary } from "@/api/git";
 
@@ -70,9 +72,7 @@ export function GitPanel() {
           </span>
         )}
         <span className="flex-1" />
-        <button type="button" onClick={() => void refresh()} className="btn-terminal btn-terminal--ghost btn-terminal--compact">
-          refresh
-        </button>
+        <IconButton icon={RotateCw} ariaLabel="refresh" tip="Re-read the worktree" onClick={() => void refresh()} />
       </header>
       {state.kind === "loading" && <p className="p-6 text-muted-foreground">loading…</p>}
       {state.kind === "error" && (

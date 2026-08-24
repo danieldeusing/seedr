@@ -1,25 +1,33 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { IconButton } from "./ui/IconButton";
 
 interface ModalProps {
   title: string;
   onClose(): void;
-  /** lg for forms, full for the workspace-sized panes (git, update with files). */
-  size?: "lg" | "full";
+  /** lg for forms, xl for wider ones, full for the workspace-sized panes. */
+  size?: "lg" | "xl" | "full";
   children: ReactNode;
 }
 
+const SIZE_CLASSES: Record<NonNullable<ModalProps["size"]>, string> = {
+  lg: "max-w-2xl w-full mx-4",
+  xl: "max-w-4xl w-full mx-4",
+  full: "w-[80vw] max-w-[1440px] h-[90vh]",
+};
+
 /**
- * The one dialog frame (configr's Modal, in estate clothes): a dimmed backdrop,
- * a centered card, a named header with the close control. Escape and the
- * backdrop both dismiss — a dialog the user cannot leave is a trap, so closing
- * is always available; the stores keep their own state across it.
+ * configr's Modal, in shared clothes: a black rgba(0,0,0,.5) scrim with blur
+ * in every theme (--dialog-backdrop), the panel on neutral-980 with a
+ * neutral-700 edge, the header a faint neutral-960 hairline with an 18px
+ * semibold title and the neutral × IconButton. Escape and the backdrop both
+ * dismiss; the stores keep their own state across it.
  */
 export function Modal({ title, onClose, size = "lg", children }: ModalProps) {
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    closeRef.current?.focus();
+    dialogRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
@@ -28,21 +36,14 @@ export function Modal({ title, onClose, size = "lg", children }: ModalProps) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/60 p-6 backdrop-blur-md" role="presentation" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onClick={(event) => event.stopPropagation()}
-        className={`flex min-h-0 flex-col overflow-hidden border border-primary/40 bg-card shadow-[0_0_40px_var(--glow-soft)] ${size === "full" ? "h-[88vh] w-[86vw] max-w-[1400px]" : "max-h-[85vh] w-full max-w-3xl"}`}
-      >
-        <div className="flex h-[36px] shrink-0 items-center gap-2 border-b border-border px-4">
-          <p className="prompt min-w-0 flex-1 truncate text-xs">{title}</p>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label={`close ${title}`} className="text-muted-foreground hover:text-primary">
-            <X className="size-3.5" aria-hidden="true" />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label={title} ref={dialogRef} tabIndex={-1}>
+      <div className="absolute inset-0 bg-[var(--dialog-backdrop)] backdrop-blur-sm" onClick={onClose} />
+      <div className={`relative flex min-h-0 flex-col overflow-hidden border border-neutral-700 bg-neutral-980 shadow-2xl ${SIZE_CLASSES[size]}`}>
+        <div className="flex flex-shrink-0 items-center gap-3 border-b border-neutral-960 px-6 py-4">
+          <h3 className="min-w-0 flex-1 truncate text-lg font-semibold text-white">{title}</h3>
+          <IconButton icon={X} ariaLabel={`close ${title}`} onClick={onClose} />
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
       </div>
     </div>
   );

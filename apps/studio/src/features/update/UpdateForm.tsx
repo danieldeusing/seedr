@@ -1,7 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { ScopeType } from "@seedr/shared";
 import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
 import type { StudioItem } from "@/features/explorer/registry";
+import { Check, Sparkles, X } from "lucide-react";
+import { IconButton } from "@/core/ui/IconButton";
 import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
 interface UpdateFormProps {
@@ -36,7 +38,8 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const changed = useMemo(() => Object.keys(toPatch(item, form)), [item, form]);
   const busy = phase === "drafting" || phase === "applying";
   // the design system styles text inputs, selects and textareas itself
-  const input = "w-full text-xs";
+  const input = "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  const formRef = useRef<HTMLFormElement>(null);
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
 
   if (phase === "done" && outcome) {
@@ -51,7 +54,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
             <li key={path}>{path}</li>
           ))}
         </ul>
-        <button type="button" onClick={close} className="btn-terminal btn-terminal--ghost btn-terminal--compact mt-4">
+        <button type="button" onClick={close} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
           back to the item
         </button>
       </section>
@@ -60,6 +63,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
 
   return (
     <form
+      ref={formRef}
       className="flex h-full min-h-0 flex-col overflow-y-auto p-6 text-xs"
       onSubmit={(event) => {
         event.preventDefault();
@@ -133,19 +137,15 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       </div>
       <Problems errors={problemFor("longDescription")} />
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={() => void redraft()} className="btn-terminal btn-terminal--ghost btn-terminal--compact" disabled={busy || !!refusal || !probe?.available}>
-          {phase === "drafting" ? "drafting…" : "redraft descriptions with Claude"}
-        </button>
-        <button type="submit" className="btn-terminal btn-terminal--compact" disabled={busy || !!refusal || changed.length === 0 || problems.length > 0}>
-          {phase === "applying" ? "applying…" : changed.length === 0 ? "nothing changed" : `apply ${changed.length} change${changed.length === 1 ? "" : "s"}`}
-        </button>
-        <button type="button" onClick={close} className="link-quiet">
-          cancel
-        </button>
-        <span className="text-muted-foreground" role="status">
-          {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : ""}
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
+        <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
+          {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : changed.length === 0 ? "nothing changed yet" : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
         </span>
+        <div className="flex items-center gap-2">
+          <IconButton icon={Sparkles} ariaLabel="redraft descriptions with Claude" tip="redraft descriptions with Claude" onClick={() => void redraft()} disabled={busy || !!refusal || !probe?.available} spin={phase === "drafting"} />
+          <IconButton icon={X} ariaLabel="cancel" tip="cancel" onClick={close} />
+          <IconButton icon={Check} ariaLabel={`apply ${changed.length} change${changed.length === 1 ? "" : "s"}`} tip="apply the changes" accentColor="violet" onClick={() => formRef.current?.requestSubmit()} disabled={busy || !!refusal || changed.length === 0 || problems.length > 0} spin={phase === "applying"} />
+        </div>
       </div>
       {draftErrors.length > 0 && (
         <p className="mt-3 text-destructive" role="alert">

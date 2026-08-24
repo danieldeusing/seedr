@@ -1,3 +1,6 @@
+import { FolderOpen } from "lucide-react";
+import { IconButton } from "@/core/ui/IconButton";
+
 interface OnboardingProps {
   error: string | null;
   onChoose(): void;
@@ -7,7 +10,7 @@ interface OnboardingProps {
 export function Onboarding({ error, onChoose }: OnboardingProps) {
   return (
     <main className="flex h-screen flex-col items-center justify-center gap-6 p-8">
-      <div className="card-terminal max-w-xl p-8">
+      <div className="max-w-xl border border-neutral-700 bg-neutral-980 p-8">
         <p className="prompt">seedr studio</p>
         <h1 className="glow-lg mt-4 text-2xl font-bold">Choose a registry</h1>
         <p className="mt-3 text-muted-foreground">
@@ -19,9 +22,10 @@ export function Onboarding({ error, onChoose }: OnboardingProps) {
             {error}
           </p>
         )}
-        <button type="button" onClick={onChoose} className="btn-terminal mt-6">
-          choose folder
-        </button>
+        <span className="mt-6 inline-flex items-center gap-2">
+          <IconButton icon={FolderOpen} ariaLabel="choose folder" tip="Open a seedr checkout" accentColor="violet" size="md" onClick={onChoose} />
+          <span className="text-sm text-neutral-500">choose folder</span>
+        </span>
       </div>
     </main>
   );

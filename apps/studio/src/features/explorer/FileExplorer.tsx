@@ -17,7 +17,7 @@ import {
   Type,
 } from "lucide-react";
 import { useAppTheme } from "@/core/useAppTheme";
-import { ContextMenu, ContextMenuItem, type ContextMenuPosition } from "@/core/ContextMenu";
+import { ContextMenu, ContextMenuItem, ContextMenuSeparator, type ContextMenuPosition } from "@/core/ContextMenu";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
 import { FormattedPreview } from "./FormattedPreview";
 
@@ -186,7 +186,7 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
           <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
             <FileCode className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
             <span className="min-w-0 flex-1 truncate text-xs text-foreground">{selectedFileName}</span>
-            <div className="flex items-center border border-border">
+            <div className="flex items-center border border-neutral-600">
               {modeOptions.map((option) => (
                 <button
                   key={option.value}
@@ -195,7 +195,7 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
                   aria-pressed={effectiveMode === option.value}
                   disabled={option.disabled}
                   data-tip={option.disabled ? `${option.label} — markdown files only` : option.label}
-                  className={`flex size-5 items-center justify-center ${effectiveMode === option.value ? "bg-secondary text-primary" : "text-muted-foreground hover:text-primary"} disabled:opacity-40`}
+                  className={`flex size-5 cursor-pointer items-center justify-center transition-colors ${effectiveMode === option.value ? "bg-violet-500/20 text-violet-300" : "text-neutral-400 hover:bg-neutral-500/20 hover:text-neutral-300"} disabled:cursor-not-allowed disabled:opacity-40`}
                   onClick={() => setMode(option.value)}
                 >
                   {option.icon}
@@ -219,7 +219,7 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
           >
             <ExternalLink className="size-3" aria-hidden="true" /> open with default app
           </ContextMenuItem>
-          <div className="mx-2 my-1 border-t border-border" role="separator" />
+          <ContextMenuSeparator />
           {modeOptions.map((option) => (
             <ContextMenuItem
               key={option.value}

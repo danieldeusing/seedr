@@ -1,6 +1,8 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
+import { Ban, Check, FolderOpen, Sparkles } from "lucide-react";
+import { IconButton } from "@/core/ui/IconButton";
 import { formProblems, useAuthor } from "./store";
 
 // The CLI has no install handler for `command` items yet (plan trap 12); until
@@ -38,7 +40,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
   const busy = phase === "probing" || phase === "drafting" || phase === "applying";
   // the design system styles text inputs, selects and textareas itself
-  const input = "w-full text-xs";
+  const formRef = useRef<HTMLFormElement>(null);
+  const input = "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
   if (phase === "done" && outcome) {
     return (
@@ -53,7 +56,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           ))}
         </ul>
         <p className="mt-4 text-muted-foreground">Review with git status and commit when you are happy.</p>
-        <button type="button" onClick={reset} className="btn-terminal btn-terminal--ghost btn-terminal--compact mt-4">
+        <button type="button" onClick={reset} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
           add another
         </button>
       </section>
@@ -62,6 +65,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
 
   return (
     <form
+      ref={formRef}
       className="flex h-full min-h-0 flex-col overflow-y-auto p-6 text-xs"
       onSubmit={(event) => {
         event.preventDefault();
@@ -74,7 +78,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         <span className="lbl">source</span>
         <div className="field-val">
           <code className="truncate text-muted-foreground">{form.sourcePath || "nothing chosen"}</code>
-          <button type="button" onClick={() => void chooseSource()} className="btn-terminal btn-terminal--ghost btn-terminal--compact" disabled={busy}>
+          <IconButton icon={FolderOpen} ariaLabel="choose folder" tip="Pick the capability's source folder" onClick={() => void chooseSource()} disabled={busy} />
+          <button type="button" hidden onClick={() => void chooseSource()} disabled={busy}>
             choose folder
           </button>
         </div>
@@ -175,21 +180,18 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       </div>
       <Problems errors={problemFor("longDescription")} />
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={() => void draft()} className="btn-terminal btn-terminal--ghost btn-terminal--compact" disabled={busy || !probe?.available}>
-          {phase === "drafting" ? "drafting…" : "draft descriptions with Claude"}
-        </button>
-        {phase === "drafting" && (
-          <button type="button" onClick={() => void cancel()} className="btn-terminal btn-terminal--ghost btn-terminal--compact">
-            cancel
-          </button>
-        )}
-        <button type="submit" className="btn-terminal btn-terminal--compact" disabled={busy || problems.length > 0}>
-          {phase === "applying" ? "applying…" : "add to registry"}
-        </button>
-        <span className="text-muted-foreground" role="status">
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
+        <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
           {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : probe === null ? "probing Claude Code…" : probe.available ? `Claude Code ${probe.version}` : probe.diagnostic}
         </span>
+        <div className="flex items-center gap-2">
+          {phase === "drafting" ? (
+            <IconButton icon={Ban} ariaLabel="cancel the draft" tip="cancel the draft" onClick={() => void cancel()} />
+          ) : (
+            <IconButton icon={Sparkles} ariaLabel="draft descriptions with Claude" tip="draft descriptions with Claude" onClick={() => void draft()} disabled={busy || !probe?.available} />
+          )}
+          <IconButton icon={Check} ariaLabel="add to registry" tip="add to registry" accentColor="violet" onClick={() => formRef.current?.requestSubmit()} disabled={busy || problems.length > 0} spin={phase === "applying"} />
+        </div>
       </div>
 
       {draftErrors.length > 0 && (

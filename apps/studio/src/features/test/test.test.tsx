@@ -120,16 +120,15 @@ describe("TestPanel", () => {
   test("runs on mount, lists the written files with the verdict, and goes back", async () => {
     const notes = await item("notes");
     onCommand("test_install", () => installed({ ".claude/skills/notes/SKILL.md": SKILL_MD, ".claude/skills/notes/scripts/run.py": "print('changed')\n" }));
-    const onDone = vi.fn();
-    render(<TestPanel item={notes} onDone={onDone} />);
+    render(<TestPanel item={notes} />);
 
     expect(await screen.findByTestId("test-verdict")).toHaveTextContent("failed: scripts/run.py was installed with different content");
     expect(screen.getByRole("status")).toHaveTextContent("ok in 220 ms");
     expect(screen.getByRole("list", { name: "written files" })).toHaveTextContent(".claude/skills/notes/SKILL.md");
     expect(screen.getByTestId("test-output")).toHaveTextContent("Installed for 2 agent(s)");
 
-    await userEvent.click(screen.getByRole("button", { name: "back" }));
-    expect(onDone).toHaveBeenCalled();
+    // closing is the dialog frame's job now; the panel keeps only "run again"
+    expect(screen.getByRole("button", { name: "run again" })).toBeInTheDocument();
   });
 });
 
@@ -138,12 +137,12 @@ describe("Detail", () => {
     const notes = await item("notes");
     const onTest = vi.fn();
     const { unmount } = render(<Detail item={notes} onTest={onTest} />);
-    await userEvent.click(await screen.findByRole("button", { name: "test install" }));
+    await userEvent.click(await screen.findByRole("button", { name: /^test install/ }));
     expect(onTest).toHaveBeenCalled();
     unmount();
 
     const pdf = await item("pdf");
     render(<Detail item={pdf} onTest={onTest} />);
-    expect(screen.queryByRole("button", { name: "test install" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^test install/ })).toBeNull();
   });
 });

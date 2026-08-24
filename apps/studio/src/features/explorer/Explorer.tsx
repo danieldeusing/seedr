@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, GitBranch, Pencil, Plus, Rows3, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, GitBranch, Pencil, Plus, Rows3 } from "lucide-react";
+import { IconButton } from "@/core/ui/IconButton";
+import { Input } from "@/core/ui/Input";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
 import { useRowStyle, type RowStyle } from "@/core/rowStyle";
 import { ThemeMenu } from "@/core/ThemeMenu";
@@ -51,10 +53,10 @@ function RowIndicators({ item, style }: { item: StudioItem["item"]; style: RowSt
     const agents = agentMatrix(item.compatibility ?? []);
     return (
       <>
-        <span data-tip={mode.tip} className="shrink-0 text-muted-foreground/75">
+        <span data-tip={mode.tip} className="shrink-0 text-neutral-500">
           {mode.text}
         </span>
-        <span data-tip={agents.tip} className="shrink-0 text-muted-foreground/75">
+        <span data-tip={agents.tip} className="shrink-0 text-neutral-500">
           {agents.text}
         </span>
       </>
@@ -64,7 +66,7 @@ function RowIndicators({ item, style }: { item: StudioItem["item"]; style: RowSt
   return (
     <>
       {/* only the editable state is marked; read-only is the unmarked default */}
-      <span data-tip={mode.editable ? mode.tip : undefined} className="w-3 shrink-0 text-muted-foreground">
+      <span data-tip={mode.editable ? mode.tip : undefined} className="w-3 shrink-0 text-neutral-500">
         {mode.editable && <Pencil className="size-3" aria-label="editable" />}
       </span>
       <span className="flex w-16 shrink-0 items-center gap-0.5">
@@ -113,9 +115,10 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
         <p className="mt-2 text-xs">
           Add the first one with <code className="text-primary">/add-toolr</code> in Claude Code, or right here:
         </p>
-        <button type="button" onClick={onAddCapability} className="btn-terminal btn-terminal--compact mt-3">
-          add capability
-        </button>
+        <span className="mt-3 inline-flex items-center gap-2">
+          <IconButton icon={Plus} ariaLabel="add capability" tip="Add a capability to the registry" accentColor="violet" onClick={onAddCapability} />
+          <span className="text-sm text-neutral-500">add capability</span>
+        </span>
       </div>
     );
   }
@@ -123,53 +126,26 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
   const allCollapsed = populatedTypes.every((type) => collapsed.has(type));
   return (
     <nav aria-label="Registry" className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
-        <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">Explorer</span>
+      <div className="flex h-[36px] shrink-0 items-center gap-1.5 border-b border-neutral-700 bg-neutral-800/40 px-3">
+        <span className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">Explorer</span>
         <span className="flex-1" />
-        <button type="button" onClick={onAddCapability} aria-label="add capability" data-tip="Add a capability to the registry" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
-          <Plus className="size-3.5" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
+        <IconButton icon={Plus} ariaLabel="add capability" tip="Add a capability to the registry" accentColor="violet" size="xs" onClick={onAddCapability} />
+        <IconButton
+          icon={allCollapsed ? ChevronsUpDown : ChevronsDownUp}
+          ariaLabel={allCollapsed ? "expand all groups" : "collapse all groups"}
+          tip={allCollapsed ? "expand all groups" : "collapse all groups"}
+          size="xs"
           onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(populatedTypes))}
-          aria-label={allCollapsed ? "expand all groups" : "collapse all groups"}
-          className="text-muted-foreground hover:text-primary"
-        >
-          {allCollapsed ? <ChevronsUpDown className="size-3.5" /> : <ChevronsDownUp className="size-3.5" />}
-        </button>
-      </div>
-      <div className="relative shrink-0 border-b border-border px-3 py-2">
-        <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-5 size-3 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="search capabilities…"
-          aria-label="search capabilities"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          // inline padding: the design system's own input rule is unlayered and
-          // outweighs utility classes, and the glass sits inside this inset
-          style={{ paddingInlineStart: "1.6rem", paddingInlineEnd: "1.4rem" }}
-          className="w-full text-xs"
         />
-        {query && (
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            aria-label="clear search"
-            className="absolute top-1/2 right-5 -translate-y-1/2 text-muted-foreground hover:text-primary"
-          >
-            <X className="size-3" />
-          </button>
-        )}
+      </div>
+      <div className="flex shrink-0 items-center border-b border-neutral-700 px-3 py-2">
+        <Input value={query} onChange={setQuery} placeholder="search capabilities…" ariaLabel="search capabilities" search variant="filled" />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {problems.length > 0 && (
-          <section className="mb-4 border border-destructive p-3 text-xs" role="alert">
-            <p className="font-bold text-destructive">{problems.length} unreadable item file(s)</p>
-            <ul className="mt-1 space-y-1 text-muted-foreground">
+          <section className="mb-4 border-l-2 border-l-red-500 py-1 pl-2.5 text-sm" role="alert">
+            <p className="font-medium text-red-400">{problems.length} unreadable item file(s)</p>
+            <ul className="mt-1 space-y-1 text-neutral-500">
               {problems.map((problem) => (
                 <li key={problem}>{problem}</li>
               ))}
@@ -187,10 +163,10 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
                 type="button"
                 aria-expanded={!isCollapsed}
                 onClick={() => toggle(type)}
-                className="flex w-full items-center gap-1 px-1 py-0.5 text-left text-xs font-bold tracking-wide text-primary hover:bg-muted"
+                className="flex w-full cursor-pointer items-center gap-1 px-1 py-0.5 text-left text-sm font-medium text-accent-400 transition-colors hover:bg-neutral-960/50"
               >
                 {isCollapsed ? <ChevronRight className="size-3 shrink-0" /> : <ChevronDown className="size-3 shrink-0" />}
-                {typeDirName(type)}/ <span className="font-normal text-muted-foreground">{searching ? `${ofType.length}/${counts[type]}` : counts[type]}</span>
+                {typeDirName(type)}/ <span className="font-normal text-neutral-500">{searching ? `${ofType.length}/${counts[type]}` : counts[type]}</span>
               </button>
               {!isCollapsed && (
                 <ul>
@@ -202,7 +178,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
                           type="button"
                           aria-current={active ? "true" : undefined}
                           onClick={() => onSelect({ type, slug })}
-                          className={`flex w-full items-center gap-2 px-2 py-0.5 text-left text-xs hover:bg-muted ${active ? "bg-muted text-primary" : ""}`}
+                          className={`flex w-full cursor-pointer items-center gap-2 px-2 py-0.5 text-left text-sm transition-colors ${active ? "bg-violet-500/20 text-neutral-200" : "text-neutral-300 hover:bg-neutral-960/50 hover:text-neutral-200"}`}
                         >
                           <RowIndicators item={item} style={rowStyle} />
                           <span className="truncate">{item.name ?? slug}</span>
@@ -221,22 +197,22 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
           );
         })}
         {searching && populatedTypes.every((type) => items.filter((i) => i.type === type).filter((i) => matches(i, query.trim())).length === 0) && (
-          <p className="p-3 text-xs text-muted-foreground">No capability matches “{query.trim()}”.</p>
+          <p className="p-3 text-sm text-neutral-500">No capability matches “{query.trim()}”.</p>
         )}
       </div>
-      <div className="flex h-[36px] shrink-0 items-center gap-1 border-t border-border px-2">
-        <details className="dropdown dropup-left">
-          <summary aria-label={`row style: ${rowStyle}`} data-tip="How rows show ownership and agents" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
+      <div className="flex h-[36px] shrink-0 items-center gap-1.5 border-t border-neutral-700 px-2">
+        <details className="dropdown relative">
+          <summary aria-label={`row style: ${rowStyle}`} data-tip="How rows show ownership and agents" className="flex h-7 w-9 cursor-pointer list-none items-center justify-center gap-0.5 border border-neutral-500/30 text-neutral-400 transition-colors hover:border-neutral-500/40 hover:bg-neutral-500/20 hover:text-neutral-300">
             <Rows3 className="size-3.5" aria-hidden="true" />
             <ChevronDown className="size-3 rotate-180" aria-hidden="true" />
           </summary>
-          <div className="dropdown-panel" role="menu" aria-label="row style">
+          <div className="absolute bottom-full left-0 z-[9999] mb-2 overflow-hidden border border-neutral-600 bg-[var(--popover)] py-1 whitespace-nowrap shadow-xl" role="menu" aria-label="row style">
             {(["icons", "text"] as const).map((option) => (
               <button
                 key={option}
                 type="button"
                 role="menuitem"
-                className="dropdown-item"
+                className={`flex w-full cursor-pointer items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors hover:bg-neutral-700 ${option === rowStyle ? "bg-violet-500/20 text-neutral-200" : "text-neutral-400"}`}
                 aria-current={option === rowStyle ? "true" : undefined}
                 onClick={(event) => {
                   setRowStyle(option);
@@ -249,13 +225,9 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
           </div>
         </details>
         <ThemeMenu direction="up" align="left" />
-        <button type="button" onClick={onGitStatus} aria-label="git status" data-tip="Branch, head and the changed paths" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
-          <GitBranch className="size-3.5" aria-hidden="true" />
-        </button>
+        <IconButton icon={GitBranch} ariaLabel="git status" tip="Branch, head and the changed paths" onClick={onGitStatus} />
         <span className="flex-1" />
-        <button type="button" onClick={onSwitchRepo} aria-label="switch repo" data-tip="Point Studio at another seedr checkout — e.g. a private fork" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
-          <FolderInput className="size-3.5" aria-hidden="true" />
-        </button>
+        <IconButton icon={FolderInput} ariaLabel="switch repo" tip="Point Studio at another seedr checkout — e.g. a private fork" onClick={onSwitchRepo} />
       </div>
     </nav>
   );

@@ -14,6 +14,7 @@ import {
   Loader2,
   ExternalLink,
   FileText,
+  PanelRightClose,
   Type,
 } from "lucide-react";
 import { useAppTheme } from "@/core/useAppTheme";
@@ -50,6 +51,8 @@ interface FileExplorerProps {
   onFetchContent: (relativePath: string) => Promise<string>;
   /** Opens the file with the OS default app (the path for anything Monaco cannot show). */
   onOpenFile: (relativePath: string) => void;
+  /** Hides the whole files zone; the control sits in this panel's own header. */
+  onCollapse?: () => void;
 }
 
 const nodeHasFiles = (node: FileTreeNode): boolean =>
@@ -79,7 +82,7 @@ function firstFilePath(nodes: FileTreeNode[], prefix: string): string | null {
  * and resize handle, tooltips are the estate's `data-tip`, and content arrives
  * through the injected fetcher (Studio's scoped filesystem IPC).
  */
-export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: FileExplorerProps) {
+export function FileExplorer({ files, rootName, onFetchContent, onOpenFile, onCollapse }: FileExplorerProps) {
   const appTheme = useAppTheme();
   const visibleFiles = useMemo(() => files.filter(nodeHasFiles), [files]);
   const allDirPaths = useMemo(() => {
@@ -160,6 +163,11 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
           >
             {allCollapsed ? <ChevronsUpDown className="size-3.5" /> : <ChevronsDownUp className="size-3.5" />}
           </button>
+          {onCollapse && (
+            <button type="button" onClick={onCollapse} aria-label="hide files" data-tip="hide files" className="text-muted-foreground hover:text-primary">
+              <PanelRightClose className="size-3.5" aria-hidden="true" />
+            </button>
+          )}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           <ul role="tree" className="space-y-0.5">

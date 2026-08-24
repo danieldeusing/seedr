@@ -57,6 +57,23 @@ describe("Detail", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("too large");
   });
 
+  test("each pane hides behind its own control and comes back from its strip", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs);
+    render(<Detail item={items.find((i) => i.slug === "playwright")!} />);
+    await screen.findByRole("button", { name: "docs" });
+
+    await userEvent.click(screen.getByRole("button", { name: "hide metadata" }));
+    expect(screen.queryByTestId("meta-pane")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "show metadata" }));
+    expect(screen.getByTestId("meta-pane")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "hide files" }));
+    expect(screen.queryByRole("tree")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "show files" }));
+    expect(await screen.findByRole("tree")).toBeInTheDocument();
+  });
+
   test("the externalUrl is a forward link that asks before opening the browser", async () => {
     mockFs(registryFiles());
     onCommand("open_external", () => undefined);

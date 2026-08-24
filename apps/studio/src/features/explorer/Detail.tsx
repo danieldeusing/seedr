@@ -8,7 +8,7 @@ import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
 import { testRefusal } from "@/features/test/testStore";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, PanelRightOpen } from "lucide-react";
 
 interface DetailProps {
   item: StudioItem;
@@ -35,6 +35,37 @@ function ExternalValue({ url, label }: { url: string; label: string }) {
   );
 }
 
+/** The item.json fields, with the two values that go somewhere as gated links. */
+function MetaFields({ item }: { item: StudioItem["item"] }) {
+  const author = item.author;
+  return (
+          <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-xs">
+            {FIELDS.map((field) => (
+              <div key={field} className="contents">
+                <dt className="text-primary">{field}</dt>
+                <dd className="break-words text-muted-foreground">
+                  {field === "externalUrl" && typeof item.externalUrl === "string" ? (
+                    <ExternalValue url={item.externalUrl} label={item.externalUrl} />
+                  ) : field === "author" && author ? (
+                    <>
+                      {author.name}
+                      {author.url && (
+                        <>
+                          {" · "}
+                          <ExternalValue url={author.url} label={author.url} />
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    renderValue(item[field])
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+  );
+}
+
 /** One item: its metadata, its validation state, its files — read-only. */
 /** Below this pane width the meta column stacks on top of the files. */
 const STACK_BELOW_PX = 860;
@@ -44,6 +75,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
   const [treeError, setTreeError] = useState<string | null>(null);
   const [metaWidth, setMetaWidth] = useState(340);
   const [metaCollapsed, setMetaCollapsed] = useState(false);
+  const [filesCollapsed, setFilesCollapsed] = useState(false);
   const [stacked, setStacked] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -76,7 +108,6 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
 
   const fetchContent = useCallback((relativePath: string) => fs.readText(`${item.dir}/${relativePath}`), [item.dir]);
 
-  const author = item.item.author;
   return (
     <article className="flex h-full min-h-0 flex-col overflow-hidden">
       <header className="border-b border-border px-6 py-4">
@@ -86,16 +117,6 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
             <h1 className="glow mt-2 text-xl font-bold">{item.item.name ?? item.slug}</h1>
           </div>
           <span className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setMetaCollapsed((collapsed) => !collapsed)}
-              aria-pressed={metaCollapsed}
-              aria-label={metaCollapsed ? "show metadata" : "hide metadata"}
-              data-tip={metaCollapsed ? "show metadata" : "hide metadata"}
-              className="text-muted-foreground hover:text-primary"
-            >
-              {metaCollapsed ? <PanelLeftOpen className="size-3.5" aria-hidden="true" /> : <PanelLeftClose className="size-3.5" aria-hidden="true" />}
-            </button>
             {onTest && !testRefusal(item) && (
               <button type="button" onClick={onTest} className="btn-terminal btn-terminal--ghost btn-terminal--compact">
                 test install
@@ -114,45 +135,38 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
         )}
       </header>
       <div ref={bodyRef} className={`flex min-h-0 flex-1 overflow-hidden ${stacked ? "flex-col" : ""}`}>
-        {!metaCollapsed && (
+        {metaCollapsed ? (
+          <CollapsedStrip side="left" label="meta" tip="show metadata" stacked={stacked} onExpand={() => setMetaCollapsed(false)} />
+        ) : (
           <div
-            style={stacked ? undefined : { width: metaWidth }}
-            className={`shrink-0 overflow-y-auto p-6 ${stacked ? "max-h-[45%] border-b border-border" : "border-r border-border"}`}
+            style={stacked || filesCollapsed ? undefined : { width: metaWidth }}
+            className={`flex shrink-0 flex-col overflow-hidden ${stacked ? "max-h-[45%] border-b border-border" : "border-r border-border"} ${filesCollapsed && !stacked ? "min-w-0 flex-1" : ""}`}
             data-testid="meta-pane"
           >
-          <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-xs">
-            {FIELDS.map((field) => (
-              <div key={field} className="contents">
-                <dt className="text-primary">{field}</dt>
-                <dd className="break-words text-muted-foreground">
-                  {field === "externalUrl" && typeof item.item.externalUrl === "string" ? (
-                    <ExternalValue url={item.item.externalUrl} label={item.item.externalUrl} />
-                  ) : field === "author" && author ? (
-                    <>
-                      {author.name}
-                      {author.url && (
-                        <>
-                          {" · "}
-                          <ExternalValue url={author.url} label={author.url} />
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    renderValue(item.item[field])
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
+            <div className="flex h-[28px] shrink-0 items-center gap-2 border-b border-border px-3">
+              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">meta</span>
+              <span className="flex-1" />
+              <button type="button" onClick={() => setMetaCollapsed(true)} aria-label="hide metadata" data-tip="hide metadata" className="text-muted-foreground hover:text-primary">
+                <PanelLeftClose className="size-3.5" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          <MetaFields item={item.item} />
           {item.item.longDescription && (
             <section className="mt-6">
               <p className="prompt text-xs">cat "tl;dr.md"</p>
               <p className="mt-2 text-xs whitespace-pre-wrap text-muted-foreground">{item.item.longDescription}</p>
             </section>
           )}
+            </div>
           </div>
         )}
-        {!metaCollapsed && !stacked && <PaneResizeHandle label="resize metadata" onResize={(delta) => setMetaWidth((width) => Math.max(240, Math.min(560, width + delta)))} />}
+        {!metaCollapsed && !filesCollapsed && !stacked && (
+          <PaneResizeHandle label="resize metadata" onResize={(delta) => setMetaWidth((width) => Math.max(240, width + delta))} />
+        )}
+        {filesCollapsed ? (
+          <CollapsedStrip side="right" label="files" tip="show files" stacked={stacked} onExpand={() => setFilesCollapsed(false)} />
+        ) : (
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-4">
           {treeError ? (
             <p className="text-xs text-destructive" role="alert">
@@ -163,10 +177,52 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           ) : tree.length === 0 ? (
             <p className="text-xs text-muted-foreground">metadata only — no content files</p>
           ) : (
-            <FileExplorer files={tree} rootName={item.slug} onFetchContent={fetchContent} onOpenFile={(rel) => void openPath(`${item.dir}/${rel}`)} />
+            <FileExplorer files={tree} rootName={item.slug} onFetchContent={fetchContent} onOpenFile={(rel) => void openPath(`${item.dir}/${rel}`)} onCollapse={() => setFilesCollapsed(true)} />
           )}
         </div>
+        )}
       </div>
     </article>
+  );
+}
+
+interface CollapsedStripProps {
+  side: "left" | "right";
+  label: string;
+  tip: string;
+  stacked: boolean;
+  onExpand(): void;
+}
+
+/** What a hidden pane leaves behind: a slim strip that names it and brings it back. */
+function CollapsedStrip({ side, label, tip, stacked, onExpand }: CollapsedStripProps) {
+  const Icon = side === "left" ? PanelLeftOpen : PanelRightOpen;
+  if (stacked) {
+    return (
+      <button
+        type="button"
+        onClick={onExpand}
+        aria-label={tip}
+        data-tip={tip}
+        className={`flex h-8 shrink-0 items-center gap-2 px-3 text-xs font-bold tracking-wider text-muted-foreground uppercase hover:text-primary ${side === "left" ? "border-b" : "border-t"} border-border`}
+      >
+        <Icon className="size-3.5" aria-hidden="true" />
+        {label}
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onExpand}
+      aria-label={tip}
+      data-tip={tip}
+      className={`flex w-8 shrink-0 flex-col items-center gap-2 pt-2 text-xs font-bold tracking-wider text-muted-foreground uppercase hover:text-primary ${side === "left" ? "border-r" : "border-l"} border-border`}
+    >
+      <Icon className="size-3.5" aria-hidden="true" />
+      <span aria-hidden="true" style={{ writingMode: "vertical-rl" }}>
+        {label}
+      </span>
+    </button>
   );
 }

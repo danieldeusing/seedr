@@ -51,7 +51,7 @@ export function App() {
   const itemKey = current ? `${current.type}/${current.slug}` : "";
   return (
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)]">
-      <AppHeader onAddCapability={() => setDialog("author")} onGitStatus={() => setDialog("git")} onSwitchRepo={() => void chooseRepo()} />
+      <AppHeader />
       <div className="grid min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
           {error && (
@@ -59,7 +59,15 @@ export function App() {
               {error}
             </p>
           )}
-          <Explorer items={items} problems={problems} selected={selected} onSelect={select} />
+          <Explorer
+            items={items}
+            problems={problems}
+            selected={selected}
+            onSelect={select}
+            onAddCapability={() => setDialog("author")}
+            onGitStatus={() => setDialog("git")}
+            onSwitchRepo={() => void chooseRepo()}
+          />
         </aside>
         <section className="min-h-0 overflow-hidden">
           {current ? (

@@ -35,7 +35,10 @@ describe("App", () => {
     useStudio.setState({ repo: { root: "/repo", name: "repo" } });
 
     render(<App />);
-    await userEvent.click(await screen.findByRole("button", { name: "add capability" }));
+    // wait for the loaded explorer first: the empty state carries an add button too,
+    // and clicking it just as the list replaces it loses the click
+    await screen.findByRole("button", { name: /skills\/ 2/ });
+    await userEvent.click(screen.getByRole("button", { name: "add capability" }));
     const dialog = await screen.findByRole("dialog", { name: /add-local/ });
     expect(dialog).toBeInTheDocument();
     expect(await screen.findByText(/not installed or not on PATH/)).toBeInTheDocument();

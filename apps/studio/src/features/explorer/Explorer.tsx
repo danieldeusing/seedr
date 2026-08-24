@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Pencil, Rows3, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, GitBranch, Pencil, Plus, Rows3, Search, X } from "lucide-react";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
 import { useRowStyle, type RowStyle } from "@/core/rowStyle";
 import { ThemeMenu } from "@/core/ThemeMenu";
@@ -13,6 +13,10 @@ interface ExplorerProps {
   problems: string[];
   selected: Selection | null;
   onSelect(selection: Selection): void;
+  /** The explorer owns the workspace controls, configr-style: add in the header, the rest in the footer. */
+  onAddCapability(): void;
+  onGitStatus(): void;
+  onSwitchRepo(): void;
 }
 
 const sameKey = (a: Selection | null, type: ComponentType, slug: string) => a?.type === type && a.slug === slug;
@@ -82,7 +86,7 @@ const matches = (item: StudioItem, query: string): boolean => {
  * every group at once, and per row the `rw-`/`r--` ownership mode plus the
  * agent matrix — which coding agents the capability is for.
  */
-export function Explorer({ items, problems, selected, onSelect }: ExplorerProps) {
+export function Explorer({ items, problems, selected, onSelect, onAddCapability, onGitStatus, onSwitchRepo }: ExplorerProps) {
   const counts = countByType(items);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<ComponentType>>(new Set());
@@ -106,7 +110,12 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
       <div className="p-6 text-muted-foreground" data-testid="empty-registry">
         <p className="prompt">ls registry/</p>
         <p className="mt-4">This registry has no items yet.</p>
-        <p className="mt-2 text-xs">Add the first one with “add capability” above, or with <code className="text-primary">/add-toolr</code> in Claude Code.</p>
+        <p className="mt-2 text-xs">
+          Add the first one with <code className="text-primary">/add-toolr</code> in Claude Code, or right here:
+        </p>
+        <button type="button" onClick={onAddCapability} className="btn-terminal btn-terminal--compact mt-3">
+          add capability
+        </button>
       </div>
     );
   }
@@ -117,6 +126,9 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
         <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">Explorer</span>
         <span className="flex-1" />
+        <button type="button" onClick={onAddCapability} aria-label="add capability" data-tip="Add a capability to the registry" className="text-muted-foreground hover:text-primary">
+          <Plus className="size-3.5" aria-hidden="true" />
+        </button>
         <button
           type="button"
           onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(populatedTypes))}
@@ -237,6 +249,13 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
           </div>
         </details>
         <ThemeMenu direction="up" align="left" />
+        <button type="button" onClick={onGitStatus} aria-label="git status" data-tip="Branch, head and the changed paths" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
+          <GitBranch className="size-3.5" aria-hidden="true" />
+        </button>
+        <span className="flex-1" />
+        <button type="button" onClick={onSwitchRepo} aria-label="switch repo" data-tip="Point Studio at another seedr checkout — e.g. a private fork" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
+          <FolderInput className="size-3.5" aria-hidden="true" />
+        </button>
       </div>
     </nav>
   );

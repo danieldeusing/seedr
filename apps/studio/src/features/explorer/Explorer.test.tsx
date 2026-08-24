@@ -9,6 +9,7 @@ import { Explorer } from "./Explorer";
 import { loadRegistry } from "./registry";
 
 const SEARCH = "search capabilities";
+const controls = { onAddCapability: () => {}, onGitStatus: () => {}, onSwitchRepo: () => {} };
 
 beforeEach(() => {
   useRowStyle.setState({ style: "icons" });
@@ -16,7 +17,7 @@ beforeEach(() => {
 
 describe("Explorer", () => {
   test("renders a real empty state for a fresh fork", () => {
-    render(<Explorer items={[]} problems={[]} selected={null} onSelect={() => {}} />);
+    render(<Explorer items={[]} problems={[]} selected={null} onSelect={() => {}} {...controls} />);
     expect(screen.getByTestId("empty-registry")).toHaveTextContent("no items yet");
   });
 
@@ -24,7 +25,7 @@ describe("Explorer", () => {
     mockFs(registryFiles());
     const { items, problems } = await loadRegistry(fs);
     const onSelect = vi.fn();
-    render(<Explorer items={items} problems={problems} selected={{ type: "skill", slug: "pdf" }} onSelect={onSelect} />);
+    render(<Explorer items={items} problems={problems} selected={{ type: "skill", slug: "pdf" }} onSelect={onSelect} {...controls} />);
 
     expect(screen.getByRole("button", { name: /skills\/ 2/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /mcp\/ 1/ })).toBeInTheDocument();
@@ -55,7 +56,7 @@ describe("Explorer", () => {
   test("search narrows every group at once and says when nothing matches", async () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs);
-    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => {}} />);
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => {}} {...controls} />);
 
     await userEvent.type(screen.getByLabelText(SEARCH), "play");
     expect(screen.getByRole("button", { name: /Playwright$/ })).toBeInTheDocument();
@@ -73,7 +74,7 @@ describe("Explorer", () => {
   test("groups collapse one by one and all at once", async () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs);
-    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => {}} />);
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => {}} {...controls} />);
 
     await userEvent.click(screen.getByRole("button", { name: /skills\/ 2/ }));
     expect(screen.queryByRole("button", { name: /PDF$/ })).toBeNull();

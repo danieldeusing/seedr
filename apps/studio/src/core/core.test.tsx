@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
 import { AppHeader } from "./AppHeader";
 import { ExternalLinkDialog } from "./ExternalLinkDialog";
@@ -80,19 +80,9 @@ describe("ExternalLinkDialog", () => {
 });
 
 describe("AppHeader", () => {
-  test("names the window and wires the three controls", async () => {
-    const onAdd = vi.fn();
-    const onGit = vi.fn();
-    const onSwitch = vi.fn();
-    render(<AppHeader onAddCapability={onAdd} onGitStatus={onGit} onSwitchRepo={onSwitch} />);
-
+  test("is the identity strip and nothing else", () => {
+    render(<AppHeader />);
     expect(screen.getByText("seedr-studio")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "add capability" }));
-    await userEvent.click(screen.getByRole("button", { name: "git status" }));
-    await userEvent.click(screen.getByRole("button", { name: "switch repo" }));
-    expect(onAdd).toHaveBeenCalled();
-    expect(onGit).toHaveBeenCalled();
-    expect(onSwitch).toHaveBeenCalled();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 });

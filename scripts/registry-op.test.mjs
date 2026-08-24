@@ -44,7 +44,13 @@ describe("registry-op CLI", () => {
     const identity = JSON.parse(result.stdout);
     const remote = execFileSync("git", ["-C", repoRoot, "remote", "get-url", "origin"], { encoding: "utf8" }).trim();
     assert.ok(remote.includes(`${identity.owner}/${identity.repo}`), `${remote} vs ${identity.owner}/${identity.repo}`);
-    assert.match(identity.externalUrlTemplate, /^https:\/\/github\.com\/.+\/tree\/.+\/registry\/skills\/<slug>$/);
+    if (identity.defaultBranch) {
+      assert.match(identity.externalUrlTemplate, /^https:\/\/github\.com\/.+\/tree\/.+\/registry\/skills\/<slug>$/);
+    } else {
+      // CI checkouts have no refs/remotes/origin/HEAD; the contract is then
+      // "no URL at all", never one with a guessed branch.
+      assert.equal(identity.externalUrlTemplate, null);
+    }
   });
 
   test("run reads the operation from stdin and refuses a malformed one on stderr with exit 1", () => {

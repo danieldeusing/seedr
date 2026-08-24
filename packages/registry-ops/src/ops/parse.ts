@@ -43,6 +43,8 @@ const CHECKS: Record<string, (op: Envelope) => void> = {
   },
   "add-remote": (op) => {
     requireString(op, "externalUrl");
+    requireString(op, "sourceRevision");
+    requireString(op, "contentDigest");
     requireItemFields(op);
   },
   update: checkUpdate,

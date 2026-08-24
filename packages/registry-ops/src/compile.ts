@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import type { ComponentType, RegistryItem, RegistryManifestIndex, SourceType, TypeManifest } from "@seedr/shared";
-import { contentHash } from "./hash.js";
+import { contentDigestOfDir, contentHash } from "./hash.js";
 import { indexManifestPath, typeDir, typeManifestPath } from "./fsPaths.js";
 import { ALL_TYPES, typeDirName } from "./paths.js";
 import { listItems } from "./read.js";
@@ -26,7 +26,10 @@ export function collectItems(registryDir: string): RegistryItem[] {
   const items = listItems(registryDir).map(({ dir, item }) => {
     if (item.sourceType === "toolr") {
       const hash = contentHash(dir);
-      if (hash) return { ...item, contentHash: hash };
+      const digest = contentDigestOfDir(dir);
+      if (hash || digest) {
+        return { ...item, ...(hash && { contentHash: hash }), ...(digest && { contentDigest: digest }) };
+      }
     }
     return item;
   });

@@ -4,6 +4,7 @@ import {
   isTypeSupported,
   getCompatibleAgents,
   filterCompatibleAgents,
+  describeIncompatibility,
 } from "./compatibility.js";
 
 describe("compatibility", () => {
@@ -34,9 +35,15 @@ describe("compatibility", () => {
       expect(AGENT_COMPATIBILITY.command).toEqual(["claude"]);
     });
 
-    it("should have MCP compatible with all agents", () => {
-      expect(AGENT_COMPATIBILITY.mcp).toContain("claude");
-      expect(AGENT_COMPATIBILITY.mcp).toContain("copilot");
+    it("should have MCP compatible with every agent whose format is verified", () => {
+      expect(AGENT_COMPATIBILITY.mcp).toEqual(["claude", "codex", "opencode"]);
+    });
+
+    it("should exclude copilot from MCP and say why", () => {
+      expect(AGENT_COMPATIBILITY.mcp).not.toContain("copilot");
+      expect(isTypeSupported("mcp", "copilot")).toBe(false);
+      expect(describeIncompatibility("mcp", "copilot")).toMatch(/could not be verified/);
+      expect(describeIncompatibility("hook", "gemini")).toBe("antigravity does not support hook content");
     });
   });
 
@@ -55,7 +62,9 @@ describe("compatibility", () => {
 
     it("resolves the deprecated gemini id like antigravity", () => {
       expect(isTypeSupported("skill", "gemini")).toBe(true);
-      expect(isTypeSupported("mcp", "gemini")).toBe(true);
+      // antigravity's MCP format is unverified, so the alias is refused the same way
+      expect(isTypeSupported("mcp", "antigravity")).toBe(false);
+      expect(isTypeSupported("mcp", "gemini")).toBe(false);
     });
   });
 

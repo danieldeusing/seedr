@@ -1,302 +1,233 @@
-import { useMemo } from "react";
-import { canonicalAgent } from "@seedr/registry-ops/pure";
-import { useParams, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import Fuse from "fuse.js";
+import { X } from "lucide-react";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { useUpdateParams } from "@/hooks/useUpdateParams";
-import Fuse from "fuse.js";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { FilterDropdown } from "@/components/FilterDropdown";
-import { SortDropdown, type SortField } from "@/components/SortDropdown";
+import { SortDropdown } from "@/components/SortDropdown";
 import { ItemCard } from "@/components/ItemCard";
+import { TypeIcon } from "@/components/TypeIcon";
+import { NotFound } from "@/routes/NotFound";
 import { getItemsByType, fuseOptions } from "@/lib/registry";
 import { pluralize } from "@/lib/text";
-import type { ComponentType, CodingAgent, SourceType, ScopeType, PluginType, RegistryItem } from "@/lib/types";
 import { typeLabelPlural, typeTextColors, pathToType } from "@/lib/colors";
-import { TypeIcon } from "@/components/TypeIcon";
-
 import { agentOptions, sourceOptions, scopeOptions } from "@/lib/filterOptions";
+import {
+  activeFilterChips,
+  capabilityOptions,
+  dropUpdates,
+  filterItems,
+  kindOptions,
+  paramUpdatesFor,
+  parseBrowseParams,
+  pluginTypeOptions,
+  resetFilterUpdates,
+  sortFieldOptions,
+  type BrowseContext,
+  type BrowseFilters,
+  type DroppedParam,
+  type FilterParamKey,
+} from "@/lib/browseFilters";
+import type { ComponentType, RegistryItem } from "@/lib/types";
+import { categoryMeta } from "../../scripts/site-meta.mjs";
 
-const pluginTypeOptions = [
-  { value: "package", label: "Package" },
-  { value: "wrapper", label: "Wrapper" },
-  { value: "integration", label: "Integration" },
-];
-
-type ItemKind = "native" | "wrapper";
-const kindOptions = [
-  { value: "native", label: "Native" },
-  { value: "wrapper", label: "Wrapper" },
-];
-
-type CapabilityType = "skill" | "hook" | "agent" | "command" | "mcp";
-const capabilityOptions = [
-  { value: "skill", label: "Skill" },
-  { value: "hook", label: "Hook" },
-  { value: "agent", label: "Agent" },
-  { value: "command", label: "Command" },
-  { value: "mcp", label: "MCP Server" },
-];
-
-const sortFields: SortField[] = [
-  { value: "name", label: "Name" },
-  { value: "updated", label: "Updated" },
-];
-
-/** Returns the raw param only if it matches one of the allowed option values, else null. */
-function pickValid<T extends string>(
-  raw: string | null,
-  allowed: readonly { value: string }[]
-): T | null {
-  return raw && allowed.some((o) => o.value === raw) ? (raw as T) : null;
-}
-
-function sortItems(items: RegistryItem[], field: string, ascending: boolean): RegistryItem[] {
-  return [...items].sort((a, b) => {
-    let cmp: number;
-    switch (field) {
-      case "name":
-        cmp = a.name.localeCompare(b.name);
-        break;
-      case "updated":
-        cmp = (a.updatedAt ?? "").localeCompare(b.updatedAt ?? "");
-        break;
-      default:
-        cmp = 0;
-    }
-    return ascending ? cmp : -cmp;
-  });
-}
-
-export function Browse() {
-  const { type } = useParams<{ type: string }>();
-  const componentType = (type ? pathToType(type) : undefined) as ComponentType;
+/** URL-backed filter state for one category page. */
+function useBrowseFilters(componentType: ComponentType) {
   const { searchParams, updateParams } = useUpdateParams();
-  useScrollRestoration();
-
-  const isPlugins = componentType === "plugin";
-
-  // Read state from URL search params, validating against known values so a
-  // hand-edited URL (?tool=garbage) doesn't render a bogus active filter.
-  const query = searchParams.get("q") ?? "";
-  // canonicalised first, so an old `?tool=gemini` link still filters (as antigravity)
-  const toolFilter = pickValid<CodingAgent>(canonicalAgent(searchParams.get("tool")), agentOptions);
-  const sourceFilter = pickValid<SourceType>(searchParams.get("source"), sourceOptions);
-  const scopeFilter = pickValid<ScopeType>(searchParams.get("scope"), scopeOptions);
-  const pluginTypeFilter = pickValid<PluginType>(searchParams.get("pluginType"), pluginTypeOptions);
-  const capabilityFilter = pickValid<CapabilityType>(searchParams.get("ext"), capabilityOptions);
-  const kindFilter = pickValid<ItemKind>(searchParams.get("kind"), kindOptions);
-  const sortField = pickValid<string>(searchParams.get("sortField"), sortFields) ?? "name";
-  const sortAsc = searchParams.get("sortAsc") !== "false";
-
-  const toParam = (value: string) => (value && value !== "all") ? value : null;
-  const setQuery = (value: string) => updateParams({ q: value || null });
-  const setToolFilter = (value: string) => updateParams({ tool: toParam(value) });
-  const setSourceFilter = (value: string) => {
-    // Clear scope filter when switching away from toolr
-    if (value !== "toolr") {
-      updateParams({ source: toParam(value), scope: null });
-    } else {
-      updateParams({ source: value });
-    }
-  };
-  const setScopeFilter = (value: string) => updateParams({ scope: toParam(value) });
-  const setPluginTypeFilter = (value: string) => {
-    // Capability filter only applies to wrappers — clear it when switching away
-    if (value !== "wrapper") {
-      updateParams({ pluginType: toParam(value), ext: null });
-    } else {
-      updateParams({ pluginType: value });
-    }
-  };
-  const setCapabilityFilter = (value: string) => updateParams({ ext: toParam(value) });
-  const setKindFilter = (value: string) => updateParams({ kind: toParam(value) });
-  const setSortField = (value: string) => updateParams({ sortField: value === "name" ? null : value });
-  const toggleSortDir = () => updateParams({ sortAsc: sortAsc ? "false" : null });
-
   const items = useMemo(() => getItemsByType(componentType), [componentType]);
-  const hasWrappers = !isPlugins && items.some(
-    (item) => item.type === "plugin" && item.pluginType === "wrapper"
+  const context = useMemo<BrowseContext>(
+    () => ({
+      componentType,
+      hasWrappers: componentType !== "plugin" && items.some((item) => item.type === "plugin" && item.pluginType === "wrapper"),
+    }),
+    [componentType, items]
   );
+  const { filters, dropped } = useMemo(() => parseBrowseParams(searchParams, context), [searchParams, context]);
+
+  // Invalid or irrelevant parameters are removed from the URL and announced once,
+  // so a stale link never silently shows an empty page.
+  const [ignored, setIgnored] = useState<DroppedParam[]>([]);
+  useEffect(() => {
+    if (dropped.length === 0) return;
+    setIgnored(dropped);
+    updateParams(dropUpdates(dropped));
+  }, [dropped, updateParams]);
 
   const fuse = useMemo(() => new Fuse(items, fuseOptions), [items]);
+  const filteredItems = useMemo(
+    () => filterItems(items, filters, context, (query) => fuse.search(query).map((result) => result.item)),
+    [items, filters, context, fuse]
+  );
 
-  const filteredItems = useMemo(() => {
-    let result = items;
+  const setFilter = (key: FilterParamKey, value: string | null) => {
+    setIgnored([]);
+    updateParams(paramUpdatesFor(key, value));
+  };
+  const resetFilters = () => {
+    setIgnored([]);
+    updateParams(resetFilterUpdates());
+  };
 
-    if (query) {
-      result = fuse.search(query).map((r) => r.item);
-    }
+  return { items, filteredItems, filters, context, ignored, setFilter, resetFilters };
+}
 
-    if (toolFilter) {
-      result = result.filter((item) => item.compatibility.includes(toolFilter));
-    }
+interface FilterBarProps {
+  filters: BrowseFilters;
+  context: BrowseContext;
+  placeholder: string;
+  setFilter: (key: FilterParamKey, value: string | null) => void;
+}
 
-    if (sourceFilter) {
-      result = result.filter((item) => (item.sourceType ?? "toolr") === sourceFilter);
-    }
-
-    if (scopeFilter) {
-      result = result.filter((item) => (item.targetScope ?? "project") === scopeFilter);
-    }
-
-    if (pluginTypeFilter) {
-      result = result.filter((item) => (item.pluginType ?? "package") === pluginTypeFilter);
-    }
-
-    if (capabilityFilter) {
-      result = result.filter((item) => {
-        if (item.pluginType === "wrapper") return item.wrapper === capabilityFilter;
-        if (item.pluginType === "integration") return item.integration === capabilityFilter;
-        if (item.package) return (item.package[capabilityFilter] ?? 0) > 0;
-        return false;
-      });
-    }
-
-    if (kindFilter && !isPlugins) {
-      if (kindFilter === "native") {
-        result = result.filter((item) => item.type === componentType);
-      } else if (kindFilter === "wrapper") {
-        result = result.filter((item) => item.type === "plugin" && item.pluginType === "wrapper");
-      }
-    }
-
-    return sortItems(result, sortField, sortAsc);
-  }, [items, query, toolFilter, sourceFilter, scopeFilter, pluginTypeFilter, capabilityFilter, kindFilter, sortField, sortAsc, fuse, isPlugins, componentType]);
-
-  // Check if any filters are active
-  const hasActiveFilters = query !== "" || toolFilter !== null || sourceFilter !== null || scopeFilter !== null || pluginTypeFilter !== null || capabilityFilter !== null || kindFilter !== null;
-
-  if (!componentType || !typeLabelPlural[componentType]) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
-        <p className="text-subtext">Invalid type</p>
-        <Link to="/" className="text-accent hover:underline mt-4 inline-block">
-          Go home
-        </Link>
-      </div>
-    );
-  }
-
+function BrowseFilterBar({ filters, context, placeholder, setFilter }: FilterBarProps) {
+  const isPlugins = context.componentType === "plugin";
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="flex items-center gap-2 text-lg font-bold text-text mb-2">
-          <TypeIcon type={componentType} size={20} className={typeTextColors[componentType]} />
-          {typeLabelPlural[componentType]}
-        </h1>
-        <p className="text-subtext">
-          {filteredItems.length} {pluralize(componentType, filteredItems.length)} available
-          {hasActiveFilters && items.length !== filteredItems.length && (
-            <span className="text-text-dim"> (filtered from {items.length})</span>
+    <div className="mb-4 flex flex-wrap items-center gap-2" data-testid="filter-bar">
+      <div className="w-full sm:w-80">
+        <Input type="search" placeholder={placeholder} value={filters.query} onChange={(value) => setFilter("q", value)} />
+      </div>
+      <div className="hidden flex-1 sm:block" />
+      {context.hasWrappers && (
+        <FilterDropdown value={filters.kind ?? "all"} options={kindOptions} onChange={(value) => setFilter("kind", value)} allLabel="Kind" />
+      )}
+      {isPlugins && (
+        <FilterDropdown value={filters.pluginType ?? "all"} options={pluginTypeOptions} onChange={(value) => setFilter("pluginType", value)} allLabel="Type" />
+      )}
+      {isPlugins && filters.pluginType === "wrapper" && (
+        <FilterDropdown value={filters.capability ?? "all"} options={capabilityOptions} onChange={(value) => setFilter("ext", value)} allLabel="Capability" />
+      )}
+      <FilterDropdown value={filters.source ?? "all"} options={sourceOptions} onChange={(value) => setFilter("source", value)} allLabel="Source" />
+      {filters.source === "toolr" && (
+        <FilterDropdown value={filters.scope ?? "all"} options={scopeOptions} onChange={(value) => setFilter("scope", value)} allLabel="Scope" />
+      )}
+      <FilterDropdown value={filters.tool ?? "all"} options={agentOptions} onChange={(value) => setFilter("tool", value)} allLabel="Coding Agent" />
+      <SortDropdown
+        field={filters.sortField}
+        ascending={filters.sortAsc}
+        onFieldChange={(value) => setFilter("sortField", value)}
+        onToggleDirection={() => setFilter("sortAsc", filters.sortAsc ? "false" : "true")}
+        fields={sortFieldOptions}
+      />
+    </div>
+  );
+}
+
+interface ActiveFiltersProps {
+  filters: BrowseFilters;
+  ignored: DroppedParam[];
+  setFilter: (key: FilterParamKey, value: string | null) => void;
+  resetFilters: () => void;
+}
+
+/** Every active filter as a removable chip, plus a reset action and the dropped-parameter notice. */
+function ActiveFilters({ filters, ignored, setFilter, resetFilters }: ActiveFiltersProps) {
+  const chips = activeFilterChips(filters);
+  if (chips.length === 0 && ignored.length === 0) return null;
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-2" data-testid="active-filters">
+      {chips.map((chip) => (
+        <button
+          key={chip.key}
+          type="button"
+          onClick={() => setFilter(chip.key, null)}
+          aria-label={`Remove filter ${chip.label}: ${chip.value}`}
+          className="inline-flex h-6 cursor-pointer items-center gap-1 border border-primary px-2 text-xs text-primary transition-colors hover:bg-secondary"
+          data-testid="filter-chip"
+        >
+          <span className="text-muted-foreground">{chip.label}:</span>
+          <span>{chip.value}</span>
+          <X className="size-3" aria-hidden />
+        </button>
+      ))}
+      {chips.length > 0 && (
+        <Button variant="outline" size="xs" onClick={resetFilters} className="h-6 text-destructive" data-testid="reset-filters">
+          <X className="size-3" />
+          reset filters
+        </Button>
+      )}
+      {ignored.length > 0 && (
+        <p role="status" className="basis-full text-xs text-muted-foreground" data-testid="ignored-filters">
+          Ignored from the URL: {ignored.map((param) => `${param.key}=${param.value} (${param.reason})`).join("; ")}.
+          {chips.length === 0 && (
+            <>
+              {" "}
+              <button type="button" onClick={resetFilters} className="link-quiet cursor-pointer">
+                reset filters
+              </button>
+            </>
           )}
-        </p>
-      </div>
-
-      {/* Filter Bar */}
-      <div className="flex items-center gap-2 mb-8">
-        {/* Search input */}
-        <div className="w-80">
-          <Input
-            type="search"
-            placeholder={`Search ${typeLabelPlural[componentType].toLowerCase()}...`}
-            value={query}
-            onChange={setQuery}
-          />
-        </div>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Kind filter for capability pages with wrappers */}
-        {hasWrappers && (
-          <FilterDropdown
-            value={kindFilter ?? "all"}
-            options={kindOptions}
-            onChange={setKindFilter}
-            allLabel="Kind"
-          />
-        )}
-
-        {/* Plugin-specific filter dropdowns */}
-        {isPlugins && (
-          <FilterDropdown
-            value={pluginTypeFilter ?? "all"}
-            options={pluginTypeOptions}
-            onChange={setPluginTypeFilter}
-            allLabel="Type"
-          />
-        )}
-
-        {isPlugins && pluginTypeFilter === "wrapper" && (
-          <FilterDropdown
-            value={capabilityFilter ?? "all"}
-            options={capabilityOptions}
-            onChange={setCapabilityFilter}
-            allLabel="Capability"
-          />
-        )}
-
-        {/* Filter dropdowns */}
-        <FilterDropdown
-          value={sourceFilter ?? "all"}
-          options={sourceOptions}
-          onChange={setSourceFilter}
-          allLabel="Source"
-        />
-
-        {sourceFilter === "toolr" && (
-          <FilterDropdown
-            value={scopeFilter ?? "all"}
-            options={scopeOptions}
-            onChange={setScopeFilter}
-            allLabel="Scope"
-          />
-        )}
-
-        <FilterDropdown
-          value={toolFilter ?? "all"}
-          options={agentOptions}
-          onChange={setToolFilter}
-          allLabel="Coding Agent"
-        />
-
-        <SortDropdown
-          field={sortField}
-          ascending={sortAsc}
-          onFieldChange={setSortField}
-          onToggleDirection={toggleSortDir}
-          fields={sortFields}
-        />
-      </div>
-
-      {/* Grid */}
-      {filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredItems.map((item) => (
-            <ItemCard
-              key={`${item.slug}-${item.type}-${item.pluginType ?? ""}`}
-              item={item}
-              browseType={componentType}
-              onSourceClick={(source) => setSourceFilter(source)}
-              onScopeClick={(scope) => setScopeFilter(scope)}
-              onToolClick={(tool) => setToolFilter(tool)}
-              onPluginTypeClick={isPlugins ? (pt) => setPluginTypeFilter(pt) : undefined}
-              onDateClick={() => {
-                if (sortField === "updated") {
-                  toggleSortDir();
-                } else {
-                  setSortField("updated");
-                }
-              }}
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="text-subtext text-center py-12">
-          No {typeLabelPlural[componentType].toLowerCase()} found
         </p>
       )}
     </div>
   );
+}
+
+function BrowseResults({
+  items,
+  componentType,
+  setFilter,
+  filters,
+}: {
+  items: RegistryItem[];
+  componentType: ComponentType;
+  filters: BrowseFilters;
+  setFilter: (key: FilterParamKey, value: string | null) => void;
+}) {
+  if (items.length === 0) {
+    return <p className="py-12 text-center text-subtext">No {typeLabelPlural[componentType].toLowerCase()} found</p>;
+  }
+  const isPlugins = componentType === "plugin";
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="results-grid">
+      {items.map((item) => (
+        <ItemCard
+          key={`${item.slug}-${item.type}-${item.pluginType ?? ""}`}
+          item={item}
+          browseType={componentType}
+          onSourceClick={(source) => setFilter("source", source)}
+          onScopeClick={(scope) => setFilter("scope", scope)}
+          onToolClick={(tool) => setFilter("tool", tool)}
+          onPluginTypeClick={isPlugins ? (pluginType) => setFilter("pluginType", pluginType) : undefined}
+          onDateClick={() => setFilter(filters.sortField === "updated" ? "sortAsc" : "sortField", filters.sortField === "updated" ? (filters.sortAsc ? "false" : "true") : "updated")}
+        />
+      ))}
+    </div>
+  );
+}
+
+function BrowsePage({ componentType }: { componentType: ComponentType }) {
+  const { items, filteredItems, filters, context, ignored, setFilter, resetFilters } = useBrowseFilters(componentType);
+  const label = typeLabelPlural[componentType];
+  usePageMeta(categoryMeta(componentType, items.length));
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mb-8">
+        <h1 className="mb-2 flex items-center gap-2 text-lg font-bold text-text">
+          <TypeIcon type={componentType} size={20} className={typeTextColors[componentType]} />
+          {label}
+        </h1>
+        <p className="text-subtext" aria-live="polite">
+          {filteredItems.length} {pluralize(componentType, filteredItems.length)} available
+          {items.length !== filteredItems.length && <span className="text-text-dim"> (filtered from {items.length})</span>}
+        </p>
+      </div>
+
+      <BrowseFilterBar filters={filters} context={context} placeholder={`Search ${label.toLowerCase()}...`} setFilter={setFilter} />
+      <ActiveFilters filters={filters} ignored={ignored} setFilter={setFilter} resetFilters={resetFilters} />
+      <BrowseResults items={filteredItems} componentType={componentType} filters={filters} setFilter={setFilter} />
+    </div>
+  );
+}
+
+export function Browse() {
+  const { type } = useParams<{ type: string }>();
+  useScrollRestoration();
+  const componentType = type ? pathToType(type) : undefined;
+  if (!componentType || !typeLabelPlural[componentType]) return <NotFound />;
+  // keyed so switching category resets every piece of page state
+  return <BrowsePage key={componentType} componentType={componentType} />;
 }

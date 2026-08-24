@@ -88,7 +88,7 @@ questions:
 ```
 
 Notes:
-- If the user selects "All", expand to `["claude", "copilot", "antigravity", "opencode", "codex"]` in the compatibility array. Never write `gemini` into new items — it is only accepted as an alias of `antigravity` until the data migration (`scripts/migrate-agent-ids.ts`) removes it.
+- If the user selects "All", pass `["claude", "copilot", "antigravity", "opencode", "codex"]` as the compatibility array. Pass canonical ids only; the operation itself stores the B1 vocabulary (`antigravity` is written as `gemini` until the published CLI understands it — `STORAGE_ALIASES` in `packages/registry-ops/src/agents.ts` is the one flip point, emptied when `scripts/migrate-agent-ids.ts` runs).
 - For hooks, agents, settings, and commands, default compatibility to `["claude"]` only since those types are Claude-specific. Pre-select accordingly.
 
 **Batch 2 — Descriptions:**

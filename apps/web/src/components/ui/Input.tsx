@@ -35,7 +35,8 @@ export function Input({ value, onChange, type = "text", className, ...props }: I
           ? { "aria-label": props.placeholder || "Search" }
           : {})}
         {...(isSearch ? SEARCH_AUTO_PROPS : {})}
-        className={cn("input w-full", isSearch && "pr-8 pl-8", className)}
+        data-search={isSearch || undefined}
+        className={cn("input w-full", className)}
         {...props}
       />
       {showClear && (

@@ -1,41 +1,58 @@
-import { join, basename } from "node:path";
+import { join, basename, dirname } from "node:path";
 import { homedir } from "node:os";
-import { mkdir, copyFile, chmod, rm } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, realpath, rm, unlink } from "node:fs/promises";
 import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
-import type { RegistryItem } from "@seedr/shared";
+import type { HookTrigger, RegistryItem } from "@seedr/shared";
 import { brand } from "../utils/ui.js";
 import { getItem, getItemSourcePath, fetchItemToDestination } from "../config/registry.js";
 import { getSettingsPath, CODING_AGENTS } from "../config/agents.js";
-import { exists, assertOverwritable } from "../utils/fs.js";
+import {
+  assertDirectoryWithin,
+  assertOverwritable,
+  assertSafePathSegment,
+  exists,
+  resolveContained,
+  restoreFile,
+  snapshotFile,
+  writeFileAtomic,
+} from "../utils/fs.js";
 import { readJson, writeJson } from "../utils/json.js";
-import type { ContentHandler, InstallResult } from "./types.js";
+import { assertValidSlug } from "../utils/slug.js";
+import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
+
+interface HookCommand {
+  type: "command";
+  command: string;
+}
 
 interface HookEntry {
   matcher?: string;
-  hooks: Array<{
-    type: "command";
-    command: string;
-  }>;
+  hooks: HookCommand[];
 }
 
+type HooksByEvent = Record<string, HookEntry[]>;
+
 interface SettingsJson {
-  hooks?: Record<string, HookEntry[]>;
+  hooks?: HooksByEvent;
   [key: string]: unknown;
+}
+
+const CLAUDE_ONLY_ERROR = "Hooks are only supported for Claude Code";
+const SCRIPT_NAME_LABEL = "hook script name";
+const SCRIPT_MODE = 0o755;
+
+/** The directory every hook path must stay inside: the project for project/local scope, home for user scope. */
+function getScopeRoot(scope: InstallScope, cwd: string): string {
+  return scope === "user" ? homedir() : cwd;
 }
 
 /**
  * Get the hooks directory path based on scope.
  */
 function getHooksDir(scope: InstallScope, cwd: string): string {
-  switch (scope) {
-    case "user":
-      return join(homedir(), ".claude", "hooks");
-    case "project":
-    case "local":
-      return join(cwd, ".claude", "hooks");
-  }
+  return join(getScopeRoot(scope, cwd), ".claude", "hooks");
 }
 
 /**
@@ -68,6 +85,74 @@ function findScriptFile(item: RegistryItem): string | null {
   return null;
 }
 
+/**
+ * Create the hooks directory and prove it physically lives inside the scope
+ * root — neither `.claude` nor `.claude/hooks` may be a symlink escaping it.
+ * Returns the physical (realpath) directory so every write lands where the
+ * check looked.
+ */
+async function prepareHooksDir(scope: InstallScope, cwd: string): Promise<string> {
+  const scopeRoot = getScopeRoot(scope, cwd);
+  const hooksDir = await resolveContained(scopeRoot, ".claude", "hooks");
+  await mkdir(hooksDir, { recursive: true });
+  await assertDirectoryWithin(hooksDir, scopeRoot, "hooks directory");
+  return realpath(hooksDir);
+}
+
+/** Refuse to write through anything that is not a plain file: symlinks, directories, sockets. */
+async function assertRegularFileOrMissing(path: string): Promise<void> {
+  let stats;
+  try {
+    stats = await lstat(path);
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw error;
+  }
+  if (stats.isSymbolicLink()) {
+    throw new Error(`${path} is a symbolic link; refusing to write through it — remove it first`);
+  }
+  if (!stats.isFile()) {
+    throw new Error(`${path} exists and is not a regular file; refusing to replace it`);
+  }
+}
+
+/** Read the hook script bytes from the local checkout or a verified download into a throwaway directory. */
+async function loadScriptBytes(item: RegistryItem, scriptFile: string, hooksDir: string): Promise<Buffer> {
+  const sourcePath = getItemSourcePath(item);
+  if (sourcePath && (await exists(sourcePath))) {
+    return readFile(join(sourcePath, scriptFile));
+  }
+
+  const fetchDir = await mkdtemp(join(dirname(hooksDir), ".seedr-hook-"));
+  try {
+    const contentDir = join(fetchDir, "content");
+    await fetchItemToDestination(item, contentDir);
+    return await readFile(join(contentDir, scriptFile));
+  } finally {
+    await rm(fetchDir, { recursive: true, force: true });
+  }
+}
+
+/** Register `command` under every trigger, reusing an entry with the same matcher. */
+function mergeTriggers(hooks: HooksByEvent, triggers: HookTrigger[], command: string): void {
+  for (const trigger of triggers) {
+    const entries = (hooks[trigger.event] ??= []);
+    const existingEntry = entries.find((entry) => entry.matcher === trigger.matcher);
+    const hookCommand: HookCommand = { type: "command", command };
+
+    if (existingEntry) {
+      if (!existingEntry.hooks.some((hook) => hook.command === command)) {
+        existingEntry.hooks.push(hookCommand);
+      }
+      continue;
+    }
+
+    const newEntry: HookEntry = { hooks: [hookCommand] };
+    if (trigger.matcher) newEntry.matcher = trigger.matcher;
+    entries.push(newEntry);
+  }
+}
+
 async function installHookForAgent(
   item: RegistryItem,
   agent: CodingAgent,
@@ -82,89 +167,41 @@ async function installHookForAgent(
 
   try {
     if (agent !== "claude") {
-      throw new Error("Hooks are only supported for Claude Code");
+      throw new Error(CLAUDE_ONLY_ERROR);
     }
 
-    // Get triggers from manifest
     const triggers = item.contents?.triggers;
     if (!triggers || triggers.length === 0) {
       throw new Error("No triggers defined for this hook");
     }
 
-    // Find the script file
     const scriptFile = findScriptFile(item);
     if (!scriptFile) {
       throw new Error("No script file found in hook");
     }
+    assertSafePathSegment(scriptFile, SCRIPT_NAME_LABEL);
 
-    // Step 1: Copy script to hooks directory
-    const hooksDir = getHooksDir(scope, cwd);
-    await mkdir(hooksDir, { recursive: true });
-
-    const sourcePath = getItemSourcePath(item);
-    const destScriptPath = join(hooksDir, scriptFile);
+    // Step 1: the script, written atomically next to its destination
+    const hooksDir = await prepareHooksDir(scope, cwd);
+    const destScriptPath = await resolveContained(hooksDir, scriptFile);
+    await assertRegularFileOrMissing(destScriptPath);
     await assertOverwritable(destScriptPath, force);
 
-    if (sourcePath && (await exists(sourcePath))) {
-      // Local registry - copy or symlink based on method
-      const sourceScriptPath = join(sourcePath, scriptFile);
-      await copyFile(sourceScriptPath, destScriptPath);
-    } else {
-      // Remote - fetch to temp then copy script
-      const tempDir = join(cwd, ".claude", ".tmp", item.slug);
-      await fetchItemToDestination(item, tempDir);
-      await copyFile(join(tempDir, scriptFile), destScriptPath);
-      // Clean up temp dir
-      await rm(tempDir, { recursive: true, force: true });
+    const scriptBytes = await loadScriptBytes(item, scriptFile, hooksDir);
+    const previousScript = await snapshotFile(destScriptPath);
+    await writeFileAtomic(destScriptPath, scriptBytes, { mode: SCRIPT_MODE });
+
+    // Step 2: the triggers; the script is put back the way it was if this fails
+    try {
+      const settingsPath = getSettingsPath(scope, cwd);
+      const settings = await readJson<SettingsJson>(settingsPath);
+      settings.hooks = settings.hooks || {};
+      mergeTriggers(settings.hooks, triggers, getScriptPath(scope, scriptFile));
+      await writeJson(settingsPath, settings);
+    } catch (error) {
+      await restoreFile(destScriptPath, previousScript);
+      throw error;
     }
-
-    // Make script executable
-    await chmod(destScriptPath, 0o755);
-
-    // Step 2: Update settings with triggers
-    const settingsPath = getSettingsPath(scope, cwd);
-    const settings = await readJson<SettingsJson>(settingsPath);
-    settings.hooks = settings.hooks || {};
-
-    const scriptPath = getScriptPath(scope, scriptFile);
-
-    for (const trigger of triggers) {
-      const event = trigger.event;
-      const matcher = trigger.matcher;
-
-      // Initialize event array if needed
-      if (!settings.hooks[event]) {
-        settings.hooks[event] = [];
-      }
-
-      // Check if there's already an entry with this matcher
-      const existingEntry = settings.hooks[event].find(
-        (e) => e.matcher === matcher
-      );
-
-      const hookCommand = { type: "command" as const, command: scriptPath };
-
-      if (existingEntry) {
-        // Add to existing entry if not already present
-        const alreadyExists = existingEntry.hooks.some(
-          (h) => h.command === scriptPath
-        );
-        if (!alreadyExists) {
-          existingEntry.hooks.push(hookCommand);
-        }
-      } else {
-        // Create new entry
-        const newEntry: HookEntry = {
-          hooks: [hookCommand],
-        };
-        if (matcher) {
-          newEntry.matcher = matcher;
-        }
-        settings.hooks[event].push(newEntry);
-      }
-    }
-
-    await writeJson(settingsPath, settings);
 
     spinner.succeed(
       brand(`Installed ${item.name} for ${CODING_AGENTS[agent].name}`)
@@ -197,12 +234,66 @@ export async function installHook(
   return results;
 }
 
+/** Drop every command belonging to the hook from all events. Returns whether anything changed. */
+function removeHookCommands(hooks: HooksByEvent, slug: string, expectedPath: string | null): boolean {
+  let removed = false;
+
+  const belongsToHook = (hook: HookCommand): boolean =>
+    (expectedPath !== null && hook.command === expectedPath) || basename(hook.command, ".sh") === slug;
+
+  for (const event of Object.keys(hooks)) {
+    const entries = hooks[event] ?? [];
+    const keptEntries: HookEntry[] = [];
+    for (const entry of entries) {
+      const keptHooks = entry.hooks.filter((hook) => !belongsToHook(hook));
+      if (keptHooks.length < entry.hooks.length) removed = true;
+      if (keptHooks.length > 0) keptEntries.push({ ...entry, hooks: keptHooks });
+    }
+    if (keptEntries.length === 0) {
+      delete hooks[event];
+    } else {
+      hooks[event] = keptEntries;
+    }
+  }
+
+  return removed;
+}
+
+/**
+ * Delete the hook's script, but only a file (or symlink entry) that sits
+ * directly inside a hooks directory that itself resolves inside the scope
+ * root. Directories and anything outside are left alone.
+ */
+async function removeScriptFile(scope: InstallScope, cwd: string, scriptFileName: string): Promise<boolean> {
+  const scopeRoot = getScopeRoot(scope, cwd);
+  const hooksDir = getHooksDir(scope, cwd);
+  if (!(await exists(hooksDir))) return false;
+
+  await assertDirectoryWithin(hooksDir, scopeRoot, "hooks directory");
+  assertSafePathSegment(scriptFileName, SCRIPT_NAME_LABEL);
+  const scriptFilePath = await resolveContained(hooksDir, scriptFileName);
+
+  let stats;
+  try {
+    stats = await lstat(scriptFilePath);
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+  if (stats.isDirectory()) {
+    throw new Error(`${scriptFilePath} is a directory; refusing to remove it`);
+  }
+  await unlink(scriptFilePath);
+  return true;
+}
+
 export async function uninstallHook(
   slug: string,
   agent: CodingAgent,
   scope: InstallScope,
   cwd: string = process.cwd()
 ): Promise<boolean> {
+  assertValidSlug(slug, "hook slug");
   if (agent !== "claude") return false;
 
   const settingsPath = getSettingsPath(scope, cwd);
@@ -211,66 +302,21 @@ export async function uninstallHook(
   // Look up the registry item to find the script file name
   const item = await getItem(slug, "hook");
   const scriptFile = item ? findScriptFile(item) : null;
-
-  // Build the script path we'd expect in settings
   const expectedPath = scriptFile ? getScriptPath(scope, scriptFile) : null;
 
   const settings = await readJson<SettingsJson>(settingsPath);
   if (!settings.hooks) return false;
 
-  let removed = false;
-
-  // Remove hook commands matching the script path from all events
-  for (const event of Object.keys(settings.hooks)) {
-    const entries = settings.hooks[event];
-    if (!entries) continue;
-
-    for (let i = entries.length - 1; i >= 0; i--) {
-      const entry = entries[i]!;
-
-      // Filter out hooks whose command matches the script path or slug
-      const originalLength = entry.hooks.length;
-      entry.hooks = entry.hooks.filter((h) => {
-        if (expectedPath && h.command === expectedPath) return false;
-        // Fallback: match by slug in the path (e.g. ".claude/hooks/my-hook.sh" contains "my-hook")
-        const cmdBasename = basename(h.command, ".sh");
-        return cmdBasename !== slug;
-      });
-
-      if (entry.hooks.length < originalLength) {
-        removed = true;
-      }
-
-      // Remove the entry entirely if no hooks remain
-      if (entry.hooks.length === 0) {
-        entries.splice(i, 1);
-      }
-    }
-
-    // Remove the event key if no entries remain
-    if (entries.length === 0) {
-      delete settings.hooks[event];
-    }
-  }
-
-  // Remove the hooks key entirely if empty
+  let removed = removeHookCommands(settings.hooks, slug, expectedPath);
   if (Object.keys(settings.hooks).length === 0) {
     delete settings.hooks;
   }
-
   if (removed) {
     await writeJson(settingsPath, settings);
   }
 
-  // Delete the script file
-  const hooksDir = getHooksDir(scope, cwd);
-  const scriptFileName = scriptFile || `${slug}.sh`;
-  const scriptFilePath = join(hooksDir, scriptFileName);
-  try {
-    await rm(scriptFilePath);
+  if (await removeScriptFile(scope, cwd, scriptFile || `${slug}.sh`)) {
     removed = true;
-  } catch (e: unknown) {
-    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
   }
 
   return removed;
@@ -294,13 +340,46 @@ export async function getInstalledHooks(
   for (const entries of Object.values(settings.hooks)) {
     for (const entry of entries) {
       for (const hook of entry.hooks) {
-        const slug = basename(hook.command, ".sh");
-        slugs.add(slug);
+        slugs.add(basename(hook.command, ".sh"));
       }
     }
   }
 
   return Array.from(slugs);
+}
+
+export async function planHook(
+  item: RegistryItem,
+  agents: CodingAgent[],
+  scope: InstallScope,
+  _method: InstallMethod,
+  cwd: string
+): Promise<PlannedChange[]> {
+  const changes: PlannedChange[] = [];
+  for (const agent of agents) {
+    if (agent !== "claude") throw new Error(CLAUDE_ONLY_ERROR);
+    const scriptFile = findScriptFile(item);
+    if (!scriptFile) throw new Error("No script file found in hook");
+    assertSafePathSegment(scriptFile, SCRIPT_NAME_LABEL);
+
+    const scopeRoot = getScopeRoot(scope, cwd);
+    const scriptPath = await resolveContained(scopeRoot, ".claude", "hooks", scriptFile);
+    const settingsPath = getSettingsPath(scope, cwd);
+    const events = (item.contents?.triggers ?? [])
+      .map((trigger) => (trigger.matcher ? `${trigger.event}[${trigger.matcher}]` : trigger.event))
+      .join(", ");
+
+    changes.push(
+      { agent, kind: (await exists(scriptPath)) ? "modify" : "create", path: scriptPath, detail: "executable hook script" },
+      {
+        agent,
+        kind: (await exists(settingsPath)) ? "modify" : "create",
+        path: settingsPath,
+        detail: `hooks: ${events || "(no triggers)"} → ${getScriptPath(scope, scriptFile)}`,
+      }
+    );
+  }
+  return changes;
 }
 
 /**
@@ -336,4 +415,6 @@ export const hookHandler: ContentHandler = {
   ): Promise<string[]> {
     return getInstalledHooks(agent, scope, cwd);
   },
+
+  plan: planHook,
 };

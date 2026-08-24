@@ -50,3 +50,31 @@ export function itemStateHash(registryDir: string, type: ComponentType, slug: st
   hash.update(contentHash(itemDir(registryDir, type, slug)) ?? "");
   return hash.digest("hex").slice(0, 16);
 }
+
+/**
+ * The full-integrity digest (docs/registry-integrity.md §2): for every content
+ * file, `path + "\n" + sha256hex(bytes) + "\n"`, paths sorted by plain
+ * code-unit comparison, hashed once more with SHA-256. Null when the item has
+ * no content files. This is what the CLI recomputes after downloading and
+ * refuses to install on a mismatch.
+ */
+export function contentDigestOfDir(dir: string): string | null {
+  const files = contentFiles(dir);
+  if (files.length === 0) return null;
+  const entries = files
+    .map((file) => ({ path: relative(dir, file).split("\\").join("/"), bytes: readFileSync(file) }))
+    .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  const digest = createHash("sha256");
+  for (const entry of entries) {
+    digest.update(entry.path);
+    digest.update("\n");
+    digest.update(createHash("sha256").update(entry.bytes).digest("hex"));
+    digest.update("\n");
+  }
+  return digest.digest("hex");
+}
+
+/** The item's content files as sorted registry-relative paths (item.json excluded). */
+export function contentFilePaths(dir: string): string[] {
+  return contentFiles(dir).map((file) => relative(dir, file).split("\\").join("/")).sort();
+}

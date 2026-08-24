@@ -1,5 +1,6 @@
-import { join } from "node:path";
-import { readdir } from "node:fs/promises";
+import { join, relative } from "node:path";
+import { homedir } from "node:os";
+import { lstat, readdir, unlink } from "node:fs/promises";
 import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
@@ -7,8 +8,24 @@ import type { RegistryItem } from "@seedr/shared";
 import { brand } from "../utils/ui.js";
 import { getItemContent, getItemSourcePath } from "../config/registry.js";
 import { getContentPath, CODING_AGENTS } from "../config/agents.js";
-import { exists, ensureDir, writeTextFile, installFile, removeFile, assertOverwritable } from "../utils/fs.js";
-import type { ContentHandler, InstallResult } from "./types.js";
+import { exists, ensureDir, writeTextFile, installFile, assertOverwritable, resolveContained } from "../utils/fs.js";
+import { assertValidSlug } from "../utils/slug.js";
+import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
+
+const SLUG_LABEL = "agent slug";
+
+/** `<agent agents dir>/<slug>.md`, proven contained in the scope root. */
+async function resolveAgentFilePath(
+  agent: CodingAgent,
+  slug: string,
+  scope: InstallScope,
+  cwd: string
+): Promise<string | null> {
+  const destDir = getContentPath(agent, "agent", scope, cwd);
+  if (!destDir) return null;
+  const scopeRoot = scope === "user" ? homedir() : cwd;
+  return resolveContained(scopeRoot, relative(scopeRoot, destDir), `${slug}.md`);
+}
 
 async function installAgentForCodingAgent(
   item: RegistryItem,
@@ -23,29 +40,22 @@ async function installAgentForCodingAgent(
   ).start();
 
   try {
-    const destDir = getContentPath(agent, "agent", scope, cwd);
-    if (!destDir) {
+    assertValidSlug(item.slug, SLUG_LABEL);
+    const destPath = await resolveAgentFilePath(agent, item.slug, scope, cwd);
+    if (!destPath) {
       throw new Error(`${CODING_AGENTS[agent].name} does not support agents`);
     }
 
-    const destPath = join(destDir, `${item.slug}.md`);
     await assertOverwritable(destPath, force);
     const sourcePath = getItemSourcePath(item);
+    const sourceFile = sourcePath ? join(sourcePath, "AGENT.md") : null;
 
-    // Try symlink for local toolr items, otherwise copy
-    if (sourcePath && method === "symlink") {
-      const sourceFile = join(sourcePath, "AGENT.md");
-      if (await exists(sourceFile)) {
-        await installFile(sourceFile, destPath, "symlink");
-      } else {
-        // Fall back to content copy
-        const content = await getItemContent(item);
-        await ensureDir(destDir);
-        await writeTextFile(destPath, content);
-      }
+    if (method === "symlink" && sourceFile && (await exists(sourceFile))) {
+      // Symlink for local toolr items
+      await installFile(sourceFile, destPath, "symlink");
     } else {
       const content = await getItemContent(item);
-      await ensureDir(destDir);
+      await ensureDir(getContentPath(agent, "agent", scope, cwd)!);
       await writeTextFile(destPath, content);
     }
 
@@ -80,22 +90,32 @@ export async function installAgent(
   return results;
 }
 
+/**
+ * Remove the agent's single `.md` entry: a regular file, or the symlink a
+ * symlink install created (unlinked, never followed). Directories are refused.
+ */
 export async function uninstallAgent(
   slug: string,
   agent: CodingAgent,
   scope: InstallScope,
   cwd: string = process.cwd()
 ): Promise<boolean> {
-  const destDir = getContentPath(agent, "agent", scope, cwd);
-  if (!destDir) return false;
+  assertValidSlug(slug, SLUG_LABEL);
+  const destPath = await resolveAgentFilePath(agent, slug, scope, cwd);
+  if (!destPath) return false;
 
-  const destPath = join(destDir, `${slug}.md`);
-
-  if (!(await exists(destPath))) {
-    return false;
+  let stats;
+  try {
+    stats = await lstat(destPath);
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
   }
-
-  return removeFile(destPath);
+  if (stats.isDirectory()) {
+    throw new Error(`${destPath} is a directory; refusing to remove it`);
+  }
+  await unlink(destPath);
+  return true;
 }
 
 export async function getInstalledAgents(
@@ -112,6 +132,30 @@ export async function getInstalledAgents(
   return files
     .filter((f) => f.endsWith(".md"))
     .map((f) => f.replace(".md", ""));
+}
+
+export async function planAgent(
+  item: RegistryItem,
+  agents: CodingAgent[],
+  scope: InstallScope,
+  method: InstallMethod,
+  cwd: string
+): Promise<PlannedChange[]> {
+  assertValidSlug(item.slug, SLUG_LABEL);
+  const changes: PlannedChange[] = [];
+  for (const agent of agents) {
+    const destPath = await resolveAgentFilePath(agent, item.slug, scope, cwd);
+    if (!destPath) throw new Error(`${CODING_AGENTS[agent].name} does not support agents`);
+    const sourcePath = getItemSourcePath(item);
+    const linked = method === "symlink" && sourcePath !== null && (await exists(join(sourcePath, "AGENT.md")));
+    changes.push({
+      agent,
+      kind: (await exists(destPath)) ? "modify" : "create",
+      path: destPath,
+      detail: linked ? `symlink → ${join(sourcePath!, "AGENT.md")}` : "agent definition file",
+    });
+  }
+  return changes;
 }
 
 /**
@@ -147,4 +191,6 @@ export const agentHandler: ContentHandler = {
   ): Promise<string[]> {
     return getInstalledAgents(agent, scope, cwd);
   },
+
+  plan: planAgent,
 };

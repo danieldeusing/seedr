@@ -9,7 +9,9 @@ import { vol } from "memfs";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { RegistryItem, RegistryManifest } from "@seedr/shared";
+import type { FileTreeNode, RegistryItem, RegistryManifest } from "@seedr/shared";
+
+const TEST_PROJECT = "/test/project";
 
 // Read real manifest using sync fs (unaffected by memfs mock of node:fs/promises)
 const __testDir = dirname(fileURLToPath(import.meta.url));
@@ -23,6 +25,24 @@ for (const desc of Object.values(indexData.types) as { file: string }[]) {
 const manifest: RegistryManifest = { version: indexData.version, items };
 
 const LIVE = process.env.SEEDR_LIVE === "true";
+
+/** A stand-in commit for the mocked download: the handler records it as gitCommitSha. */
+const STUB_SOURCE_REVISION = "0123456789abcdef0123456789abcdef01234567";
+
+/** Materialise a contents.files tree with stub content (JSON files get a parseable body). */
+function writeTree(nodes: FileTreeNode[], dir: string): void {
+  for (const node of nodes) {
+    const nodePath = join(dir, node.name);
+    if (node.type === "directory") {
+      vol.mkdirSync(nodePath, { recursive: true });
+      if (node.children) writeTree(node.children, nodePath);
+    } else if (node.name.endsWith(".json")) {
+      vol.writeFileSync(nodePath, JSON.stringify({ name: "stub" }));
+    } else {
+      vol.writeFileSync(nodePath, `stub: ${node.name}`);
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -38,6 +58,7 @@ vi.mock("node:child_process", () => ({
 }));
 
 vi.mock("../config/registry.js", () => ({
+  getItem: vi.fn(async () => undefined),
   getItemSourcePath: vi.fn((item: RegistryItem) => {
     if (item.sourceType === "toolr") {
       return `/registry/${item.type}s/${item.slug}`;
@@ -62,26 +83,16 @@ vi.mock("../config/registry.js", () => ({
         return `# ${item.name}\n\nMock content.`;
     }
   }),
+  // Mirrors the real contract: the verified tree lands in destPath and the
+  // revision it was fetched at is reported back.
   fetchItemToDestination: vi.fn(async (item: RegistryItem, destPath: string) => {
     vol.mkdirSync(destPath, { recursive: true });
     if (item.contents?.files) {
-      const writeTree = (nodes: { name: string; type: string; children?: any[] }[], dir: string) => {
-        for (const node of nodes) {
-          const nodePath = join(dir, node.name);
-          if (node.type === "directory") {
-            vol.mkdirSync(nodePath, { recursive: true });
-            if (node.children) writeTree(node.children, nodePath);
-          } else if (node.name.endsWith(".json")) {
-            vol.writeFileSync(nodePath, JSON.stringify({ name: "stub" }));
-          } else {
-            vol.writeFileSync(nodePath, `stub: ${node.name}`);
-          }
-        }
-      };
       writeTree(item.contents.files, destPath);
     } else {
       vol.writeFileSync(join(destPath, "STUB"), "stub");
     }
+    return { sourceRevision: STUB_SOURCE_REVISION, contentDigest: null, files: [] };
   }),
 }));
 
@@ -97,19 +108,6 @@ describe("install all manifest items (mocked)", () => {
   beforeEach(() => {
     vol.reset();
     // Set up local source dirs for toolr items with correct content files
-    const writeTree = (nodes: { name: string; type: string; children?: any[] }[], dir: string) => {
-      for (const node of nodes) {
-        const nodePath = join(dir, node.name);
-        if (node.type === "directory") {
-          vol.mkdirSync(nodePath, { recursive: true });
-          if (node.children) writeTree(node.children, nodePath);
-        } else if (node.name.endsWith(".json")) {
-          vol.writeFileSync(nodePath, JSON.stringify({ name: "stub" }));
-        } else {
-          vol.writeFileSync(nodePath, `stub: ${node.name}`);
-        }
-      }
-    };
     for (const item of manifest.items) {
       if (item.sourceType === "toolr") {
         const srcPath = `/registry/${item.type}s/${item.slug}`;
@@ -136,7 +134,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("skill")) {
       it(`${item.type}/${item.slug} (${item.sourceType})`, async () => {
         const { installSkill } = await import("./skill.js");
-        const results = await installSkill(item, ["claude"], "project", "copy", true, "/test/project");
+        const results = await installSkill(item, ["claude"], "project", "copy", true, TEST_PROJECT);
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -146,7 +144,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("plugin")) {
       it(`${item.type}/${item.slug} (${item.sourceType})`, async () => {
         const { installPlugin } = await import("./plugin.js");
-        const results = await installPlugin(item, ["claude"], "project", "copy", true, "/test/project");
+        const results = await installPlugin(item, ["claude"], "project", "copy", true, TEST_PROJECT);
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -156,7 +154,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("agent")) {
       it(`${item.type}/${item.slug} (${item.sourceType})`, async () => {
         const { installAgent } = await import("./agent.js");
-        const results = await installAgent(item, ["claude"], "project", "copy", true, "/test/project");
+        const results = await installAgent(item, ["claude"], "project", "copy", true, TEST_PROJECT);
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -166,7 +164,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("hook")) {
       it(`${item.type}/${item.slug} (${item.sourceType})`, async () => {
         const { installHook } = await import("./hook.js");
-        const results = await installHook(item, ["claude"], "project", "copy", true, "/test/project");
+        const results = await installHook(item, ["claude"], "project", "copy", true, TEST_PROJECT);
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -176,7 +174,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("mcp")) {
       it(`${item.type}/${item.slug} (${item.sourceType})`, async () => {
         const { installMcp } = await import("./mcp.js");
-        const results = await installMcp(item, ["claude"], "project", "copy", true, "/test/project");
+        const results = await installMcp(item, ["claude"], "project", "copy", true, TEST_PROJECT);
         expect(results[0]?.success).toBe(true);
       });
     }
@@ -186,7 +184,7 @@ describe("install all manifest items (mocked)", () => {
     for (const item of byType("settings")) {
       it(`${item.type}/${item.slug} (${item.sourceType})`, async () => {
         const { installSettings } = await import("./settings.js");
-        const results = await installSettings(item, ["claude"], "project", "copy", true, "/test/project");
+        const results = await installSettings(item, ["claude"], "project", "copy", true, TEST_PROJECT);
         expect(results[0]?.success).toBe(true);
       });
     }

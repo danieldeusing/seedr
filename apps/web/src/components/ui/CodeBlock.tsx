@@ -17,7 +17,7 @@ export function CodeBlock({ code, label }: CodeBlockProps) {
       )}
       <div className="bg-surface/50 border border-border p-3">
         <div className="flex items-center justify-between gap-2">
-          <code className="text-sm font-mono text-text">{code}</code>
+          <code className="min-w-0 break-all font-mono text-sm text-text">{code}</code>
           <CopyButton text={code} />
         </div>
       </div>

@@ -9,8 +9,12 @@ import type { AddRemoteOp, OpResult } from "./types.js";
 
 /**
  * Register a GitHub-hosted item by metadata alone — no content is copied; the
- * CLI fetches from `externalUrl` at install time. Fetching that metadata is the
- * caller's job (the skill via `gh`, or Studio); this only writes what it is given.
+ * CLI fetches the pinned revision at install time and verifies the digest.
+ * Fetching the metadata AND computing the pin (`sourceRevision`,
+ * `contentDigest`, `pluginSource` for plugins) is the caller's job (the skill
+ * via `gh`, or Studio, both of which read the repository tree anyway); an
+ * unpinned item is refused rather than written, because nothing downstream —
+ * compile, the CLI, the sync — accepts it.
  */
 export function addRemote(registryDir: string, op: AddRemoteOp): OpResult {
   if (itemExists(registryDir, op.type, op.slug)) {

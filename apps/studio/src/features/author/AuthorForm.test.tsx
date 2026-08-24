@@ -50,7 +50,7 @@ describe("AuthorForm", () => {
     expect(screen.getByRole("button", { name: "add to registry" })).toBeDisabled();
     expect(screen.getByText(/choose the file or folder to add/)).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("slug"), "Bad Slug");
-    expect(screen.getByText(/slug: must be a lowercase path segment/)).toBeInTheDocument();
+    expect(screen.getByText(/slug: must match/)).toBeInTheDocument();
   });
 
   test("shows the agent diagnostic and disables drafting when Claude is unavailable", async () => {

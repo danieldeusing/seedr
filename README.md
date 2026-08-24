@@ -36,7 +36,7 @@ npx @danieldeusing/seedr list
 | **Agents** | Single-file agent definitions | Claude only |
 | **Hooks** | Event-triggered automation | Claude only |
 | **Plugins** | Extended functionality packages | Claude only |
-| **MCP Servers** | Model Context Protocol integrations | All tools |
+| **MCP Servers** | Model Context Protocol integrations | Claude, Codex, OpenCode — each written in that tool's own config format ([details](#mcp-server-targets)) |
 | **Settings** | Configuration presets | Claude only |
 
 Browse all content at [seedr.danieldeusing.de](https://seedr.danieldeusing.de)
@@ -81,7 +81,8 @@ npx @danieldeusing/seedr list -i --scope user             # Show user-scoped ins
 |--------|-------------|
 | `-t, --type <type>` | Filter by type: `skill`, `agent`, `hook`, `plugin`, `mcp`, `settings` |
 | `-i, --installed` | Show only installed items |
-| `--scope <scope>` | Scope for installed check: `project` or `user` (default: `project`) |
+| `-a, --agents <tools>` | Limit the installed check to specific tools (default: all) |
+| `--scope <scope>` | Scope for installed check: `project`, `user`, or `local` (default: `project`) |
 
 ### `remove <name>` (alias: `rm`)
 
@@ -97,7 +98,7 @@ npx @danieldeusing/seedr remove superpowers -t plugin -y    # Skip confirmation
 |--------|-------------|
 | `-t, --type <type>` | Content type (required): `skill`, `agent`, `hook`, `plugin`, `mcp`, `settings` |
 | `-a, --agents <tools>` | Remove from specific AI tools only (default: auto-detect) |
-| `--scope <scope>` | Installation scope: `project`, `user`, or `global` (default: `project`) |
+| `--scope <scope>` | Installation scope: `project`, `user`, or `local` (default: `project`) |
 | `-y, --yes` | Skip confirmation prompts |
 
 ### Registry location
@@ -124,6 +125,63 @@ npx @danieldeusing/seedr init -a copilot,antigravity      # Initialize for speci
 |--------|-------------|
 | `-a, --agents <tools>` | AI tools to initialize (default: `claude`) |
 | `-y, --yes` | Skip confirmation prompts |
+
+## MCP Server Targets
+
+`seedr add <server> --type mcp` writes the server definition in the target tool's own
+configuration format — never one tool's schema into another tool's file:
+
+| Tool | Project scope | User scope |
+|------|---------------|------------|
+| Claude Code | `.mcp.json` (`mcpServers`) | `~/.claude.json` (`mcpServers`) |
+| OpenAI Codex | `.codex/config.toml` (`[mcp_servers.<name>]`) | `~/.codex/config.toml` |
+| OpenCode | `opencode.json` (`mcp`) | `~/.config/opencode/opencode.json` |
+
+GitHub Copilot and Google Antigravity are not MCP targets: their MCP configuration formats
+could not be verified against primary documentation, so seedr refuses rather than guessing.
+
+## Registry Integrity
+
+Every item that seedr downloads is pinned to an immutable upstream revision and carries a
+SHA-256 digest of its complete file set (see
+[`docs/registry-integrity.md`](docs/registry-integrity.md)):
+
+- the CLI fetches all files of an item from **one** upstream commit (`sourceRevision`), never
+  from a moving branch, so a multi-file item cannot be assembled from two different commits;
+- the downloaded files are hashed and compared with the registry's `contentDigest` **before**
+  anything is installed — a mismatch aborts the installation and leaves nothing behind;
+- the upstream license text (`LICENSE` / `COPYING` / `NOTICE`) travels with the installed
+  content, and the SPDX identifier is recorded on the item where it could be determined;
+- plugins record the marketplace `source` they come from (local path, `github`, `url`,
+  `git-subdir`) with its pinned SHA, and `strict: false` marketplace entries (such as the
+  LSP plugins) are modelled as the marketplace defines them.
+
+## Telemetry
+
+When an installation **succeeds**, the CLI sends one anonymous event **per successful target
+tool** to `https://seedr.danieldeusing.de/api/installs` (the install counts shown on the
+website). Nothing else is ever sent, and nothing is sent for failed installs or `--dry-run`.
+
+The payload is exactly:
+
+```json
+{ "slug": "pdf", "type": "skill", "tool": "claude", "scope": "project", "version": "0.1.87" }
+```
+
+The server stores these fields plus the **country** Cloudflare derives from the request and
+a timestamp. IP addresses are not stored. Events are deleted after **90 days**. Because no
+identifier is stored, the counts are "install events", not unique installs or users — a
+client that runs the same command twice counts twice.
+
+Opt out at any time by setting the environment variable before running seedr; when it is set
+(to any value) no request is ever constructed:
+
+```bash
+SEEDR_NO_TELEMETRY=1 npx @danieldeusing/seedr add pdf
+```
+
+Telemetry can never affect an installation: the request is fire-and-forget with a short
+timeout, and a failing or unreachable endpoint is ignored.
 
 ## Development
 

@@ -1,5 +1,6 @@
-import { join, relative, dirname } from "node:path";
-import { readdir, symlink, rm } from "node:fs/promises";
+import { relative, dirname } from "node:path";
+import { homedir } from "node:os";
+import { readdir, symlink } from "node:fs/promises";
 import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
@@ -14,16 +15,46 @@ import { getContentPath, CODING_AGENTS } from "../config/agents.js";
 import {
   exists,
   installDirectory,
-  copyDirectory,
   ensureDir,
   getAgentsPath,
   assertOverwritable,
+  removePathEntry,
+  resolveContained,
 } from "../utils/fs.js";
-import type { ContentHandler, InstallResult } from "./types.js";
+import { assertValidSlug } from "../utils/slug.js";
+import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
+
+const SLUG_LABEL = "skill slug";
+
+/** Agents that read `.agents/skills/` directly and need no per-agent link. */
+const READS_CENTRAL_DIR: ReadonlySet<CodingAgent> = new Set(["antigravity", "codex", "opencode"]);
+
+function getScopeRoot(scope: InstallScope, cwd: string): string {
+  return scope === "user" ? homedir() : cwd;
+}
+
+/** `<scopeRoot>/.agents/skills/<slug>`, proven contained. */
+async function resolveCentralPath(slug: string, scope: InstallScope, cwd: string): Promise<string> {
+  const central = getAgentsPath("skill", slug, scope, cwd);
+  return resolveContained(dirname(central), slug);
+}
+
+/** `<agent skills dir>/<slug>`, proven contained in the scope root. */
+async function resolveAgentSkillPath(
+  agent: CodingAgent,
+  slug: string,
+  scope: InstallScope,
+  cwd: string
+): Promise<string | null> {
+  const destDir = getContentPath(agent, "skill", scope, cwd);
+  if (!destDir) return null;
+  const scopeRoot = getScopeRoot(scope, cwd);
+  return resolveContained(scopeRoot, relative(scopeRoot, destDir), slug);
+}
 
 /**
  * Install skill to the central .agents/skills/<name> location.
- * Returns the path to the central location.
+ * Returns the path to the central location and whether it was newly created.
  */
 async function installToCentralLocation(
   item: RegistryItem,
@@ -31,20 +62,19 @@ async function installToCentralLocation(
   scope: InstallScope,
   force: boolean,
   cwd: string
-): Promise<string> {
-  const centralPath = getAgentsPath("skill", item.slug, scope, cwd);
-
+): Promise<{ centralPath: string; created: boolean }> {
+  const centralPath = await resolveCentralPath(item.slug, scope, cwd);
   await assertOverwritable(centralPath, force);
-  await rm(centralPath, { recursive: true, force: true });
+  const existed = await exists(centralPath);
 
   // Copy from local or fetch from remote
   if (sourcePath && (await exists(sourcePath))) {
-    await copyDirectory(sourcePath, centralPath);
+    await installDirectory(sourcePath, centralPath, "copy");
   } else {
     await fetchItemToDestination(item, centralPath);
   }
 
-  return centralPath;
+  return { centralPath, created: !existed };
 }
 
 /**
@@ -55,8 +85,7 @@ async function createAgentSymlink(
   destPath: string
 ): Promise<void> {
   await ensureDir(dirname(destPath));
-
-  await rm(destPath, { recursive: true, force: true });
+  await removePathEntry(destPath);
 
   // Create relative symlink for portability
   const relPath = relative(dirname(destPath), centralPath);
@@ -77,12 +106,11 @@ async function installSkillForAgent(
   ).start();
 
   try {
-    const destDir = getContentPath(agent, "skill", scope, cwd);
-    if (!destDir) {
+    const destPath = await resolveAgentSkillPath(agent, item.slug, scope, cwd);
+    if (!destPath) {
       throw new Error(`${CODING_AGENTS[agent].name} does not support skills`);
     }
 
-    const destPath = join(destDir, item.slug);
     await assertOverwritable(destPath, force);
     const sourcePath = getItemSourcePath(item);
 
@@ -118,24 +146,22 @@ export async function installSkill(
   force: boolean,
   cwd: string = process.cwd()
 ): Promise<InstallResult[]> {
+  assertValidSlug(item.slug, SLUG_LABEL);
   const results: InstallResult[] = [];
   const sourcePath = getItemSourcePath(item);
 
   // For symlink mode, first install to central .agents location
-  let centralPath: string | undefined;
+  let central: { centralPath: string; created: boolean } | undefined;
   if (method === "symlink") {
-    centralPath = await installToCentralLocation(item, sourcePath, scope, force, cwd);
+    central = await installToCentralLocation(item, sourcePath, scope, force, cwd);
   }
 
   for (const agent of agents) {
-    // Antigravity, Codex, and OpenCode already read .agents/skills/, so skip
+    // Gemini, Codex, and OpenCode already read .agents/skills/, so skip
     // the symlink when content is installed centrally. For single-agent
     // installs, copy directly to the agent's own directory instead.
-    const canonical = canonicalAgent(agent);
-    const readsAgentsDir =
-      canonical === "antigravity" || canonical === "codex" || canonical === "opencode";
-    if (readsAgentsDir && method === "symlink" && centralPath) {
-      results.push({ agent, success: true, path: centralPath });
+    if (READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent) && central) {
+      results.push({ agent, success: true, path: central.centralPath });
       continue;
     }
 
@@ -146,9 +172,14 @@ export async function installSkill(
       method,
       force,
       cwd,
-      centralPath
+      central?.centralPath
     );
     results.push(result);
+  }
+
+  // A central copy nobody links to is an orphan; remove it if this install created it.
+  if (central?.created && !results.some((result) => result.success)) {
+    await removePathEntry(central.centralPath);
   }
 
   return results;
@@ -160,17 +191,12 @@ export async function uninstallSkill(
   scope: InstallScope,
   cwd: string = process.cwd()
 ): Promise<boolean> {
-  const destDir = getContentPath(agent, "skill", scope, cwd);
-  if (!destDir) return false;
+  assertValidSlug(slug, SLUG_LABEL);
+  const destPath = await resolveAgentSkillPath(agent, slug, scope, cwd);
+  if (!destPath) return false;
 
-  const destPath = join(destDir, slug);
-
-  if (!(await exists(destPath))) {
-    return false;
-  }
-
-  await rm(destPath, { recursive: true });
-  return true;
+  // A symlink entry (symlink installs) is unlinked, never followed.
+  return removePathEntry(destPath);
 }
 
 export async function getInstalledSkills(
@@ -183,8 +209,50 @@ export async function getInstalledSkills(
     return [];
   }
 
+  // Slugs never start with a dot, so hidden entries (a leftover staging
+  // directory, editor files) are never reported as installed skills.
   const entries = await readdir(destDir, { withFileTypes: true });
-  return entries.filter((e) => e.isDirectory()).map((e) => e.name);
+  return entries
+    .filter((entry) => (entry.isDirectory() || entry.isSymbolicLink()) && !entry.name.startsWith("."))
+    .map((entry) => entry.name);
+}
+
+export async function planSkill(
+  item: RegistryItem,
+  agents: CodingAgent[],
+  scope: InstallScope,
+  method: InstallMethod,
+  cwd: string
+): Promise<PlannedChange[]> {
+  assertValidSlug(item.slug, SLUG_LABEL);
+  const changes: PlannedChange[] = [];
+  const kindFor = async (path: string): Promise<PlannedChange["kind"]> =>
+    (await exists(path)) ? "modify" : "create";
+
+  let centralPath: string | undefined;
+  if (method === "symlink") {
+    centralPath = await resolveCentralPath(item.slug, scope, cwd);
+    const sharedBy = agents.filter((agent) => READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent));
+    changes.push({
+      agent: "shared",
+      kind: await kindFor(centralPath),
+      path: centralPath,
+      detail: sharedBy.length > 0 ? `central copy, read directly by ${sharedBy.join(", ")}` : "central copy",
+    });
+  }
+
+  for (const agent of agents) {
+    if (centralPath && READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent)) continue;
+    const destPath = await resolveAgentSkillPath(agent, item.slug, scope, cwd);
+    if (!destPath) throw new Error(`${CODING_AGENTS[agent].name} does not support skills`);
+    changes.push({
+      agent,
+      kind: await kindFor(destPath),
+      path: destPath,
+      detail: centralPath ? `symlink → ${centralPath}` : "skill directory",
+    });
+  }
+  return changes;
 }
 
 /**
@@ -220,6 +288,8 @@ export const skillHandler: ContentHandler = {
   ): Promise<string[]> {
     return getInstalledSkills(agent, scope, cwd);
   },
+
+  plan: planSkill,
 };
 
 // Re-export types for backward compatibility

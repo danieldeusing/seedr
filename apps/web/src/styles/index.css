@@ -20,14 +20,16 @@
 @import "@danieldeusing/design/tailwind.css";
 @source "../../node_modules/@danieldeusing/design";
 
-/* Badge accent colors. Light themes (warm/paper) use the -700 Tailwind shades for
-   ~4.5:1 contrast at 11px; the dark themes override with -400. */
+/* Badge accent colors. Light themes (warm/paper) use Tailwind shades measured to clear
+   WCAG AA 4.5:1 on EVERY surface a badge lands on (--background, --card, --muted) — the
+   binding surface is --card #efe7d4: amber-800 5.76:1, orange-800 5.93:1 (the -700 shades
+   measured 4.08 and 4.20 there and failed axe). Dark themes override with -400. */
 :root {
-  --badge-amber: #b45309;
+  --badge-amber: #92400e;
   --badge-pink: #be185d;
   --badge-purple: #7e22ce;
   --badge-blue: #1d4ed8;
-  --badge-orange: #c2410c;
+  --badge-orange: #9a3412;
   --badge-emerald: #047857;
   --badge-indigo: #4338ca;
   --badge-teal: #0f766e;
@@ -145,6 +147,14 @@ html[data-theme="mono"] {
   html {
     @apply bg-base text-text;
   }
+  /* The package's html.anim-off kills keyframes; also stop transitions, so the
+     OS reduced-motion setting (which sets anim-off pre-paint) and the footer
+     toggle both mean "no motion at all". */
+  html.anim-off *,
+  html.anim-off *::before,
+  html.anim-off *::after {
+    transition-duration: 0s !important;
+  }
   body {
     @apply min-h-screen;
   }
@@ -234,4 +244,13 @@ html[data-theme="mono"] {
 
 @utility text-balance {
   text-wrap: balance;
+}
+
+/* The search box keeps room for its magnifier and clear button. Deliberately
+   outside every layer: the design system styles text inputs with an unlayered
+   rule (padding 0.35rem 0.5rem), and unlayered CSS beats Tailwind's layered
+   utilities no matter their specificity — so `pl-8`/`pr-8` never applied. */
+input[type="text"][data-search] {
+  padding-left: 2rem;
+  padding-right: 2rem;
 }

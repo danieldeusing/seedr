@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, type KeyboardEvent, type ReactNode } from "react";
 import {
-  AlertCircle,
   ChevronDown,
   ChevronRight,
   ChevronsDownUp,
@@ -16,33 +15,27 @@ import {
 
 import { Button } from "../ui/Button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/Tooltip";
+import { PreviewErrorBoundary } from "./PreviewErrorBoundary";
+import type { PreviewMode } from "./FilePreview";
 import { cn } from "@/lib/utils";
 import type { FileTreeNode } from "@/lib/types";
+import type { PreviewResult } from "@/lib/preview";
 
-type PreviewMode = "syntax" | "plain";
+// The preview renderers (tokenizer, image/binary panels) only load once a file is
+// clicked: the detail page itself stays free of that chunk.
+const FilePreview = lazy(() => import("./FilePreview").then((m) => ({ default: m.FilePreview })));
 
 export interface FileStructureSectionProps {
   files: FileTreeNode[];
   rootName: string;
-  /** Initial height of the split view in pixels. */
+  /** Initial height of the split view in pixels (desktop layout). */
   initialHeight?: number;
-  /** Fetches file content by path relative to the item root. */
-  onFetchContent: (relativePath: string) => Promise<string>;
-  /** Custom renderer for syntax-highlighted previews. Enables the syntax/plain toggle. */
-  renderPreview?: (content: string, filePath: string, language: string) => ReactNode;
-}
-
-export function getLanguageFromPath(filePath: string): string {
-  const ext = filePath.split(".").pop()?.toLowerCase() || "";
-  const map: Record<string, string> = {
-    js: "javascript", ts: "typescript", jsx: "javascript", tsx: "typescript",
-    json: "json", md: "markdown", yml: "yaml", yaml: "yaml",
-    sh: "shell", bash: "shell",
-    rs: "rust", py: "python", rb: "ruby", go: "go",
-    html: "html", css: "css", scss: "scss",
-    toml: "ini", xml: "xml", sql: "sql",
-  };
-  return map[ext] || "plaintext";
+  /** Fetches and classifies a file by path relative to the item root. */
+  loadFile: (relativePath: string) => Promise<PreviewResult>;
+  /** Host the files are fetched from; named in the UI before the first request is made. */
+  sourceHost: string;
+  /** Page for a file on its host (shown for binaries), or null when there is none. */
+  fileUrl: (relativePath: string) => string | null;
 }
 
 function nodeHasFiles(node: FileTreeNode): boolean {
@@ -50,68 +43,92 @@ function nodeHasFiles(node: FileTreeNode): boolean {
   return !!node.children?.some(nodeHasFiles);
 }
 
-function collectDirPaths(nodes: FileTreeNode[], rootName: string): Set<string> {
-  const paths = new Set<string>([rootName]);
-  function walk(children: FileTreeNode[], pathPrefix: string) {
-    for (const node of children.filter(nodeHasFiles)) {
-      if (node.type === "directory") {
-        const path = `${pathPrefix}/${node.name}`;
-        paths.add(path);
-        if (node.children) walk(node.children, path);
-      }
+interface VisibleItem {
+  path: string;
+  parentPath: string | null;
+  isDir: boolean;
+  expanded: boolean;
+}
+
+/** Depth-first list of the items a user can currently see (collapsed subtrees excluded). */
+function listVisibleItems(root: FileTreeNode, rootPath: string, expandedPaths: Set<string>): VisibleItem[] {
+  const items: VisibleItem[] = [];
+  const walk = (node: FileTreeNode, path: string, parentPath: string | null) => {
+    const isDir = node.type === "directory";
+    const expanded = isDir && expandedPaths.has(path);
+    items.push({ path, parentPath, isDir, expanded });
+    if (expanded && node.children) {
+      for (const child of node.children.filter(nodeHasFiles)) walk(child, `${path}/${child.name}`, path);
     }
-  }
-  walk(nodes, rootName);
+  };
+  walk(root, rootPath, null);
+  return items;
+}
+
+function collectDirPaths(root: FileTreeNode, rootPath: string): Set<string> {
+  const paths = new Set<string>();
+  const walk = (node: FileTreeNode, path: string) => {
+    if (node.type !== "directory") return;
+    paths.add(path);
+    for (const child of node.children?.filter(nodeHasFiles) ?? []) walk(child, `${path}/${child.name}`);
+  };
+  walk(root, rootPath);
   return paths;
 }
 
 function NodeChevron({ isDir, expanded }: { isDir: boolean; expanded: boolean }) {
-  if (!isDir) return <span className="w-3 shrink-0" />;
+  if (!isDir) return <span className="w-3 shrink-0" aria-hidden />;
   const Chevron = expanded ? ChevronDown : ChevronRight;
-  return <Chevron className="size-3 shrink-0" />;
+  return <Chevron className="size-3 shrink-0" aria-hidden />;
 }
 
 function NodeIcon({ isDir, expanded }: { isDir: boolean; expanded: boolean }) {
   const Icon = isDir ? (expanded ? FolderOpen : Folder) : FileCode;
-  return <Icon className="size-3.5 shrink-0 text-muted-foreground" />;
+  return <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />;
 }
 
 interface FileTreeNodeItemProps {
   node: FileTreeNode;
   path: string;
+  level: number;
   selectedPath: string | null;
-  onSelectFile: (path: string) => void;
+  focusedPath: string;
   expandedPaths: Set<string>;
-  onTogglePath: (path: string) => void;
+  onActivate: (path: string, isDir: boolean) => void;
+  onKeyDown: (event: KeyboardEvent<HTMLLIElement>, path: string) => void;
 }
 
-function FileTreeNodeItem({
-  node,
-  path,
-  selectedPath,
-  onSelectFile,
-  expandedPaths,
-  onTogglePath,
-}: FileTreeNodeItemProps) {
+function FileTreeNodeItem({ node, path, level, selectedPath, focusedPath, expandedPaths, onActivate, onKeyDown }: FileTreeNodeItemProps) {
   const isDir = node.type === "directory";
   const isSelected = !isDir && selectedPath === path;
   const expanded = isDir && expandedPaths.has(path);
 
   return (
-    <li role="treeitem" aria-expanded={isDir ? expanded : undefined} aria-selected={isSelected}>
-      <button
-        onClick={isDir ? () => onTogglePath(path) : () => onSelectFile(path)}
+    <li
+      role="treeitem"
+      aria-level={level}
+      aria-expanded={isDir ? expanded : undefined}
+      aria-selected={isDir ? undefined : isSelected}
+      tabIndex={focusedPath === path ? 0 : -1}
+      data-tree-path={path}
+      className="outline-none"
+      onKeyDown={(event) => onKeyDown(event, path)}
+    >
+      <div
+        onClick={(event) => {
+          event.stopPropagation();
+          onActivate(path, isDir);
+        }}
         className={cn(
-          "flex cursor-pointer items-center gap-1.5 overflow-hidden px-1 py-0.5 text-sm whitespace-nowrap transition-colors",
-          isSelected
-            ? "bg-secondary text-primary"
-            : "text-foreground hover:bg-secondary hover:text-primary"
+          "flex cursor-pointer items-center gap-1.5 px-1 py-0.5 text-sm whitespace-nowrap transition-colors",
+          "[li:focus-visible>&]:outline-2 [li:focus-visible>&]:outline-ring [li:focus-visible>&]:-outline-offset-2",
+          isSelected ? "bg-secondary text-primary" : "text-foreground hover:bg-secondary hover:text-primary"
         )}
       >
         <NodeChevron isDir={isDir} expanded={expanded} />
         <NodeIcon isDir={isDir} expanded={expanded} />
         <span className="truncate">{node.name}</span>
-      </button>
+      </div>
       {isDir && expanded && node.children && (
         <ul role="group" className="ml-4 space-y-0.5">
           {node.children.filter(nodeHasFiles).map((child) => (
@@ -119,10 +136,12 @@ function FileTreeNodeItem({
               key={child.name}
               node={child}
               path={`${path}/${child.name}`}
+              level={level + 1}
               selectedPath={selectedPath}
-              onSelectFile={onSelectFile}
+              focusedPath={focusedPath}
               expandedPaths={expandedPaths}
-              onTogglePath={onTogglePath}
+              onActivate={onActivate}
+              onKeyDown={onKeyDown}
             />
           ))}
         </ul>
@@ -131,24 +150,117 @@ function FileTreeNodeItem({
   );
 }
 
-export function FileStructureSection({
-  files,
-  rootName,
-  initialHeight = 500,
-  onFetchContent,
-  renderPreview,
-}: FileStructureSectionProps) {
-  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
-  const [fileContent, setFileContent] = useState<string | null>(null);
-  const [fetchedFilePath, setFetchedFilePath] = useState<string | null>(null);
-  const [fileError, setFileError] = useState<string | null>(null);
-  const [mode, setMode] = useState<PreviewMode>(renderPreview ? "syntax" : "plain");
+const MIN_HEIGHT = 150;
+const MAX_HEIGHT = 1200;
+const KEYBOARD_RESIZE_STEP = 24;
 
-  const allDirPaths = useMemo(() => collectDirPaths(files, rootName), [files, rootName]);
-  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set<string>());
+function clampHeight(value: number): number {
+  return Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, value));
+}
+
+function useSplitHeight(initialHeight: number) {
+  const [height, setHeight] = useState(() => clampHeight(initialHeight));
+
+  const startDrag = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const startY = event.clientY;
+      const startHeight = height;
+      const onMove = (move: PointerEvent) => setHeight(clampHeight(startHeight + (move.clientY - startY)));
+      const onUp = () => {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+      };
+      document.addEventListener("pointermove", onMove, { passive: true });
+      document.addEventListener("pointerup", onUp, { passive: true });
+    },
+    [height]
+  );
+
+  const onKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    const delta: Record<string, number> = {
+      ArrowUp: -KEYBOARD_RESIZE_STEP,
+      ArrowDown: KEYBOARD_RESIZE_STEP,
+      PageUp: -KEYBOARD_RESIZE_STEP * 4,
+      PageDown: KEYBOARD_RESIZE_STEP * 4,
+    };
+    if (event.key === "Home") setHeight(MIN_HEIGHT);
+    else if (event.key === "End") setHeight(MAX_HEIGHT);
+    else if (event.key in delta) setHeight((current) => clampHeight(current + delta[event.key]!));
+    else return;
+    event.preventDefault();
+  }, []);
+
+  return { height, startDrag, onKeyDown };
+}
+
+/** Selection + fetch state of the preview panel; fetches only after an explicit selection. */
+function useSelectedFile(loadFile: FileStructureSectionProps["loadFile"], relativePathOf: (path: string) => string) {
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [result, setResult] = useState<PreviewResult | null>(null);
+  const [loadedPath, setLoadedPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedPath) return;
+    let cancelled = false;
+    loadFile(relativePathOf(selectedPath))
+      .then((loaded) => {
+        if (cancelled) return;
+        setResult(loaded);
+        setLoadedPath(selectedPath);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setResult({ kind: "error", message: error instanceof Error ? error.message : "Failed to load file" });
+        setLoadedPath(selectedPath);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPath, loadFile, relativePathOf]);
+
+  const select = useCallback(
+    (path: string) => {
+      if (path === selectedPath) return;
+      setSelectedPath(path);
+      setResult(null);
+    },
+    [selectedPath]
+  );
+
+  return { selectedPath, select, result, isLoading: selectedPath !== null && selectedPath !== loadedPath };
+}
+
+export function FileStructureSection({ files, rootName, initialHeight = 500, loadFile, sourceHost, fileUrl }: FileStructureSectionProps) {
+  const root = useMemo<FileTreeNode>(() => ({ name: rootName, type: "directory", children: files }), [files, rootName]);
+  const allDirPaths = useMemo(() => collectDirPaths(root, rootName), [root, rootName]);
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set(allDirPaths));
   useEffect(() => {
     setExpandedPaths(new Set(allDirPaths));
   }, [allDirPaths]);
+  const allCollapsed = expandedPaths.size === 0;
+
+  const relativePathOf = useCallback(
+    (path: string) => (path.startsWith(`${rootName}/`) ? path.slice(rootName.length + 1) : path),
+    [rootName]
+  );
+  const { selectedPath, select, result, isLoading } = useSelectedFile(loadFile, relativePathOf);
+  const [mode, setMode] = useState<PreviewMode>("syntax");
+  const [focusedPath, setFocusedPath] = useState(rootName);
+  const pendingFocus = useRef<string | null>(null);
+  const treeRef = useRef<HTMLUListElement>(null);
+  const { height, startDrag, onKeyDown: onResizeKeyDown } = useSplitHeight(initialHeight);
+
+  const visibleItems = useMemo(() => listVisibleItems(root, rootName, expandedPaths), [root, rootName, expandedPaths]);
+  useEffect(() => {
+    if (!visibleItems.some((item) => item.path === focusedPath)) setFocusedPath(rootName);
+  }, [visibleItems, focusedPath, rootName]);
+  useEffect(() => {
+    if (pendingFocus.current === null) return;
+    treeRef.current?.querySelector<HTMLElement>(`[data-tree-path="${CSS.escape(pendingFocus.current)}"]`)?.focus();
+    pendingFocus.current = null;
+  });
+
   const togglePath = useCallback((path: string) => {
     setExpandedPaths((prev) => {
       const next = new Set(prev);
@@ -157,167 +269,152 @@ export function FileStructureSection({
       return next;
     });
   }, []);
-  const allCollapsed = expandedPaths.size === 0;
 
-  const [height, setHeight] = useState(initialHeight);
-  const resizing = useRef(false);
-  const startY = useRef(0);
-  const startHeight = useRef(0);
-
-  const handleResizeStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      resizing.current = true;
-      startY.current = e.clientY;
-      startHeight.current = height;
-
-      const onMouseMove = (ev: MouseEvent) => {
-        if (!resizing.current) return;
-        setHeight(Math.max(150, startHeight.current + (ev.clientY - startY.current)));
-      };
-      const onMouseUp = () => {
-        resizing.current = false;
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
-      };
-      document.addEventListener("mousemove", onMouseMove, { passive: true });
-      document.addEventListener("mouseup", onMouseUp, { passive: true });
+  const activate = useCallback(
+    (path: string, isDir: boolean) => {
+      setFocusedPath(path);
+      if (isDir) togglePath(path);
+      else select(path);
     },
-    [height]
+    [select, togglePath]
   );
 
-  const firstFilePath = useMemo(() => {
-    const findFirst = (nodes: FileTreeNode[], prefix: string): string | null => {
-      for (const node of nodes) {
-        const path = `${prefix}/${node.name}`;
-        if (node.type === "file") return path;
-        if (node.children) {
-          const found = findFirst(node.children, path);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return findFirst(files, rootName);
-  }, [files, rootName]);
-
-  const effectiveFilePath = selectedFilePath ?? firstFilePath;
-  const fileIsLoading = effectiveFilePath != null && effectiveFilePath !== fetchedFilePath;
-
-  useEffect(() => {
-    if (!effectiveFilePath) return;
-
-    const relativePath = effectiveFilePath.startsWith(`${rootName}/`)
-      ? effectiveFilePath.slice(rootName.length + 1)
-      : effectiveFilePath;
-
-    let cancelled = false;
-
-    onFetchContent(relativePath)
-      .then((text) => {
-        if (!cancelled) {
-          setFileContent(text);
-          setFetchedFilePath(effectiveFilePath);
-          setFileError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setFileError(err instanceof Error ? err.message : "Failed to load file");
-          setFetchedFilePath(effectiveFilePath);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [effectiveFilePath, rootName, onFetchContent]);
-
-  const handleSelectFile = useCallback((filePath: string) => {
-    setSelectedFilePath(filePath);
-    setFileContent(null);
-    setFileError(null);
+  const moveFocus = useCallback((path: string) => {
+    pendingFocus.current = path;
+    setFocusedPath(path);
   }, []);
+
+  const onTreeKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLLIElement>, path: string) => {
+      const index = visibleItems.findIndex((item) => item.path === path);
+      const item = visibleItems[index];
+      if (!item) return;
+      const go = (target: VisibleItem | undefined) => {
+        if (target) moveFocus(target.path);
+      };
+      switch (event.key) {
+        case "ArrowDown":
+          go(visibleItems[index + 1]);
+          break;
+        case "ArrowUp":
+          go(visibleItems[index - 1]);
+          break;
+        case "ArrowRight":
+          if (item.isDir && !item.expanded) togglePath(path);
+          else if (item.isDir) go(visibleItems[index + 1]);
+          break;
+        case "ArrowLeft":
+          if (item.isDir && item.expanded) togglePath(path);
+          else if (item.parentPath) moveFocus(item.parentPath);
+          break;
+        case "Home":
+          go(visibleItems[0]);
+          break;
+        case "End":
+          go(visibleItems[visibleItems.length - 1]);
+          break;
+        case "Enter":
+        case " ":
+          activate(path, item.isDir);
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    [visibleItems, moveFocus, togglePath, activate]
+  );
 
   if (files.length === 0) return null;
 
-  const selectedFileName = effectiveFilePath?.split("/").pop() || "";
-
-  function renderContent(content: string, filePath: string) {
-    if (mode === "syntax" && renderPreview) {
-      return renderPreview(content, filePath, getLanguageFromPath(filePath));
-    }
-    return (
-      <pre className="p-3 font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-        <code>{content}</code>
-      </pre>
-    );
-  }
+  const selectedName = selectedPath?.split("/").pop() ?? "";
+  const showModeToggle = result?.kind === "text" && !isLoading;
 
   const modeOptions: { value: PreviewMode; icon: ReactNode; description: string }[] = [
     { value: "syntax", icon: <Code2 className="size-3" />, description: "Syntax highlighting" },
     { value: "plain", icon: <Type className="size-3" />, description: "Plain text" },
   ];
 
+  let panelBody: ReactNode;
+  if (!selectedPath) {
+    panelBody = (
+      <p className="p-3 text-sm text-muted-foreground" data-testid="preview-hint">
+        Select a file to preview it. Files are fetched from <span className="text-foreground">{sourceHost}</span> only
+        when you select them.
+      </p>
+    );
+  } else if (isLoading || !result) {
+    panelBody = (
+      <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground" role="status">
+        <Loader2 className="size-3.5 animate-spin" aria-hidden />
+        Loading {selectedName} from {sourceHost}…
+      </div>
+    );
+  } else {
+    panelBody = (
+      <PreviewErrorBoundary resetKey={selectedPath}>
+        <Suspense fallback={<div className="h-full bg-card" />}>
+          <FilePreview result={result} name={selectedName} mode={mode} openUrl={fileUrl(relativePathOf(selectedPath))} />
+        </Suspense>
+      </PreviewErrorBoundary>
+    );
+  }
+
   return (
     <div data-term>
       <h3 className="prompt mb-2">tree {rootName}/</h3>
       <div data-term-out>
-      <div className="flex gap-3" style={{ height: `${height}px` }}>
-        {/* Tree panel */}
+        {/* Stacked on phones; side by side with a draggable height from md up. */}
         <div
-          className={cn(
-            "flex flex-col overflow-hidden border border-border bg-card",
-            effectiveFilePath ? "w-1/3 shrink-0" : "flex-1"
-          )}
+          className="flex flex-col gap-3 md:h-(--split-height) md:flex-row"
+          style={{ "--split-height": `${height}px` } as React.CSSProperties}
         >
-          <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
-            <FolderTree className="size-3.5 shrink-0 text-primary" />
-            <span className="flex-1 truncate text-sm text-foreground">Files</span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label={allCollapsed ? "Expand all" : "Collapse all"}
-                  onClick={() =>
-                    setExpandedPaths(allCollapsed ? new Set(allDirPaths) : new Set())
-                  }
-                >
-                  {allCollapsed ? (
-                    <ChevronsUpDown className="size-3.5" />
-                  ) : (
-                    <ChevronsDownUp className="size-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{allCollapsed ? "Expand all" : "Collapse all"}</TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <ul role="tree" className="space-y-0.5">
-              <FileTreeNodeItem
-                node={{ name: rootName, type: "directory", children: files }}
-                path={rootName}
-                selectedPath={effectiveFilePath}
-                onSelectFile={handleSelectFile}
-                expandedPaths={expandedPaths}
-                onTogglePath={togglePath}
-              />
-            </ul>
-          </div>
-        </div>
-
-        {/* Preview panel */}
-        {effectiveFilePath && (
-          <div className="flex flex-1 flex-col overflow-hidden border border-border bg-card">
+          {/* Tree panel */}
+          <div className="flex max-h-64 flex-col overflow-hidden border border-border bg-card md:max-h-none md:w-1/3 md:shrink-0">
             <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
-              <FileCode className="size-3.5 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                {selectedFileName}
-              </span>
-              {renderPreview && (
-                <div className="flex items-center border border-border">
+              <FolderTree className="size-3.5 shrink-0 text-primary" aria-hidden />
+              <span className="flex-1 truncate text-sm text-foreground">Files</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={allCollapsed ? "Expand all folders" : "Collapse all folders"}
+                    onClick={() => setExpandedPaths(allCollapsed ? new Set(allDirPaths) : new Set())}
+                  >
+                    {allCollapsed ? <ChevronsUpDown className="size-3.5" /> : <ChevronsDownUp className="size-3.5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{allCollapsed ? "Expand all folders" : "Collapse all folders"}</TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex-1 overflow-auto p-3">
+              <ul ref={treeRef} role="tree" aria-label={`Files of ${rootName}`} className="space-y-0.5">
+                <FileTreeNodeItem
+                  node={root}
+                  path={rootName}
+                  level={1}
+                  selectedPath={selectedPath}
+                  focusedPath={focusedPath}
+                  expandedPaths={expandedPaths}
+                  onActivate={activate}
+                  onKeyDown={onTreeKeyDown}
+                />
+              </ul>
+            </div>
+          </div>
+
+          {/* Preview panel */}
+          <div
+            className="flex h-96 min-w-0 flex-1 flex-col overflow-hidden border border-border bg-card md:h-auto"
+            data-testid="preview-panel"
+          >
+            <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+              <FileCode className="size-3.5 shrink-0 text-primary" aria-hidden />
+              <span className="min-w-0 flex-1 truncate text-sm text-foreground">{selectedName || "Preview"}</span>
+              {showModeToggle && (
+                <div className="flex items-center border border-border" role="group" aria-label="Preview mode">
                   {modeOptions.map((option) => (
                     <Tooltip key={option.value}>
                       <TooltipTrigger asChild>
@@ -325,10 +422,8 @@ export function FileStructureSection({
                           variant="ghost"
                           size="icon-xs"
                           aria-label={option.description}
-                          className={cn(
-                            "size-5",
-                            mode === option.value && "bg-secondary text-primary"
-                          )}
+                          aria-pressed={mode === option.value}
+                          className={cn("size-5", mode === option.value && "bg-secondary text-primary")}
                           onClick={() => setMode(option.value)}
                         >
                           {option.icon}
@@ -340,32 +435,25 @@ export function FileStructureSection({
                 </div>
               )}
             </div>
-            <div className="flex-1 overflow-auto">
-              {fileIsLoading ? (
-                <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
-                  <Loader2 className="size-3.5 animate-spin" />
-                  Loading...
-                </div>
-              ) : fileError ? (
-                <p className="flex items-center gap-2 p-3 text-sm text-destructive">
-                  <AlertCircle className="size-3.5 shrink-0" />
-                  {fileError}
-                </p>
-              ) : fileContent !== null ? (
-                renderContent(fileContent, effectiveFilePath)
-              ) : null}
-            </div>
+            <div className="flex-1 overflow-auto">{panelBody}</div>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Resize handle */}
-      <div
-        onMouseDown={handleResizeStart}
-        className="group -mt-1.5 flex h-4 cursor-grab items-center justify-center active:cursor-grabbing"
-      >
-        <div className="h-1 w-10 bg-border transition-colors group-hover:bg-primary" />
-      </div>
+        {/* Resize handle (desktop): drag, or focus it and use the arrow keys. */}
+        <div
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Resize file preview"
+          aria-valuemin={MIN_HEIGHT}
+          aria-valuemax={MAX_HEIGHT}
+          aria-valuenow={height}
+          tabIndex={0}
+          onPointerDown={startDrag}
+          onKeyDown={onResizeKeyDown}
+          className="group -mt-1.5 hidden h-4 cursor-row-resize touch-none items-center justify-center outline-none focus-visible:outline-2 focus-visible:outline-ring md:flex"
+        >
+          <div className="h-1 w-10 bg-border transition-colors group-hover:bg-primary group-focus-visible:bg-primary" />
+        </div>
       </div>
     </div>
   );

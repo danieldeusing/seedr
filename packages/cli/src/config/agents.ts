@@ -1,10 +1,13 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
+import { CANONICAL_AGENTS, canonicalAgent } from "@seedr/registry-ops/pure";
 import type { CodingAgentConfig, InstallScope, ContentTypeConfig } from "../types.js";
 import type { CodingAgent, ComponentType } from "@seedr/shared";
 
 const home = homedir();
+
+const SETTINGS_FILE = "settings.json";
+const JSON_MERGE = "json-merge" as const;
 
 const SKILL_DIRECTORY: ContentTypeConfig = {
   path: "skills",
@@ -49,8 +52,8 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
       hook: {
         path: "",
         extension: ".json",
-        structure: "json-merge",
-        mergeTarget: "settings.json",
+        structure: JSON_MERGE,
+        mergeTarget: SETTINGS_FILE,
         mergeField: "hooks",
       },
       plugin: {
@@ -61,13 +64,13 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
       settings: {
         path: "",
         extension: ".json",
-        structure: "json-merge",
-        mergeTarget: "settings.json",
+        structure: JSON_MERGE,
+        mergeTarget: SETTINGS_FILE,
       },
       mcp: {
         path: "",
         extension: ".json",
-        structure: "json-merge",
+        structure: JSON_MERGE,
         mergeTarget: ".mcp.json",
         mergeField: "mcpServers",
       },
@@ -168,18 +171,44 @@ export function getSettingsPath(
 }
 
 /**
- * Get the MCP config path for a given scope.
+ * Get Claude Code's MCP config path for a given scope.
  */
 export function getMcpPath(
   scope: InstallScope,
   cwd: string = process.cwd()
 ): string {
-  switch (scope) {
-    case "project":
-    case "local":
-      return join(cwd, ".mcp.json");
-    case "user":
-      return join(home, ".claude.json");
+  return getMcpConfigPath("claude", scope, cwd);
+}
+
+/**
+ * Where each agent keeps its MCP server configuration. Project and local
+ * scope share the project file; only Claude Code distinguishes them elsewhere.
+ *
+ * - claude:   `<cwd>/.mcp.json` / `~/.claude.json`
+ * - codex:    `<cwd>/.codex/config.toml` / `~/.codex/config.toml`
+ * - opencode: `<cwd>/opencode.json` / `~/.config/opencode/opencode.json`
+ *
+ * Copilot and Antigravity have no verified MCP configuration format and are
+ * not listed (`undefined` means "no known configuration file"); the deprecated
+ * `gemini` id resolves to antigravity before it ever reaches this table.
+ */
+export function getMcpConfigPath(
+  agent: CodingAgent,
+  scope: InstallScope,
+  cwd: string = process.cwd()
+): string {
+  const isUser = scope === "user";
+  switch (canonicalAgent(agent) ?? agent) {
+    case "claude":
+      return isUser ? join(home, ".claude.json") : join(cwd, ".mcp.json");
+    case "codex":
+      return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
+    case "opencode":
+      return isUser ? join(home, ".config", "opencode", "opencode.json") : join(cwd, "opencode.json");
+    default:
+      // copilot and antigravity: the mcp handler refuses these before ever
+      // resolving a path (MCP_UNSUPPORTED_REASONS in config/compatibility.ts).
+      throw new Error(`${agent} has no verified MCP configuration format`);
   }
 }
 

@@ -5,26 +5,35 @@ import type { CodingAgent, InstallScope } from "../types.js";
 import { brand } from "../utils/ui.js";
 import type { ComponentType } from "@seedr/shared";
 import { ALL_AGENTS, CODING_AGENTS } from "../config/agents.js";
-import { parseAgentsArg } from "../utils/detection.js";
+import { parseAgentsArgStrict } from "../utils/detection.js";
 import { promptConfirm } from "../utils/prompts.js";
 import { getHandler } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
+import { isValidSlug, MAX_SLUG_LENGTH, SLUG_PATTERN } from "../utils/slug.js";
 import { validateScope, validateType } from "../utils/validate-options.js";
 
 // Ensure handlers are registered
 import "../handlers/index.js";
 
+export interface RemoveOptions {
+  type?: string;
+  agents?: string;
+  scope?: string;
+  yes?: boolean;
+}
+
 async function findInstalledAgents(
   slug: string,
   type: ComponentType,
-  scope: InstallScope
+  scope: InstallScope,
+  cwd: string
 ): Promise<CodingAgent[]> {
   const handler = getHandler(type);
   if (!handler) return [];
 
   const agents: CodingAgent[] = [];
   for (const agent of ALL_AGENTS) {
-    const installed = await handler.listInstalled(agent, scope);
+    const installed = await handler.listInstalled(agent, scope, cwd);
     if (installed.includes(slug)) {
       agents.push(agent);
     }
@@ -36,7 +45,8 @@ async function removeFromAgents(
   slug: string,
   type: ComponentType,
   agents: CodingAgent[],
-  scope: InstallScope
+  scope: InstallScope,
+  cwd: string
 ): Promise<number> {
   const handler = getHandler(type);
   if (!handler) return 0;
@@ -45,7 +55,7 @@ async function removeFromAgents(
   for (const agent of agents) {
     const spinner = ora(`Removing from ${CODING_AGENTS[agent].name}...`).start();
 
-    const removed = await handler.uninstall(slug, agent, scope);
+    const removed = await handler.uninstall(slug, agent, scope, cwd);
     if (removed) {
       spinner.succeed(brand(`Removed from ${CODING_AGENTS[agent].name}`));
       successCount++;
@@ -54,6 +64,89 @@ async function removeFromAgents(
     }
   }
   return successCount;
+}
+
+/**
+ * Validate everything about a removal request before any handler runs.
+ * Returns an error message, or null when the request is well-formed.
+ */
+export function validateRemoveRequest(name: unknown, options: RemoveOptions): string | null {
+  if (!isValidSlug(name)) {
+    return `Invalid item name ${JSON.stringify(name)}: expected a slug matching ${SLUG_PATTERN.source} (at most ${MAX_SLUG_LENGTH} characters)`;
+  }
+  const optionError = validateScope(options.scope) || validateType(options.type);
+  if (optionError) return optionError;
+  if (!options.type) {
+    return "Please specify the content type with --type (skill, plugin, agent, hook, mcp, settings)";
+  }
+  if (options.agents && options.agents !== "all") {
+    const { unknown } = parseAgentsArgStrict(options.agents);
+    if (unknown.length > 0) {
+      return `Unknown agent(s): ${unknown.join(", ")}. Valid agents: ${ALL_AGENTS.join(", ")} or "all"`;
+    }
+  }
+  return null;
+}
+
+/**
+ * The `remove` flow without the commander wrapper. Returns the exit code.
+ */
+export async function runRemove(name: string, options: RemoveOptions, cwd: string = process.cwd()): Promise<number> {
+  const requestError = validateRemoveRequest(name, options);
+  if (requestError) {
+    console.log(chalk.red(requestError));
+    return 1;
+  }
+
+  const scope = (options.scope ?? "project") as InstallScope;
+  const type = options.type as ComponentType;
+
+  const handler = getHandler(type);
+  if (!handler) {
+    console.log(chalk.red(`No handler found for type "${type}"`));
+    return 1;
+  }
+
+  // Determine which agents to uninstall from
+  let agents: CodingAgent[];
+  if (!options.agents) {
+    agents = await findInstalledAgents(name, type, scope, cwd);
+  } else if (options.agents === "all") {
+    agents = [...ALL_AGENTS];
+  } else {
+    agents = parseAgentsArgStrict(options.agents).agents;
+  }
+
+  if (agents.length === 0) {
+    console.log(chalk.yellow(`${type} "${name}" is not installed in ${scope} scope`));
+    return 0;
+  }
+
+  // Confirm
+  if (!options.yes) {
+    console.log(brand(`\nWill remove ${type} "${name}" from:`));
+    for (const agent of agents) {
+      console.log(`  - ${CODING_AGENTS[agent].name}`);
+    }
+    console.log("");
+
+    const confirmed = await promptConfirm("Proceed with removal?");
+    if (!confirmed) {
+      console.log(chalk.yellow("Removal cancelled"));
+      return 0;
+    }
+  }
+
+  // Remove and report
+  const successCount = await removeFromAgents(name, type, agents, scope, cwd);
+
+  console.log("");
+  if (successCount > 0) {
+    console.log(brand(`Successfully removed from ${successCount} agent(s)`));
+  } else {
+    console.log(chalk.yellow("Nothing to remove"));
+  }
+  return 0;
 }
 
 export const removeCommand = new Command("remove")
@@ -71,68 +164,10 @@ export const removeCommand = new Command("remove")
     "project"
   )
   .option("-y, --yes", "Skip confirmation prompts")
-  .action(async (name, options) => {
+  .action(async (name: string, options: RemoveOptions) => {
     try {
-      const optionError = validateScope(options.scope) || validateType(options.type);
-      if (optionError) {
-        console.log(chalk.red(optionError));
-        process.exit(1);
-      }
-
-      const scope: InstallScope = options.scope;
-      const type: ComponentType | undefined = options.type;
-
-      if (!type) {
-        console.log(
-          chalk.yellow(`Please specify the content type with --type (skill, plugin, agent, hook, mcp, settings)`)
-        );
-        process.exit(1);
-      }
-
-      const handler = getHandler(type);
-      if (!handler) {
-        console.log(chalk.red(`No handler found for type "${type}"`));
-        process.exit(1);
-      }
-
-      // Determine which agents to uninstall from
-      const agents = options.agents
-        ? parseAgentsArg(options.agents, ALL_AGENTS)
-        : await findInstalledAgents(name, type, scope);
-
-      if (agents.length === 0) {
-        console.log(
-          chalk.yellow(`${type} "${name}" is not installed in ${scope} scope`)
-        );
-        process.exit(0);
-      }
-
-      // Confirm
-      if (!options.yes) {
-        console.log(brand(`\nWill remove ${type} "${name}" from:`));
-        for (const agent of agents) {
-          console.log(`  - ${CODING_AGENTS[agent].name}`);
-        }
-        console.log("");
-
-        const confirmed = await promptConfirm("Proceed with removal?");
-        if (!confirmed) {
-          console.log(chalk.yellow("Removal cancelled"));
-          process.exit(0);
-        }
-      }
-
-      // Remove and report
-      const successCount = await removeFromAgents(name, type, agents, scope);
-
-      console.log("");
-      if (successCount > 0) {
-        console.log(
-          brand(`Successfully removed from ${successCount} agent(s)`)
-        );
-      } else {
-        console.log(chalk.yellow("Nothing to remove"));
-      }
+      const exitCode = await runRemove(name, options);
+      if (exitCode !== 0) process.exit(exitCode);
     } catch (error) {
       handleCommandError(error);
     }

@@ -7,6 +7,9 @@ import { compileRegistry } from "../compile.js";
 
 export const LONG = "Reads `item.json` files and " + "checks every description carefully ".repeat(10);
 
+export const FIXTURE_SHA = "a".repeat(40);
+export const FIXTURE_DIGEST = "b".repeat(64);
+
 export const toolrSkill: RegistryItem = {
   slug: "alpha",
   name: "Alpha",
@@ -16,7 +19,12 @@ export const toolrSkill: RegistryItem = {
   compatibility: ["claude"],
   sourceType: "toolr",
   author: { name: "Test Author" },
-  contents: { files: [{ name: "SKILL.md", type: "file" }] },
+  contents: {
+    files: [
+      { name: "SKILL.md", type: "file" },
+      { name: "references", type: "directory", children: [{ name: "notes.md", type: "file" }] },
+    ],
+  },
 };
 
 export const communityPlugin: RegistryItem = {
@@ -32,6 +40,9 @@ export const communityPlugin: RegistryItem = {
   author: { name: "Someone", url: "https://github.com/someone" },
   externalUrl: "https://github.com/someone/beta/tree/main",
   contents: { files: [{ name: "README.md", type: "file" }] },
+  sourceRevision: FIXTURE_SHA,
+  contentDigest: FIXTURE_DIGEST,
+  pluginSource: { kind: "url", url: "https://github.com/someone/beta.git", sha: FIXTURE_SHA },
 };
 
 export const officialSkill: RegistryItem = {
@@ -44,6 +55,8 @@ export const officialSkill: RegistryItem = {
   sourceType: "official",
   author: { name: "Anthropic" },
   externalUrl: "https://github.com/anthropics/skills/tree/main/skills/gamma",
+  sourceRevision: FIXTURE_SHA,
+  contentDigest: FIXTURE_DIGEST,
 };
 
 export const toolrMcp: RegistryItem = {
@@ -55,6 +68,7 @@ export const toolrMcp: RegistryItem = {
   compatibility: ["claude"],
   sourceType: "toolr",
   author: { name: "Test Author" },
+  contents: { files: [{ name: "mcp.md", type: "file" }] },
 };
 
 export function writeItem(registryDir: string, typeDir: string, item: RegistryItem, files: Record<string, string> = {}): string {

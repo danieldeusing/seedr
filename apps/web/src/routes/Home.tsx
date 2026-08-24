@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { useUpdateParams } from "@/hooks/useUpdateParams";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { homeMeta } from "../../scripts/site-meta.mjs";
 import Fuse from "fuse.js";
 // toolr-design-ignore-next-line
 import { Sprout, X } from "lucide-react";
@@ -43,6 +45,7 @@ import { agentOptions, sourceOptions, scopeOptions } from "@/lib/filterOptions";
 export function Home() {
   const { searchParams, setSearchParams, updateParams } = useUpdateParams();
   useScrollRestoration();
+  usePageMeta(homeMeta());
 
   // Read state from URL search params
   const query = searchParams.get("q") ?? "";

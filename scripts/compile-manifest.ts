@@ -4,23 +4,36 @@
  *
  * Usage: npx tsx scripts/compile-manifest.ts
  *
- * The logic lives in @seedr/registry-ops (`compileRegistry`); this is the `pnpm
- * compile` entry point and the module sync.ts imports.
+ * The logic — including the single validator and the first-party content
+ * digests — lives in @seedr/registry-ops; this is the `pnpm compile` entry
+ * point and the module sync.ts and the sync tests import. `registryDir` is
+ * overridable so tests compile disposable registries.
  */
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ALL_TYPES, collectItems, compileRegistry, typeDirName } from "@seedr/registry-ops";
+import { ALL_TYPES, collectItems, compileRegistry, listItemsRaw, typeDirName } from "@seedr/registry-ops";
 import type { Manifest, ManifestItem } from "./sync/types.js";
 
-const registryDir = join(dirname(fileURLToPath(import.meta.url)), "..", "registry");
+export const DEFAULT_REGISTRY_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "registry");
 
-/** Every item with its content hash, in manifest order. sync.ts reads these before it writes. */
-export function readAllItems(): ManifestItem[] {
+export interface CompileOptions {
+  registryDir?: string;
+  /** `false` reads items without validation — the sync's migration path only. */
+  validate?: boolean;
+}
+
+/** Every item with its content hash and digest, in manifest order. sync.ts reads these before it writes. */
+export function readAllItems(options: CompileOptions = {}): ManifestItem[] {
+  const registryDir = options.registryDir ?? DEFAULT_REGISTRY_DIR;
   // sync/types.ts keeps its own looser item shape; the data on disk is the same.
+  if (options.validate === false) {
+    return listItemsRaw(registryDir).map(({ item }) => item) as unknown as ManifestItem[];
+  }
   return collectItems(registryDir) as unknown as ManifestItem[];
 }
 
-export function compileManifest(): Manifest {
+export function compileManifest(options: CompileOptions = {}): Manifest {
+  const registryDir = options.registryDir ?? DEFAULT_REGISTRY_DIR;
   const { items, counts } = compileRegistry(registryDir);
   console.log(`Compiled ${items.length} items into split manifests`);
   for (const type of ALL_TYPES) {

@@ -29,9 +29,9 @@ export function Header() {
 
   return (
     <header className="h-12 border-b border-border bg-card px-4">
-      <div className="h-full flex items-center">
+      <div className="flex h-full items-center gap-2">
         {/* Left: Logo (takes remaining space) */}
-        <div className="flex-1 flex items-center">
+        <div className="flex shrink-0 items-center sm:flex-1">
           <Link to="/" className="group flex items-center">
             <span className="text-xl font-bold tracking-tight glow">Seedr</span>
             <span className="cursor-block" aria-hidden />
@@ -39,7 +39,7 @@ export function Header() {
         </div>
 
         {/* Center: breadcrumb path + history nav */}
-        <div className="w-full max-w-6xl px-4 flex items-center gap-1 min-w-0">
+        <nav aria-label="Breadcrumb and history" className="flex min-w-0 flex-1 items-center gap-1 sm:w-full sm:max-w-6xl sm:px-4">
             <Button
               variant="ghost"
               size="icon-xs"
@@ -81,7 +81,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <span className="text-[12px] truncate ml-10">
+            <span className="ml-2 min-w-0 truncate text-[12px] sm:ml-10">
               <span className="text-muted-foreground">visitor@registry:</span>
               <span className="text-primary">~</span>
               <span className="text-muted-foreground">/</span>
@@ -111,10 +111,10 @@ export function Header() {
                 </Fragment>
               ))}
             </span>
-          </div>
+          </nav>
 
         {/* Right: External links (takes remaining space) */}
-        <div className="flex-1 flex items-center justify-end gap-2">
+        <div className="flex shrink-0 items-center justify-end gap-2 sm:flex-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon-sm" asChild>

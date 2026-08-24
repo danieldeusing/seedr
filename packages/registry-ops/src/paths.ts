@@ -12,17 +12,22 @@ export const ALL_TYPES = ["skill", "plugin", "hook", "agent", "mcp", "settings",
 const KNOWN_TYPES = new Set<string>(ALL_TYPES);
 
 /**
- * A slug is a single path segment: lowercase, starts alphanumeric, no separators.
- * Slugs become directory names, so this is the traversal guard as much as a style rule.
+ * A slug is a single canonical path segment: lowercase letters, digits and
+ * hyphens, starting alphanumeric, at most MAX_SLUG_LENGTH characters. Slugs
+ * become directory names, so this is the traversal guard as much as a style
+ * rule; dots and underscores are deliberately not allowed (every published
+ * item conforms, and the CLI enforces the same pattern on removal names).
  */
-export const SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
+export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+
+export const MAX_SLUG_LENGTH = 100;
 
 export function isComponentType(value: unknown): value is ComponentType {
   return typeof value === "string" && KNOWN_TYPES.has(value);
 }
 
 export function isValidSlug(value: unknown): value is string {
-  return typeof value === "string" && SLUG_PATTERN.test(value);
+  return typeof value === "string" && value.length <= MAX_SLUG_LENGTH && SLUG_PATTERN.test(value);
 }
 
 /** Folder name for a type: plural except `mcp` and `settings`, which are used as-is. */
@@ -37,6 +42,6 @@ export function itemKey(type: ComponentType, slug: string): string {
 
 export function assertSlug(slug: string): void {
   if (!isValidSlug(slug)) {
-    throw new Error(`Invalid slug "${slug}": expected lowercase letters, digits, ".", "_" or "-", starting with a letter or digit`);
+    throw new Error(`Invalid slug ${JSON.stringify(slug)}: expected lowercase letters, digits or "-", starting with a letter or digit, at most ${MAX_SLUG_LENGTH} characters`);
   }
 }

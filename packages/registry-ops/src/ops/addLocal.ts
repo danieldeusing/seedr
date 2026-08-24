@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, realpathSync, rmdirSync, rmSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { FileTreeNode, RegistryItem } from "@seedr/shared";
-import { canonicalAgents } from "../agents.js";
+import { canonicalAgent, storageAgents } from "../agents.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
 import { fileTree, itemExists } from "../read.js";
 import { assertStructurallyValid, formatErrors, validateItem } from "../validate.js";
@@ -75,13 +75,19 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
   const dir = itemDir(registryDir, op.type, op.slug);
   // Prepare the item first with a provisional file tree, so every validation
   // failure happens before the copy.
+  // Unknown ids are refused by name; aliases and duplicates normalise to the
+  // B1 storage vocabulary (STORAGE_ALIASES), which is what gets validated and written.
+  const unknown = op.compatibility.filter((agent) => canonicalAgent(agent) === null);
+  if (unknown.length > 0) {
+    throw new Error(`Item would be invalid: compatibility: unknown coding agent(s) ${unknown.join(", ")}`);
+  }
   const provisional: RegistryItem = {
     slug: op.slug,
     name: op.name,
     type: op.type,
     description: op.description,
     longDescription: op.longDescription,
-    compatibility: op.compatibility,
+    compatibility: storageAgents(op.compatibility),
     sourceType: "toolr",
     author: op.author,
     ...(op.externalUrl ? { externalUrl: op.externalUrl } : {}),
@@ -99,8 +105,6 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
 
   const item: RegistryItem = {
     ...provisional,
-    // Written canonically; the raw list was validated above so an unknown id still names itself.
-    compatibility: canonicalAgents(op.compatibility),
     contents: { files: fileTree(dir), ...(op.triggers?.length ? { triggers: op.triggers } : {}) },
   };
   assertStructurallyValid(item, { expectedType: op.type, expectedSlug: op.slug });

@@ -1,362 +1,304 @@
 /**
- * Sync skills and plugins from Anthropic repositories.
+ * Official sources:
  *
- * Sources:
- * - anthropics/skills/skills → skills, sourceType: "official"
- * - anthropics/claude-plugins-official/plugins → plugins, sourceType: "official"
- * - anthropics/claude-plugins-official/external_plugins → plugins, sourceType: "community"
+ *   - anthropics/skills — every `skills/<slug>` directory at the branch head, pinned to it.
+ *   - anthropics/claude-plugins-official — the marketplace file is the source of truth. Each
+ *     entry's `source` descriptor says where the content lives (a path inside the marketplace
+ *     repo, or another repository at a pinned sha); the registry records the effective pin,
+ *     the full file tree and the digest at that pin.
+ *
+ * Inclusion set for the marketplace: plugins the registry already carries (matched by name,
+ * after `renames`) plus every entry sourced from a local `./plugins/*` or `./external_plugins/*`
+ * path. The ~230 entries that point at third-party repositories are not imported wholesale;
+ * widening that is a product decision.
  */
 
-import { existsSync, readFileSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { CANONICAL_AGENTS, storageAgents } from "@seedr/registry-ops/pure";
+import { validateItem } from "../lib/validate-item.js";
+import { classifyPlugin, collectContent, findEntry, parseJsonEntry, withDeclaredLicense } from "./content.js";
+import type { GitHubClient } from "./github.js";
+import { finalizeItem } from "./item.js";
 import {
-  GITHUB_RAW,
-  fetchJson,
-  fetchText,
-  fetchLastCommitDate,
-  fetchRepoTree,
-  listDirectoryFromTree,
-  extractSubtree,
-  computeContentHash,
-  formatName,
-  parsePluginContents,
-} from "./utils.js";
-import type { PluginJson } from "./utils.js";
-import type { ManifestItem, ComponentType, SourceType, GitTreeItem, PluginContents, PluginType, ParsedPluginContents } from "./types.js";
-import { typeDirName } from "@seedr/registry-ops";
+  applyRenames,
+  describeSource,
+  parseMarketplace,
+  pinSource,
+  toPluginSource,
+  type MarketplaceEntry,
+  type MarketplaceFile,
+  type PinnedSource,
+} from "./marketplace.js";
+import type { Author, GitTreeItem, ItemKey, ManifestItem, SourceResult, SourceType } from "./types.js";
+import { itemKey } from "./types.js";
+import { formatName, listDirectoryFromTree, mapConcurrent, parseFrontmatter, type PluginJson } from "./utils.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const registryDir = join(__dirname, "..", "..", "registry");
+export const SKILLS_REPO = "anthropics/skills";
+export const SKILLS_BRANCH = "main";
+export const PLUGINS_REPO = "anthropics/claude-plugins-official";
+export const PLUGINS_BRANCH = "main";
+export const OFFICIAL_MARKETPLACE_NAME = "claude-plugins-official";
+export const MARKETPLACE_FILE = ".claude-plugin/marketplace.json";
+export const PLUGIN_JSON = ".claude-plugin/plugin.json";
 
-/**
- * Read existing item.json to preserve manually-set fields like compatibility.
- */
-function readExistingItem(type: ComponentType, slug: string): ManifestItem | null {
-  const itemPath = join(registryDir, typeDirName(type), slug, "item.json");
-  if (!existsSync(itemPath)) return null;
-  try {
-    return JSON.parse(readFileSync(itemPath, "utf-8"));
-  } catch {
-    return null;
+const ITEM_CONCURRENCY = 4;
+
+export interface SourceContext {
+  client: GitHubClient;
+  /** The registry as it is on disk before this run. */
+  existing: ReadonlyMap<ItemKey, ManifestItem>;
+  log: (line: string) => void;
+  /** Accept an upstream listing with zero entries (SYNC_ALLOW_EMPTY=1). */
+  allowEmpty: boolean;
+}
+
+export function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export function treeUrl(repo: string, sha: string, path: string): string {
+  return `https://github.com/${repo}/tree/${sha}${path ? `/${path}` : ""}`;
+}
+
+export function cloneUrl(repo: string): string {
+  return `https://github.com/${repo}.git`;
+}
+
+/** Validate a freshly built item; invalid upstream data fails that item instead of the run. */
+export function assertBuiltItemValid(item: ManifestItem): void {
+  const errors = validateItem(item, { file: `${itemKey(item)}/item.json` });
+  if (errors.length > 0) {
+    throw new Error(`built item is invalid:\n      ${errors.join("\n      ")}`);
   }
 }
 
-const PLUGINS_REPO = "anthropics/claude-plugins-official";
-const SKILLS_REPO = "anthropics/skills";
+// ---- official skills ------------------------------------------------------------------
 
-// Items to exclude
-const EXCLUDED = ["example-plugin", "template"];
+async function buildOfficialSkill(ctx: SourceContext, slug: string, sha: string, tree: GitTreeItem[]): Promise<ManifestItem> {
+  const path = `skills/${slug}`;
+  const content = await collectContent(ctx.client, { repo: SKILLS_REPO, sha, path }, tree);
+  const skillMd = findEntry(content, "SKILL.md");
+  if (!skillMd) throw new Error(`no SKILL.md in ${path} at ${sha}`);
+  const frontmatter = parseFrontmatter(skillMd.toString("utf-8"));
+  if (!frontmatter?.name) throw new Error(`SKILL.md in ${path} has no frontmatter "name"`);
 
-async function fetchPluginJson(repo: string, basePath: string, slug: string): Promise<PluginJson | null> {
-  const url = `${GITHUB_RAW}/${repo}/main/${basePath}/${slug}/.claude-plugin/plugin.json`;
-  return fetchJson<PluginJson>(url);
-}
-
-async function fetchHookTriggers(repo: string, basePath: string, slug: string): Promise<string[] | null> {
-  // Try hooks/hooks.json, then .claude/hooks/hooks.json
-  for (const hooksPath of ["hooks/hooks.json", ".claude/hooks/hooks.json"]) {
-    const url = `${GITHUB_RAW}/${repo}/main/${basePath}/${slug}/${hooksPath}`;
-    const data = await fetchJson<{ hooks?: Record<string, unknown> }>(url);
-    if (data?.hooks) {
-      return Object.keys(data.hooks);
-    }
-  }
-  return null;
-}
-
-async function fetchMcpServerNames(repo: string, basePath: string, slug: string): Promise<string[] | null> {
-  const url = `${GITHUB_RAW}/${repo}/main/${basePath}/${slug}/.mcp.json`;
-  const data = await fetchJson<Record<string, unknown>>(url);
-  if (!data) return null;
-  // Two formats: { mcpServers: { name: ... } } or { name: ... } (flat)
-  const servers = (data.mcpServers as Record<string, unknown> | undefined) ?? data;
-  return Object.keys(servers).filter(k => k !== "mcpServers");
-}
-
-async function fetchReadmeMd(repo: string, basePath: string, slug: string): Promise<{ name: string; description: string } | null> {
-  const url = `${GITHUB_RAW}/${repo}/main/${basePath}/${slug}/README.md`;
-  const content = await fetchText(url);
-  if (!content) return null;
-
-  // Extract name from first # heading, description from first paragraph
-  const headingMatch = content.match(/^#\s+(.+)$/m);
-  const name = headingMatch ? headingMatch[1].trim() : formatName(slug);
-
-  // First non-empty paragraph after the heading (or from start if no heading)
-  const lines = content.split("\n");
-  let description = "";
-  let pastHeading = !headingMatch; // if no heading, start collecting immediately
-  for (const line of lines) {
-    if (line.startsWith("# ")) { pastHeading = true; continue; }
-    if (!pastHeading) continue;
-    const trimmed = line.trim();
-    if (trimmed === "") { if (description) break; continue; }
-    if (trimmed.startsWith("#") || trimmed.startsWith("```")) break;
-    description += (description ? " " : "") + trimmed;
-  }
-
-  return { name, description };
-}
-
-async function fetchSkillMd(repo: string, basePath: string, slug: string): Promise<{ name: string; description: string } | null> {
-  const url = `${GITHUB_RAW}/${repo}/main/${basePath}/${slug}/SKILL.md`;
-  const content = await fetchText(url);
-  if (!content) return null;
-
-  // Parse YAML frontmatter
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!match) return null;
-
-  const frontmatter = match[1];
-  const name = frontmatterValue(frontmatter, "name");
-  if (!name) return null;
-
-  return { name, description: frontmatterValue(frontmatter, "description") ?? "" };
-}
-
-/**
- * One frontmatter value, including YAML block scalars (`description: >` /
- * `|`): those fold the following indented lines — a naive line regex would
- * take the literal `>` as the description.
- */
-function frontmatterValue(frontmatter: string, key: string): string | null {
-  const match = new RegExp(`^${key}:[ \\t]*(.*)$`, "m").exec(frontmatter);
-  if (!match) return null;
-  const inline = (match[1] ?? "").trim();
-  if (!/^[>|][+-]?$/.test(inline)) return inline || null;
-  const folded: string[] = [];
-  for (const line of frontmatter.slice((match.index ?? 0) + match[0].length).split("\n")) {
-    if (line.trim() === "") {
-      if (folded.length > 0) break;
-      continue;
-    }
-    if (!/^[ \t]/.test(line)) break;
-    folded.push(line.trim());
-  }
-  return folded.length > 0 ? folded.join(" ") : null;
-}
-
-interface FetchItemsOptions {
-  repo: string;
-  basePath: string;
-  type: ComponentType;
-  sourceType: SourceType;
-  compatibility: string[];
-  defaultAuthor: string;
-  repoTree: GitTreeItem[];
-  fetchMetadata: (repo: string, basePath: string, slug: string) => Promise<{ name: string; description: string; author?: { name: string; url?: string } } | null>;
-  includeFileTree?: boolean;
-  marketplace?: string;
-}
-
-async function fetchItems(options: FetchItemsOptions): Promise<ManifestItem[]> {
-  const { repo, basePath, type, sourceType, compatibility, defaultAuthor, repoTree, fetchMetadata, includeFileTree, marketplace } = options;
-  const slugs = listDirectoryFromTree(repoTree, basePath);
-
-  console.log(`Fetching ${slugs.length} ${type}s from ${repo}/${basePath}...`);
-
-  const results = await Promise.all(
-    slugs
-      .filter((slug) => !EXCLUDED.includes(slug))
-      .map(async (slug) => {
-        const metadata = await fetchMetadata(repo, basePath, slug);
-        if (!metadata) {
-          console.warn(`  Skipping ${slug} (no metadata)`);
-          return null;
-        }
-
-        const updatedAt = await fetchLastCommitDate(repo, `${basePath}/${slug}`);
-        const contentHash = computeContentHash(repoTree, `${basePath}/${slug}`);
-
-        let contents: PluginContents | undefined;
-        let pluginType: PluginType | undefined;
-        let wrapper: string | undefined;
-        let integration: string | undefined;
-        let pkg: Record<string, number> | undefined;
-
-        if (includeFileTree) {
-          const files = extractSubtree(repoTree, `${basePath}/${slug}`, 6);
-          if (files.length > 0) {
-            const parsed = parsePluginContents(files);
-            // Replace file-based hooks with trigger names from hooks.json
-            if (parsed.hooks) {
-              const triggers = await fetchHookTriggers(repo, basePath, slug);
-              if (triggers && triggers.length > 0) {
-                parsed.hooks = triggers;
-              }
-            }
-            // Replace placeholder with actual MCP server names from .mcp.json
-            if (parsed.mcpServers) {
-              const servers = await fetchMcpServerNames(repo, basePath, slug);
-              if (servers && servers.length > 0) {
-                parsed.mcpServers = servers;
-              }
-            }
-
-            // Classify plugin type — only for plugins, not skills or other types
-            if (type === "plugin") {
-              const contentKeyToType: Record<string, string> = {
-                skills: "skill", agents: "agent", hooks: "hook",
-                commands: "command", mcpServers: "mcp",
-              };
-              const typeCounts: Record<string, number> = {};
-              for (const [key, typeName] of Object.entries(contentKeyToType)) {
-                const arr = parsed[key as keyof ParsedPluginContents];
-                if (Array.isArray(arr) && arr.length > 0) {
-                  typeCounts[typeName] = arr.length;
-                }
-              }
-              const typeNames = Object.keys(typeCounts);
-
-              // Preserve existing pluginType if integration (detected from existing item.json)
-              const existingForClassify = readExistingItem(type, slug);
-              if (existingForClassify?.pluginType === "integration") {
-                pluginType = "integration";
-                integration = existingForClassify.integration ?? "lsp";
-              } else if (typeNames.length === 0) {
-                pluginType = "package";
-                pkg = {};
-              } else if (typeNames.length === 1) {
-                pluginType = "wrapper";
-                wrapper = typeNames[0];
-              } else {
-                pluginType = "package";
-                pkg = typeCounts;
-              }
-            }
-
-            // Store only files on contents for plugins; keep full tree for other types
-            contents = parsed.files?.length ? { files: parsed.files } : undefined;
-          }
-        }
-
-        // Preserve existing item.json fields, only overwrite remote-sourced ones.
-        // Whitelist: these fields are refreshed from the remote source on every sync.
-        // Everything else (longDescription, featured, targetScope, etc.) is preserved.
-        const existing = readExistingItem(type, slug);
-        const itemName = existing?.name ?? formatName(metadata.name || slug);
-        const itemCompatibility = existing?.compatibility ?? compatibility;
-
-        console.log(`  ✓ ${slug}${updatedAt ? ` (${updatedAt.split("T")[0]})` : ""}`);
-        return {
-          ...(existing ?? {}),
-          // --- whitelisted remote fields ---
-          slug,
-          name: itemName,
-          type,
-          description: metadata.description || "",
-          compatibility: itemCompatibility,
-          sourceType,
-          author: metadata.author ?? { name: defaultAuthor },
-          externalUrl: `https://github.com/${repo}/tree/main/${basePath}/${slug}`,
-          ...(marketplace && { marketplace }),
-          ...(contentHash && { contentHash }),
-          ...(updatedAt && { updatedAt }),
-          ...(contents && { contents }),
-          ...(pluginType && { pluginType }),
-          ...(wrapper && { wrapper }),
-          ...(integration && { integration }),
-          ...(pkg && { package: pkg }),
-        } satisfies ManifestItem;
-      })
+  const existing = ctx.existing.get(`skill/${slug}`) ?? null;
+  const updatedAt = (await ctx.client.getLastCommitDate(SKILLS_REPO, sha, path)) ?? existing?.updatedAt;
+  const item = finalizeItem(
+    {
+      slug,
+      name: formatName(frontmatter.name),
+      type: "skill",
+      description: frontmatter.description ?? "",
+      // B1: all agents, downgraded to the ids the published CLI understands
+      // (STORAGE_ALIASES in registry-ops is the one flip point for B2).
+      compatibility: storageAgents(CANONICAL_AGENTS),
+      sourceType: "official",
+      author: { name: "Anthropic" },
+      externalUrl: treeUrl(SKILLS_REPO, sha, path),
+      sourceRevision: sha,
+      ...(content.contentDigest && { contentDigest: content.contentDigest }),
+      ...(content.contentHash && { contentHash: content.contentHash }),
+      license: content.license,
+      ...(updatedAt && { updatedAt }),
+      contents: { files: content.files },
+    },
+    existing,
   );
-
-  return results.filter((item): item is ManifestItem => item !== null);
+  assertBuiltItemValid(item);
+  if (content.skipped.length > 0) ctx.log(`    skipped non-regular files in ${path}: ${content.skipped.join(", ")}`);
+  return item;
 }
 
-export async function syncAnthropic(): Promise<ManifestItem[]> {
-  console.log("\n=== Syncing from Anthropic ===\n");
+export async function syncOfficialSkills(ctx: SourceContext): Promise<SourceResult> {
+  const owned = [...ctx.existing.values()]
+    .filter((item) => item.type === "skill" && item.sourceType === "official")
+    .map(itemKey);
+  ctx.log(`\n=== Official skills (${SKILLS_REPO}@${SKILLS_BRANCH}) ===`);
+  try {
+    const { sha } = await ctx.client.getCommit(SKILLS_REPO, SKILLS_BRANCH);
+    const tree = await ctx.client.getTree(SKILLS_REPO, sha);
+    const slugs = listDirectoryFromTree(tree, "skills");
+    ctx.log(`  head ${sha}, ${slugs.length} skill directories`);
+    if (slugs.length === 0 && !ctx.allowEmpty) {
+      return { status: "failed", owned, reason: `tree at ${sha} lists no skills/* directories (set SYNC_ALLOW_EMPTY=1 to accept an empty listing)` };
+    }
 
-  // Pre-fetch entire repo trees (1 API call each, cached for reuse)
-  // Also fetch marketplace.json from the plugins repo root
-  const [skillsTree, pluginsTree, pluginsMarketplace] = await Promise.all([
-    fetchRepoTree(SKILLS_REPO),
-    fetchRepoTree(PLUGINS_REPO),
-    fetchJson<{ name: string }>(`${GITHUB_RAW}/${PLUGINS_REPO}/main/.claude-plugin/marketplace.json`),
-  ]);
-  const pluginsMarketplaceName = pluginsMarketplace?.name;
-
-  if (skillsTree.length === 0) {
-    console.warn("⚠ Failed to fetch skills repo tree — skipping skills");
-  }
-  if (pluginsTree.length === 0) {
-    console.warn("⚠ Failed to fetch plugins repo tree — skipping plugins");
-  }
-
-  // Fetch official skills (compatible with all tools)
-  const officialSkills = skillsTree.length > 0 ? await fetchItems({
-    repo: SKILLS_REPO,
-    basePath: "skills",
-    type: "skill",
-    sourceType: "official",
-    // B1 (plan §5): keep writing exactly the ids the CLI already on npm (0.1.87)
-    // understands — an `antigravity` entry would crash its `list`. After that CLI
-    // ships, `scripts/migrate-agent-ids.ts` rewrites the data and B2 switches this
-    // line to `[...CANONICAL_AGENTS]`.
-    compatibility: ["claude", "copilot", "gemini", "codex", "opencode"],
-    defaultAuthor: "Anthropic",
-    repoTree: skillsTree,
-    includeFileTree: true,
-    fetchMetadata: async (repo, basePath, slug) => {
-      const skill = await fetchSkillMd(repo, basePath, slug);
-      if (!skill) return null;
-      return { name: skill.name, description: skill.description, author: { name: "Anthropic" } };
-    },
-  }) : [];
-
-  // Fetch official plugins (Claude-only)
-  const officialPlugins = pluginsTree.length > 0 ? await fetchItems({
-    repo: PLUGINS_REPO,
-    basePath: "plugins",
-    type: "plugin",
-    sourceType: "official",
-    compatibility: ["claude"],
-    defaultAuthor: "Anthropic",
-    repoTree: pluginsTree,
-    includeFileTree: true,
-    marketplace: pluginsMarketplaceName,
-    fetchMetadata: async (repo, basePath, slug) => {
-      const plugin = await fetchPluginJson(repo, basePath, slug);
-      if (plugin) {
-        return {
-          name: plugin.name,
-          description: plugin.description,
-          author: plugin.author ? { name: plugin.author.name, url: plugin.author.url } : undefined,
-        };
+    const items: ManifestItem[] = [];
+    const failedItems: { key: ItemKey; reason: string }[] = [];
+    await mapConcurrent(slugs, ITEM_CONCURRENCY, async (slug) => {
+      try {
+        items.push(await buildOfficialSkill(ctx, slug, sha, tree));
+        ctx.log(`  ✓ ${slug}`);
+      } catch (error) {
+        failedItems.push({ key: `skill/${slug}`, reason: describeError(error) });
+        ctx.log(`  ✗ ${slug}: ${describeError(error)}`);
       }
-      // Fall back to README.md for plugins without plugin.json (e.g. LSPs)
-      const readme = await fetchReadmeMd(repo, basePath, slug);
-      if (!readme) return null;
-      return { name: readme.name, description: readme.description };
-    },
-  }) : [];
+    });
+    items.sort((a, b) => a.slug.localeCompare(b.slug, "en"));
+    return { status: "complete", owned, items, failedItems, renamed: [] };
+  } catch (error) {
+    return { status: "failed", owned, reason: describeError(error) };
+  }
+}
 
-  // Fetch community plugins (Claude-only)
-  // External plugins share the same repo-level marketplace as official plugins
-  const communityPlugins = pluginsTree.length > 0 ? await fetchItems({
-    repo: PLUGINS_REPO,
-    basePath: "external_plugins",
-    type: "plugin",
-    sourceType: "community",
-    compatibility: ["claude"],
-    defaultAuthor: "Community",
-    repoTree: pluginsTree,
-    includeFileTree: true,
-    marketplace: pluginsMarketplaceName,
-    fetchMetadata: async (repo, basePath, slug) => {
-      const plugin = await fetchPluginJson(repo, basePath, slug);
-      if (!plugin) return null;
+// ---- official marketplace plugins ---------------------------------------------------------
+
+interface IncludedEntry {
+  entry: MarketplaceEntry;
+  /** The registry item this entry updates, if any (its slug may be the entry's old name). */
+  existing: ManifestItem | null;
+}
+
+function isLocalPath(entry: MarketplaceEntry): boolean {
+  return typeof entry.source === "string";
+}
+
+function pickAuthor(entry: MarketplaceEntry | null, pluginJson: PluginJson | null, existing: ManifestItem | null, fallback: string): Author {
+  const declared = entry?.author?.name ? entry.author : pluginJson?.author?.name ? pluginJson.author : null;
+  if (declared?.name) {
+    return { name: declared.name, ...(declared.url && { url: declared.url }) };
+  }
+  return existing?.author ?? { name: fallback };
+}
+
+export interface PluginBuildInput {
+  entry: MarketplaceEntry;
+  marketplace: { name: string; repo: string; sha: string; tree: GitTreeItem[] };
+  existing: ManifestItem | null;
+  /** Slug to write; differs from entry.name only while a rename is applied. */
+  slug: string;
+}
+
+/** Build one plugin item from a marketplace entry. Shared with the community source (a repo's own marketplace). */
+export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBuildInput, sourceTypeOverride?: SourceType): Promise<ManifestItem> {
+  const { entry, marketplace, existing, slug } = input;
+  const pinned: PinnedSource = await pinSource(describeSource(entry, marketplace.repo, marketplace.sha), ctx.client);
+  const tree =
+    pinned.repo === marketplace.repo && pinned.sha === marketplace.sha ? marketplace.tree : await ctx.client.getTree(pinned.repo, pinned.sha);
+  const content = await collectContent(ctx.client, { repo: pinned.repo, sha: pinned.sha, path: pinned.path }, tree);
+
+  // plugin.json is optional (plugins-reference): without it the marketplace
+  // entry names the plugin and components are discovered from the directory.
+  // `strict` only decides which side is the authority when both declare them.
+  const pluginJson = parseJsonEntry<PluginJson>(content, PLUGIN_JSON);
+
+  const sourceType: SourceType =
+    sourceTypeOverride ?? (pinned.kind === "marketplace-path" && pinned.path.startsWith("plugins/") ? "official" : "community");
+  const classification = classifyPlugin(content, {
+    pluginJson,
+    lspServers: entry.lspServers,
+    inlineSkills: entry.skills,
+    existing,
+  });
+  const version = entry.version ?? pluginJson?.version;
+  const updatedAt = (await ctx.client.getLastCommitDate(pinned.repo, pinned.sha, pinned.path)) ?? existing?.updatedAt;
+
+  const item = finalizeItem(
+    {
+      slug,
+      name: formatName(entry.name),
+      type: "plugin",
+      description: entry.description ?? pluginJson?.description ?? "",
+      compatibility: ["claude"],
+      ...classification,
+      sourceType,
+      author: pickAuthor(entry, pluginJson, existing, sourceType === "official" ? "Anthropic" : "Community"),
+      externalUrl: treeUrl(pinned.repo, pinned.sha, pinned.path),
+      marketplace: marketplace.name,
+      ...(version && { version }),
+      ...(entry.strict !== undefined && { strict: entry.strict }),
+      ...(entry.lspServers && { lspServers: entry.lspServers }),
+      ...(entry.skills && entry.skills.length > 0 && { skills: entry.skills }),
+      sourceRevision: pinned.sha,
+      ...(content.contentDigest && { contentDigest: content.contentDigest }),
+      ...(content.contentHash && { contentHash: content.contentHash }),
+      pluginSource: toPluginSource(pinned),
+      marketplaceRef: { name: marketplace.name, url: cloneUrl(marketplace.repo), sha: marketplace.sha },
+      license: withDeclaredLicense(content.license, pluginJson?.license),
+      ...(updatedAt && { updatedAt }),
+      contents: { files: content.files },
+    },
+    existing,
+  );
+  assertBuiltItemValid(item);
+  if (content.skipped.length > 0) ctx.log(`    skipped non-regular files in ${entry.name}: ${content.skipped.join(", ")}`);
+  return item;
+}
+
+export async function loadMarketplace(client: GitHubClient, repo: string, sha: string): Promise<MarketplaceFile> {
+  const text = await client.getRawText(repo, sha, MARKETPLACE_FILE);
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${repo}@${sha} ${MARKETPLACE_FILE} is not valid JSON: ${(error as Error).message}`, { cause: error });
+  }
+  return parseMarketplace(json, `${repo}@${sha}`);
+}
+
+export function officialPluginsOwnedByField(existing: ReadonlyMap<ItemKey, ManifestItem>): ItemKey[] {
+  return [...existing.values()]
+    .filter(
+      (item) =>
+        item.type === "plugin" && (item.marketplaceRef?.name === OFFICIAL_MARKETPLACE_NAME || item.marketplace === OFFICIAL_MARKETPLACE_NAME),
+    )
+    .map(itemKey);
+}
+
+export async function syncOfficialPlugins(ctx: SourceContext): Promise<SourceResult> {
+  const ownedByField = officialPluginsOwnedByField(ctx.existing);
+  ctx.log(`\n=== Official marketplace (${PLUGINS_REPO}@${PLUGINS_BRANCH}) ===`);
+  try {
+    const { sha } = await ctx.client.getCommit(PLUGINS_REPO, PLUGINS_BRANCH);
+    const tree = await ctx.client.getTree(PLUGINS_REPO, sha);
+    const marketplace = await loadMarketplace(ctx.client, PLUGINS_REPO, sha);
+    if (marketplace.name !== OFFICIAL_MARKETPLACE_NAME) {
       return {
-        name: plugin.name,
-        description: plugin.description,
-        author: plugin.author ? { name: plugin.author.name, url: plugin.author.url } : undefined,
+        status: "failed",
+        owned: ownedByField,
+        reason: `marketplace at ${sha} is named "${marketplace.name}", expected "${OFFICIAL_MARKETPLACE_NAME}"`,
       };
-    },
-  }) : [];
+    }
+    ctx.log(`  head ${sha}, ${marketplace.plugins.length} marketplace entries, ${Object.keys(marketplace.renames).length} renames`);
+    if (marketplace.plugins.length === 0) {
+      ctx.log(`  marketplace explicitly lists zero plugins`);
+    }
 
-  const items = [...officialSkills, ...officialPlugins, ...communityPlugins];
-  console.log(`\nAnthropic sync complete: ${items.length} items`);
+    const entriesByName = new Map(marketplace.plugins.map((entry) => [entry.name, entry]));
+    const included = new Map<string, IncludedEntry>();
+    const renamed: { from: ItemKey; to: ItemKey }[] = [];
+    const owned = new Set<ItemKey>(ownedByField);
 
-  return items;
+    for (const item of ctx.existing.values()) {
+      if (item.type !== "plugin") continue;
+      const name = applyRenames(item.slug, marketplace.renames);
+      const entry = entriesByName.get(name);
+      if (!entry) continue;
+      included.set(name, { entry, existing: item });
+      owned.add(itemKey(item));
+      if (name !== item.slug) renamed.push({ from: itemKey(item), to: `plugin/${name}` });
+    }
+    for (const entry of marketplace.plugins) {
+      if (isLocalPath(entry) && !included.has(entry.name)) included.set(entry.name, { entry, existing: null });
+    }
+    ctx.log(`  inclusion set: ${included.size} entries (${[...included.values()].filter((e) => e.existing).length} existing)`);
+
+    const items: ManifestItem[] = [];
+    const failedItems: { key: ItemKey; reason: string }[] = [];
+    await mapConcurrent([...included.values()], ITEM_CONCURRENCY, async ({ entry, existing }) => {
+      try {
+        items.push(
+          await buildMarketplacePlugin(ctx, { entry, existing, slug: entry.name, marketplace: { name: marketplace.name, repo: PLUGINS_REPO, sha, tree } }),
+        );
+        ctx.log(`  ✓ ${entry.name}${existing && existing.slug !== entry.name ? ` (renamed from ${existing.slug})` : ""}`);
+      } catch (error) {
+        failedItems.push({ key: existing ? itemKey(existing) : `plugin/${entry.name}`, reason: describeError(error) });
+        ctx.log(`  ✗ ${entry.name}: ${describeError(error)}`);
+      }
+    });
+    items.sort((a, b) => a.slug.localeCompare(b.slug, "en"));
+    return { status: "complete", owned: [...owned], items, failedItems, renamed };
+  } catch (error) {
+    return { status: "failed", owned: ownedByField, reason: describeError(error) };
+  }
 }

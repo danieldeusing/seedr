@@ -41,6 +41,15 @@ export interface AddRemoteOp {
   updatedAt?: string;
   targetScope?: ScopeType;
   contents?: RegistryItem["contents"];
+  // Immutable source identity (docs/registry-integrity.md): the caller — the
+  // add-community skill or Studio, which already read the repository tree —
+  // supplies the pinned commit and digest; an unpinned community item is
+  // refused rather than written.
+  sourceRevision: string;
+  contentDigest: string;
+  pluginSource?: RegistryItem["pluginSource"];
+  marketplaceRef?: RegistryItem["marketplaceRef"];
+  license?: RegistryItem["license"];
 }
 
 export interface FileEdit {

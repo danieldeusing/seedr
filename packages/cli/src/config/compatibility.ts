@@ -3,7 +3,10 @@ import type { CanonicalCodingAgent, CodingAgent, ComponentType } from "@seedr/sh
 
 /**
  * Maps content types to the coding agents that support them.
- * Skills and MCP are cross-platform, everything else is Claude-only.
+ * Skills are cross-platform; MCP servers are written only for agents whose
+ * configuration format was verified against primary documentation (Claude,
+ * Codex, OpenCode) — Copilot's and Antigravity's could not be, so they are
+ * refused rather than guessed at. Everything else is Claude-only.
  * Canonical ids only; inputs are resolved through `canonicalAgent`, so the
  * deprecated `gemini` alias behaves exactly like `antigravity`.
  */
@@ -14,7 +17,7 @@ export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> 
   hook: ["claude"],
   plugin: ["claude"],
   settings: ["claude"],
-  mcp: ["claude", "copilot", "antigravity", "codex", "opencode"],
+  mcp: ["claude", "codex", "opencode"],
 };
 
 /**
@@ -42,4 +45,21 @@ export function filterCompatibleAgents(
 ): CodingAgent[] {
   const compatible = AGENT_COMPATIBILITY[type];
   return canonicalAgents(agents).filter((a) => compatible.includes(a));
+}
+
+/** Why a type/agent pair is refused, when there is more to say than "not supported". */
+export const MCP_UNSUPPORTED_REASONS: Partial<Record<CanonicalCodingAgent, string>> = {
+  copilot:
+    "GitHub Copilot's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
+  antigravity:
+    "Google Antigravity's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
+};
+
+/** A sentence explaining why `agent` cannot take `type` content. */
+export function describeIncompatibility(type: ComponentType, agent: CodingAgent): string {
+  const canonical = canonicalAgent(agent);
+  if (type === "mcp" && canonical !== null && MCP_UNSUPPORTED_REASONS[canonical]) {
+    return MCP_UNSUPPORTED_REASONS[canonical];
+  }
+  return `${canonical ?? agent} does not support ${type} content`;
 }

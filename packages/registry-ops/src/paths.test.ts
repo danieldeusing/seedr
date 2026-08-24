@@ -10,10 +10,10 @@ describe("typeDirName", () => {
 
 describe("slugs", () => {
   test("accepts lowercase path segments", () => {
-    for (const slug of ["pdf", "last30days", "c-sharp_lsp", "a.b"]) expect(isValidSlug(slug)).toBe(true);
+    for (const slug of ["pdf", "last30days", "c-sharp-lsp", "code-smell-doctor"]) expect(isValidSlug(slug)).toBe(true);
   });
 
-  test("rejects separators, traversal, case and leading dots", () => {
+  test("rejects separators, traversal, case, dots and underscores", () => {
     for (const slug of ["", "../x", "a/b", "a\\b", ".hidden", "Pdf", "with space", 42, null]) expect(isValidSlug(slug)).toBe(false);
   });
 

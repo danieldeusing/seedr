@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useAnimationEpoch } from "./animationPreference";
 
 /*
  * Live terminal session: `$ command` prompts type out,
@@ -9,11 +10,13 @@ import { useEffect } from "react";
  *
  * `subject` identifies the rendered data (e.g. the registry item): the session
  * replays from the top when it changes and never starts while it is missing.
+ * It also replays when the footer toggle re-enables animations (the epoch).
  * Each run first resets animation state — React reuses DOM nodes across
  * client-side navigations, so leftover term-live/term-show classes from the
  * previous item must not suppress the replay.
  */
 export function useTerminalSession(subject: unknown) {
+  const animationEpoch = useAnimationEpoch();
   useEffect(() => {
     if (subject == null) return;
     if (!document.documentElement.classList.contains("term-anim")) return;
@@ -136,5 +139,5 @@ export function useTerminalSession(subject: unknown) {
         }
       });
     };
-  }, [subject]);
+  }, [subject, animationEpoch]);
 }

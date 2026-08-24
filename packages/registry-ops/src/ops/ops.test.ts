@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { itemStateHash } from "../hash.js";
 import { readItem } from "../read.js";
-import { LONG, makeRegistry } from "../test/fixtures.js";
+import { LONG, makeRegistry, FIXTURE_SHA, FIXTURE_DIGEST } from "../test/fixtures.js";
 import { applyOp } from "./apply.js";
 import { parseOp } from "./parse.js";
 import type { AddLocalOp, AddRemoteOp, RemoveOp, UpdateOp } from "./types.js";
@@ -112,6 +112,9 @@ describe("add-remote", () => {
     compatibility: ["claude"],
     author: { name: "Them", url: "https://github.com/them" },
     externalUrl: "https://github.com/them/remote-plugin/tree/main",
+    sourceRevision: FIXTURE_SHA,
+    contentDigest: FIXTURE_DIGEST,
+    pluginSource: { kind: "url", url: "https://github.com/them/remote-plugin.git", sha: FIXTURE_SHA },
     pluginType: "package",
     package: { skill: 2, agent: 1 },
     updatedAt: "2026-01-02",
@@ -201,7 +204,8 @@ describe("remove", () => {
     const copied = join(registry, "skills", "deref", "linked.md");
     expect(lstatSync(copied).isSymbolicLink()).toBe(false);
     expect(readFileSync(copied, "utf8")).toBe("real\n");
-    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "antigravity"]);
+    // B1 storage vocabulary: canonical order, but antigravity stored as gemini
+    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "gemini"]);
   });
 
   test("drops files git ignores from the copy, the tree and the hash", () => {
@@ -252,11 +256,11 @@ describe("remove", () => {
     expect(contents.triggers).toEqual([{ event: "PostToolUse" }]);
   });
 
-  test("update writes canonical agent ids over a stored alias", () => {
+  test("update keeps stored ids in the B1 vocabulary: a patched antigravity is stored as gemini", () => {
     const registry = makeRegistry();
     writeFileSync(join(registry, "skills", "alpha", "item.json"), JSON.stringify({ ...readItem(registry, "skill", "alpha"), compatibility: ["gemini"] }, null, 2) + "\n");
-    const result = applyOp(registry, { v: 1, kind: "update", type: "skill", slug: "alpha", expectedHash: itemStateHash(registry, "skill", "alpha") as string, patch: { name: "Alpha 2" } });
-    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["antigravity"]);
+    const result = applyOp(registry, { v: 1, kind: "update", type: "skill", slug: "alpha", expectedHash: itemStateHash(registry, "skill", "alpha") as string, patch: { name: "Alpha 2", compatibility: ["claude", "antigravity"] } });
+    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "gemini"]);
   });
 
   test("applyOp dispatches every op kind to its implementation", () => {
@@ -268,7 +272,7 @@ describe("remove", () => {
     expect(added.kind).toBe("add-local");
     expect(existsSync(join(registry, "skills", slug, "SKILL.md"))).toBe(true);
 
-    const remote = applyOp(registry, { v: 1, kind: "add-remote", type: "plugin", slug: "dispatch-remote", name: "Remote", description: "Adds remotely.", longDescription: LONG, compatibility: ["claude"], author: { name: "T" }, externalUrl: "https://github.com/x/y/tree/main/z" });
+    const remote = applyOp(registry, { v: 1, kind: "add-remote", type: "plugin", slug: "dispatch-remote", name: "Remote", description: "Adds remotely.", longDescription: LONG, compatibility: ["claude"], author: { name: "T" }, externalUrl: "https://github.com/x/y/tree/main/z", sourceRevision: FIXTURE_SHA, contentDigest: FIXTURE_DIGEST, pluginSource: { kind: "github", url: "https://github.com/x/y.git", sha: FIXTURE_SHA } });
     expect(remote.kind).toBe("add-remote");
 
     const updated = applyOp(registry, { v: 1, kind: "update", type: "skill", slug, expectedHash: itemStateHash(registry, "skill", slug) as string, patch: { name: "Local 2" } });

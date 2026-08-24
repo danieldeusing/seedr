@@ -1,4 +1,4 @@
-import type { CanonicalCodingAgent, LegacyCodingAgent } from "@seedr/shared";
+import type { CanonicalCodingAgent, CodingAgent, LegacyCodingAgent } from "@seedr/shared";
 
 /**
  * The one runtime vocabulary of coding-agent identifiers (plan §5). Everything
@@ -29,6 +29,19 @@ export function isCanonicalAgent(value: unknown): value is CanonicalCodingAgent 
 
 export function isLegacyAgent(value: unknown): value is LegacyCodingAgent {
   return typeof value === "string" && Object.hasOwn(AGENT_ALIASES, value);
+}
+
+/**
+ * B1 (plan §5): what registry DATA may carry today. The published CLI (0.1.87)
+ * reads `main` live and crashes on ids it does not know, so every writer stores
+ * `gemini`, never `antigravity`, until a CLI that understands both has shipped.
+ * B2 is one flip: run scripts/migrate-agent-ids.ts and empty this table.
+ */
+export const STORAGE_ALIASES: Partial<Record<CanonicalCodingAgent, LegacyCodingAgent>> = { antigravity: "gemini" };
+
+/** The canonical, deduplicated agent list downgraded to the ids data may store during B1. */
+export function storageAgents(values: readonly unknown[]): CodingAgent[] {
+  return canonicalAgents(values).map((agent) => STORAGE_ALIASES[agent] ?? agent);
 }
 
 /** The canonical id for any known id (alias resolved), or null for an unknown one. */

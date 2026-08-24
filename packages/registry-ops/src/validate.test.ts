@@ -43,7 +43,7 @@ describe("validateItem", () => {
     const errors = validateItem(toolrSkill, { expectedType: "plugin", expectedSlug: "other" });
     expect(errors.map((e) => e.message)).toEqual([
       'is "alpha" but the directory is "other"',
-      'is "skill" but the directory is for "plugin"',
+      'is "skill" but the directory is for "plugins/" (plugin)',
     ]);
   });
 

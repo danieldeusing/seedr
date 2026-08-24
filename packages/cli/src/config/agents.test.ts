@@ -11,6 +11,9 @@ import {
   getMcpPath,
 } from "./agents.js";
 
+const PROJECT = "/my/project";
+const PROJECT_CLAUDE = "/my/project/.claude";
+
 // Mock homedir to return a consistent path for testing
 vi.mock("node:os", () => ({
   homedir: () => "/home/testuser",
@@ -91,18 +94,18 @@ describe("agents", () => {
 
   describe("getAgentRoot", () => {
     it("should return project root for project scope", () => {
-      const root = getAgentRoot("claude", "project", "/my/project");
-      expect(root).toBe("/my/project/.claude");
+      const root = getAgentRoot("claude", "project", PROJECT);
+      expect(root).toBe(PROJECT_CLAUDE);
     });
 
     it("should return user root for user scope", () => {
-      const root = getAgentRoot("claude", "user", "/my/project");
+      const root = getAgentRoot("claude", "user", PROJECT);
       expect(root).toContain(".claude");
     });
 
     it("should return project root for local scope", () => {
-      const root = getAgentRoot("claude", "local", "/my/project");
-      expect(root).toBe("/my/project/.claude");
+      const root = getAgentRoot("claude", "local", PROJECT);
+      expect(root).toBe(PROJECT_CLAUDE);
     });
 
     it("should use correct project root for each agent", () => {
@@ -116,46 +119,46 @@ describe("agents", () => {
 
   describe("getContentPath", () => {
     it("should return correct path for skills", () => {
-      const path = getContentPath("claude", "skill", "project", "/my/project");
+      const path = getContentPath("claude", "skill", "project", PROJECT);
       expect(path).toBe("/my/project/.claude/skills");
     });
 
     it("should return correct path for agents", () => {
-      const path = getContentPath("claude", "agent", "project", "/my/project");
+      const path = getContentPath("claude", "agent", "project", PROJECT);
       expect(path).toBe("/my/project/.claude/agents");
     });
 
     it("should return undefined for unsupported content types", () => {
-      const path = getContentPath("copilot", "agent", "project", "/my/project");
+      const path = getContentPath("copilot", "agent", "project", PROJECT);
       expect(path).toBeUndefined();
     });
 
     it("should return root for types with empty path", () => {
-      const path = getContentPath("claude", "hook", "project", "/my/project");
-      expect(path).toBe("/my/project/.claude");
+      const path = getContentPath("claude", "hook", "project", PROJECT);
+      expect(path).toBe(PROJECT_CLAUDE);
     });
   });
 
   describe("getSettingsPath", () => {
     it("should return project settings path", () => {
-      const path = getSettingsPath("project", "/my/project");
+      const path = getSettingsPath("project", PROJECT);
       expect(path).toBe("/my/project/.claude/settings.json");
     });
 
     it("should return local settings path", () => {
-      const path = getSettingsPath("local", "/my/project");
+      const path = getSettingsPath("local", PROJECT);
       expect(path).toBe("/my/project/.claude/settings.local.json");
     });
   });
 
   describe("getMcpPath", () => {
     it("should return project .mcp.json for project scope", () => {
-      const path = getMcpPath("project", "/my/project");
+      const path = getMcpPath("project", PROJECT);
       expect(path).toBe("/my/project/.mcp.json");
     });
 
     it("should return project .mcp.json for local scope", () => {
-      const path = getMcpPath("local", "/my/project");
+      const path = getMcpPath("local", PROJECT);
       expect(path).toBe("/my/project/.mcp.json");
     });
   });

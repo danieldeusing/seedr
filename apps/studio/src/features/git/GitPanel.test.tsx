@@ -43,6 +43,9 @@ describe("GitPanel", () => {
     expect(await screen.findByText("main @ abc1234 · 2 changed")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /registry\/mcp\/manifest\.json/ }));
     expect(await screen.findByTestId("git-diff")).toHaveTextContent("+changed");
+    // additions succeed, headers recede
+    expect(screen.getByText("+changed")).toHaveClass("text-success");
+    expect(screen.getByText("+++ b/x")).toHaveClass("text-muted-foreground");
 
     await userEvent.click(screen.getByRole("button", { name: /registry\/skills\/new\/item\.json/ }));
     expect(await screen.findByTestId("git-diff")).toHaveTextContent('{"slug":"new"}');

@@ -126,7 +126,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
         <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">Explorer</span>
         <span className="flex-1" />
-        <button type="button" onClick={onAddCapability} aria-label="add capability" data-tip="Add a capability to the registry" className="text-muted-foreground hover:text-primary">
+        <button type="button" onClick={onAddCapability} aria-label="add capability" data-tip="Add a capability to the registry" className="btn-terminal btn-terminal--ghost btn-terminal--compact">
           <Plus className="size-3.5" aria-hidden="true" />
         </button>
         <button

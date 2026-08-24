@@ -8,6 +8,28 @@ type Summary = { kind: "loading" } | { kind: "ready"; summary: GitSummary } | { 
  * What a commit would contain, and nothing more: v1 ships status and diff only
  * (plan §6.6). Committing stays in the terminal the maintainer already has open.
  */
+/** Unified-diff ink: additions succeed, removals are destructive, hunk heads point. */
+function diffLineClass(line: string): string | undefined {
+  if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("diff --git") || line.startsWith("index ")) return "text-muted-foreground";
+  if (line.startsWith("@@")) return "text-primary";
+  if (line.startsWith("+")) return "text-success";
+  if (line.startsWith("-")) return "text-destructive";
+  return undefined;
+}
+
+function DiffText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("\n").map((line, index) => (
+        <span key={index} className={diffLineClass(line)}>
+          {line}
+          {"\n"}
+        </span>
+      ))}
+    </>
+  );
+}
+
 export function GitPanel() {
   const [state, setState] = useState<Summary>({ kind: "loading" });
   const [selected, setSelected] = useState<string | null>(null);
@@ -77,7 +99,7 @@ export function GitPanel() {
             ))}
           </ul>
           <pre className="min-h-0 overflow-auto p-4 leading-relaxed" data-testid="git-diff">
-            {selected === null ? "Select a path to see its diff." : (diff ?? "loading…")}
+            {selected === null ? "Select a path to see its diff." : diff === null ? "loading…" : <DiffText text={diff} />}
           </pre>
         </div>
       )}

@@ -1,12 +1,64 @@
-import { cpSync, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { copyFileSync, existsSync, mkdirSync, realpathSync, rmdirSync, rmSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { RegistryItem } from "@seedr/shared";
+import type { FileTreeNode, RegistryItem } from "@seedr/shared";
+import { canonicalAgents } from "../agents.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
 import { fileTree, itemExists } from "../read.js";
 import { assertStructurallyValid, formatErrors, validateItem } from "../validate.js";
 import type { AddLocalOp, OpResult } from "./types.js";
 
 export const today = (): string => new Date().toISOString().slice(0, 10);
+
+const flattenTree = (nodes: FileTreeNode[], prefix = ""): string[] =>
+  nodes.flatMap((node) =>
+    node.type === "directory" ? flattenTree(node.children ?? [], `${prefix}${node.name}/`) : [`${prefix}${node.name}`]
+  );
+
+/**
+ * Drop copied files that git ignores (editor droppings, build output): they
+ * would enter the file tree and the content hash but never a commit, so a
+ * remote install of the item would 404 on them. Outside a git checkout —
+ * registry fixtures in tests — there is nothing to consult, so keep everything.
+ */
+function removeIgnoredFiles(dir: string): void {
+  const files = flattenTree(fileTree(dir));
+  if (files.length === 0) return;
+  const check = spawnSync("git", ["-C", dir, "check-ignore", "--stdin", "-z"], { input: files.join("\0"), encoding: "utf8" });
+  // 0 = some ignored, 1 = none ignored; anything else (128: not a repository) means no answer.
+  if (check.error || check.status === null || check.status > 1) return;
+  for (const ignored of check.stdout.split("\0").filter(Boolean)) {
+    rmSync(join(dir, ignored), { force: true });
+  }
+  pruneEmptyDirs(dir);
+}
+
+/**
+ * Copy a tree following symlinks (Node's `cpSync` dereferences only the top
+ * level): what lands in the registry is always real bytes, because a committed
+ * link would carry a machine-local path into every other checkout. A cycle is
+ * refused by tracking real paths already on the walk.
+ */
+function copyDereferenced(src: string, dest: string, walked: Set<string> = new Set()): void {
+  const real = realpathSync(src);
+  if (walked.has(real)) throw new Error(`Source links back into itself: ${src}`);
+  if (statSync(src).isDirectory()) {
+    mkdirSync(dest, { recursive: true });
+    const nested = new Set(walked).add(real);
+    for (const entry of readdirSync(src)) copyDereferenced(join(src, entry), join(dest, entry), nested);
+  } else {
+    copyFileSync(src, dest);
+  }
+}
+
+function pruneEmptyDirs(dir: string): void {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const child = join(dir, entry.name);
+    pruneEmptyDirs(child);
+    if (readdirSync(child).length === 0) rmdirSync(child);
+  }
+}
 
 /**
  * Copy a local source tree into the registry as a first-party (`toolr`) item.
@@ -41,11 +93,14 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
   if (errors.length > 0) throw new Error(`Item would be invalid: ${formatErrors(errors)}`);
 
   mkdirSync(dir, { recursive: true });
-  if (sourceIsDir) cpSync(op.sourcePath, dir, { recursive: true });
-  else cpSync(op.sourcePath, join(dir, basename(op.sourcePath)));
+  if (sourceIsDir) copyDereferenced(op.sourcePath, dir);
+  else copyDereferenced(op.sourcePath, join(dir, basename(op.sourcePath)));
+  removeIgnoredFiles(dir);
 
   const item: RegistryItem = {
     ...provisional,
+    // Written canonically; the raw list was validated above so an unknown id still names itself.
+    compatibility: canonicalAgents(op.compatibility),
     contents: { files: fileTree(dir), ...(op.triggers?.length ? { triggers: op.triggers } : {}) },
   };
   assertStructurallyValid(item, { expectedType: op.type, expectedSlug: op.slug });

@@ -26,15 +26,22 @@ function renderValue(value: unknown): string {
 /** One item: its metadata, its validation state, its files — read-only. */
 export function Detail({ item, onEdit, onTest }: DetailProps) {
   const [tree, setTree] = useState<FileTreeNode[] | null>(null);
+  const [treeError, setTreeError] = useState<string | null>(null);
   const [file, setFile] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setTree(null);
+    setTreeError(null);
     setFile(null);
-    loadFileTree(fs, item.dir).then((nodes) => {
-      if (!cancelled) setTree(nodes);
-    });
+    loadFileTree(fs, item.dir).then(
+      (nodes) => {
+        if (!cancelled) setTree(nodes);
+      },
+      (error: Error) => {
+        if (!cancelled) setTreeError(error.message);
+      }
+    );
     return () => {
       cancelled = true;
     };
@@ -84,7 +91,11 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           )}
           <section className="mt-6">
             <p className="prompt text-xs">tree {item.slug}/</p>
-            {tree === null ? (
+            {treeError ? (
+              <p className="mt-2 text-xs text-destructive" role="alert">
+                {treeError}
+              </p>
+            ) : tree === null ? (
               <p className="mt-2 text-xs text-muted-foreground">loading…</p>
             ) : tree.length === 0 ? (
               <p className="mt-2 text-xs text-muted-foreground">metadata only — no content files</p>

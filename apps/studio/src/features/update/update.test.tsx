@@ -24,7 +24,7 @@ function host(requests: RunRequest[] = []) {
     const request = args?.request as RunRequest;
     requests.push(request);
     if (request.program === "claude" && request.args[0] === "--version") return ok(request, "2.1.226");
-    if (request.program === "claude" && request.args[0] === "--help") return ok(request, "--output-format --json-schema --max-turns");
+    if (request.program === "claude" && request.args[0] === "--help") return ok(request, "--output-format --json-schema --tools");
     if (request.program === "claude") return ok(request, JSON.stringify({ type: "result", is_error: false, result: "", structured_output: { description: "Drives a real browser.", longDescription: LONG } }));
     if (request.args.includes("hash")) return ok(request, JSON.stringify({ hash: "abcdef0123456789" }));
     return ok(request, JSON.stringify({ ok: true, kind: "update", type: "mcp", slug: "playwright", item: {}, changedPaths: ["registry/mcp/playwright/item.json", "registry/mcp/manifest.json"], headBefore: "abc1234def" }));

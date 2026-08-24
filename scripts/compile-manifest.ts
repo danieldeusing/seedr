@@ -12,8 +12,6 @@ import { fileURLToPath } from "node:url";
 import { ALL_TYPES, collectItems, compileRegistry, typeDirName } from "@seedr/registry-ops";
 import type { Manifest, ManifestItem } from "./sync/types.js";
 
-export { ALL_TYPES, typeDirName };
-
 const registryDir = join(dirname(fileURLToPath(import.meta.url)), "..", "registry");
 
 /** Every item with its content hash, in manifest order. sync.ts reads these before it writes. */

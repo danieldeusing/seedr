@@ -1,4 +1,4 @@
-import { KNOWN_AGENTS } from "@seedr/registry-ops/pure";
+import { canonicalAgent, KNOWN_AGENTS } from "@seedr/registry-ops/pure";
 
 interface Env {
   DB: D1Database;
@@ -40,7 +40,8 @@ function validate(body: unknown): InstallPayload | string {
   if (typeof version !== "string" || version.length === 0 || version.length > 20)
     return "version must be a string (1-20 chars)";
 
-  return { slug, type, tool, scope, version };
+  // stored canonically: `gemini` and `antigravity` are the same agent, one row
+  return { slug, type, tool: canonicalAgent(tool) ?? tool, scope, version };
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {

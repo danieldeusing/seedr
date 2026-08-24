@@ -86,12 +86,14 @@ When a marketplace is detected, each sub-plugin is added as a **separate registr
       ```bash
       gh api repos/{owner}/{repo}/contents/{basePath}/{source}/.claude-plugin/plugin.json --jq '.content | @base64d'
       ```
-   e. Set `externalUrl` to `https://github.com/{owner}/{repo}/tree/main/{resolved-source-path}`
-   f. Proceed with steps 3–8 for this sub-plugin (file tree, dates, classification, descriptions, write item.json)
-5. After all sub-plugins are processed, compile manifest once:
-   ```bash
-   npx tsx scripts/compile-manifest.ts
-   ```
+   e. Set `externalUrl` to `https://github.com/{owner}/{repo}/tree/{default-branch}/{resolved-source-path}`
+   f. Proceed with steps 3–8 for this sub-plugin — each one is its own `add-remote`
+      transaction through `scripts/registry-op.ts` (never write `item.json` or compile
+      yourself)
+   g. **Commit the sub-plugin's registry changes before starting the next one** — the next
+      transaction requires a clean worktree and will refuse to run on top of an uncommitted
+      one
+
 
 **Important marketplace notes:**
 - Each sub-plugin gets its own `item.json` in `registry/plugins/{slug}/`

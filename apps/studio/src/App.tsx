@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { ComponentType } from "@seedr/shared";
 import { AuthorForm } from "./features/author/AuthorForm";
 import { Detail } from "./features/explorer/Detail";
 import { Explorer } from "./features/explorer/Explorer";
+import { ThemeSwitch } from "./core/ThemeSwitch";
 import { selectedItem, useStudio } from "./features/explorer/store";
 import type { StudioItem } from "./features/explorer/registry";
 import { GitPanel } from "./features/git/GitPanel";
@@ -32,6 +33,7 @@ function Workspace({ pane, current, onAdded, setPane }: WorkspaceProps): ReactNo
 
 export function App() {
   const [pane, setPane] = useState<Pane>("detail");
+  const workspaceRef = useRef<HTMLElement>(null);
   const repo = useStudio((s) => s.repo);
   const items = useStudio((s) => s.items);
   const problems = useStudio((s) => s.problems);
@@ -46,6 +48,12 @@ export function App() {
   useEffect(() => {
     void init();
   }, [init]);
+
+  // When the pane switches, the previously focused control is often gone;
+  // instead of dropping to <body>, keyboard users land on the new pane.
+  useEffect(() => {
+    workspaceRef.current?.focus();
+  }, [pane]);
 
   // After a successful add the watcher refreshes the list; select the new item
   // and return to its detail view.
@@ -73,12 +81,13 @@ export function App() {
         <button type="button" onClick={() => setPane("git")} className="link-quiet" aria-pressed={pane === "git"}>
           git status
         </button>
+        <ThemeSwitch />
         <button type="button" onClick={() => void chooseRepo()} className="link-quiet">
           switch repo
         </button>
       </header>
       <div className="grid min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="min-h-0 overflow-hidden border-r border-border bg-card">
+        <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
           {error && (
             <p className="m-4 text-xs text-destructive" role="alert">
               {error}
@@ -94,7 +103,7 @@ export function App() {
             }}
           />
         </aside>
-        <section className="min-h-0 overflow-hidden">
+        <section ref={workspaceRef} tabIndex={-1} aria-label="workspace" className="min-h-0 overflow-hidden outline-none">
           <Workspace pane={pane} current={current} onAdded={onAdded} setPane={setPane} />
         </section>
       </div>

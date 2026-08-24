@@ -4,7 +4,7 @@ import { emit, invoke, onCommand } from "@/test/mockIpc";
 import { emptyForm, formProblems, toOp, useAuthor } from "./store";
 
 const LONG = "Reads `item.json` files and " + "checks every description carefully ".repeat(10);
-const HELP = "--output-format --json-schema --max-turns";
+const HELP = "--output-format --json-schema --tools";
 const PROBE_OK = { available: true, version: "2.1.226", diagnostic: null };
 
 /** Scripts the host's `run_process` by program+args, recording every request. */

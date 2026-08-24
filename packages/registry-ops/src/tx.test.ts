@@ -61,7 +61,7 @@ describe("runRegistryTransaction", () => {
     let reads = 0;
     const movingHead = async (args: string[], cwd: string) => {
       const out = git(cwd, ...args);
-      if (args[0] === "rev-parse") return `${out.slice(0, 39)}${reads++ === 0 ? "0" : "1"}`;
+      if (args[0] === "rev-parse" && args[1] === "HEAD") return `${out.slice(0, 39)}${reads++ === 0 ? "0" : "1"}`;
       return out;
     };
     await expect(runRegistryTransaction(addOp(), { repoRoot: repo, git: movingHead })).rejects.toThrow(/HEAD moved/);

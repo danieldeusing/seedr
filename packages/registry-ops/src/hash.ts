@@ -10,6 +10,8 @@ export function contentFiles(dir: string): string[] {
   const walk = (current: string) => {
     for (const entry of readdirSync(current, { withFileTypes: true })) {
       const full = join(current, entry.name);
+      // Symlinks are not content, matching fileTree — following one could leave the item directory.
+      if (entry.isSymbolicLink()) continue;
       if (entry.isDirectory()) walk(full);
       else if (entry.name !== "item.json") files.push(full);
     }

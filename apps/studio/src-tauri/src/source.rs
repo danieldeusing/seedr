@@ -20,8 +20,10 @@ pub struct PickedPaths(Mutex<HashSet<PathBuf>>);
 
 impl PickedPaths {
     pub fn remember(&self, path: &Path) {
+        // Stored canonically; `allows` compares canonicalised paths against these.
+        let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
         if let Ok(mut set) = self.0.lock() {
-            set.insert(path.to_path_buf());
+            set.insert(canonical);
         }
     }
 
@@ -115,5 +117,19 @@ mod tests {
         assert!(picked.allows(Path::new("/tmp/chosen")));
         assert!(picked.allows(Path::new("/tmp/chosen/sub/file.md")));
         assert!(!picked.allows(Path::new("/tmp/chosen-other")));
+    }
+
+    #[test]
+    fn remember_stores_the_canonical_path_so_canonical_queries_match() {
+        let real = std::env::temp_dir().join(format!("seedr-picked-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&real);
+        fs::create_dir_all(&real).expect("fixture");
+        // The dialog may hand back a path through symlinks (macOS /tmp is one);
+        // the canonical form of anything under it must still be allowed.
+        let picked = PickedPaths::default();
+        picked.remember(&real);
+        let canonical = real.canonicalize().expect("canonicalize");
+        assert!(picked.allows(&canonical.join("file.md")));
+        fs::remove_dir_all(&real).expect("cleanup");
     }
 }

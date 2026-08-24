@@ -35,6 +35,25 @@
 > - §4 / §12: Windows remains unexecuted locally; the CI matrix runs `pnpm install`
 >   (junctions), the registry-ops suite and the Studio host's Rust tests — including the
 >   real-install test of the Test action — on windows-latest, so the first push answers it.
+> - A nine-lens adversarial review of the two commits (2026-08-24) led to a fix pass:
+>   worktree-safe transaction lock (`git rev-parse --absolute-git-dir`), exact rollback
+>   (`clean -fdqx`) that keeps the original error visible, `add-local` dereferences
+>   symlinks and drops gitignored files, `update` merges `contents` patches and refuses
+>   drive-letter/backslash/symlinked edit paths, both ops write canonical agent ids,
+>   symlinks are never content, the Windows tree kill drops the kill-on-close job
+>   (`win32job` has no `terminate`), withdrawn cancel marks, a program allowlist and
+>   canonical picked paths on the host, capability grants trimmed to `core:default`,
+>   the Studio coverage thresholds enforced by `vitest run --coverage`, a real
+>   byte-for-byte manifest test, a child-process test of `scripts/registry-op.ts`,
+>   update/remove hash guards captured when the form opens (not at apply), `-z`
+>   porcelain, sidebar scrolling, pane focus, live status regions, a theme switch,
+>   `(type, slug)` keying in `sync.ts`, `.gitattributes` pinning `registry/**` to LF,
+>   and the sync writing only agent ids the published CLI understands.
+> - Still deliberately absent, recorded here: §6.6's committed policy file and per-user
+>   preference store, and §6.7's first-run screen — Studio starts at the folder picker
+>   and `SEEDR_STUDIO_REPO` covers the dev loop. `command`-type authoring is not offered
+>   (the CLI has no handler for it, trap 12). Installs made under `.gemini/` by CLI
+>   ≤0.1.87 are not managed by the B1 CLI — remove them with that CLI or by hand.
 > - The "real session sees every skill" acceptance was demonstrated inside the implementing
 >   session (harness re-scan of all skills, subagent launched through the link); a *fresh*
 >   `claude -p` could not authenticate from inside a session. Window captures of the running

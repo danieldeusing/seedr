@@ -1,4 +1,4 @@
-import type { CanonicalCodingAgent, CodingAgent, LegacyCodingAgent } from "@seedr/shared";
+import type { CanonicalCodingAgent, LegacyCodingAgent } from "@seedr/shared";
 
 /**
  * The one runtime vocabulary of coding-agent identifiers (plan §5). Everything
@@ -14,16 +14,21 @@ export const AGENT_ALIASES: Record<LegacyCodingAgent, CanonicalCodingAgent> = { 
 /** Every id a registry item or a CLI flag may carry: canonical plus the aliases. */
 export const KNOWN_AGENTS = [...CANONICAL_AGENTS, ...(Object.keys(AGENT_ALIASES) as LegacyCodingAgent[])] as const;
 
+/** Display names, kept beside the ids so every surface prints the same one. */
+export const AGENT_LABELS: Record<CanonicalCodingAgent, string> = {
+  claude: "Claude Code",
+  copilot: "GitHub Copilot",
+  antigravity: "Google Antigravity",
+  codex: "OpenAI Codex",
+  opencode: "OpenCode",
+};
+
 export function isCanonicalAgent(value: unknown): value is CanonicalCodingAgent {
   return typeof value === "string" && (CANONICAL_AGENTS as readonly string[]).includes(value);
 }
 
-export function isKnownAgent(value: unknown): value is CodingAgent {
-  return typeof value === "string" && (KNOWN_AGENTS as readonly string[]).includes(value);
-}
-
 export function isLegacyAgent(value: unknown): value is LegacyCodingAgent {
-  return typeof value === "string" && value in AGENT_ALIASES;
+  return typeof value === "string" && Object.hasOwn(AGENT_ALIASES, value);
 }
 
 /** The canonical id for any known id (alias resolved), or null for an unknown one. */
@@ -39,8 +44,3 @@ export function canonicalAgents(values: readonly unknown[]): CanonicalCodingAgen
   return CANONICAL_AGENTS.filter((a) => present.has(a));
 }
 
-/** Whether a compatibility list covers an agent, with aliases resolved on both sides. */
-export function agentMatches(compatibility: readonly unknown[], agent: unknown): boolean {
-  const wanted = canonicalAgent(agent);
-  return wanted !== null && compatibility.some((c) => canonicalAgent(c) === wanted);
-}

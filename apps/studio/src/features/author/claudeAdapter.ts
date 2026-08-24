@@ -6,7 +6,7 @@ import { buildPrompt, DRAFT_SCHEMA, parseDraft, type DraftRequest, type DraftRes
  *
  * Flags verified against Claude Code 2.1.226 on 2026-08-22 and re-probed at
  * runtime: `-p` (non-interactive, prompt on stdin), `--output-format json`,
- * `--json-schema` (structured output), `--max-turns 1`. One turn is the
+ * `--json-schema` (structured output), `--tools ""` (no tools), `--max-turns 1`. One turn is the
  * tool-free bound: the model cannot complete a tool round-trip inside it, so
  * there is nothing to hijack and nothing to half-apply.
  */
@@ -46,7 +46,8 @@ export async function probeClaude(run: typeof runProcess = runProcess): Promise<
     return { available: false, version, diagnostic: `Claude Code ${version} is too old; ${CLAUDE_MIN_VERSION.join(".")} or newer is required` };
   }
   const helpRun = await run({ taskId: "probe-claude-help", program: "claude", args: ["--help"], timeoutMs: 15_000 });
-  for (const flag of ["--json-schema", "--output-format", "--max-turns"]) {
+  // `--max-turns` is accepted but not listed in --help on 2.1.226, so it cannot be probed here.
+  for (const flag of ["--json-schema", "--output-format", "--tools"]) {
     if (!helpRun.stdout.includes(flag)) {
       return { available: false, version, diagnostic: `Claude Code ${version} lacks ${flag}; update it` };
     }
@@ -101,7 +102,8 @@ export function normaliseClaudeOutcome(outcome: RunOutcome): NormalisedOutcome {
 }
 
 export function claudeDraftArgs(): string[] {
-  return ["-p", "--output-format", "json", "--json-schema", JSON.stringify(DRAFT_SCHEMA), "--max-turns", "1"];
+  // `--tools ""` removes every tool; `--max-turns 1` additionally bounds the run to one turn.
+  return ["-p", "--output-format", "json", "--json-schema", JSON.stringify(DRAFT_SCHEMA), "--tools", "", "--max-turns", "1"];
 }
 
 /**

@@ -25,7 +25,7 @@ describe("remove", () => {
     expect(useMutations.getState().error).toMatch(/official items cannot be removed/);
   });
 
-  test("reads the current hash through the CLI, then runs the remove transaction with it", async () => {
+  test("captures the hash when armed, then runs the remove transaction with it", async () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs);
     const playwright = items.find((i) => i.slug === "playwright")!;
@@ -37,6 +37,7 @@ describe("remove", () => {
       return ok(request, JSON.stringify({ ok: true, kind: "remove", type: "mcp", slug: "playwright", item: null, changedPaths: ["registry/mcp/playwright/item.json"], headBefore: "abc" }));
     });
 
+    await useMutations.getState().arm(playwright);
     await useMutations.getState().remove(playwright);
 
     expect(useMutations.getState().phase).toBe("done");
@@ -53,6 +54,7 @@ describe("remove", () => {
       if (request.args.includes("hash")) return ok(request, JSON.stringify({ hash: "stale" }));
       return { taskId: request.taskId, status: "failed", exitCode: 1, stdout: "", stderr: 'registry-op: mcp "playwright" changed since it was read', durationMs: 1 };
     });
+    await useMutations.getState().arm(playwright);
     await useMutations.getState().remove(playwright);
     expect(useMutations.getState().phase).toBe("idle");
     expect(useMutations.getState().error).toMatch(/changed since it was read/);
@@ -74,11 +76,13 @@ describe("RemoveButton", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "remove playwright" }));
     await userEvent.click(screen.getByRole("button", { name: "keep" }));
-    expect(requests).toHaveLength(0);
+    // arming captures the item's hash; nothing has run
+    expect(requests.map((r) => r.args[2])).toEqual(["hash"]);
 
     await userEvent.click(screen.getByRole("button", { name: "remove playwright" }));
     await userEvent.click(screen.getByRole("button", { name: "confirm remove mcp/playwright" }));
-    expect(requests.map((r) => r.args[2])).toEqual(["hash", "run"]);
+    expect(requests.map((r) => r.args[2])).toEqual(["hash", "hash", "run"]);
+    expect(await screen.findByRole("status")).toHaveTextContent("removed");
   });
 
   test("is disabled with the reason for an official item", async () => {

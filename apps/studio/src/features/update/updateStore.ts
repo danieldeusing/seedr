@@ -22,6 +22,9 @@ export interface UpdateForm {
 
 interface UpdateState {
   target: StudioItem | null;
+  /** The item's state hash from the moment the form opened — the whole editing
+   * session is guarded, so an edit landed elsewhere in between refuses to apply. */
+  expectedHash: string | null;
   form: UpdateForm;
   probe: AdapterProbe | null;
   phase: "idle" | "drafting" | "applying" | "done";
@@ -89,6 +92,7 @@ async function readItemFiles(dir: string, nodes: FileTreeNode[], prefix = ""): P
 
 export const useUpdate = create<UpdateState>((set, get) => ({
   target: null,
+  expectedHash: null,
   form: formFor({ type: "skill" as ComponentType, slug: "", dir: "", item: { slug: "", name: "", type: "skill", description: "", compatibility: [] }, errors: [] }),
   probe: null,
   phase: "idle",
@@ -97,8 +101,14 @@ export const useUpdate = create<UpdateState>((set, get) => ({
   outcome: null,
 
   async start(item) {
-    set({ target: item, form: formFor(item), phase: "idle", draftErrors: [], error: updateRefusal(item), outcome: null });
+    set({ target: item, expectedHash: null, form: formFor(item), phase: "idle", draftErrors: [], error: updateRefusal(item), outcome: null });
     if (!get().probe) set({ probe: await probeClaude() });
+    if (updateRefusal(item)) return;
+    try {
+      set({ expectedHash: await itemHash(item.type, item.slug) });
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
   },
 
   setField(field, value) {
@@ -146,9 +156,13 @@ export const useUpdate = create<UpdateState>((set, get) => ({
       set({ error: "fix the highlighted fields first" });
       return;
     }
+    const expectedHash = get().expectedHash;
+    if (!expectedHash) {
+      set({ error: "the item's current state could not be read — reopen the form" });
+      return;
+    }
     set({ phase: "applying", error: null });
     try {
-      const expectedHash = await itemHash(target.type, target.slug);
       const outcome = await runRegistryOp(parseOp({ v: 1, kind: "update", type: target.type, slug: target.slug, expectedHash, patch } satisfies UpdateOp));
       set({ phase: "done", outcome });
     } catch (error) {

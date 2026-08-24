@@ -17,7 +17,8 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { syncAnthropic } from "./sync/anthropic.js";
 import { syncCommunity } from "./sync/community.js";
-import { compileManifest, readAllItems, typeDirName } from "./compile-manifest.js";
+import { typeDirName } from "@seedr/registry-ops";
+import { compileManifest, readAllItems } from "./compile-manifest.js";
 import type { ManifestItem } from "./sync/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -59,22 +60,22 @@ async function main() {
   const anthropicItems = await syncAnthropic();
   syncedItems.push(...anthropicItems);
 
+  // (type, slug) is the primary key — a slug alone can name two different items.
+  const keyOf = (item: { type: string; slug: string }) => `${item.type}/${item.slug}`;
+
   // Only update if we fetched items, otherwise keep existing
   if (syncedItems.length > 0) {
     // Find manually-added community items (not covered by Anthropic sync)
-    const syncedSlugs = new Set(syncedItems.map((item) => item.slug));
+    const syncedKeys = new Set(syncedItems.map(keyOf));
     const manualCommunityItems = existingItems.filter(
-      (item) => item.sourceType === "community" && !syncedSlugs.has(item.slug)
+      (item) => item.sourceType === "community" && !syncedKeys.has(keyOf(item))
     );
 
     // Re-sync manual community items from their GitHub repos
     const updatedCommunityItems = await syncCommunity(manualCommunityItems);
 
     // Build set of all valid synced slugs
-    const allSyncedSlugs = new Set([
-      ...syncedItems.map((i) => i.slug),
-      ...updatedCommunityItems.map((i) => i.slug),
-    ]);
+    const allSyncedKeys = new Set([...syncedItems, ...updatedCommunityItems].map(keyOf));
 
     // Write each synced item as item.json
     for (const item of [...syncedItems, ...updatedCommunityItems]) {
@@ -82,11 +83,11 @@ async function main() {
     }
 
     // Delete stale non-toolr item directories
-    const toolrSlugs = new Set(toolrItems.map((i) => i.slug));
+    const toolrKeys = new Set(toolrItems.map(keyOf));
     for (const existing of existingSyncedItems) {
-      if (!allSyncedSlugs.has(existing.slug) && !toolrSlugs.has(existing.slug)) {
+      if (!allSyncedKeys.has(keyOf(existing)) && !toolrKeys.has(keyOf(existing))) {
         deleteItemDir(existing);
-        console.log(`  Removed stale: ${existing.slug}`);
+        console.log(`  Removed stale: ${keyOf(existing)}`);
       }
     }
 

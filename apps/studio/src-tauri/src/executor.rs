@@ -102,8 +102,10 @@ impl Capped {
 /// What a running task needs for cancellation: the child, and on Windows the job that owns its tree.
 struct Running {
     child: Child,
+    /// Taken (dropped) to kill: the job holds kill-on-close, and closing its last
+    /// handle is how a Job Object terminates every process in it.
     #[cfg(windows)]
-    _job: win32job::Job,
+    job: Option<win32job::Job>,
 }
 
 /// The live task registry: the task id is the only handle anyone holds.
@@ -167,8 +169,9 @@ fn kill_tree(running: &mut Running) {
 
 #[cfg(windows)]
 fn kill_tree(running: &mut Running) {
-    // Every descendant was assigned to the job at spawn; terminating the job ends all of them.
-    let _ = running._job.terminate(1);
+    // Every descendant was assigned to the job at spawn, and the job carries
+    // kill-on-close: dropping the handle ends all of them.
+    drop(running.job.take());
     let _ = running.child.kill();
 }
 
@@ -250,7 +253,7 @@ pub fn run(registry: &Registry, request: RunRequest, sink: Arc<dyn Fn(OutputEven
     let slot = Arc::new(Mutex::new(Some(Running {
         child,
         #[cfg(windows)]
-        _job: job,
+        job: Some(job),
     })));
     if let Ok(mut map) = registry.0.lock() {
         map.insert(request.task_id.clone(), slot.clone());
@@ -315,6 +318,13 @@ static CANCELLED: Mutex<Vec<String>> = Mutex::new(Vec::new());
 pub fn mark_cancelled(task_id: &str) {
     if let Ok(mut list) = CANCELLED.lock() {
         list.push(task_id.to_string());
+    }
+}
+
+/// Withdraw a mark that found nothing to kill; see `cancel_process`.
+pub fn clear_cancel_flag(task_id: &str) {
+    if let Ok(mut list) = CANCELLED.lock() {
+        list.retain(|t| t != task_id);
     }
 }
 
@@ -434,6 +444,18 @@ mod tests {
     #[test]
     fn cancelling_an_unknown_task_is_a_no() {
         assert!(!Registry::default().cancel("nope"));
+    }
+
+    #[test]
+    fn a_withdrawn_cancel_mark_does_not_taint_the_tasks_next_run() {
+        let registry = Registry::default();
+        // The command sequence for a cancel that found nothing running:
+        mark_cancelled("reused-id");
+        assert!(!registry.cancel("reused-id"));
+        clear_cancel_flag("reused-id");
+
+        let outcome = run(&registry, RunRequest { task_id: "reused-id".into(), program: "node".into(), args: vec!["-e".into(), "console.log('fine')".into()], stdin: None, cwd: None, timeout_ms: 30_000 }, quiet());
+        assert_eq!(outcome.status, RunStatus::Ok, "stderr: {}", outcome.stderr);
     }
 
     #[test]

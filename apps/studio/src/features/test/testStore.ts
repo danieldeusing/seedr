@@ -29,8 +29,10 @@ interface TestState {
   reset(): void;
 }
 
-export const testRefusal = (item: StudioItem): string | null =>
-  item.item.sourceType === "toolr" ? null : `${item.item.sourceType ?? "synced"} items install from their upstream repository — test them with the CLI online`;
+export const testRefusal = (item: StudioItem): string | null => {
+  if (item.type === "command") return "the CLI has no install handler for command items yet";
+  return item.item.sourceType === "toolr" ? null : `${item.item.sourceType ?? "synced"} items install from their upstream repository — test them with the CLI online`;
+};
 
 /** Every file path in a tree, relative, with forward slashes. */
 const flatten = (nodes: FileTreeNode[], prefix = ""): string[] =>

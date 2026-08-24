@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "vitest";
 import { collectItems, compileRegistry } from "./compile.js";
@@ -97,14 +98,15 @@ describe("compile", () => {
 
   test("reproduces the committed manifests of the real registry byte for byte", () => {
     const realRegistry = resolve(import.meta.dirname, "../../../registry");
-    const { counts } = compileRegistry(makeRegistry());
-    expect(counts.skill).toBe(2);
-    // The real registry is compiled into a copy so the test never writes into the repo.
-    const copy = makeRegistry();
-    for (const file of ["manifest.json"]) {
-      expect(existsSync(join(copy, file))).toBe(false);
+    // Compiled into a copy so the test never writes into the repo.
+    const copy = mkdtempSync(join(tmpdir(), "seedr-real-registry-"));
+    cpSync(realRegistry, copy, { recursive: true });
+    compileRegistry(copy);
+    const manifests = ["manifest.json", ...readdirSync(realRegistry, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => join(e.name, "manifest.json"))];
+    expect(manifests.length).toBeGreaterThan(1);
+    for (const manifest of manifests) {
+      expect(readFileSync(join(copy, manifest), "utf8"), manifest).toBe(readFileSync(join(realRegistry, manifest), "utf8"));
     }
-    const committedIndex = readFileSync(join(realRegistry, "manifest.json"), "utf8");
-    expect(JSON.parse(committedIndex).version).toBe("2.0.0");
+    rmSync(copy, { recursive: true, force: true });
   });
 });

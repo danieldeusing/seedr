@@ -20,12 +20,12 @@ export function Explorer({ items, problems, selected, onSelect }: ExplorerProps)
       <div className="p-6 text-muted-foreground" data-testid="empty-registry">
         <p className="prompt">ls registry/</p>
         <p className="mt-4">This registry has no items yet.</p>
-        <p className="mt-2 text-xs">Add the first one with <code className="text-primary">/add-toolr</code> in Claude Code, or wait for the Author screen.</p>
+        <p className="mt-2 text-xs">Add the first one with “add capability” above, or with <code className="text-primary">/add-toolr</code> in Claude Code.</p>
       </div>
     );
   }
   return (
-    <nav aria-label="Registry" className="overflow-y-auto p-4">
+    <nav aria-label="Registry" className="min-h-0 flex-1 overflow-y-auto p-4">
       {problems.length > 0 && (
         <section className="mb-4 border border-destructive p-3 text-xs" role="alert">
           <p className="font-bold text-destructive">{problems.length} unreadable item file(s)</p>

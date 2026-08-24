@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { useParams, Link } from "react-router-dom";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { useUpdateParams } from "@/hooks/useUpdateParams";
@@ -77,7 +78,8 @@ export function Browse() {
   // Read state from URL search params, validating against known values so a
   // hand-edited URL (?tool=garbage) doesn't render a bogus active filter.
   const query = searchParams.get("q") ?? "";
-  const toolFilter = pickValid<CodingAgent>(searchParams.get("tool"), agentOptions);
+  // canonicalised first, so an old `?tool=gemini` link still filters (as antigravity)
+  const toolFilter = pickValid<CodingAgent>(canonicalAgent(searchParams.get("tool")), agentOptions);
   const sourceFilter = pickValid<SourceType>(searchParams.get("source"), sourceOptions);
   const scopeFilter = pickValid<ScopeType>(searchParams.get("scope"), scopeOptions);
   const pluginTypeFilter = pickValid<PluginType>(searchParams.get("pluginType"), pluginTypeOptions);

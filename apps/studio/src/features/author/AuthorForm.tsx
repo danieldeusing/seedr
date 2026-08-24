@@ -1,16 +1,11 @@
 import { useEffect, useMemo } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
-import { ALL_TYPES, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
+import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
 import { formProblems, useAuthor } from "./store";
 
-// New items only ever name canonical agents; the deprecated `gemini` id is not offered.
-const AGENT_LABELS: Record<(typeof CANONICAL_AGENTS)[number], string> = {
-  claude: "Claude Code",
-  copilot: "GitHub Copilot",
-  antigravity: "Google Antigravity",
-  codex: "OpenAI Codex",
-  opencode: "OpenCode",
-};
+// The CLI has no install handler for `command` items yet (plan trap 12); until
+// it does, Studio does not offer authoring them.
+const AUTHORABLE_TYPES = ALL_TYPES.filter((type) => type !== "command");
 
 interface AuthorFormProps {
   onAdded(type: ComponentType, slug: string): void;
@@ -42,7 +37,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const problems = useMemo(() => formProblems(form), [form]);
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
   const busy = phase === "probing" || phase === "drafting" || phase === "applying";
-  const input = "w-full border border-border bg-muted px-2 py-1 text-xs";
+  // the design system styles text inputs, selects and textareas itself
+  const input = "w-full text-xs";
 
   if (phase === "done" && outcome) {
     return (
@@ -91,7 +87,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         </label>
         <div className="field-val">
           <select id="author-type" value={form.type} onChange={(e) => setField("type", e.target.value as ComponentType)} disabled={busy}>
-            {ALL_TYPES.map((type) => (
+            {AUTHORABLE_TYPES.map((type) => (
               <option key={type} value={type}>
                 {type}
               </option>
@@ -191,8 +187,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         <button type="submit" className="btn-terminal btn-terminal--compact" disabled={busy || problems.length > 0}>
           {phase === "applying" ? "applying…" : "add to registry"}
         </button>
-        <span className="text-muted-foreground">
-          {probe === null ? "probing Claude Code…" : probe.available ? `Claude Code ${probe.version}` : probe.diagnostic}
+        <span className="text-muted-foreground" role="status">
+          {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : probe === null ? "probing Claude Code…" : probe.available ? `Claude Code ${probe.version}` : probe.diagnostic}
         </span>
       </div>
 
@@ -217,5 +213,5 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
 
 function Problems({ errors }: { errors: { field: string; message: string }[] }) {
   if (errors.length === 0) return null;
-  return <p className="mb-2 pl-[8.5rem] text-destructive">{formatErrors(errors)}</p>;
+  return <p className="mb-2 pl-[var(--field-label-w)] text-destructive">{formatErrors(errors)}</p>;
 }

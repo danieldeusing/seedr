@@ -224,8 +224,8 @@ cd apps/studio/src-tauri && cargo test                 # the host's path-scoping
 **Add capability** (the Author screen) is the one end-to-end mutation today: you pick the
 source folder and supply what the model must not guess (type, slug, name, agents, scope,
 author — prefilled from `registry-op.ts identity`); "draft descriptions with Claude" sends a
-size-capped digest of the source to `claude -p --output-format json --json-schema … --max-turns 1`
-— one turn, no tools, answer validated by the same validator the commit gate uses, rejected
+size-capped digest of the source to `claude -p --output-format json --json-schema … --tools ""
+--max-turns 1` — one turn, no tools, answer validated by the same validator the commit gate uses, rejected
 twice means failure, never a hand-repaired JSON; "add to registry" runs the `add-local`
 operation through `scripts/registry-op.ts` as a transaction (clean worktree required, rollback
 on any failure). Claude Code is probed at startup (`--version`, `--help` flags) and disabled
@@ -322,7 +322,7 @@ GitHub Actions workflows in `.github/workflows/`:
 
 | Workflow | Trigger | Does |
 |----------|---------|------|
-| `ci.yml` | push to `main`, any PR | `pnpm lint`, `pnpm typecheck`, `pnpm --filter @danieldeusing/seedr test` |
+| `ci.yml` | push to `main`, any PR | Main job: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm check-descriptions`. Matrix job (ubuntu/windows/macos): registry-ops tests, script tests, `cargo test` for the Studio host |
 | `deploy.yml` | push to `prod` | Deploy web to Cloudflare Pages + publish CLI to npm |
 | `sync.yml` | schedule / manual | Re-sync community registry items from their GitHub repos |
 | `test-email.yml` | manual | Smoke-test the SMTP sync-notification setup |

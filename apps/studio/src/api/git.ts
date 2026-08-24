@@ -21,15 +21,21 @@ function check(outcome: RunOutcome, what: string): string {
   return outcome.stdout;
 }
 
-/** Porcelain v1 lines → entries; renames keep the destination path. */
+/**
+ * Porcelain v1 `-z` records → entries: NUL-separated, so paths arrive verbatim
+ * (no quoting or escaping to undo). A rename carries a second record — its
+ * source path — which is dropped; the first is already the destination.
+ */
 export function parsePorcelain(text: string): ChangedPath[] {
-  return text
-    .split("\n")
-    .filter((line) => line.length > 3)
-    .map((line) => {
-      const path = line.slice(3).replace(/^"|"$/g, "");
-      return { status: line.slice(0, 2), path: path.includes(" -> ") ? (path.split(" -> ")[1] ?? path) : path };
-    });
+  const records = text.split("\0").filter(Boolean);
+  const changes: ChangedPath[] = [];
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i] as string;
+    const status = record.slice(0, 2);
+    changes.push({ status, path: record.slice(3) });
+    if (status.includes("R") || status.includes("C")) i++;
+  }
+  return changes;
 }
 
 export async function gitSummary(run: typeof runProcess = runProcess): Promise<GitSummary> {
@@ -37,7 +43,7 @@ export async function gitSummary(run: typeof runProcess = runProcess): Promise<G
   const [branch, head, status] = await Promise.all([
     git("git-branch", ["rev-parse", "--abbrev-ref", "HEAD"]),
     git("git-head", ["rev-parse", "--short", "HEAD"]),
-    git("git-status", ["status", "--porcelain=v1", "--untracked-files=all"]),
+    git("git-status", ["status", "--porcelain=v1", "-z", "--untracked-files=all"]),
   ]);
   return { branch: check(branch, "git rev-parse").trim(), head: check(head, "git rev-parse").trim(), changes: parsePorcelain(check(status, "git status")) };
 }

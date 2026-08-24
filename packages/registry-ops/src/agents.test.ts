@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { canonicalAgent, canonicalAgents, isLegacyAgent } from "./agents.js";
+import { canonicalAgent, canonicalAgents, isLegacyAgent, storageAgents } from "./agents.js";
 
 describe("agent vocabulary", () => {
   test("canonicalAgent resolves the alias, keeps canonical ids, refuses the rest", () => {
@@ -7,6 +7,12 @@ describe("agent vocabulary", () => {
     expect(canonicalAgent("antigravity")).toBe("antigravity");
     expect(canonicalAgent("cursor")).toBeNull();
     expect(canonicalAgent(42)).toBeNull();
+  });
+
+  test("storageAgents downgrades antigravity to the stored gemini alias (B1)", () => {
+    expect(storageAgents(["antigravity", "claude", "gemini"])).toEqual(["claude", "gemini"]);
+    expect(storageAgents(["claude", "cursor"])).toEqual(["claude"]);
+    expect(storageAgents([])).toEqual([]);
   });
 
   test("Object.prototype keys are not agents", () => {

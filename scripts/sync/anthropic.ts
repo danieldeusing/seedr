@@ -13,6 +13,7 @@
  * widening that is a product decision.
  */
 
+import { CANONICAL_AGENTS, storageAgents } from "@seedr/registry-ops/pure";
 import { validateItem } from "../lib/validate-item.js";
 import { classifyPlugin, collectContent, findEntry, parseJsonEntry, withDeclaredLicense } from "./content.js";
 import type { GitHubClient } from "./github.js";
@@ -88,11 +89,9 @@ async function buildOfficialSkill(ctx: SourceContext, slug: string, sha: string,
       name: formatName(frontmatter.name),
       type: "skill",
       description: frontmatter.description ?? "",
-      // B1 (Studio plan §5): keep writing exactly the ids the CLI already on npm
-      // (0.1.87) understands — an `antigravity` entry would crash its `list`. After
-      // that CLI ships, `scripts/migrate-agent-ids.ts` rewrites the data and B2
-      // switches this line to `[...CANONICAL_AGENTS]`.
-      compatibility: ["claude", "copilot", "gemini", "codex", "opencode"],
+      // B1: all agents, downgraded to the ids the published CLI understands
+      // (STORAGE_ALIASES in registry-ops is the one flip point for B2).
+      compatibility: storageAgents(CANONICAL_AGENTS),
       sourceType: "official",
       author: { name: "Anthropic" },
       externalUrl: treeUrl(SKILLS_REPO, sha, path),

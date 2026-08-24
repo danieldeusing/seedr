@@ -204,7 +204,8 @@ describe("remove", () => {
     const copied = join(registry, "skills", "deref", "linked.md");
     expect(lstatSync(copied).isSymbolicLink()).toBe(false);
     expect(readFileSync(copied, "utf8")).toBe("real\n");
-    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "antigravity"]);
+    // B1 storage vocabulary: canonical order, but antigravity stored as gemini
+    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "gemini"]);
   });
 
   test("drops files git ignores from the copy, the tree and the hash", () => {
@@ -255,11 +256,11 @@ describe("remove", () => {
     expect(contents.triggers).toEqual([{ event: "PostToolUse" }]);
   });
 
-  test("update writes canonical agent ids over a stored alias", () => {
+  test("update keeps stored ids in the B1 vocabulary: a patched antigravity is stored as gemini", () => {
     const registry = makeRegistry();
     writeFileSync(join(registry, "skills", "alpha", "item.json"), JSON.stringify({ ...readItem(registry, "skill", "alpha"), compatibility: ["gemini"] }, null, 2) + "\n");
-    const result = applyOp(registry, { v: 1, kind: "update", type: "skill", slug: "alpha", expectedHash: itemStateHash(registry, "skill", "alpha") as string, patch: { name: "Alpha 2" } });
-    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["antigravity"]);
+    const result = applyOp(registry, { v: 1, kind: "update", type: "skill", slug: "alpha", expectedHash: itemStateHash(registry, "skill", "alpha") as string, patch: { name: "Alpha 2", compatibility: ["claude", "antigravity"] } });
+    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "gemini"]);
   });
 
   test("applyOp dispatches every op kind to its implementation", () => {

@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
-import { canonicalAgents } from "../agents.js";
+import { storageAgents } from "../agents.js";
 import { itemStateHash } from "../hash.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
 import { fileTree, readItem } from "../read.js";
@@ -63,9 +63,11 @@ export function update(registryDir: string, op: UpdateOp): OpResult {
     mkdirSync(dirname(edit.target), { recursive: true });
     writeFileSync(edit.target, edit.content);
   }
-  // Written canonically (a stored `gemini` leaves on the first edit); the raw
-  // list was validated above so an unknown id still names itself.
-  next.compatibility = canonicalAgents(next.compatibility);
+  // Written in the B1 storage vocabulary (STORAGE_ALIASES): deduplicated with
+  // aliases resolved, but `antigravity` stays stored as `gemini` until the
+  // published CLI understands it. The raw list was validated above, so an
+  // unknown id still names itself.
+  next.compatibility = storageAgents(next.compatibility);
   const item: RegistryItem = edits.length > 0 ? { ...next, contents: { ...next.contents, files: fileTree(dir) } } : next;
   writeFileSync(itemJsonPath(registryDir, op.type, op.slug), JSON.stringify(item, null, 2) + "\n");
   return { kind: op.kind, type: op.type, slug: op.slug, item };

@@ -178,10 +178,10 @@ export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBu
     pinned.repo === marketplace.repo && pinned.sha === marketplace.sha ? marketplace.tree : await ctx.client.getTree(pinned.repo, pinned.sha);
   const content = await collectContent(ctx.client, { repo: pinned.repo, sha: pinned.sha, path: pinned.path }, tree);
 
+  // plugin.json is optional (plugins-reference): without it the marketplace
+  // entry names the plugin and components are discovered from the directory.
+  // `strict` only decides which side is the authority when both declare them.
   const pluginJson = parseJsonEntry<PluginJson>(content, PLUGIN_JSON);
-  if (!pluginJson && entry.strict !== false) {
-    throw new Error(`no ${PLUGIN_JSON} in ${pinned.repo}/${pinned.path || "."} at ${pinned.sha} (strict plugin)`);
-  }
 
   const sourceType: SourceType =
     sourceTypeOverride ?? (pinned.kind === "marketplace-path" && pinned.path.startsWith("plugins/") ? "official" : "community");

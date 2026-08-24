@@ -318,15 +318,19 @@ describe("runSync", () => {
       expect(logLines.join("\n")).toMatch(/carried over \(1\):\n\s+- plugin\/code-review: Gave up on/);
     });
 
-    it("treats a missing plugin.json on a strict plugin as an item failure, not a deletion", async () => {
+    it("builds a plugin without plugin.json from its marketplace entry (plugin.json is optional)", async () => {
       await migrate();
       const repo = world.fake.repos["anthropics/claude-plugins-official"]!.commits[SHA_B]!;
       delete repo.files["plugins/code-review/.claude-plugin/plugin.json"];
       const outcome = await sync();
       expect(outcome.ok).toBe(true);
-      expect(outcome.carriedOver).toEqual([{ key: "plugin/code-review", reason: expect.stringMatching(/no \.claude-plugin\/plugin\.json .* \(strict plugin\)/) }]);
-      expect(outcome.deleted).toEqual([]);
-      expect(existsSync(join(world.registryDir, "plugins", "code-review", "item.json"))).toBe(true);
+      expect(outcome.carriedOver).toEqual([]);
+      const item = readItem(world.registryDir, "plugins", "code-review");
+      expect(item.name).toBe("Code Review");
+      expect(item.description).toBe("Review PRs");
+      expect(item.sourceRevision).toBe(SHA_B);
+      expect(item.contentDigest).toMatch(/^[0-9a-f]{64}$/);
+      expect((item.contents?.files ?? []).map((f: { name: string }) => f.name)).not.toContain(".claude-plugin");
     });
 
     it("aborts without writing when the API is rate limited on the first call", async () => {

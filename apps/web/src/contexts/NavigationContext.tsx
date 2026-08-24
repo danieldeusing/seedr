@@ -1,6 +1,8 @@
-import { createContext, useContext, useReducer, useEffect, useRef, useCallback, type ReactNode } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { createContext, useContext, useReducer, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { useLocation, useNavigate, useNavigationType, type NavigationType } from "react-router-dom";
 import { typeLabelPlural, typeBreadcrumbIcon, typeBreadcrumbColor, typeToPath, pathToType } from "@/lib/colors";
+import { getItem } from "@/lib/registry";
+import type { ComponentType } from "@/lib/types";
 
 export interface BreadcrumbSegment {
   id: string;
@@ -9,57 +11,58 @@ export interface BreadcrumbSegment {
   color?: string;
   onClick?: () => void;
 }
-import { getItem } from "@/lib/registry";
-import type { ComponentType } from "@/lib/types";
 
 const CONTENT_TYPES = ["skills", "plugins", "hooks", "agents", "mcps", "settings", "commands"];
 
-interface HistoryEntry {
-  // full URL incl. search params, so back/forward restore filters and ?q=
+/*
+ * Seedr's Back/Forward/history controls and the browser's buttons share ONE
+ * history: the browser's. Every entry is identified by the index React Router
+ * stores in `window.history.state.idx`, so a browser Back (a POP to an existing
+ * index) moves the cursor instead of appending, a PUSH appends and truncates the
+ * forward entries, and a REPLACE swaps the current entry. Our own controls are
+ * just `history.go(n)`.
+ */
+export interface HistoryEntry {
+  /** Position in the browser's session history (React Router's `idx`). */
+  idx: number;
+  /** Full URL incl. search params, so back/forward restore filters and ?q=. */
   path: string;
   state: unknown;
   segments: BreadcrumbSegment[];
 }
 
-interface HistoryState {
+export interface HistoryState {
   entries: HistoryEntry[];
   currentIndex: number;
 }
 
-type HistoryAction =
-  | { type: "upsert"; entry: HistoryEntry }
-  | { type: "go"; index: number };
+export const EMPTY_HISTORY: HistoryState = { entries: [], currentIndex: -1 };
 
-function pathnameOf(path: string): string {
-  return path.split("?")[0]!;
-}
+type HistoryAction = { type: "sync"; navigationType: NavigationType; entry: HistoryEntry };
 
-function historyReducer(state: HistoryState, action: HistoryAction): HistoryState {
-  switch (action.type) {
-    case "upsert": {
-      const current = state.entries[state.currentIndex];
-      // Same page (pathname + nav state) with only search/filters changed, or a
-      // StrictMode double-mount: replace the current entry in place instead of
-      // pushing a duplicate, so the latest filters round-trip on back/forward.
-      const samePage =
-        current &&
-        pathnameOf(current.path) === pathnameOf(action.entry.path) &&
-        current.state === action.entry.state;
-      if (samePage) {
-        if (current.path === action.entry.path) return state;
-        const entries = state.entries.slice();
-        entries[state.currentIndex] = action.entry;
-        return { ...state, entries };
-      }
-      return {
-        entries: [...state.entries.slice(0, state.currentIndex + 1), action.entry].slice(-50),
-        currentIndex: Math.min(state.currentIndex + 1, 49),
-      };
-    }
-    case "go":
-      if (action.index < 0 || action.index >= state.entries.length) return state;
-      return { ...state, currentIndex: action.index };
+export function historyReducer(state: HistoryState, action: HistoryAction): HistoryState {
+  const { entry } = action;
+  const position = state.entries.findIndex((e) => e.idx === entry.idx);
+
+  if (action.navigationType === "PUSH" || (action.navigationType === "REPLACE" && position === -1)) {
+    // new entry: everything the browser discarded (indexes at or after it) goes too
+    const kept = state.entries.filter((e) => e.idx < entry.idx);
+    return { entries: [...kept, entry], currentIndex: kept.length };
   }
+  if (action.navigationType === "REPLACE") {
+    const entries = state.entries.slice();
+    entries[position] = entry;
+    return { entries, currentIndex: position };
+  }
+  // POP: the browser moved to an entry it already had
+  if (position !== -1) {
+    const entries = state.entries.slice();
+    entries[position] = entry;
+    return { entries, currentIndex: position };
+  }
+  // an entry this page never saw (created before a reload): slot it in by index
+  const entries = [...state.entries, entry].sort((a, b) => a.idx - b.idx);
+  return { entries, currentIndex: entries.indexOf(entry) };
 }
 
 interface NavigationContextValue {
@@ -81,11 +84,7 @@ export function useNavigation() {
   return ctx;
 }
 
-function buildSegments(
-  pathname: string,
-  state: unknown,
-  onNavigate: (path: string) => void,
-): BreadcrumbSegment[] {
+function buildSegments(pathname: string, state: unknown, onNavigate: (path: string) => void): BreadcrumbSegment[] {
   const parts = pathname.split("/").filter(Boolean);
   const segments: BreadcrumbSegment[] = [
     { id: "home", label: "Home", icon: "home", color: "emerald", onClick: () => onNavigate("/") },
@@ -106,15 +105,14 @@ function buildSegments(
 
     if (parts[1]) {
       const item = getItem(parts[1], componentType);
-      segments.push({
-        id: parts[1],
-        label: item?.name || parts[1],
-      });
+      segments.push({ id: parts[1], label: item?.name || parts[1] });
     }
   } else if (parts[0] === "privacy") {
     segments.push({ id: "privacy", label: "Privacy Policy" });
   } else if (parts[0] === "impressum") {
     segments.push({ id: "impressum", label: "Impressum" });
+  } else if (parts.length > 0) {
+    segments.push({ id: "not-found", label: "Not Found" });
   }
 
   return segments;
@@ -124,69 +122,70 @@ function toDisplaySegments(segments: BreadcrumbSegment[]): BreadcrumbSegment[] {
   return segments.map(({ onClick: _onClick, ...rest }) => rest);
 }
 
+/** React Router's position of the current entry in the browser history. */
+function currentHistoryIdx(): number {
+  const idx = (window.history.state as { idx?: unknown } | null)?.idx;
+  return typeof idx === "number" ? idx : 0;
+}
+
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const isHistoryNavRef = useRef(false);
-  const [history, dispatch] = useReducer(historyReducer, { entries: [], currentIndex: -1 });
+  const navigationType = useNavigationType();
+  const [history, dispatch] = useReducer(historyReducer, EMPTY_HISTORY);
 
   const segments = buildSegments(location.pathname, location.state, (path) => navigate(path));
-  const locationKey =
-    location.pathname + location.search + "|" + ((location.state as { from?: string } | null)?.from ?? "");
 
+  // location.key changes on every navigation (push, replace and pop alike)
   useEffect(() => {
-    if (isHistoryNavRef.current) {
-      isHistoryNavRef.current = false;
-      return;
-    }
-
     dispatch({
-      type: "upsert",
+      type: "sync",
+      navigationType,
       entry: {
+        idx: currentHistoryIdx(),
         path: location.pathname + location.search,
         state: location.state,
         segments: toDisplaySegments(segments),
       },
     });
-  }, [locationKey]); // eslint-disable-line react-hooks/exhaustive-deps -- segments derived from locationKey
+  }, [location.key]); // eslint-disable-line react-hooks/exhaustive-deps -- segments are derived from the location
+
+  const canGoBack = history.currentIndex > 0;
+  const canGoForward = history.currentIndex >= 0 && history.currentIndex < history.entries.length - 1;
 
   const goBack = useCallback(() => {
-    const newIndex = history.currentIndex - 1;
-    if (newIndex < 0) return;
-    isHistoryNavRef.current = true;
-    dispatch({ type: "go", index: newIndex });
-    const entry = history.entries[newIndex]!;
-    navigate(entry.path, { state: entry.state });
-  }, [history.currentIndex, history.entries, navigate]);
+    if (canGoBack) navigate(-1);
+  }, [canGoBack, navigate]);
 
   const goForward = useCallback(() => {
-    const newIndex = history.currentIndex + 1;
-    if (newIndex >= history.entries.length) return;
-    isHistoryNavRef.current = true;
-    dispatch({ type: "go", index: newIndex });
-    const entry = history.entries[newIndex]!;
-    navigate(entry.path, { state: entry.state });
-  }, [history.currentIndex, history.entries, navigate]);
+    if (canGoForward) navigate(1);
+  }, [canGoForward, navigate]);
 
-  const goToHistory = useCallback((index: number) => {
-    if (index < 0 || index >= history.entries.length || index === history.currentIndex) return;
-    isHistoryNavRef.current = true;
-    dispatch({ type: "go", index });
-    const entry = history.entries[index]!;
-    navigate(entry.path, { state: entry.state });
-  }, [history.entries, history.currentIndex, navigate]);
+  const goToHistory = useCallback(
+    (index: number) => {
+      const target = history.entries[index];
+      const current = history.entries[history.currentIndex];
+      if (!target || !current || index === history.currentIndex) return;
+      navigate(target.idx - current.idx);
+    },
+    [history.entries, history.currentIndex, navigate]
+  );
+
+  const historyEntries = useMemo(() => history.entries.map((e) => e.segments), [history.entries]);
 
   return (
-    <NavigationContext.Provider value={{
-      segments,
-      canGoBack: history.currentIndex > 0,
-      canGoForward: history.currentIndex < history.entries.length - 1,
-      goBack,
-      goForward,
-      historyEntries: history.entries.map(e => e.segments),
-      currentHistoryIndex: history.currentIndex,
-      goToHistory,
-    }}>
+    <NavigationContext.Provider
+      value={{
+        segments,
+        canGoBack,
+        canGoForward,
+        goBack,
+        goForward,
+        historyEntries,
+        currentHistoryIndex: history.currentIndex,
+        goToHistory,
+      }}
+    >
       {children}
     </NavigationContext.Provider>
   );

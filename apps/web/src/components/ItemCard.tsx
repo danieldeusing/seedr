@@ -1,7 +1,7 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 // toolr-design-ignore-next-line
 import { Clock, Package, Plug, Puzzle } from "lucide-react";
-import { Card } from "./ui/Card";
 import { CodingAgentIcon } from "./ui/CodingAgentIcon";
 import { Label } from "./ui/Label";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/Tooltip";
@@ -9,8 +9,9 @@ import { TypeIcon } from "./TypeIcon";
 import { SourceBadge } from "./SourceBadge";
 import { ScopeBadge } from "./ScopeBadge";
 import { formatRelativeTime } from "@/lib/text";
-import { typeLabels, typeTextColors, agentLabels, pluginTypeToBadgeColor, typeToPath } from "@/lib/colors";
+import { typeLabels, typeTextColors, agentLabels, pluginTypeToBadgeColor, typeToPath, sourceLabels, scopeLabels } from "@/lib/colors";
 import { capabilityTypes } from "@/lib/capabilityTypes";
+import { cn } from "@/lib/utils";
 import type { RegistryItem, SourceType, ScopeType, CodingAgent, PluginType } from "@/lib/types";
 
 function PackageBadges({ counts }: { counts: Record<string, number> }) {
@@ -33,9 +34,9 @@ function PackageBadges({ counts }: { counts: Record<string, number> }) {
         return (
           <Tooltip key={item.type}>
             <TooltipTrigger asChild>
-              <span className="flex items-center gap-0.5">
-                <Icon className={`w-3 h-3 ${colorClass}`} />
-                <span className="text-[11px] text-subtext">{item.count}</span>
+              <span role="img" className="flex items-center gap-0.5" aria-label={`${item.count} ${item.label}`}>
+                <Icon className={`w-3 h-3 ${colorClass}`} aria-hidden />
+                <span className="text-[11px] text-subtext" aria-hidden>{item.count}</span>
               </span>
             </TooltipTrigger>
             <TooltipContent side="top">{`${item.count} ${item.label}`}</TooltipContent>
@@ -46,27 +47,31 @@ function PackageBadges({ counts }: { counts: Record<string, number> }) {
   );
 }
 
+const FILTER_BUTTON = "relative z-10 cursor-pointer transition-all hover:brightness-125 focus-visible:outline-2 focus-visible:outline-ring";
+
 /**
- * Props that turn a span inside the card Link into an accessible button:
- * stops the click from navigating, and adds keyboard (Enter/Space) + role so
- * the filter affordance works without a mouse. Returns {} when no handler.
+ * A filter affordance on the card: a real <button> when the page can filter,
+ * otherwise the plain content. Sits above the card's stretched link (z-10) so
+ * it is never nested inside it.
  */
-function interactiveProps(handler?: () => void) {
-  if (!handler) return {};
-  const activate = (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    handler();
-  };
-  return {
-    role: "button" as const,
-    tabIndex: 0,
-    onClick: activate,
-    onKeyDown: (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") activate(e);
-    },
-  };
+function FilterControl({ label, onClick, className, children }: { label: string; onClick?: () => void; className?: string; children: ReactNode }) {
+  if (!onClick) return <span className={cn("inline-flex", className)}>{children}</span>;
+  return (
+    <button type="button" aria-label={label} onClick={onClick} className={cn("inline-flex", FILTER_BUTTON, className)}>
+      {children}
+    </button>
+  );
 }
+
+const PLUGIN_TYPE_BADGES: Record<PluginType, { text: string; icon: typeof Package; description: (item: RegistryItem) => string }> = {
+  package: { text: "Package", icon: Package, description: () => "Bundles multiple capabilities (skills, hooks, agents, etc.) into a single plugin" },
+  wrapper: { text: "Wrapper", icon: Puzzle, description: (item) => `Wraps a single ${item.wrapper} capability as a plugin` },
+  integration: {
+    text: "Integration",
+    icon: Plug,
+    description: () => "Integrates an external tool with your AI assistant. Installing adds it to enabledPlugins — the README explains how to set up the tool itself.",
+  },
+};
 
 interface ItemCardProps {
   item: RegistryItem;
@@ -78,85 +83,84 @@ interface ItemCardProps {
   onDateClick?: () => void;
 }
 
+/**
+ * Registry item card. The item name is the card's link and stretches over the
+ * whole card (::after overlay); the filter badges are sibling buttons layered
+ * above it, so no control is ever nested inside the link.
+ */
 export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onToolClick, onPluginTypeClick, onDateClick }: ItemCardProps) {
-  const interactive = "cursor-pointer hover:brightness-125 transition-all";
+  const pluginBadge = item.pluginType ? PLUGIN_TYPE_BADGES[item.pluginType] : null;
+  const authorName = item.sourceType === "toolr" ? "Daniel Deusing" : item.author?.name;
 
   return (
-    <Link to={`/${typeToPath[item.type]}/${item.slug}`} state={browseType && item.type !== browseType ? { from: browseType } : undefined}>
-      <Card className="h-full flex flex-col">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex items-center gap-1.5">
-            {item.sourceType && (
-              <span {...interactiveProps(onSourceClick ? () => onSourceClick(item.sourceType!) : undefined)} className={onSourceClick ? interactive : ""}>
-                <SourceBadge source={item.sourceType} />
-              </span>
-            )}
-            {item.pluginType === "package" && (
-              <span {...interactiveProps(onPluginTypeClick ? () => onPluginTypeClick("package") : undefined)} className={onPluginTypeClick ? interactive : ""}>
-                <Label text="Package" accentColor={pluginTypeToBadgeColor.package} icon={Package} tooltip={{ description: "Bundles multiple capabilities (skills, hooks, agents, etc.) into a single plugin" }} />
-              </span>
-            )}
-            {item.pluginType === "wrapper" && (
-              <span {...interactiveProps(onPluginTypeClick ? () => onPluginTypeClick("wrapper") : undefined)} className={onPluginTypeClick ? interactive : ""}>
-                <Label text="Wrapper" accentColor={pluginTypeToBadgeColor.wrapper} icon={Puzzle} tooltip={{ description: `Wraps a single ${item.wrapper} capability as a plugin` }} />
-              </span>
-            )}
-            {item.pluginType === "integration" && (
-              <span {...interactiveProps(onPluginTypeClick ? () => onPluginTypeClick("integration") : undefined)} className={onPluginTypeClick ? interactive : ""}>
-                <Label text="Integration" accentColor={pluginTypeToBadgeColor.integration} icon={Plug} tooltip={{ description: "Integrates an external tool with your AI assistant. Installing adds it to enabledPlugins — the README explains how to set up the tool itself." }} />
-              </span>
-            )}
-            {item.sourceType === "toolr" && item.targetScope && (
-              <span {...interactiveProps(onScopeClick ? () => onScopeClick(item.targetScope!) : undefined)} className={onScopeClick ? interactive : ""}>
-                <ScopeBadge scope={item.targetScope} />
-              </span>
-            )}
-          </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex">
-                <TypeIcon type={item.type} size={16} className="opacity-60" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">{typeLabels[item.type]}</TooltipContent>
-          </Tooltip>
-        </div>
-
-        <h3 className="text-sm font-medium text-text mb-0.5">{item.name}</h3>
-        {(item.author || item.sourceType === "toolr") && (
-          <p className="text-[11px] text-text-dim mb-3">
-            by {item.sourceType === "toolr" ? "Daniel Deusing" : item.author?.name}
-          </p>
-        )}
-        <p className="text-subtext text-xs mb-5 flex-grow line-clamp-3 text-justify">{item.description}</p>
-
-        <div className="flex items-center justify-between">
-          <div className="flex flex-wrap gap-1.5">
-            {item.compatibility.map((tool) => (
-              <Tooltip key={tool}>
-                <TooltipTrigger asChild>
-                  <span {...interactiveProps(onToolClick ? () => onToolClick(tool) : undefined)} className={`inline-flex ${onToolClick ? interactive : ""}`}>
-                    <CodingAgentIcon agent={tool} size={16} />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top">{agentLabels[tool]}</TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-          {(item.package || item.wrapper) && (
-            <PackageBadges counts={item.package ?? { [item.wrapper!]: 1 }} />
+    <article
+      className={cn(
+        "relative flex h-full flex-col border border-overlay bg-surface p-3 transition-colors",
+        "hover:border-overlay-hover hover:bg-active has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-ring"
+      )}
+      data-testid="item-card"
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {item.sourceType && (
+            <FilterControl label={`Filter by source: ${sourceLabels[item.sourceType]}`} onClick={onSourceClick && (() => onSourceClick(item.sourceType!))}>
+              <SourceBadge source={item.sourceType} />
+            </FilterControl>
           )}
-          {item.updatedAt && (
-            <span
-              {...interactiveProps(onDateClick)}
-              className={`flex items-center gap-1 text-[11px] text-text-dim ${onDateClick ? interactive : ""}`}
-            >
-              <Clock className="w-3 h-3" />
-              {formatRelativeTime(item.updatedAt)}
+          {item.pluginType && pluginBadge && (
+            <FilterControl label={`Filter by plugin type: ${pluginBadge.text}`} onClick={onPluginTypeClick && (() => onPluginTypeClick(item.pluginType!))}>
+              <Label text={pluginBadge.text} accentColor={pluginTypeToBadgeColor[item.pluginType]} icon={pluginBadge.icon} tooltip={{ description: pluginBadge.description(item) }} />
+            </FilterControl>
+          )}
+          {item.sourceType === "toolr" && item.targetScope && (
+            <FilterControl label={`Filter by scope: ${scopeLabels[item.targetScope]}`} onClick={onScopeClick && (() => onScopeClick(item.targetScope!))}>
+              <ScopeBadge scope={item.targetScope} />
+            </FilterControl>
+          )}
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span role="img" className="inline-flex" aria-label={typeLabels[item.type]}>
+              <TypeIcon type={item.type} size={16} className="opacity-60" />
             </span>
-          )}
+          </TooltipTrigger>
+          <TooltipContent side="top">{typeLabels[item.type]}</TooltipContent>
+        </Tooltip>
+      </div>
+
+      <h3 className="mb-0.5 text-sm font-medium text-text">
+        <Link
+          to={`/${typeToPath[item.type]}/${item.slug}`}
+          state={browseType && item.type !== browseType ? { from: browseType } : undefined}
+          className="outline-none after:absolute after:inset-0 after:content-['']"
+        >
+          {item.name}
+        </Link>
+      </h3>
+      {authorName && <p className="mb-3 text-[11px] text-text-dim">by {authorName}</p>}
+      <p className="mb-5 flex-grow text-justify text-xs text-subtext line-clamp-3">{item.description}</p>
+
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {item.compatibility.map((tool) => (
+            <Tooltip key={tool}>
+              <TooltipTrigger asChild>
+                <FilterControl label={`Filter by coding agent: ${agentLabels[tool]}`} onClick={onToolClick && (() => onToolClick(tool))}>
+                  <CodingAgentIcon agent={tool} size={16} decorative={!!onToolClick} />
+                </FilterControl>
+              </TooltipTrigger>
+              <TooltipContent side="top">{agentLabels[tool]}</TooltipContent>
+            </Tooltip>
+          ))}
         </div>
-      </Card>
-    </Link>
+        {(item.package || item.wrapper) && <PackageBadges counts={item.package ?? { [item.wrapper!]: 1 }} />}
+        {item.updatedAt && (
+          <FilterControl label="Sort by last update" onClick={onDateClick} className="items-center gap-1 text-[11px] text-text-dim">
+            <Clock className="h-3 w-3" aria-hidden />
+            <span>{formatRelativeTime(item.updatedAt)}</span>
+          </FilterControl>
+        )}
+      </div>
+    </article>
   );
 }

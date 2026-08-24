@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
+import { useParams } from "react-router-dom";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { NotFound } from "@/routes/NotFound";
+import { itemMeta, notFoundMeta } from "../../scripts/site-meta.mjs";
 // toolr-design-ignore-next-line
 import { Clock, Folder, Lock, Package, Plug, Puzzle, Shield, User, type LucideIcon } from "lucide-react";
 import { FileStructureSection } from "@/components/detail/FileStructureSection";
@@ -9,41 +12,15 @@ import { CodeBlock } from "@/components/ui";
 import { typeLabels, typeTextColors, sourceToBadgeColor, sourceLabels, scopeToBadgeColor, scopeLabels, pluginTypeToBadgeColor, pathToType } from "@/lib/colors";
 import { typeIcons } from "@/components/TypeIcon";
 import { AuthorLink } from "@/components/AuthorLink";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { PluginContents } from "@/components/PluginContents";
 import { getItem, getLongDescription, getFileTree } from "@/lib/registry";
 import { useTerminalSession } from "@/lib/useTerminalSession";
+import { loadPreview, type PreviewResult } from "@/lib/preview";
+import { resolveFileSource } from "@/lib/fileSource";
 import type { ComponentType, FileTreeNode, ScopeType, SourceType } from "@/lib/types";
 
-// Monaco is heavy and only needed when a file preview opens — lazy-load it so it
-// stays out of the main bundle (and self-hosts rather than using a CDN).
-const MonacoPreview = lazy(() =>
-  import("@/components/detail/MonacoPreview").then((m) => ({ default: m.MonacoPreview }))
-);
-
-function getRawUrl(externalUrl: string, filePath: string): string | null {
-  if (externalUrl.startsWith("local://")) {
-    const basePath = externalUrl.replace("local://", "");
-    return `/${basePath}/${filePath}`;
-  }
-
-  const withTree = externalUrl.match(/github\.com\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?/);
-  const withoutTree = !withTree ? externalUrl.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/) : null;
-  if (!withTree && !withoutTree) return null;
-
-  const owner = (withTree ?? withoutTree)![1];
-  const repo = (withTree ?? withoutTree)![2];
-  const branch = withTree?.[3] ?? "main";
-  const basePath = withTree?.[4];
-
-  if (import.meta.env.DEV && owner === "danieldeusing" && repo === "seedr") {
-    return `/${basePath}/${filePath}`;
-  }
-
-  const fullPath = basePath ? `${basePath}/${filePath}` : filePath;
-  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${fullPath}`;
-}
+// The markdown toolchain is only needed for the tl;dr on this page.
+const MarkdownText = lazy(() => import("@/components/detail/MarkdownText").then((m) => ({ default: m.MarkdownText })));
 
 const sourceDescriptions: Record<SourceType, string> = {
   official: "Published by the tool maker",
@@ -128,6 +105,7 @@ export function Detail() {
   useScrollRestoration();
 
   const item = slug ? getItem(slug, componentType) : undefined;
+  usePageMeta(item ? itemMeta(item) : notFoundMeta());
 
   const [longDescription, setLongDescription] = useState<string>();
   const [fileTree, setFileTree] = useState<FileTreeNode[]>();
@@ -151,25 +129,20 @@ export function Detail() {
   // have settled, so the whole page animates in one uninterrupted sequence.
   useTerminalSession(item && lazyDataSettled ? `${item.type}/${item.slug}` : null);
 
-  const fetchFileContent = useCallback(async (relativePath: string) => {
-    if (!item?.externalUrl) throw new Error("No external URL");
-    const rawUrl = getRawUrl(item.externalUrl, relativePath);
-    if (!rawUrl) throw new Error("Could not determine file URL");
-    const response = await fetch(rawUrl);
-    if (!response.ok) throw new Error(`Failed to fetch file (${response.status})`);
-    return response.text();
-  }, [item?.externalUrl]);
+  // Where this item's files live. Nothing is requested from that host until the
+  // visitor selects a file in the tree (see FileStructureSection).
+  const externalUrl = item?.externalUrl;
+  const fileSource = useMemo(() => resolveFileSource(externalUrl, import.meta.env.DEV), [externalUrl]);
+  const loadFile = useCallback(
+    async (relativePath: string): Promise<PreviewResult> => {
+      const rawUrl = fileSource?.rawUrl(relativePath);
+      if (!rawUrl) return { kind: "error", message: "This item has no file source" };
+      return loadPreview(relativePath, rawUrl);
+    },
+    [fileSource]
+  );
 
-  if (!item) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
-        <p className="text-subtext">Item not found</p>
-        <Link to="/" className="text-accent hover:underline mt-4 inline-block">
-          Go home
-        </Link>
-      </div>
-    );
-  }
+  if (!item) return <NotFound message="Item not found" />;
 
   const installCommand = `npx @danieldeusing/seedr add ${item.slug} --type ${item.type}`;
 
@@ -203,7 +176,13 @@ export function Detail() {
       labels={labels}
       subtitle={subtitle}
       description={item.description}
-      longDescription={longDescription ? <Markdown remarkPlugins={[remarkGfm]}>{longDescription}</Markdown> : undefined}
+      longDescription={
+        longDescription ? (
+          <Suspense fallback={<p className="text-md text-muted-foreground">{longDescription}</p>}>
+            <MarkdownText>{longDescription}</MarkdownText>
+          </Suspense>
+        ) : undefined
+      }
       integration={item.pluginType === "integration"}
       compatibleTools={item.compatibility}
       maxWidth="max-w-6xl"
@@ -242,26 +221,24 @@ export function Detail() {
         </div>
       )}
 
-      {/* File tree (lazy-loaded from item.json) */}
-      {fileTree && (
+      {/* File tree (lazy-loaded from item.json); previews load on click only */}
+      {fileTree && fileSource && (
         <FileStructureSection
           files={fileTree}
           rootName={item.slug}
           initialHeight={500}
-          renderPreview={(content, _filePath, lang) => (
-            <Suspense fallback={<div className="h-full bg-card" />}>
-              <MonacoPreview content={content} language={lang} />
-            </Suspense>
-          )}
-          onFetchContent={fetchFileContent}
+          loadFile={loadFile}
+          sourceHost={fileSource.host}
+          fileUrl={fileSource.pageUrl}
         />
       )}
 
       {/* CLI Reference */}
       <div data-term>
         <h3 className="prompt mb-3">seedr add --help</h3>
-        <div data-term-out className="bg-surface border border-overlay overflow-hidden">
-          <table className="w-full text-sm table-fixed">
+        {/* scrolls inside its own box on narrow screens instead of widening the page */}
+        <div data-term-out className="overflow-x-auto border border-overlay bg-surface" data-testid="cli-table">
+          <table className="w-full min-w-[560px] table-fixed text-sm">
             <colgroup>
               <col className="w-[200px]" />
               <col />

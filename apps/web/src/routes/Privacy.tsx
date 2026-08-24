@@ -1,4 +1,8 @@
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { privacyMeta } from "../../scripts/site-meta.mjs";
+
 export function Privacy() {
+  usePageMeta(privacyMeta());
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <p className="prompt">cat privacy.txt</p>
@@ -79,15 +83,19 @@ export function Privacy() {
             No cookies — local storage only
           </h2>
           <p className="text-text leading-relaxed">
-            This site sets no cookies and runs no tracking or analytics tools.
-            It stores a few values in your browser's local storage to remember
-            your interface preferences: your chosen color theme ("theme"),
-            whether the typing animation is on or off ("anim"), and your
-            cookie-banner choice ("seedr-cookie-consent"). Your browser also
-            keeps your scroll position per page in session storage so it can be
-            restored when you navigate back or forward; this is cleared when you
-            close the tab. The fonts and design system are bundled with the site
-            and served from our own origin, so no web-font provider is contacted.
+            This site sets no cookies, shows no cookie banner, and runs no
+            tracking or analytics tools. It stores exactly two values in your
+            browser's local storage to remember your interface preferences: your
+            chosen color theme (key <code className="text-accent">theme</code>)
+            and whether the typing animation is on or off (key{" "}
+            <code className="text-accent">anim</code>). Your browser also keeps
+            your scroll position per page in session storage (keys starting with{" "}
+            <code className="text-accent">scroll:</code>) so it can be restored
+            when you navigate back or forward; session storage is cleared when
+            you close the tab. The fonts and the design system — also for the
+            interactive playgrounds under <code className="text-accent">/playgrounds/</code> —
+            are bundled with the site and served from our own origin, so no
+            web-font provider or content delivery network is contacted.
           </p>
           <p className="text-text leading-relaxed mt-3">
             None of these values ever leave your device, are not transmitted to
@@ -101,33 +109,22 @@ export function Privacy() {
 
         <section className="mt-10">
           <h2 className="comment text-xs text-subtext uppercase mb-3">
-            Cookie banner
-          </h2>
-          <p className="text-text leading-relaxed">
-            On your first visit the site shows a small banner. Whichever button
-            you choose ("Decline", "Essential Only", or "Accept All"), your
-            choice is saved in local storage only ("seedr-cookie-consent") so the
-            banner is not shown again. Because the site sets no cookies and loads
-            no tracking or analytics regardless of your choice, the banner only
-            dismisses itself — no processing depends on it.
-          </p>
-        </section>
-
-        <section className="mt-10">
-          <h2 className="comment text-xs text-subtext uppercase mb-3">
             File previews from GitHub
           </h2>
           <p className="text-text leading-relaxed">
             Most registry items point to a source repository hosted on GitHub.
-            When you open such an item and click a file in its preview, your
-            browser fetches that file's contents directly from GitHub
-            (raw.githubusercontent.com). As part of this technical request,
-            GitHub, Inc. (USA) receives your IP address and browser information.
-            This only happens when you explicitly click to preview a file — not
-            while browsing or searching, and not for items whose files are served
-            from this site. The legal basis is Art. 6(1)(f) GDPR — our legitimate
-            interest in letting you preview source files without copying them.
-            Details:{" "}
+            The detail page of such an item shows its file tree; nothing is
+            fetched until you select a file in that tree, and the preview panel
+            names the host (raw.githubusercontent.com) before you do. When you
+            select a file, your browser fetches that file's contents directly
+            from GitHub. As part of this technical request, GitHub, Inc. (USA)
+            receives your IP address, your browser information and the path of
+            the requested file. This never happens while browsing or searching,
+            and not for items whose files are served from this site. Fetched
+            files are only shown when they are plain text or an image; other
+            file types are described, not downloaded. The legal basis is Art.
+            6(1)(f) GDPR — our legitimate interest in letting you preview source
+            files without copying them. Details:{" "}
             <a
               href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
               target="_blank"
@@ -164,14 +161,28 @@ export function Privacy() {
             API containing exactly the item name, the item type, the target tool,
             the installation scope, and the CLI version. Our server derives a
             coarse country code from the request and stores it together with the
-            event and a timestamp. Your IP address is not stored. The stored data
-            contains no identifiers and cannot be traced back to you; it serves
-            only aggregate usage statistics for the registry. The legal basis is
-            Art. 6(1)(f) GDPR — our legitimate interest in understanding which
+            event and a timestamp. Your IP address is not stored with the event.
+            The stored data contains no identifiers and cannot be traced back to
+            you; it serves only aggregate usage statistics for the registry and
+            cannot tell installs by one person apart from installs by many.
+            Install events are kept for 90 days; older events are deleted
+            automatically as part of the API's normal operation. The legal basis
+            is Art. 6(1)(f) GDPR — our legitimate interest in understanding which
             items are used. You can switch this off entirely by setting the
             environment variable{" "}
             <code className="text-accent">SEEDR_NO_TELEMETRY</code> before
             running the CLI.
+          </p>
+          <p className="text-text leading-relaxed mt-3">
+            To protect the API against abuse, the server limits how many events
+            one client may send per minute. For this it keeps a counter keyed by
+            a one-way hash (SHA-256) of your IP address combined with a value
+            that changes every day, so the key can be linked neither to your IP
+            address nor across days. The counter is stored separately from the
+            install events, never together with them, and is deleted once its
+            one-minute window has passed (the deletion runs with the next
+            requests the API receives). The legal basis is Art. 6(1)(f) GDPR —
+            our legitimate interest in keeping the service available.
           </p>
         </section>
 
@@ -209,7 +220,7 @@ export function Privacy() {
             address above. Please note that the install statistics contain no
             identifiers, so stored install events cannot be associated with an
             individual person and therefore cannot be retrieved or deleted on an
-            individual basis.
+            individual basis; they expire after 90 days in any case.
           </p>
         </section>
 
@@ -246,7 +257,7 @@ export function Privacy() {
             this page.
           </p>
           <p className="text-text leading-relaxed mt-3">
-            Last updated: June 2026
+            Last updated: August 2026
           </p>
         </section>
       </div>

@@ -1,0 +1,33 @@
+# Cloudflare Pages response headers (https://developers.cloudflare.com/pages/configuration/headers/).
+#
+# Content-Security-Policy decisions:
+#   - script-src: only same-origin bundles plus the ONE inline script in index.html (the pre-paint
+#     theme/animation gate). Its hash is verified against index.html by tests/unit/headers.test.ts
+#     and recomputed at build by scripts/postbuild.mjs, which rewrites dist/_headers if the script
+#     changed. No 'unsafe-inline', no 'unsafe-eval'. The playgrounds ship external scripts only.
+#   - style-src: same-origin stylesheets only. React sets styles through the CSSOM (allowed under
+#     CSP); the playgrounds were converted away from inline <style> and style="" attributes.
+#   - img-src: data: for the coding-agent logos embedded as data URIs, blob: for image previews
+#     rendered from bytes fetched off GitHub.
+#   - connect-src: raw.githubusercontent.com is the only third party the app contacts, and only
+#     after the visitor clicks a file in a detail page (see Privacy.tsx).
+#   - frame-ancestors: the ?embed mode exists for the danieldeusing estate (danieldeusing.de and its
+#     subdomains). Nothing else is known to embed seedr, so framing is restricted to the estate
+#     rather than opened to every origin. No X-Frame-Options: it cannot express an allow-list and
+#     would contradict this policy.
+#   - worker-src/object-src/frame-src/media-src 'none': the app uses none of them (Monaco and its
+#     web worker were replaced by a plain text viewer).
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Gs6aWUf99ShghZTFPr3n6GUka1xiLsMMp5qU9/0ueC8='; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com; worker-src 'none'; object-src 'none'; frame-src 'none'; media-src 'none'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://danieldeusing.de https://*.danieldeusing.de; upgrade-insecure-requests
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()
+
+# Hashed build assets never change under the same name.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The install-statistics API is never cacheable.
+/api/*
+  Cache-Control: no-store

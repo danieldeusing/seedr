@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Circle } from "lucide-react";
+import { setAnimationEnabled, useAnimationEnabled } from "@/lib/animationPreference";
 
 const THEMES = ["warm", "green", "mono", "paper"] as const;
 type Theme = (typeof THEMES)[number];
@@ -17,14 +18,9 @@ function currentTheme(): Theme {
   return theme && THEMES.includes(theme) ? theme : "warm";
 }
 
-function animEnabled(): boolean {
-  if (typeof document === "undefined") return true;
-  return !document.documentElement.classList.contains("anim-off");
-}
-
 export function StatusBar() {
   const [theme, setTheme] = useState<Theme>(currentTheme);
-  const [anim, setAnim] = useState<boolean>(animEnabled);
+  const anim = useAnimationEnabled();
   const { pathname } = useLocation();
   const themeDropdownRef = useRef<HTMLDetailsElement>(null);
 
@@ -67,34 +63,20 @@ export function StatusBar() {
     setTheme(next);
   };
 
-  // Animations on/off — mirrors pagr's footer toggle. Turning off marks html.anim-off
-  // (the design system's CSS then kills every keyframe) and persists localStorage "anim",
-  // which the terminal session reads pre-paint so the choice sticks across loads.
-  const toggleAnim = () => {
-    const html = document.documentElement;
-    const turningOff = !html.classList.contains("anim-off");
-    if (turningOff) {
-      html.classList.add("anim-off");
-      html.classList.remove("term-anim");
-    } else {
-      html.classList.remove("anim-off");
-    }
-    try {
-      localStorage.setItem("anim", turningOff ? "off" : "on");
-    } catch {
-      /* private mode */
-    }
-    setAnim(!turningOff);
-  };
+  // Animations on/off — mirrors pagr's footer toggle. Takes effect immediately:
+  // the terminal session re-arms (or stops) without a reload, and the choice is
+  // persisted in localStorage "anim" for the pre-paint gate in index.html.
+  const toggleAnim = () => setAnimationEnabled(!anim);
 
   return (
-    <footer className="fixed bottom-0 inset-x-0 z-50 h-8 border-t border-border bg-card text-[11px]">
-      <div className="h-full px-4 flex items-center justify-between gap-4">
-        <span className="text-muted-foreground truncate">
+    <footer className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card text-[11px]" data-testid="status-bar">
+      {/* wraps onto two rows on phones: the path collapses first, the controls never clip */}
+      <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-1">
+        <span className="min-w-0 flex-1 basis-full truncate text-muted-foreground sm:basis-auto" data-testid="status-path">
           <span className="text-primary">[seedr]</span> visitor@registry:
           <span className="text-foreground">{`~/.agents${pathname === "/" ? "" : pathname}`}</span>
         </span>
-        <nav className="flex items-center gap-6 shrink-0">
+        <nav className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 sm:gap-x-6" aria-label="Site">
           <Link to="/privacy" className="link-quiet no-underline!">
             privacy
           </Link>
@@ -102,8 +84,8 @@ export function StatusBar() {
             impressum
           </Link>
           <span className="h-3.5 w-px bg-border" aria-hidden />
-          <details ref={themeDropdownRef} className="dropdown">
-            <summary>
+          <details ref={themeDropdownRef} className="dropdown" data-testid="theme-picker">
+            <summary aria-label={`Theme: ${theme}`}>
               <span className="visually-hidden">theme </span>
               <Circle className="size-3" fill="currentColor" />
               <span>{theme}</span>
@@ -131,8 +113,10 @@ export function StatusBar() {
             type="button"
             onClick={toggleAnim}
             aria-pressed={anim}
+            aria-label="Animations"
             title="Toggle animations"
-            className="flex cursor-pointer items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors outline-none"
+            data-testid="anim-toggle"
+            className="flex cursor-pointer items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
           >
             <span aria-hidden className={anim ? "text-primary" : undefined}>
               {anim ? "[x]" : "[ ]"}

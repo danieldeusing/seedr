@@ -2,24 +2,22 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NavigationProvider } from "./contexts/NavigationContext";
 import { Header } from "./components/Header";
 import { StatusBar } from "./components/StatusBar";
-// CookieConsent is intentionally NOT rendered: seedr sets no cookies and runs no
-// tracking/analytics, so no consent banner is legally required (see Privacy.tsx).
-// The component is kept for open-source reuse — uncomment this import and the render
-// in App() below to re-enable a banner.
-// import { CookieConsent } from "./components/CookieConsent";
 import { Home } from "./routes/Home";
 import { Browse } from "./routes/Browse";
 import { Detail } from "./routes/Detail";
 import { Privacy } from "./routes/Privacy";
 import { Impressum } from "./routes/Impressum";
+import { NotFound } from "./routes/NotFound";
 
+// ?embed hides the site chrome so a page can be framed by the danieldeusing estate
+// (frame-ancestors in public/_headers lists who may do that).
 const isEmbed = new URLSearchParams(window.location.search).has("embed");
 
 export function App() {
   return (
     <BrowserRouter>
       <NavigationProvider>
-        <div className="min-h-screen flex flex-col pb-8">
+        <div className="flex min-h-screen flex-col pb-16 sm:pb-8">
           {!isEmbed && <Header />}
           <main className="flex-grow">
             <Routes>
@@ -28,10 +26,10 @@ export function App() {
               <Route path="/impressum" element={<Impressum />} />
               <Route path="/:type" element={<Browse />} />
               <Route path="/:type/:slug" element={<Detail />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           {!isEmbed && <StatusBar />}
-          {/* {!isEmbed && <CookieConsent />} — disabled; see the note on the import above */}
         </div>
       </NavigationProvider>
     </BrowserRouter>

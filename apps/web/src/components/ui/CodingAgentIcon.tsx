@@ -1,4 +1,5 @@
 import type { CodingAgent } from "@/lib/types";
+import { agentLabels } from "@/lib/colors";
 
 // Brand logos as data URIs, copied from @toolr/ui-design's coding-agents module.
 const CODING_AGENT_LOGOS: Record<CodingAgent, string> = {
@@ -13,13 +14,17 @@ interface CodingAgentIconProps {
   agent: CodingAgent;
   size?: number;
   className?: string;
+  /** True when the parent control already carries the agent's name (e.g. an aria-labelled button). */
+  decorative?: boolean;
 }
 
-export function CodingAgentIcon({ agent, size = 16, className }: CodingAgentIconProps) {
+/** Brand logo of a coding agent; named by its alt text unless the parent names it. */
+export function CodingAgentIcon({ agent, size = 16, className, decorative = false }: CodingAgentIconProps) {
   return (
     <img
       src={CODING_AGENT_LOGOS[agent]}
-      alt=""
+      alt={decorative ? "" : agentLabels[agent]}
+      aria-hidden={decorative || undefined}
       width={size}
       height={size}
       className={className}

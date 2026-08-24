@@ -1,4 +1,8 @@
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { impressumMeta } from "../../scripts/site-meta.mjs";
+
 export function Impressum() {
+  usePageMeta(impressumMeta());
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <p className="prompt">cat imprint.txt</p>

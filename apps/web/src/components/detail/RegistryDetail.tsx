@@ -150,7 +150,7 @@ export function RegistryDetail({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-3">
           <Icon className={`size-6 shrink-0 ${iconColor}`} />
-          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          <h1 className="text-lg font-semibold text-foreground">{title}</h1>
           {labels?.map((label) => <DetailLabel key={label.text} label={label} />)}
         </div>
         {subtitle && <div className="mt-1">{subtitle}</div>}

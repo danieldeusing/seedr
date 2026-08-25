@@ -49,8 +49,14 @@ describe("useStudio", () => {
       throw new Error("Not a seedr registry: no registry/ directory");
     });
     await useStudio.getState().chooseRepo();
-    expect(useStudio.getState().error).toBe("Not a seedr registry: no registry/ directory");
+    expect(useStudio.getState().repoError).toBe("Not a seedr registry: no registry/ directory");
     expect(useStudio.getState().repo).toEqual(repo);
+
+    // The watcher refreshes on its own; what it reports is its own, and the
+    // rejected folder is not something it can clear.
+    mockFs(registryFiles());
+    await useStudio.getState().refresh();
+    expect(useStudio.getState().repoError).toBe("Not a seedr registry: no registry/ directory");
   });
 
   test("makeRepoDefault re-baselines the open checkout, and says so when the host cannot", async () => {

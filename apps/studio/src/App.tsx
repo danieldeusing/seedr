@@ -27,6 +27,7 @@ export function App() {
   const items = useStudio((s) => s.items);
   const problems = useStudio((s) => s.problems);
   const error = useStudio((s) => s.error);
+  const repoError = useStudio((s) => s.repoError);
   const selected = useStudio((s) => s.selected);
   const current = useStudio(selectedItem);
   const init = useStudio((s) => s.init);
@@ -51,7 +52,7 @@ export function App() {
 
   const close = useCallback(() => setDialog(null), []);
 
-  if (!repo) return <Onboarding error={error} onChoose={() => void chooseRepo()} />;
+  if (!repo) return <Onboarding error={repoError ?? error} onChoose={() => void chooseRepo()} />;
 
   const itemKey = current ? `${current.type}/${current.slug}` : "";
   return (
@@ -59,9 +60,9 @@ export function App() {
       <AppHeader />
       <div className="grid min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
-          {error && (
+          {(repoError ?? error) && (
             <p className="m-4 text-xs text-destructive" role="alert">
-              {error}
+              {repoError ?? error}
             </p>
           )}
           <Explorer

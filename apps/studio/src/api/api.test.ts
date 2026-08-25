@@ -26,10 +26,10 @@ describe("IPC serialisation", () => {
   });
 
   test("repo commands", async () => {
-    onCommand("pick_repo", () => ({ root: "/r", name: "r" }));
+    onCommand("pick_repo", () => ({ root: "/r", name: "r", isDefault: false }));
     onCommand("get_repo", () => null);
 
-    expect(await pickRepo()).toEqual({ root: "/r", name: "r" });
+    expect(await pickRepo()).toEqual({ root: "/r", name: "r", isDefault: false });
     expect(await getRepo()).toBeNull();
   });
 

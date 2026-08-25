@@ -16,6 +16,8 @@ interface StudioState {
   problems: string[];
   loading: boolean;
   error: string | null;
+  /** Why the last repository pick failed — the watcher never clears this. */
+  repoError: string | null;
   selected: Selection | null;
   /** Restore the host's selected repo on start, then load and watch it. */
   init(): Promise<void>;
@@ -42,6 +44,7 @@ export const useStudio = create<StudioState>((set, get) => ({
   problems: [],
   loading: false,
   error: null,
+  repoError: null,
   selected: null,
 
   async init() {
@@ -60,11 +63,14 @@ export const useStudio = create<StudioState>((set, get) => ({
     try {
       const repo = await pickRepo();
       if (!repo) return;
-      set({ repo, selected: null, error: null });
+      set({ repo, selected: null, repoError: null });
       await get().refresh();
       await watch(get().refresh);
     } catch (error) {
-      set({ error: (error as Error).message });
+      // Kept apart from `error`: the registry watcher refreshes on its own and
+      // clears what it reported, and a folder it was never pointed at is not
+      // its news to clear.
+      set({ repoError: (error as Error).message });
     }
   },
 

@@ -315,12 +315,16 @@ describe("manifest loading (remote)", () => {
   });
 
   it("assembles, looks up by (type, slug), lists and searches", async () => {
-    const { loadManifest, getItem, listItems, searchItems, clearCache, getItemFull, typeDirName, mainFileName } = await loadRegistry();
+    const { loadManifest, getItem, getItemsBySlug, listItems, searchItems, clearCache, getItemFull, typeDirName, mainFileName } = await loadRegistry();
     const manifest = await loadManifest();
     expect(manifest.items).toHaveLength(2);
     expect((await getItem("pdf", "plugin"))?.name).toBe("PDF plugin");
     expect((await getItem("pdf"))?.type).toBe("skill");
     expect(await getItem("missing")).toBeUndefined();
+    // A slug is unique per type, not globally: an untyped lookup can be
+    // ambiguous, and `add` must be able to see that rather than take the first.
+    expect((await getItemsBySlug("pdf")).map((item) => item.type).sort()).toEqual(["plugin", "skill"]);
+    expect(await getItemsBySlug("missing")).toEqual([]);
     expect(await listItems("plugin")).toHaveLength(1);
     expect(await listItems()).toHaveLength(2);
     expect((await searchItems("PLUGIN DESC")).map((i) => i.type)).toEqual(["plugin"]);

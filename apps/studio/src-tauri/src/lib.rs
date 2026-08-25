@@ -407,7 +407,13 @@ fn preselected_repo() -> Repo {
             false
         }
     });
-    Repo(Mutex::new(from_env.or_else(|| remembered_repo_file().as_deref().and_then(remembered_repo_at))))
+    // Whatever this launch resolved to becomes the one the next plain launch
+    // opens: choosing a checkout is choosing it, however it was named.
+    let selected = from_env.or_else(|| remembered_repo_file().as_deref().and_then(remembered_repo_at));
+    if let (Some(file), Some(path)) = (remembered_repo_file(), selected.as_deref()) {
+        remember_repo_at(&file, path);
+    }
+    Repo(Mutex::new(selected))
 }
 
 pub fn run() {

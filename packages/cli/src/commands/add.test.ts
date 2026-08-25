@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { vol } from "memfs";
+import { isFirstParty } from "@seedr/registry-ops/pure";
 import type { RegistryItem } from "@seedr/shared";
 import type { ContentHandler } from "../handlers/types.js";
 
@@ -39,7 +40,7 @@ const SKILL: RegistryItem = {
   type: "skill",
   description: "A test skill",
   compatibility: ["claude", "copilot", "gemini"],
-  sourceType: "toolr",
+  sourceType: "seedr",
 };
 
 const MCP: RegistryItem = {
@@ -48,13 +49,13 @@ const MCP: RegistryItem = {
   type: "mcp",
   description: "Browser automation",
   compatibility: ["claude"],
-  sourceType: "toolr",
+  sourceType: "seedr",
 };
 
 const MCP_MULTI: RegistryItem = { ...MCP, slug: "multi", compatibility: ["claude", "codex", "copilot"] };
-const HOOK: RegistryItem = { slug: "lint-hook", name: "Lint", type: "hook", description: "lint", compatibility: ["claude"], sourceType: "toolr" };
+const HOOK: RegistryItem = { slug: "lint-hook", name: "Lint", type: "hook", description: "lint", compatibility: ["claude"], sourceType: "seedr" };
 // The registry really ships these: `skill-creator` is both a skill and a plugin.
-const DUAL_SKILL: RegistryItem = { slug: "skill-creator", name: "Skill Creator", type: "skill", description: "Create skills", compatibility: ["claude"], sourceType: "toolr" };
+const DUAL_SKILL: RegistryItem = { slug: "skill-creator", name: "Skill Creator", type: "skill", description: "Create skills", compatibility: ["claude"], sourceType: "seedr" };
 const DUAL_PLUGIN: RegistryItem = { slug: "skill-creator", name: "Skill Creator", type: "plugin", description: "Create skills", compatibility: ["claude"], sourceType: "community" };
 const ITEMS = [SKILL, MCP, MCP_MULTI, HOOK, DUAL_SKILL, DUAL_PLUGIN];
 
@@ -63,7 +64,7 @@ vi.mock("../config/registry.js", () => ({
   getItemsBySlug: vi.fn(async (slug: string) => ITEMS.filter((item) => item.slug === slug)),
   searchItems: vi.fn(async (query: string) => ITEMS.filter((item) => item.slug.includes(query) || item.name.toLowerCase().includes(query.toLowerCase()))),
   listItems: vi.fn(async (type?: string) => ITEMS.filter((item) => !type || item.type === type)),
-  getItemSourcePath: vi.fn((item: RegistryItem) => (item.sourceType === "toolr" ? `/registry/${item.type}s/${item.slug}` : null)),
+  getItemSourcePath: vi.fn((item: RegistryItem) => (isFirstParty(item.sourceType) ? `/registry/${item.type}s/${item.slug}` : null)),
   getItemContent: vi.fn(async () => JSON.stringify({ name: "playwright", config: { command: "npx", args: ["-y", "@playwright/mcp@latest"] } })),
   fetchItemToDestination: vi.fn(),
   fetchItemFile: vi.fn(),

@@ -25,7 +25,7 @@ Schedule (6:00 UTC) or Manual Trigger
     Re-sync community items from their GitHub repos
     (updates metadata, file trees, last commit dates)
             ↓
-    Merge: toolr items + community items + Anthropic items
+    Merge: first-party items + community items + Anthropic items
             ↓
     Update registry/manifest.json
             ↓
@@ -35,7 +35,7 @@ Schedule (6:00 UTC) or Manual Trigger
 ```
 
 **Item ordering in manifest:**
-1. Toolr items (manually maintained, always preserved)
+1. First-party items (manually maintained, always preserved)
 2. Community items (manually added via `/add-community`, re-synced from GitHub)
 3. Anthropic items (synced from Anthropic repos)
 

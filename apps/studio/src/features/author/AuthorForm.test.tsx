@@ -16,11 +16,13 @@ beforeEach(() => {
   onCommand("run_process", (args) => {
     const request = args?.request as RunRequest;
     if (request.program === "claude" && request.args[0] === "--version") return ok(request, "2.1.226");
-    if (request.program === "claude") return ok(request, "--output-format --json-schema --tools");
+    if (request.program === "claude" && request.args[0] === "--help") return ok(request, "--output-format --json-schema --tools");
+    if (request.program === "claude") return ok(request, JSON.stringify({ type: "result", is_error: false, result: "", structured_output: { description: "Fills PDF forms.", longDescription: LONG } }));
     if (request.args.includes("identity")) return ok(request, JSON.stringify({ owner: "acme", authorName: "Acme" }));
     return ok(request, JSON.stringify({ ok: true, kind: "add-local", type: "skill", slug: "pdf", item: {}, changedPaths: ["registry/skills/pdf/item.json", "registry/skills/manifest.json"], headBefore: "abc1234def" }));
   });
   onCommand("pick_path", () => "/src/pdf");
+  onCommand("read_source_files", () => ({ files: { "SKILL.md": "# PDF" }, skipped: [] }));
 });
 
 describe("AuthorForm", () => {
@@ -29,14 +31,15 @@ describe("AuthorForm", () => {
     render(<AuthorForm onAdded={onAdded} />);
 
     expect(await screen.findByText("2.1.226")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "drafting agent" })).toHaveTextContent("Claude Code");
+    expect(screen.getByRole("button", { name: "coding agent" })).toHaveTextContent("Claude Code");
     expect(screen.getByLabelText("author")).toHaveValue("Acme");
 
     await userEvent.click(screen.getByRole("button", { name: "choose folder" }));
     expect(screen.getByLabelText("slug")).toHaveValue("pdf");
 
-    await userEvent.type(screen.getByLabelText("description"), "Fills PDF forms.");
-    await userEvent.type(screen.getByLabelText("tl;dr"), LONG);
+    // The descriptions are the agent's to write — the form does not ask for them.
+    expect(screen.queryByLabelText("description")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("tl;dr")).not.toBeInTheDocument();
     const submit = screen.getByRole("button", { name: "add to registry" });
     expect(submit).toBeEnabled();
     await userEvent.click(submit);
@@ -55,12 +58,13 @@ describe("AuthorForm", () => {
     expect(screen.getByText(/must match/)).toBeInTheDocument();
   });
 
-  test("shows the agent diagnostic and disables drafting when Claude is unavailable", async () => {
+  test("shows the agent diagnostic when Claude is unavailable", async () => {
     useAuthor.setState({ probe: { available: false, version: null, diagnostic: "Claude Code is not installed or not on PATH: npm install -g @anthropic-ai/claude-code" } });
     onCommand("run_process", (args) => ({ taskId: (args?.request as RunRequest).taskId, status: "not-found", exitCode: null, stdout: "", stderr: "", durationMs: 1 }));
     render(<AuthorForm onAdded={() => {}} />);
     expect(await screen.findByText(/not installed or not on PATH/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "draft descriptions with Claude" })).toBeDisabled();
+    // Nothing to press: drafting is not a button any more, it is what submitting does.
+    expect(screen.queryByRole("button", { name: /draft descriptions/ })).not.toBeInTheDocument();
   });
 
   test("a rejected draft is shown verbatim", async () => {
@@ -108,22 +112,33 @@ describe("AuthorForm — where the capability comes from", () => {
     expect(prompt).toHaveValue("hooks are scripts and mine");
   });
 
-  test("an empty description says who fills it in, and does not block the submit", async () => {
+  test("the descriptions are the agent's, and their absence never blocks the submit", async () => {
     render(<AuthorForm onAdded={() => {}} />);
     await screen.findByText("2.1.226");
     await userEvent.click(screen.getByRole("button", { name: "choose folder" }));
 
-    for (const label of ["description", "tl;dr"]) {
-      expect(screen.getByLabelText(label)).toHaveAttribute("placeholder", "leave empty and the agent writes it");
-      expect(screen.getByLabelText(label)).toBeEnabled();
-    }
+    expect(screen.getByText(/The agent writes the description and the TL;DR/)).toBeInTheDocument();
     expect(screen.queryByText(/is missing 'description'/)).not.toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("button", { name: "add to registry" })).toBeEnabled());
   });
 
+  test("a repository derives the author, and switching back restores the configured one", async () => {
+    render(<AuthorForm onAdded={() => {}} />);
+    await screen.findByText("2.1.226");
+    expect(screen.getByLabelText("author")).toHaveValue("Acme");
+
+    await choose("source kind", "a git repository");
+    expect(screen.getByLabelText("author")).toHaveValue("");
+    expect(screen.getByLabelText("author")).toHaveAttribute("placeholder", "derived from the source");
+    expect(screen.getByLabelText("author url")).toHaveAttribute("placeholder", "derived from the source");
+
+    await choose("source kind", "a local folder");
+    expect(screen.getByLabelText("author")).toHaveValue("Acme");
+  });
+
   test("every label explains itself on hover", () => {
     render(<AuthorForm onAdded={() => {}} />);
-    for (const label of ["from", "slug", "type", "name", "agents", "scope", "author", "description", "tl;dr", "prompt"]) {
+    for (const label of ["from", "slug", "type", "name", "agents", "scope", "author", "prompt"]) {
       expect(screen.getByText(label, { selector: ".lbl" })).toHaveAttribute("data-tip");
     }
   });

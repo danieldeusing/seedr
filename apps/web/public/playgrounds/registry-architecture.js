@@ -16,7 +16,7 @@
     settings: { label: "Settings", color: "#fb923c", count: 0,  file: "settings/manifest.json" },
   };
 
-  const SOURCES = ["all", "official", "toolr", "community"];
+  const SOURCES = ["all", "official", "seedr", "community"];
   const VIEWS = ["hierarchy", "data-flow", "consumers"];
 
   const PRESETS = [

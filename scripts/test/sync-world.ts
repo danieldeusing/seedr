@@ -202,7 +202,7 @@ export function makeExistingRegistry(registryDir: string): Record<string, Manife
       description: "Track sessions.",
       longDescription: LONG,
       compatibility: ["claude"],
-      sourceType: "toolr",
+      sourceType: "seedr",
       author: AUTHOR,
       externalUrl: "https://github.com/danieldeusing/seedr/tree/main/registry/hooks/agentwatch",
       contents: { files: [{ name: "agentwatch.sh", type: "file" }], triggers: [{ event: "SessionStart" }] },

@@ -1,5 +1,6 @@
 import type { ComponentType, FileTreeNode, RegistryItem } from "@seedr/shared";
 import { KNOWN_AGENTS } from "./agents.js";
+import { KNOWN_SOURCE_TYPES, isFirstParty } from "./sourceTypes.js";
 import { MAX_SLUG_LENGTH, SLUG_PATTERN, isComponentType, isValidSlug, typeDirName } from "./paths.js";
 
 /**
@@ -21,7 +22,6 @@ export interface ValidationError {
 
 export const MIN_LONG_DESCRIPTION_WORDS = 30;
 
-export const KNOWN_SOURCE_TYPES = ["official", "toolr", "community"] as const;
 export const KNOWN_SCOPES = ["user", "project", "local"] as const;
 export const KNOWN_PLUGIN_TYPES = ["package", "wrapper", "integration"] as const;
 export const PLUGIN_SOURCE_KINDS = ["marketplace-path", "github", "url", "git-subdir"] as const;
@@ -249,7 +249,7 @@ function checkContents(item: Item, options: ValidateOptions, push: Push): void {
     }
   }
 
-  if (options.diskFiles !== undefined && item.sourceType === "toolr") {
+  if (options.diskFiles !== undefined && isFirstParty(item.sourceType)) {
     const declared = flattenFileTree(((item.contents as { files?: FileTreeNode[] } | undefined)?.files ?? []));
     const onDisk = [...options.diskFiles].sort();
     if (JSON.stringify(declared) !== JSON.stringify(onDisk)) {
@@ -323,7 +323,7 @@ function checkPluginFields(item: Item, push: Push): void {
 
 function checkProvenance(item: Item, options: ValidateOptions, push: Push): void {
   const requireProvenance = options.requireProvenance ?? true;
-  const synced = item.sourceType !== "toolr";
+  const synced = !isFirstParty(item.sourceType);
 
   if (item.sourceRevision !== undefined && !SHA1_HEX.test(String(item.sourceRevision))) {
     push("sourceRevision", "must be a 40-character lowercase hex commit SHA");

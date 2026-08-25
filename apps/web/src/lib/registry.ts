@@ -1,5 +1,5 @@
 import type { IFuseOptions } from "fuse.js";
-import { canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
+import { canonicalAgents, canonicalSourceType, typeDirName } from "@seedr/registry-ops/pure";
 import { itemsInCategory } from "../../scripts/site-meta.mjs";
 import type { RegistryManifest, RegistryItem, ComponentType, FileTreeNode } from "./types";
 
@@ -21,7 +21,7 @@ const devTestItem: RegistryItem = {
   type: "skill",
   description: "Test item for previewing various media formats (dev only)",
   compatibility: ["claude"],
-  sourceType: "toolr",
+  sourceType: "seedr",
   author: { name: "Daniel Deusing" },
   externalUrl: "local://dev-samples",
   contents: {
@@ -38,9 +38,9 @@ const devTestItem: RegistryItem = {
   },
 };
 
-// Assemble all type manifests into a single RegistryManifest. Compatibility is
-// canonicalised here, so a not-yet-migrated `gemini` entry filters and renders
-// as `antigravity` everywhere downstream.
+// Assemble all type manifests into a single RegistryManifest. Compatibility and
+// source type are canonicalised here, so a not-yet-migrated `gemini` or `toolr`
+// entry filters and renders as `antigravity` / `seedr` everywhere downstream.
 const allItems: RegistryItem[] = (
   [
     ...skillsData.items,
@@ -51,7 +51,11 @@ const allItems: RegistryItem[] = (
     ...settingsData.items,
     ...commandsData.items,
   ] as RegistryItem[]
-).map((item) => ({ ...item, compatibility: canonicalAgents(item.compatibility) }));
+).map((item) => ({
+  ...item,
+  compatibility: canonicalAgents(item.compatibility),
+  sourceType: canonicalSourceType(item.sourceType) ?? item.sourceType,
+}));
 
 const baseManifest: RegistryManifest = {
   version: indexData.version,

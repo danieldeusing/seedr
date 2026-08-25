@@ -4,10 +4,10 @@
  * Every parameter is validated against the options that apply to the current
  * category; anything invalid or irrelevant is reported as "dropped" so the page
  * can remove it from the URL and tell the visitor, instead of silently showing
- * zero results. Dependent parameters (`scope` needs `source=toolr`, `ext` needs
+ * zero results. Dependent parameters (`scope` needs `source=seedr`, `ext` needs
  * `pluginType=wrapper`) are cleared together with the parameter they depend on.
  */
-import { canonicalAgent } from "@seedr/registry-ops/pure";
+import { canonicalAgent, canonicalSourceType } from "@seedr/registry-ops/pure";
 import type { CodingAgent, ComponentType, PluginType, RegistryItem, ScopeType, SourceType } from "./types";
 import { agentOptions, scopeOptions, sourceOptions } from "./filterOptions";
 import { agentLabels, scopeLabels, sourceLabels } from "./colors";
@@ -102,8 +102,9 @@ export function parseBrowseParams(params: URLSearchParams, context: BrowseContex
   const query = params.get("q") ?? "";
   // canonicalised first, so an old `?tool=gemini` link still filters (as antigravity)
   const tool = read<CodingAgent>("tool", agentOptions, true, "", (raw) => canonicalAgent(raw) ?? raw);
-  const source = read<SourceType>("source", sourceOptions, true, "");
-  const scope = read<ScopeType>("scope", scopeOptions, source === "toolr", "scope only applies to Seedr-sourced items");
+  // canonicalised first, so an old `?source=toolr` link still filters (as seedr)
+  const source = read<SourceType>("source", sourceOptions, true, "", (raw) => canonicalSourceType(raw) ?? raw);
+  const scope = read<ScopeType>("scope", scopeOptions, source === "seedr", "scope only applies to Seedr-sourced items");
   const pluginType = read<PluginType>("pluginType", pluginTypeOptions, isPlugins, "plugin type only applies to the plugins page");
   const capability = read<CapabilityType>("ext", capabilityOptions, isPlugins && pluginType === "wrapper", "capability only applies to wrapper plugins");
   const kind = read<ItemKind>("kind", kindOptions, !isPlugins && context.hasWrappers, "kind only applies to capability pages that list wrappers");
@@ -140,7 +141,7 @@ export function filterItems(
 ): RegistryItem[] {
   let result = filters.query ? search(filters.query) : items;
   if (filters.tool) result = result.filter((item) => item.compatibility.includes(filters.tool!));
-  if (filters.source) result = result.filter((item) => (item.sourceType ?? "toolr") === filters.source);
+  if (filters.source) result = result.filter((item) => (item.sourceType ?? "seedr") === filters.source);
   if (filters.scope) result = result.filter((item) => (item.targetScope ?? "project") === filters.scope);
   if (filters.pluginType) result = result.filter((item) => (item.pluginType ?? "package") === filters.pluginType);
   if (filters.capability) result = result.filter((item) => matchesCapability(item, filters.capability!));
@@ -181,7 +182,7 @@ export function hasActiveFilters(filters: BrowseFilters): boolean {
 export function paramUpdatesFor(key: FilterParamKey, value: string | null): Record<string, string | null> {
   const normalized = value === "" || value === "all" ? null : value;
   const updates: Record<string, string | null> = { [key]: normalized };
-  if (key === "source" && normalized !== "toolr") updates.scope = null;
+  if (key === "source" && normalized !== "seedr") updates.scope = null;
   if (key === "pluginType" && normalized !== "wrapper") updates.ext = null;
   if (key === "sortField" && normalized === "name") updates.sortField = null;
   if (key === "sortAsc" && normalized === "true") updates.sortAsc = null;

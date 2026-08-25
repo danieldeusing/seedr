@@ -9,6 +9,7 @@ import { vol } from "memfs";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isFirstParty } from "@seedr/registry-ops/pure";
 import type { FileTreeNode, RegistryItem, RegistryManifest } from "@seedr/shared";
 
 const TEST_PROJECT = "/test/project";
@@ -60,7 +61,7 @@ vi.mock("node:child_process", () => ({
 vi.mock("../config/registry.js", () => ({
   getItem: vi.fn(async () => undefined),
   getItemSourcePath: vi.fn((item: RegistryItem) => {
-    if (item.sourceType === "toolr") {
+    if (isFirstParty(item.sourceType)) {
       return `/registry/${item.type}s/${item.slug}`;
     }
     return null;
@@ -107,9 +108,9 @@ vi.mock("node:os", () => ({
 describe("install all manifest items (mocked)", () => {
   beforeEach(() => {
     vol.reset();
-    // Set up local source dirs for toolr items with correct content files
+    // Set up local source dirs for first-party items with correct content files
     for (const item of manifest.items) {
-      if (item.sourceType === "toolr") {
+      if (isFirstParty(item.sourceType)) {
         const srcPath = `/registry/${item.type}s/${item.slug}`;
         vol.mkdirSync(srcPath, { recursive: true });
 

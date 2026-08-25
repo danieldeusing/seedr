@@ -1,5 +1,5 @@
 import { isComponentType, isValidSlug } from "../paths.js";
-import { KNOWN_SOURCE_TYPES } from "../validate.js";
+import { KNOWN_SOURCE_TYPES } from "../sourceTypes.js";
 import type { RegistryOp } from "./types.js";
 
 type Envelope = Record<string, unknown>;

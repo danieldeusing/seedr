@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { CanonicalCodingAgent, ComponentType, ScopeType } from "@seedr/shared";
+import { useEffect, useMemo, useRef } from "react";
+import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
-import { Ban, Check, FolderOpen, Sparkles } from "lucide-react";
+import { Ban, Check, FolderOpen } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
-import { DRAFT_CERTIFIED } from "@/features/settings/agentSettings";
+import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
 import { formProblems, useAuthor, type SourceKind } from "./store";
 
 // The CLI has no install handler for `command` items yet (plan trap 12); until
@@ -30,9 +30,7 @@ const TIPS = {
   name: "The display name, shown in the explorer and on the web.",
   agents: "The coding agents this capability supports. Installing it for an agent it does not list is refused.",
   scope: "Where the CLI installs it by default — the project, or the user's home.",
-  author: "Who made it. For a repository this is its owner; for our own items it is prefilled from this checkout's git remote.",
-  description: "One sentence: what it does. Shown in every list. Leave it empty and the agent writes it.",
-  longDescription: "The TL;DR on the detail page — what is inside, how much, what makes it different, in at least 30 words. Leave it empty and the agent writes it.",
+  author: "Who made it. Prefilled from settings → author; for a repository it comes from the source, unless you say otherwise here.",
 };
 
 interface AuthorFormProps {
@@ -52,7 +50,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const log = useAuthor((s) => s.log);
   const result = useAuthor((s) => s.result);
   const error = useAuthor((s) => s.error);
-  const { setField, setType, toggleAgent, chooseSource, prepare, draft, apply, cancel, reset } = useAuthor.getState();
+  const { setField, setType, setSourceKind, toggleAgent, chooseSource, prepare, apply, cancel, reset } = useAuthor.getState();
 
   useEffect(() => {
     void prepare();
@@ -70,7 +68,10 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   /** A repository or a prompt is carried out by the agent, not by the transaction. */
   const byAgent = form.sourceKind !== "folder";
   const formRef = useRef<HTMLFormElement>(null);
-  const [agent, setAgent] = useState<CanonicalCodingAgent>("claude");
+  const agent = useAgentSettings((state) => state.preferred);
+  const setAgent = useAgentSettings((state) => state.setPreferred);
+  /** For a repository, what the agent works out from the source unless overridden. */
+  const derivedPlaceholder = form.sourceKind === "repo" ? "derived from the source" : "";
   const input =
     "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -112,14 +113,14 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         void apply();
       }}
     >
-      <p className="prompt">{form.sourceKind === "folder" ? "add-local" : form.sourceKind === "repo" ? "add-community" : "add-toolr"}</p>
+      <p className="prompt">{form.sourceKind === "folder" ? "add-local" : form.sourceKind === "repo" ? "add-community" : "add-seedr"}</p>
 
       <div className="field-row mt-4">
         <span className="lbl" data-tip={TIPS.from}>
           from
         </span>
         <div className="field-val">
-          <Select<SourceKind> ariaLabel="source kind" value={form.sourceKind} options={SOURCE_KINDS} onChange={(kind) => setField("sourceKind", kind)} disabled={busy} />
+          <Select<SourceKind> ariaLabel="source kind" value={form.sourceKind} options={SOURCE_KINDS} onChange={setSourceKind} disabled={busy} />
         </div>
       </div>
 
@@ -248,44 +249,30 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
             className={input}
             value={form.authorName}
             onChange={(e) => setField("authorName", e.target.value)}
-            placeholder={form.sourceKind === "repo" ? "the repository's owner" : "name"}
+            placeholder={derivedPlaceholder || "name"}
             disabled={busy}
           />
-          <input aria-label="author url" className={input} value={form.authorUrl} onChange={(e) => setField("authorUrl", e.target.value)} placeholder="https://github.com/you" disabled={busy} />
+          <input
+            aria-label="author url"
+            className={input}
+            value={form.authorUrl}
+            onChange={(e) => setField("authorUrl", e.target.value)}
+            placeholder={derivedPlaceholder || "https://github.com/you"}
+            disabled={busy}
+          />
         </div>
       </div>
       <Problems errors={[...problemFor("author"), ...problemFor("author.url")]} />
 
       <div className="field-row">
-        <label className="lbl" htmlFor="author-description" data-tip={TIPS.description}>
-          description
-        </label>
-        <div className="field-val">
-          <input id="author-description" className={input} value={form.description} onChange={(e) => setField("description", e.target.value)} placeholder="leave empty and the agent writes it" disabled={busy} />
-        </div>
+        <span className="lbl" />
+        <p className="field-val text-muted-foreground">The agent writes the description and the TL;DR from the content itself — edit them afterwards on the item.</p>
       </div>
-      <Problems errors={problemFor("description")} />
-
-      <div className="field-row">
-        <label className="lbl" htmlFor="author-long" data-tip={TIPS.longDescription}>
-          tl;dr
-        </label>
-        <div className="field-val">
-          <textarea
-            id="author-long"
-            className={`${input} min-h-24`}
-            value={form.longDescription}
-            onChange={(e) => setField("longDescription", e.target.value)}
-            placeholder="leave empty and the agent writes it"
-            disabled={busy}
-          />
-        </div>
-      </div>
-      <Problems errors={problemFor("longDescription")} />
+      <Problems errors={[...problemFor("description"), ...problemFor("longDescription")]} />
 
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
-          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="drafting agent" disabled={busy} />
+          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="coding agent" disabled={busy} />
           <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
             {phase === "drafting"
               ? "drafting…"
@@ -301,11 +288,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {phase === "drafting" || phase === "running" ? (
-            <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />
-          ) : (
-            !byAgent && <IconButton icon={Sparkles} ariaLabel="draft descriptions with Claude" tip="draft descriptions with Claude" onClick={() => void draft()} disabled={busy || !probe?.available} />
-          )}
+          {(phase === "drafting" || phase === "running") && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
           <IconButton
             icon={Check}
             ariaLabel={byAgent ? "hand it to the agent" : "add to registry"}

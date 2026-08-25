@@ -1,14 +1,15 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import type { ComponentType, RegistryItem, RegistryManifestIndex, SourceType, TypeManifest } from "@seedr/shared";
+import type { CanonicalSourceType, ComponentType, RegistryItem, RegistryManifestIndex, TypeManifest } from "@seedr/shared";
 import { contentDigestOfDir, contentHash } from "./hash.js";
 import { indexManifestPath, typeDir, typeManifestPath } from "./fsPaths.js";
 import { ALL_TYPES, typeDirName } from "./paths.js";
 import { listItems } from "./read.js";
+import { canonicalSourceType, isFirstParty } from "./sourceTypes.js";
 import { omit } from "./util.js";
 
 export const MANIFEST_VERSION = "2.0.0";
 
-const SOURCE_ORDER: Record<SourceType, number> = { toolr: 0, community: 1, official: 2 };
+const SOURCE_ORDER: Record<CanonicalSourceType, number> = { seedr: 0, community: 1, official: 2 };
 
 export interface CompileResult {
   /** Every item as written into the per-type manifests' source, in manifest order. */
@@ -17,14 +18,14 @@ export interface CompileResult {
 }
 
 /**
- * All items with their content hash filled in for toolr items, sorted the way
- * the manifests list them: by source (toolr, community, official), then slug.
- * Structural validation happens in `listItems`; the description gate does not
- * apply here, because synced items are compiled as they arrive.
+ * All items with their content hash filled in for first-party items, sorted the
+ * way the manifests list them: by source (seedr, community, official), then
+ * slug. Structural validation happens in `listItems`; the description gate does
+ * not apply here, because synced items are compiled as they arrive.
  */
 export function collectItems(registryDir: string): RegistryItem[] {
   const items = listItems(registryDir).map(({ dir, item }) => {
-    if (item.sourceType === "toolr") {
+    if (isFirstParty(item.sourceType)) {
       const hash = contentHash(dir);
       const digest = contentDigestOfDir(dir);
       if (hash || digest) {
@@ -34,7 +35,7 @@ export function collectItems(registryDir: string): RegistryItem[] {
     return item;
   });
   return items.sort((a, b) => {
-    const order = SOURCE_ORDER[a.sourceType ?? "toolr"] - SOURCE_ORDER[b.sourceType ?? "toolr"];
+    const order = SOURCE_ORDER[canonicalSourceType(a.sourceType) ?? "seedr"] - SOURCE_ORDER[canonicalSourceType(b.sourceType) ?? "seedr"];
     return order !== 0 ? order : a.slug.localeCompare(b.slug);
   });
 }

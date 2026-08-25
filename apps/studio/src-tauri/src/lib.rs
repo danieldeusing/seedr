@@ -18,8 +18,8 @@ use std::sync::{Arc, Mutex};
 
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
-use tauri_plugin_dialog::DialogExt;
+use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_dialog::{DialogExt, FileDialogBuilder};
 
 use executor::{OutputEvent, Registry, RunOutcome, RunRequest};
 use source::{PickedPaths, SourceFiles};
@@ -35,9 +35,14 @@ struct Repo(Mutex<Option<PathBuf>>);
 struct RegistryWatcher(Mutex<Option<RecommendedWatcher>>);
 
 #[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 struct RepoInfo {
     root: String,
     name: String,
+    /// Whether this is the checkout Studio calls home. False is the interesting
+    /// case: the title bar warns, because changing the wrong registry by
+    /// accident is the mistake this app can make.
+    is_default: bool,
 }
 
 #[derive(Serialize)]
@@ -88,7 +93,7 @@ fn repo_info(path: &Path) -> Result<RepoInfo, String> {
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.display().to_string());
-    Ok(RepoInfo { root: path.display().to_string(), name })
+    Ok(RepoInfo { root: path.display().to_string(), name, is_default: is_default_repo(path) })
 }
 
 
@@ -97,9 +102,9 @@ fn remembered_repo_file() -> Option<PathBuf> {
     dirs::config_dir().map(|dir| dir.join("seedr-studio").join("repo"))
 }
 
-/// Remembering is best effort — a read-only config directory must not stop the
-/// app from opening the repository the user just picked.
-fn remember_repo_at(file: &Path, path: &Path) {
+/// One path, one line. Writing is best effort — a read-only config directory must
+/// not stop the app from opening the repository the user just picked.
+fn write_repo_path(file: &Path, path: &Path) {
     if let Some(parent) = file.parent() {
         let _ = fs::create_dir_all(parent);
     }
@@ -113,18 +118,78 @@ fn remembered_repo_at(file: &Path) -> Option<PathBuf> {
     repo_info(&path).ok().map(|_| path)
 }
 
+/// Where the *default* checkout is recorded — a second file beside the
+/// remembered one, and a different question: not "which one do I reopen?" but
+/// "which one am I normally in?".
+fn default_repo_file() -> Option<PathBuf> {
+    dirs::config_dir().map(|dir| dir.join("seedr-studio").join("default"))
+}
+
+/// The recorded default, whether or not that folder is still a checkout: a
+/// default that has moved away makes the current one *not* it, which is exactly
+/// what the user should be told.
+fn default_repo_at(file: &Path) -> Option<PathBuf> {
+    let recorded = fs::read_to_string(file).ok()?;
+    let line = recorded.trim();
+    (!line.is_empty()).then(|| PathBuf::from(line))
+}
+
+/// The first checkout wins. A plain switch must not move the baseline it is
+/// being measured against, or the alert would never fire.
+fn adopt_default_repo_at(file: &Path, path: &Path) {
+    if default_repo_at(file).is_none() {
+        write_repo_path(file, path);
+    }
+}
+
+/// The comparison the webview is spared: it never learns which path is the
+/// default, only whether the one it has open is it.
+fn is_default_repo(path: &Path) -> bool {
+    match default_repo_file().as_deref().and_then(default_repo_at) {
+        Some(default) => default == path,
+        // Nothing recorded yet — a first run is home, not something to warn about.
+        None => true,
+    }
+}
+
+/// The file picker, owned by the app window. With no parent set, rfd falls back
+/// to whatever `NSApp` reports on macOS and runs the panel as a sheet on that
+/// window; when the guess is not the window the user clicked in, no dialog is
+/// ever shown and the click looks like it did nothing at all.
+fn parented_file_dialog(app: &AppHandle) -> FileDialogBuilder<tauri::Wry> {
+    let dialog = app.dialog().file();
+    match app.get_webview_window("main") {
+        Some(window) => dialog.set_parent(&window),
+        None => dialog,
+    }
+}
+
 #[tauri::command]
 async fn pick_repo(app: AppHandle, repo: State<'_, Repo>) -> Result<Option<RepoInfo>, String> {
-    let Some(picked) = app.dialog().file().blocking_pick_folder() else {
+    let Some(picked) = parented_file_dialog(&app).blocking_pick_folder() else {
         return Ok(None);
     };
     let path = picked.into_path().map_err(|e| e.to_string())?;
     let info = repo_info(&path)?;
     if let Some(file) = remembered_repo_file() {
-        remember_repo_at(&file, &path);
+        write_repo_path(&file, &path);
+    }
+    // Only a folder that passed as a checkout may become the default one.
+    if let Some(file) = default_repo_file() {
+        adopt_default_repo_at(&file, &path);
     }
     *repo.0.lock().map_err(|e| e.to_string())? = Some(path);
     Ok(Some(info))
+}
+
+/// Re-baseline: the open checkout becomes the one every other is measured
+/// against. Deliberate, because it is what silences the alert.
+#[tauri::command]
+fn set_default_repo(repo: State<Repo>) -> Result<RepoInfo, String> {
+    let root = current_root(&repo)?;
+    let file = default_repo_file().ok_or_else(|| "No configuration directory to record the default checkout in".to_string())?;
+    write_repo_path(&file, &root);
+    repo_info(&root)
 }
 
 #[tauri::command]
@@ -366,7 +431,7 @@ fn cancel_process(task_id: String, registry: State<Registry>) -> bool {
 /// A native picker; the chosen absolute path is remembered so `read_source_files` may read under it.
 #[tauri::command]
 async fn pick_path(kind: String, app: AppHandle, picked: State<'_, PickedPaths>) -> Result<Option<String>, String> {
-    let dialog = app.dialog().file();
+    let dialog = parented_file_dialog(&app);
     let chosen = if kind == "file" { dialog.blocking_pick_file() } else { dialog.blocking_pick_folder() };
     let Some(chosen) = chosen else { return Ok(None) };
     let path = chosen.into_path().map_err(|e| e.to_string())?;
@@ -411,7 +476,12 @@ fn preselected_repo() -> Repo {
     // opens: choosing a checkout is choosing it, however it was named.
     let selected = from_env.or_else(|| remembered_repo_file().as_deref().and_then(remembered_repo_at));
     if let (Some(file), Some(path)) = (remembered_repo_file(), selected.as_deref()) {
-        remember_repo_at(&file, path);
+        write_repo_path(&file, path);
+    }
+    // The first checkout Studio ever opens is the one it calls home; every later
+    // one is measured against it rather than replacing it.
+    if let (Some(file), Some(path)) = (default_repo_file(), selected.as_deref()) {
+        adopt_default_repo_at(&file, path);
     }
     Repo(Mutex::new(selected))
 }
@@ -431,6 +501,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             pick_repo,
             get_repo,
+            set_default_repo,
             list_dir,
             read_text,
             path_exists,
@@ -477,7 +548,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("seedr-skills-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         for (name, body) in [
-            ("add-toolr", "---\nname: add-toolr\ndescription: \"Add local items\"\n---\n# body\n"),
+            ("add-seedr", "---\nname: add-seedr\ndescription: \"Add local items\"\n---\n# body\n"),
             ("bare", "# no frontmatter\n"),
         ] {
             fs::create_dir_all(dir.join(name)).expect("fixture");
@@ -490,7 +561,7 @@ mod tests {
         let mut skills = Vec::new();
         skills_in(&dir, "project", &mut skills);
         skills.sort_by(|a, b| a.name.cmp(&b.name));
-        assert_eq!(skills.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["add-toolr", "bare"]);
+        assert_eq!(skills.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["add-seedr", "bare"]);
         assert_eq!(skills[0].description, "Add local items");
         assert_eq!(skills[1].description, "");
 
@@ -557,12 +628,37 @@ mod tests {
         let file = std::env::temp_dir().join(format!("seedr-remember-{}", std::process::id())).join("repo");
 
         assert_eq!(remembered_repo_at(&file), None, "nothing remembered yet");
-        remember_repo_at(&file, &root);
+        write_repo_path(&file, &root);
         assert_eq!(remembered_repo_at(&file), Some(root.clone()));
 
         // A folder that is no longer a checkout is forgotten, not reopened.
         fs::remove_dir_all(root.join("registry")).expect("remove");
         assert_eq!(remembered_repo_at(&file), None);
+
+        let _ = fs::remove_dir_all(file.parent().expect("parent"));
+    }
+
+    #[test]
+    fn the_default_checkout_is_the_first_one_opened_until_it_is_set_again() {
+        let file = std::env::temp_dir().join(format!("seedr-default-{}", std::process::id())).join("default");
+        let _ = fs::remove_dir_all(file.parent().expect("parent"));
+
+        assert_eq!(default_repo_at(&file), None, "nothing recorded yet");
+        adopt_default_repo_at(&file, Path::new("/checkouts/seedr"));
+        assert_eq!(default_repo_at(&file), Some(PathBuf::from("/checkouts/seedr")));
+
+        // Switching checkouts leaves the baseline alone, which is what gives the
+        // alert something to be measured against.
+        adopt_default_repo_at(&file, Path::new("/checkouts/fork"));
+        assert_eq!(default_repo_at(&file), Some(PathBuf::from("/checkouts/seedr")));
+
+        // Re-baselining is the explicit action, and it overwrites.
+        write_repo_path(&file, Path::new("/checkouts/fork"));
+        assert_eq!(default_repo_at(&file), Some(PathBuf::from("/checkouts/fork")));
+
+        // A blank file records nothing — it must not read as the root directory.
+        write_repo_path(&file, Path::new(""));
+        assert_eq!(default_repo_at(&file), None);
 
         let _ = fs::remove_dir_all(file.parent().expect("parent"));
     }

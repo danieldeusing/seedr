@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isFirstParty } from "@seedr/registry-ops";
 import { readAllItems } from "./compile-manifest.js";
 import { computeContentDigest } from "./sync/digest.js";
 import { GitHubClient } from "./sync/github.js";
@@ -69,7 +70,7 @@ describe("runSync", () => {
 
       // every synced item now carries provenance and validates strictly
       const items = readAllItems({ registryDir: world.registryDir });
-      for (const item of items.filter((i) => i.sourceType !== "toolr")) {
+      for (const item of items.filter((i) => !isFirstParty(i.sourceType))) {
         expect(item.sourceRevision, item.slug).toMatch(/^[0-9a-f]{40}$/);
         expect(item.contentDigest, item.slug).toMatch(/^[0-9a-f]{64}$/);
         expect(item.license, item.slug).toBeDefined();
@@ -242,7 +243,7 @@ describe("runSync", () => {
       });
       expect(readItem(world.registryDir, "skills", "react-best-practices").pluginSource).toBeUndefined();
 
-      // toolr items are never touched; manifests are compiled with the toolr digest
+      // first-party items are never touched; manifests are compiled with their digest
       expect(readItem(world.registryDir, "hooks", "agentwatch")).toEqual(world.existing.agentwatch);
       const hooksManifest = JSON.parse(readFileSync(join(world.registryDir, "hooks", "manifest.json"), "utf-8")) as { items: ManifestItem[] };
       expect(hooksManifest.items[0]!.contentDigest).toBe(computeContentDigest([{ path: "agentwatch.sh", bytes: encode("#!/bin/sh\necho hi\n") }]));
@@ -489,7 +490,7 @@ describe("runSync", () => {
     expect(logLines.join("\n")).toMatch(/DRY RUN, nothing will be written/);
   });
 
-  it("leaves toolr files untouched on disk (same mtime) across a run", async () => {
+  it("leaves first-party files untouched on disk (same mtime) across a run", async () => {
     const path = join(world.registryDir, "hooks", "agentwatch", "item.json");
     const before = statSync(path).mtimeMs;
     await sync();

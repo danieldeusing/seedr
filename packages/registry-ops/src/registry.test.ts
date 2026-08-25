@@ -6,7 +6,7 @@ import { collectItems, compileRegistry } from "./compile.js";
 import { contentHash, itemStateHash } from "./hash.js";
 import { indexManifestPath, typeManifestPath } from "./fsPaths.js";
 import { fileTree, listItems, readIndex, readItem, readTypeManifest } from "./read.js";
-import { makeRegistry, writeItem, toolrSkill } from "./test/fixtures.js";
+import { makeRegistry, writeItem, seedrSkill } from "./test/fixtures.js";
 
 describe("read", () => {
   test("listItems walks every type directory and keys by (type, slug)", () => {
@@ -16,8 +16,8 @@ describe("read", () => {
 
   test("readItem refuses an item whose json disagrees with its directory", () => {
     const registry = makeRegistry();
-    writeItem(registry, "skills", { ...toolrSkill, slug: "wrong" });
-    writeFileSync(join(registry, "skills", "wrong", "item.json"), JSON.stringify({ ...toolrSkill, slug: "alpha" }));
+    writeItem(registry, "skills", { ...seedrSkill, slug: "wrong" });
+    writeFileSync(join(registry, "skills", "wrong", "item.json"), JSON.stringify({ ...seedrSkill, slug: "alpha" }));
     expect(() => readItem(registry, "skill", "wrong")).toThrow(/is "alpha" but the directory is "wrong"/);
   });
 
@@ -42,7 +42,7 @@ describe("hash", () => {
     const alpha = join(registry, "skills", "alpha");
     const before = contentHash(alpha);
     expect(before).toMatch(/^[0-9a-f]{16}$/);
-    writeFileSync(join(alpha, "item.json"), JSON.stringify({ ...toolrSkill, name: "Alpha!" }));
+    writeFileSync(join(alpha, "item.json"), JSON.stringify({ ...seedrSkill, name: "Alpha!" }));
     expect(contentHash(alpha)).toBe(before);
     writeFileSync(join(alpha, "SKILL.md"), "# changed\n");
     expect(contentHash(alpha)).not.toBe(before);
@@ -52,7 +52,7 @@ describe("hash", () => {
   test("itemStateHash changes on either metadata or content, and is null for a missing item", () => {
     const registry = makeRegistry();
     const initial = itemStateHash(registry, "skill", "alpha");
-    writeFileSync(join(registry, "skills", "alpha", "item.json"), JSON.stringify({ ...toolrSkill, name: "Alpha!" }));
+    writeFileSync(join(registry, "skills", "alpha", "item.json"), JSON.stringify({ ...seedrSkill, name: "Alpha!" }));
     const afterMeta = itemStateHash(registry, "skill", "alpha");
     expect(afterMeta).not.toBe(initial);
     writeFileSync(join(registry, "skills", "alpha", "references", "notes.md"), "more\n");
@@ -62,9 +62,10 @@ describe("hash", () => {
 });
 
 describe("compile", () => {
-  test("orders by source then slug and fills contentHash for toolr items with content", () => {
+  test("orders by source then slug and fills contentHash for first-party items with content", () => {
     const items = collectItems(makeRegistry());
-    expect(items.map((i) => `${i.sourceType}/${i.slug}`)).toEqual(["toolr/alpha", "toolr/delta", "community/beta", "official/gamma"]);
+    // `toolr/delta` sorts with the first-party items: the alias resolves before ordering.
+    expect(items.map((i) => `${i.sourceType}/${i.slug}`)).toEqual(["seedr/alpha", "toolr/delta", "community/beta", "official/gamma"]);
     expect(items.find((i) => i.slug === "alpha")?.contentHash).toMatch(/^[0-9a-f]{16}$/);
     expect(items.find((i) => i.slug === "delta")?.contentHash).toMatch(/^[0-9a-f]{16}$/);
     expect(items.find((i) => i.slug === "beta")?.contentHash).toBeUndefined();
@@ -91,7 +92,7 @@ describe("compile", () => {
 
   test("fails loudly on a structurally invalid item and writes nothing", () => {
     const registry = makeRegistry();
-    writeItem(registry, "hooks", { ...toolrSkill, slug: "broken", type: "hook", compatibility: ["bard" as never] });
+    writeItem(registry, "hooks", { ...seedrSkill, slug: "broken", type: "hook", compatibility: ["bard" as never] });
     expect(() => compileRegistry(registry)).toThrow(/compatibility: unknown coding agent "bard"/);
     expect(existsSync(indexManifestPath(registry))).toBe(false);
   });

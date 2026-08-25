@@ -1,4 +1,3 @@
-// toolr-design-ignore-next-line
 import { Package, Puzzle, Plug } from "lucide-react";
 import type { PluginType, RegistryItem } from "@/lib/types";
 

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { PLUGIN_TYPE_BADGES } from "@/lib/pluginBadges";
 import { Link } from "react-router-dom";
-// toolr-design-ignore-next-line
 import { Clock,} from "lucide-react";
 import { CodingAgentIcon } from "./ui/CodingAgentIcon";
 import { Label } from "./ui/Label";
@@ -106,7 +105,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
               <Label text={pluginBadge.text} accentColor={pluginTypeToBadgeColor[item.pluginType]} icon={pluginBadge.icon} tooltip={{ description: pluginBadge.description(item) }} />
             </FilterControl>
           )}
-          {item.sourceType === "toolr" && item.targetScope && (
+          {item.sourceType === "seedr" && item.targetScope && (
             <FilterControl label={`Filter by scope: ${scopeLabels[item.targetScope]}`} onClick={onScopeClick && (() => onScopeClick(item.targetScope!))}>
               <ScopeBadge scope={item.targetScope} />
             </FilterControl>

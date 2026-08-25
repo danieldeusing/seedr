@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { ComponentType } from "@seedr/shared";
 import { fs } from "@/api/fs";
-import { getRepo, pickRepo, type RepoInfo } from "@/api/repo";
+import { getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
 import { onRegistryChanged, watchRegistry } from "@/api/watch";
 import { loadRegistry, type StudioItem } from "./registry";
 
@@ -16,10 +16,14 @@ interface StudioState {
   problems: string[];
   loading: boolean;
   error: string | null;
+  /** Why the last repository pick failed — the watcher never clears this. */
+  repoError: string | null;
   selected: Selection | null;
   /** Restore the host's selected repo on start, then load and watch it. */
   init(): Promise<void>;
   chooseRepo(): Promise<void>;
+  /** Make the open checkout the one Studio calls home. */
+  makeRepoDefault(): Promise<void>;
   refresh(): Promise<void>;
   select(selection: Selection | null): void;
 }
@@ -40,6 +44,7 @@ export const useStudio = create<StudioState>((set, get) => ({
   problems: [],
   loading: false,
   error: null,
+  repoError: null,
   selected: null,
 
   async init() {
@@ -58,9 +63,20 @@ export const useStudio = create<StudioState>((set, get) => ({
     try {
       const repo = await pickRepo();
       if (!repo) return;
-      set({ repo, selected: null, error: null });
+      set({ repo, selected: null, repoError: null });
       await get().refresh();
       await watch(get().refresh);
+    } catch (error) {
+      // Kept apart from `error`: the registry watcher refreshes on its own and
+      // clears what it reported, and a folder it was never pointed at is not
+      // its news to clear.
+      set({ repoError: (error as Error).message });
+    }
+  },
+
+  async makeRepoDefault() {
+    try {
+      set({ repo: await setDefaultRepo() });
     } catch (error) {
       set({ error: (error as Error).message });
     }

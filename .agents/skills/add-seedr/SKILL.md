@@ -1,15 +1,15 @@
 ---
-name: add-toolr
+name: add-seedr
 description: |
   Add new content (skills, hooks, agents, plugins, MCP servers, settings, commands) to the seedr registry.
-  Trigger on: "/add-toolr <path>", "add toolr item", "register this hook/skill/agent/plugin/mcp/settings".
+  Trigger on: "/add-seedr <path>", "add seedr item", "register this hook/skill/agent/plugin/mcp/settings".
   Accepts a filesystem path, auto-detects the content type from path segments, asks clarifying
   questions (scope, compatibility, name, description), derives author and externalUrl from the
   repo, and adds the item through the operations CLI (scripts/registry-op.ts), which copies the
-  content, writes item.json and recompiles the manifests in one transaction. Toolr items only.
+  content, writes item.json and recompiles the manifests in one transaction. First-party items only.
 ---
 
-# Add Toolr Item
+# Add Seedr Item
 
 Add a new item to the seedr registry from a local filesystem path.
 
@@ -17,7 +17,7 @@ Add a new item to the seedr registry from a local filesystem path.
 
 ### 1. Parse the argument
 
-Extract `<path>` from the user's input (e.g. `/add-toolr /Users/daniel/whatever/.claude/hooks/abc`).
+Extract `<path>` from the user's input (e.g. `/add-seedr /Users/daniel/whatever/.claude/hooks/abc`).
 Verify the path exists (file or directory) using Bash `ls` or Read.
 
 ### 2. Detect content type
@@ -234,7 +234,7 @@ npx tsx scripts/registry-op.ts list <type>
 
 If an entry with this `slug` exists under this type, stop and tell the user: the operation
 refuses collisions by design. Changing an existing item is `/update-item`; replacing it is
-`/remove-toolr` followed by this skill. The same slug under a *different* type is fine —
+`/remove-seedr` followed by this skill. The same slug under a *different* type is fine —
 `(type, slug)` is the key.
 
 ### 8. Add through the operations CLI
@@ -268,7 +268,7 @@ npx tsx scripts/registry-op.ts run --op <path-to-that-file>
 
 The transaction copies the source into `registry/<type dir>/<slug>/` (a directory whole, a
 single file into the directory), derives the file tree, writes `item.json` with
-`sourceType: "toolr"` and today's date, recompiles the manifests, and verifies that only the
+`sourceType: "toolr"` (the B1 storage value) and today's date, recompiles the manifests, and verifies that only the
 item's paths and the manifests changed — rolling back on any failure. It validates the item in
 full before copying: a `longDescription` under 30 words or without backticks is refused here,
 not at commit time. Fix the draft and run again; never bypass it.
@@ -285,8 +285,8 @@ Print a summary from the result JSON:
 
 ## Important notes
 
-- `sourceType` is always `"toolr"` — this skill is for first-party, manually-maintained items
-- The sync script (`pnpm sync`) preserves toolr items and only replaces synced items
+- `sourceType` always means first-party. It is still WRITTEN as `"toolr"`: see STORAGE_SOURCE_TYPES in `packages/registry-ops/src/sourceTypes.ts`
+- The sync script (`pnpm sync`) preserves first-party items and only replaces synced items
 - Never `cp`, `mkdir` or write `item.json` yourself, and never run `pnpm compile` separately:
   the transaction does all of it and undoes all of it on failure
 - For skills, validate that a `SKILL.md` exists in the source directory before step 6

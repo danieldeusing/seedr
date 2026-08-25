@@ -32,8 +32,8 @@ registry/
 │   ├── manifest.json          # Generated: all skill items
 │   └── <slug>/
 │       ├── item.json          # Source of truth for one item
-│       ├── SKILL.md           # Skill content (toolr items only)
-│       └── references/        # Supporting files (toolr items only)
+│       ├── SKILL.md           # Skill content (first-party items only)
+│       └── references/        # Supporting files (first-party items only)
 ├── plugins/                   # Plugin item.json files + manifest.json
 ├── hooks/                     # Hook content + item.json + manifest.json
 ├── agents/                    # manifest.json (may be empty)
@@ -86,7 +86,8 @@ Three kinds of generated files:
 ```
 
 Per-type manifests strip `longDescription` (loaded on demand from `item.json`), and plugin
-manifests also strip `contents`.
+manifests also strip `contents`. `"toolr"` above is verbatim: it is the deprecated spelling of
+`seedr` that the data still carries (see `sourceType` below).
 
 ## `item.json` Fields
 
@@ -97,7 +98,7 @@ manifests also strip `contents`.
 | `type` | Yes | `skill`, `plugin`, `hook`, `agent`, `mcp`, `settings`, `command` |
 | `description` | Yes | One-sentence summary |
 | `longDescription` | Yes | TL;DR for the detail page (see registry-descriptions.md) |
-| `sourceType` | Yes | `toolr`, `community`, or `official` |
+| `sourceType` | Yes | `seedr`, `community`, or `official`. `toolr` is a deprecated alias of `seedr`, accepted on input and still what writers store — the vocabulary lives in `packages/registry-ops/src/sourceTypes.ts` |
 | `compatibility` | Yes | Non-empty subset of `claude`, `copilot`, `antigravity`, `codex`, `opencode` (`gemini` is accepted only as a deprecated alias of `antigravity`; never write it) — the vocabulary lives in `packages/registry-ops/src/agents.ts` |
 | `author` | Yes | `{ name, url? }` |
 | `externalUrl` | Community | GitHub URL the CLI fetches content from at install time |
@@ -105,8 +106,8 @@ manifests also strip `contents`.
 ## Sync vs Compile
 
 - **`pnpm sync`** (`scripts/sync.ts`): re-fetches `community` and Anthropic `official` items
-  from their GitHub repos, writes each as `item.json`, then calls `compileManifest()`. Toolr
-  items are never touched. Do **not** run sync as part of `build`.
+  from their GitHub repos, writes each as `item.json`, then calls `compileManifest()`.
+  First-party items are never touched. Do **not** run sync as part of `build`.
 - **`pnpm compile`** (`scripts/compile-manifest.ts`): assembles `item.json` files into the
   generated manifests. Fast, offline, no network.
 
@@ -114,10 +115,10 @@ manifests also strip `contents`.
 
 Use the skills rather than editing manifests directly:
 
-- `/add-toolr <path>` — copies first-party content into `registry/<type dir>/<slug>/`
+- `/add-seedr <path>` — copies first-party content into `registry/<type dir>/<slug>/`
 - `/add-community <github-url>` — metadata-only entry with `externalUrl`
-- `/update-item <type> <slug> <instruction>` — patch a toolr item's metadata or content
-- `/remove-toolr <slug>` / `/remove-community <slug>`
+- `/update-item <type> <slug> <instruction>` — patch a first-party item's metadata or content
+- `/remove-seedr <slug>` / `/remove-community <slug>`
 
 All five call `scripts/registry-op.ts`; none copies, deletes or compiles on its own.
 

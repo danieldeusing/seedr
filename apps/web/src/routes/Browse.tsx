@@ -100,7 +100,7 @@ function BrowseFilterBar({ filters, context, placeholder, setFilter }: FilterBar
         <FilterDropdown value={filters.capability ?? "all"} options={capabilityOptions} onChange={(value) => setFilter("ext", value)} allLabel="Capability" />
       )}
       <FilterDropdown value={filters.source ?? "all"} options={sourceOptions} onChange={(value) => setFilter("source", value)} allLabel="Source" />
-      {filters.source === "toolr" && (
+      {filters.source === "seedr" && (
         <FilterDropdown value={filters.scope ?? "all"} options={scopeOptions} onChange={(value) => setFilter("scope", value)} allLabel="Scope" />
       )}
       <FilterDropdown value={filters.tool ?? "all"} options={agentOptions} onChange={(value) => setFilter("tool", value)} allLabel="Coding Agent" />

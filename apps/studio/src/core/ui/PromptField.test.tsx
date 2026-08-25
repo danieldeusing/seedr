@@ -28,7 +28,7 @@ describe("slashToken", () => {
   });
 
   test("reads the token the caret is in, not the last one typed", () => {
-    expect(slashToken("/add-toolr and /skill", 10)).toEqual({ query: "add-toolr", start: 0 });
+    expect(slashToken("/add-seedr and /skill", 10)).toEqual({ query: "add-seedr", start: 0 });
   });
 });
 

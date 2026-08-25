@@ -27,7 +27,7 @@ export const playwright: RegistryItem = {
   description: "Drives a browser.",
   longDescription: LONG,
   compatibility: ["claude"],
-  sourceType: "toolr",
+  sourceType: "seedr",
   author: { name: "Test Author" },
 };
 

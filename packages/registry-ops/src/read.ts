@@ -4,6 +4,7 @@ import type { ComponentType, FileTreeNode, RegistryItem, RegistryManifestIndex, 
 import { indexManifestPath, itemDir, itemJsonPath, typeDir, typeManifestPath } from "./fsPaths.js";
 import { ALL_TYPES, isValidSlug } from "./paths.js";
 import { assertStructurallyValid, structuralErrors, validateItem } from "./validate.js";
+import { isFirstParty } from "./sourceTypes.js";
 import { contentFilePaths } from "./hash.js";
 
 export interface LocatedItem {
@@ -59,12 +60,12 @@ export function listItemsChecked(registryDir: string): { items: LocatedItem[]; v
       const location = itemDir(registryDir, type, entry.name);
       const path = itemJsonPath(registryDir, type, entry.name);
       const value = readJson(path);
-      const isToolr = isObject(value) && (value as { sourceType?: unknown }).sourceType === "toolr";
+      const firstParty = isObject(value) && isFirstParty((value as { sourceType?: unknown }).sourceType);
       const errors = structuralErrors(
         validateItem(value, {
           expectedType: type,
           expectedSlug: entry.name,
-          ...(isToolr ? { diskFiles: contentFilePaths(location) } : {}),
+          ...(firstParty ? { diskFiles: contentFilePaths(location) } : {}),
         })
       );
       if (errors.length > 0) {

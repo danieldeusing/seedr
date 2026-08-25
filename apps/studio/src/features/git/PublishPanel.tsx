@@ -3,8 +3,7 @@ import { Ban, Check, TriangleAlert } from "lucide-react";
 import { gitBranches, type BranchInfo, type GitSummary } from "@/api/git";
 import { IconButton } from "@/core/ui/IconButton";
 import { AgentSelect } from "@/features/settings/AgentSelect";
-import { GIT_CERTIFIED } from "@/features/settings/agentSettings";
-import type { CanonicalCodingAgent } from "@seedr/shared";
+import { GIT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
 import { usePublish } from "./publishStore";
 import { pushTriggers } from "./workflows";
 
@@ -23,7 +22,8 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
   const [message, setMessage] = useState("");
   const [notes, setNotes] = useState("");
   const [armed, setArmed] = useState(false);
-  const [agent, setAgent] = useState<CanonicalCodingAgent>("claude");
+  const agent = useAgentSettings((state) => state.preferred);
+  const setAgent = useAgentSettings((state) => state.setPreferred);
   const [error, setError] = useState<string | null>(null);
   const { phase, log, verdict, error: jobError } = usePublish();
   const { run, cancel, reset } = usePublish.getState();
@@ -118,7 +118,7 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
 
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
-          <AgentSelect value={agent} onChange={setAgent} certified={GIT_CERTIFIED} job="git" ariaLabel="publishing agent" disabled={busy} />
+          <AgentSelect value={agent} onChange={setAgent} certified={GIT_CERTIFIED} job="git" ariaLabel="coding agent" disabled={busy} />
           <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
             {busy ? "the agent is working…" : nothingToCommit ? "nothing to commit" : `${summary.changes.length} changed path(s) from ${summary.branch}`}
           </span>

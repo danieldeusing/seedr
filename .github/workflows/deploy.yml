@@ -71,9 +71,16 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # `--branch` is not optional here. The workflow checks out a commit, so
+        # git is on a detached HEAD, and wrangler infers the deployment branch as
+        # "head" — a *preview* branch. The upload succeeds, the job goes green, and
+        # the custom domain keeps serving the last production deployment. Naming
+        # the project's production branch is what makes this a production deploy.
+        # wrangler lives in apps/web, so both commands run from there.
+        working-directory: apps/web
         run: |
           pnpm exec wrangler pages project create seedr --production-branch=prod 2>/dev/null || true
-          cd apps/web && pnpm exec wrangler pages deploy --commit-dirty=true
+          pnpm exec wrangler pages deploy --commit-dirty=true --branch=prod
 
   publish-cli:
     name: Publish CLI to npm

@@ -5,7 +5,6 @@ import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { NotFound } from "@/routes/NotFound";
 import { itemMeta, notFoundMeta } from "../../scripts/site-meta.mjs";
-// toolr-design-ignore-next-line
 import { Clock, Folder, Lock, Shield, User, type LucideIcon } from "lucide-react";
 import { FileStructureSection } from "@/components/detail/FileStructureSection";
 import { RegistryDetail, type DetailLabelData } from "@/components/detail/RegistryDetail";
@@ -25,8 +24,10 @@ const MarkdownText = lazy(() => import("@/components/detail/MarkdownText").then(
 
 const sourceDescriptions: Record<SourceType, string> = {
   official: "Published by the tool maker",
-  toolr: "Published by Seedr",
+  seedr: "Published by Seedr",
   community: "Community contribution",
+  // deprecated value; items are canonicalised on load, so it never reaches the UI
+  toolr: "Published by Seedr",
 };
 
 const scopeIcons: Record<ScopeType, LucideIcon> = {
@@ -74,7 +75,7 @@ function buildDetailLabels(item: NonNullable<ReturnType<typeof getItem>>): Detai
       tooltip: { description: pluginBadge.description(item) },
     });
   }
-  if (item.sourceType === "toolr" && item.targetScope) {
+  if (item.sourceType === "seedr" && item.targetScope) {
     const ScopeIcon = scopeIcons[item.targetScope];
     labels.push({
       text: scopeLabels[item.targetScope],
@@ -147,7 +148,7 @@ export function Detail() {
 
   const labels = buildDetailLabels(item);
 
-  const subtitle = (item.author || item.sourceType === "toolr") ? (
+  const subtitle = (item.author || item.sourceType === "seedr") ? (
     <div className="flex items-center gap-2 text-sm text-subtext">
       <AuthorLink
         author={item.author!}

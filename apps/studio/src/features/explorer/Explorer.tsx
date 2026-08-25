@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
-import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
+import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, isFirstParty, typeDirName } from "@seedr/registry-ops/pure";
 import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, GitBranch, Pencil, Plus, Rows3, Settings } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { Input } from "@/core/ui/Input";
@@ -43,7 +43,7 @@ export function agentMatrix(compatibility: readonly unknown[]): { text: string; 
 
 /** `rw-` when the item is this registry's own (editable); `r--` when a sync owns it. */
 export function sourceMode(sourceType: string | undefined): { text: string; editable: boolean; tip: string } {
-  if (sourceType === "toolr") return { text: "rw-", editable: true, tip: "toolr — this registry's own item; editable here" };
+  if (isFirstParty(sourceType)) return { text: "rw-", editable: true, tip: "seedr — this registry's own item; editable here" };
   return { text: "r--", editable: false, tip: `${sourceType ?? "synced"} — refreshed by the sync; read-only here` };
 }
 
@@ -118,7 +118,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
         <p className="prompt">ls registry/</p>
         <p className="mt-4">This registry has no items yet.</p>
         <p className="mt-2 text-xs">
-          Add the first one with <code className="text-primary">/add-toolr</code> in Claude Code, or right here:
+          Add the first one with <code className="text-primary">/add-seedr</code> in Claude Code, or right here:
         </p>
         <span className="mt-3 inline-flex items-center gap-2">
           <IconButton icon={Plus} ariaLabel="add capability" tip="Add a capability to the registry" accentColor="violet" onClick={onAddCapability} />

@@ -4,7 +4,7 @@ import { registryFiles } from "@/test/fixtures";
 import { REGISTRY_CHANGED } from "@/api/watch";
 import { selectedItem, useStudio } from "./store";
 
-const repo = { root: "/repo", name: "repo" };
+const repo = { root: "/repo", name: "repo", isDefault: true };
 
 beforeEach(() => {
   useStudio.setState({ repo: null, items: [], problems: [], loading: false, error: null, selected: null });
@@ -43,12 +43,34 @@ describe("useStudio", () => {
     expect(useStudio.getState().items.map((i) => i.slug)).toEqual(["broken", "pdf", "playwright"]);
   });
 
-  test("a host error is shown, not swallowed", async () => {
+  test("a rejected folder is reported and leaves the open checkout alone", async () => {
+    useStudio.setState({ repo });
     onCommand("pick_repo", () => {
       throw new Error("Not a seedr registry: no registry/ directory");
     });
     await useStudio.getState().chooseRepo();
-    expect(useStudio.getState().error).toMatch(/Not a seedr registry/);
+    expect(useStudio.getState().repoError).toBe("Not a seedr registry: no registry/ directory");
+    expect(useStudio.getState().repo).toEqual(repo);
+
+    // The watcher refreshes on its own; what it reports is its own, and the
+    // rejected folder is not something it can clear.
+    mockFs(registryFiles());
+    await useStudio.getState().refresh();
+    expect(useStudio.getState().repoError).toBe("Not a seedr registry: no registry/ directory");
+  });
+
+  test("makeRepoDefault re-baselines the open checkout, and says so when the host cannot", async () => {
+    const elsewhere = { root: "/forks/seedr", name: "seedr", isDefault: false };
+    useStudio.setState({ repo: elsewhere });
+    onCommand("set_default_repo", () => ({ ...elsewhere, isDefault: true }));
+    await useStudio.getState().makeRepoDefault();
+    expect(useStudio.getState().repo).toEqual({ ...elsewhere, isDefault: true });
+
+    onCommand("set_default_repo", () => {
+      throw new Error("No configuration directory to record the default checkout in");
+    });
+    await useStudio.getState().makeRepoDefault();
+    expect(useStudio.getState().error).toMatch(/No configuration directory/);
   });
 
   test("a registry change event refreshes, and a selection that disappeared is dropped", async () => {

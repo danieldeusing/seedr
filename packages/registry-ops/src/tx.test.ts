@@ -76,7 +76,7 @@ describe("runRegistryTransaction", () => {
 
   test("rolls back completely when the operation itself fails", async () => {
     const repo = makeRepo();
-    const op: RemoveOp = { v: 1, kind: "remove", type: "skill", slug: "alpha", sourceType: "toolr", expectedHash: "0000000000000000" };
+    const op: RemoveOp = { v: 1, kind: "remove", type: "skill", slug: "alpha", sourceType: "seedr", expectedHash: "0000000000000000" };
     await expect(runRegistryTransaction(op, { repoRoot: repo })).rejects.toThrow(/changed since it was read/);
     expect(status(repo)).toBe("");
   });
@@ -114,7 +114,7 @@ describe("runRegistryTransaction", () => {
       kind: "remove",
       type: "skill",
       slug: "alpha",
-      sourceType: "toolr",
+      sourceType: "seedr",
       expectedHash: itemStateHash(join(repo, "registry"), "skill", "alpha") as string,
     };
     const { changedPaths } = await runRegistryTransaction(op, { repoRoot: repo });

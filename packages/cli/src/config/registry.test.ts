@@ -144,20 +144,20 @@ describe("fetchItemToDestination", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("installs a first-party item without a digest from the registry trust root (legacy toolr)", async () => {
+  it("installs a first-party item without a digest from the registry trust root (legacy first-party)", async () => {
     responses.set(`${REGISTRY_RAW}/hooks/lint/lint.sh`, "#!/bin/sh\n");
     const { fetchItemToDestination } = await loadRegistry();
-    const toolr: RegistryItem = {
+    const firstParty: RegistryItem = {
       slug: "lint",
       name: "Lint",
       type: "hook",
       description: "d",
       compatibility: ["claude"],
-      sourceType: "toolr",
+      sourceType: "seedr",
       contents: { files: [{ name: "lint.sh", type: "file" }] },
     };
 
-    const result = await fetchItemToDestination(toolr, "/dest/lint");
+    const result = await fetchItemToDestination(firstParty, "/dest/lint");
     expect(result).toEqual({ sourceRevision: null, contentDigest: null, files: ["lint.sh"] });
     expect(vol.readFileSync("/dest/lint/lint.sh", "utf-8")).toBe("#!/bin/sh\n");
   });
@@ -167,19 +167,20 @@ describe("fetchItemToDestination", () => {
     responses.set(`${REGISTRY_RAW}/skills/mine/scripts/a.py`, "print(1)\n");
     responses.set(`${RAW}/danieldeusing/seedr/main/LICENSE`, LICENSE_TEXT);
     const { fetchItemToDestination } = await loadRegistry();
-    const toolr = officialSkill({ slug: "mine", sourceType: "toolr", sourceRevision: undefined });
+    const firstParty = officialSkill({ slug: "mine", sourceType: "seedr", sourceRevision: undefined });
 
-    await expect(fetchItemToDestination(toolr, "/dest/mine")).resolves.toMatchObject({ contentDigest: VECTOR_DIGEST });
+    await expect(fetchItemToDestination(firstParty, "/dest/mine")).resolves.toMatchObject({ contentDigest: VECTOR_DIGEST });
 
     responses.set(`${REGISTRY_RAW}/skills/mine/SKILL.md`, "changed\n");
-    await expect(fetchItemToDestination(toolr, "/dest/mine2")).rejects.toThrow(/content digest mismatch/);
+    await expect(fetchItemToDestination(firstParty, "/dest/mine2")).rejects.toThrow(/content digest mismatch/);
   });
 
   it("falls back to the legacy single-file list for a first-party item without a tree", async () => {
     responses.set(`${REGISTRY_RAW}/skills/old/SKILL.md`, "# old\n");
     const { fetchItemToDestination } = await loadRegistry();
-    const toolr: RegistryItem = { slug: "old", name: "Old", type: "skill", description: "d", compatibility: ["claude"], sourceType: "toolr" };
-    await expect(fetchItemToDestination(toolr, "/dest/old")).resolves.toMatchObject({ files: ["SKILL.md"] });
+    // Spelled with the deprecated `toolr`, which is what the registry still stores.
+    const firstParty: RegistryItem = { slug: "old", name: "Old", type: "skill", description: "d", compatibility: ["claude"], sourceType: "toolr" };
+    await expect(fetchItemToDestination(firstParty, "/dest/old")).resolves.toMatchObject({ files: ["SKILL.md"] });
     expect(vol.readFileSync("/dest/old/SKILL.md", "utf-8")).toBe("# old\n");
   });
 
@@ -359,7 +360,7 @@ describe("manifest loading (remote)", () => {
   it("getItemSourcePath and listItemFiles are null/minimal without a local checkout", async () => {
     const { getItemSourcePath, listItemFiles } = await loadRegistry();
     expect(getItemSourcePath(officialSkill())).toBeNull();
-    expect(getItemSourcePath(officialSkill({ sourceType: "toolr" }))).toBeNull();
+    expect(getItemSourcePath(officialSkill({ sourceType: "seedr" }))).toBeNull();
     await expect(listItemFiles(officialSkill())).resolves.toEqual(["SKILL.md"]);
   });
 });
@@ -377,7 +378,7 @@ describe("local registry checkout", () => {
       [join(registryDir, "manifest.json")]: JSON.stringify({ version: "2.0.0", types: { mcp: { file: "mcp/manifest.json", count: 1 } } }),
       [join(registryDir, "mcp/manifest.json")]: JSON.stringify({
         type: "mcp",
-        items: [{ slug: "playwright", name: "Playwright", type: "mcp", description: "d", compatibility: ["claude"], sourceType: "toolr" }],
+        items: [{ slug: "playwright", name: "Playwright", type: "mcp", description: "d", compatibility: ["claude"], sourceType: "seedr" }],
       }),
       [join(registryDir, "mcp/playwright/mcp.md")]: '{"name":"playwright","config":{"command":"npx"}}',
       [join(registryDir, "mcp/playwright/item.json")]: '{"slug":"playwright"}',
@@ -388,7 +389,7 @@ describe("local registry checkout", () => {
   it("reads first-party content, files and source paths from disk without any fetch", async () => {
     const { getItem, getItemContent, getItemSourcePath, listItemFiles, getItemFull, fetchItemFile } = await loadRegistry();
     const item = (await getItem("playwright", "mcp"))!;
-    expect(item.sourceType).toBe("toolr");
+    expect(item.sourceType).toBe("seedr");
     expect(await getItemContent(item)).toBe('{"name":"playwright","config":{"command":"npx"}}');
     expect(getItemSourcePath(item)).toBe(join(registryDir, "mcp", "playwright"));
     expect((await listItemFiles(item)).sort()).toEqual(["docs/notes.md", "item.json", "mcp.md"]);
@@ -409,7 +410,7 @@ describe("local registry checkout", () => {
 const LOCAL_DIR = "/private/registry";
 const SLUG = "private-skill";
 const INDEX = { version: "2.0.0", types: { skill: { file: "skills/manifest.json", count: 1 } } };
-const SKILLS = { type: "skill", items: [{ slug: SLUG, name: "Private", type: "skill", description: "Ours.", compatibility: ["claude"], sourceType: "toolr" }] };
+const SKILLS = { type: "skill", items: [{ slug: SLUG, name: "Private", type: "skill", description: "Ours.", compatibility: ["claude"], sourceType: "seedr" }] };
 
 async function freshLocationRegistry() {
   vi.resetModules();
@@ -467,7 +468,7 @@ describe("registry location", () => {
   it("refuses slugs that are not a single lowercase path segment", async () => {
     process.env.SEEDR_REGISTRY_DIR = LOCAL_DIR;
     const registry = await freshLocationRegistry();
-    const item = { slug: "../escape", name: "x", type: "skill" as const, description: "x", compatibility: [], sourceType: "toolr" as const };
+    const item = { slug: "../escape", name: "x", type: "skill" as const, description: "x", compatibility: [], sourceType: "seedr" as const };
     expect(() => registry.getItemSourcePath(item)).toThrow(/Invalid item slug/);
   });
 });

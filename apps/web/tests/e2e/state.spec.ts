@@ -7,13 +7,13 @@ test.describe("filter state and animation toggle", () => {
   });
 
   test("active filters render as removable chips with a reset action", async ({ page }) => {
-    // scope is a dependent filter: it only applies together with source=toolr.
-    await page.goto("/skills?source=toolr&scope=user");
+    // scope is a dependent filter: it only applies together with source=seedr.
+    await page.goto("/skills?source=seedr&scope=user");
     await expect(page.getByTestId("filter-chip")).toHaveCount(2);
     await expect(page.getByTestId("reset-filters")).toBeVisible();
     await page.getByTestId("filter-chip").filter({ hasText: "Scope" }).click();
     await expect(page).not.toHaveURL(/scope=user/);
-    await expect(page).toHaveURL(/source=toolr/);
+    await expect(page).toHaveURL(/source=seedr/);
     await page.getByTestId("reset-filters").click();
     await expect(page).not.toHaveURL(/source=/);
   });

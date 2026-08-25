@@ -3,10 +3,13 @@ import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, CANONICAL_AGENTS, parseOp, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess, onProcessOutput, pickPath } from "@/api/agent";
 import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
+import type { JobCapability } from "./adapters";
+import { configuredAuthor } from "@/features/settings/authorSettings";
+import { useAgentSettings } from "@/features/settings/agentSettings";
 import { prePromptFor } from "@/features/settings/prePrompts";
 import { repoIdentity, runRegistryOp } from "@/api/registryCli";
 import { readSourceFiles } from "@/api/source";
-import { draftWithClaude, probeClaude, type AdapterProbe } from "./claudeAdapter";
+import { draftWith, probeAgent, type AdapterProbe } from "./claudeAdapter";
 
 /**
  * Where a capability's content comes from. A folder is copied by the
@@ -46,6 +49,8 @@ export type AddResult =
 interface AuthorState {
   form: AddLocalForm;
   probe: AdapterProbe | null;
+  /** Settings' author, or what the checkout's remote says — the prefill to restore. */
+  defaultAuthor: { name: string; url: string };
   phase: Phase;
   draftErrors: string[];
   /** Capped live output of the running agent / operation. */
@@ -54,6 +59,7 @@ interface AuthorState {
   error: string | null;
   setField<K extends keyof AddLocalForm>(field: K, value: AddLocalForm[K]): void;
   setType(type: ComponentType): void;
+  setSourceKind(kind: SourceKind): void;
   toggleAgent(agent: CodingAgent): void;
   chooseSource(): Promise<void>;
   /** Probe Claude and prefill author/externalUrl from the repo's identity. */
@@ -76,7 +82,7 @@ const JOB_TASK = "author-job";
  * operations CLI — which is what actually mutates the registry, as a
  * transaction. No `git`, so a job cannot commit, and no unscoped shell.
  */
-export const ADD_JOB_TOOLS = ["Read", "Write", "Edit", "Glob", "Grep", "Skill", "WebFetch", "Bash(gh api:*)", "Bash(npx tsx scripts/registry-op.ts:*)"];
+export const ADD_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "skills", "web", "shell:gh api", "shell:npx tsx scripts/registry-op.ts"];
 
 /** The last line an add job must print, so Studio can open what was added. */
 const ADDED_LINE = /^ADDED\s+([a-z]+)\/([A-Za-z0-9._-]+)$/m;
@@ -112,7 +118,7 @@ export function jobPrompt(form: AddLocalForm): string {
   const task =
     form.sourceKind === "repo"
       ? `/add-community ${form.repoUrl.trim()}`
-      : `Author a new first-party ${form.type} capability for this registry, then add it with the /add-toolr skill.`;
+      : `Author a new first-party ${form.type} capability for this registry, then add it with the /add-seedr skill.`;
   const descriptions =
     form.description.trim() && form.longDescription.trim()
       ? "Use the descriptions given above verbatim."
@@ -210,7 +216,7 @@ export function formProblems(form: AddLocalForm): ValidationError[] {
     description: op.description,
     longDescription: op.longDescription,
     compatibility: op.compatibility,
-    sourceType: "toolr",
+    sourceType: "seedr",
     author: op.author,
     ...(op.externalUrl ? { externalUrl: op.externalUrl } : {}),
     ...(op.targetScope ? { targetScope: op.targetScope } : {}),
@@ -225,6 +231,7 @@ export function formProblems(form: AddLocalForm): ValidationError[] {
 export const useAuthor = create<AuthorState>((set, get) => ({
   form: emptyForm(),
   probe: null,
+  defaultAuthor: { name: "", url: "" },
   phase: "idle",
   draftErrors: [],
   log: [],
@@ -244,6 +251,14 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     set({ form: { ...form, type, prompt: form.promptTouched ? form.prompt : prePromptFor(type, "add") } });
   },
 
+  setSourceKind(kind) {
+    const { form } = get();
+    // A repository carries its own author, so the fields start empty and say so
+    // — still editable, for the case where the repo is wrong about it.
+    const author = kind === "repo" ? { authorName: "", authorUrl: "" } : { authorName: form.authorName || get().defaultAuthor.name, authorUrl: form.authorUrl || get().defaultAuthor.url };
+    set({ form: { ...form, sourceKind: kind, ...author } });
+  },
+
   toggleAgent(agent) {
     const { compatibility } = get().form;
     const next = compatibility.includes(agent) ? compatibility.filter((a) => a !== agent) : [...compatibility, agent];
@@ -261,15 +276,23 @@ export const useAuthor = create<AuthorState>((set, get) => ({
   async prepare() {
     set({ phase: "probing", error: null });
     try {
-      const [probe, identity] = await Promise.all([probeClaude(), repoIdentity().catch(() => null)]);
+      const [probe, identity] = await Promise.all([probeAgent(useAgentSettings.getState().preferred), repoIdentity().catch(() => null)]);
+      // Settings wins over the checkout: a fork's remote is not who authored this.
+      const configured = configuredAuthor();
+      const defaultAuthor = {
+        name: configured.name || identity?.authorName || "",
+        url: configured.url || (identity?.owner ? `https://github.com/${identity.owner}` : ""),
+      };
       const { form } = get();
+      const derived = form.sourceKind === "repo";
       set({
         probe,
+        defaultAuthor,
         phase: "idle",
         form: {
           ...form,
-          authorName: form.authorName || identity?.authorName || "",
-          authorUrl: form.authorUrl || (identity?.owner ? `https://github.com/${identity.owner}` : ""),
+          authorName: derived ? form.authorName : form.authorName || defaultAuthor.name,
+          authorUrl: derived ? form.authorUrl : form.authorUrl || defaultAuthor.url,
         },
       });
     } catch (error) {
@@ -291,7 +314,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     const unlisten = await onProcessOutput(`${DRAFT_TASK}-0`, (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.line] }));
     try {
       const { files } = await readSourceFiles(form.sourcePath);
-      const result = await draftWithClaude({ type: form.type, slug: form.slug, name: form.name, compatibility: form.compatibility, files, notes: form.prompt }, undefined, DRAFT_TASK);
+      const result = await draftWith(useAgentSettings.getState().preferred, { type: form.type, slug: form.slug, name: form.name, compatibility: form.compatibility, files, notes: form.prompt }, undefined, DRAFT_TASK);
       if (result.ok) {
         set({ form: { ...get().form, description: result.draft.description, longDescription: result.draft.longDescription }, phase: "idle" });
       } else {
@@ -342,7 +365,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
       const outcome: AgentJobResult = await runAgentJob({
         taskId: JOB_TASK,
         prompt: jobPrompt(form),
-        allowedTools: ADD_JOB_TOOLS,
+        capabilities: ADD_JOB_CAPABILITIES,
         onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
       });
       if (!outcome.ok) {

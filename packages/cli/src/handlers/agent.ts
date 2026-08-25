@@ -51,7 +51,7 @@ async function installAgentForCodingAgent(
     const sourceFile = sourcePath ? join(sourcePath, "AGENT.md") : null;
 
     if (method === "symlink" && sourceFile && (await exists(sourceFile))) {
-      // Symlink for local toolr items
+      // Symlink for local first-party items
       await installFile(sourceFile, destPath, "symlink");
     } else {
       const content = await getItemContent(item);

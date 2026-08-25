@@ -26,7 +26,7 @@ const item = (overrides: Partial<RegistryItem>): RegistryItem => ({
 });
 
 const ITEMS: RegistryItem[] = [
-  item({ slug: "alpha", name: "Alpha", type: "skill", sourceType: "toolr", targetScope: "user", compatibility: ["claude", "gemini"], updatedAt: "2026-01-01" }),
+  item({ slug: "alpha", name: "Alpha", type: "skill", sourceType: "seedr", targetScope: "user", compatibility: ["claude", "gemini"], updatedAt: "2026-01-01" }),
   item({ slug: "beta", name: "Beta", type: "skill", sourceType: "community", compatibility: ["copilot"], updatedAt: "2026-03-01" }),
   item({ slug: "wrap", name: "Wrap", type: "plugin", pluginType: "wrapper", wrapper: "skill", sourceType: "official", updatedAt: "2026-02-01" }),
   item({ slug: "pack", name: "Pack", type: "plugin", pluginType: "package", package: { skill: 2, hook: 1 }, sourceType: "official" }),
@@ -35,11 +35,11 @@ const ITEMS: RegistryItem[] = [
 
 describe("parseBrowseParams", () => {
   it("reads valid parameters and defaults the rest", () => {
-    const { filters, dropped } = parseBrowseParams(params("q=pdf&tool=claude&source=toolr&scope=user&sortField=updated&sortAsc=false"), skills);
+    const { filters, dropped } = parseBrowseParams(params("q=pdf&tool=claude&source=seedr&scope=user&sortField=updated&sortAsc=false"), skills);
     expect(filters).toEqual({
       query: "pdf",
       tool: "claude",
-      source: "toolr",
+      source: "seedr",
       scope: "user",
       pluginType: null,
       capability: null,
@@ -59,12 +59,19 @@ describe("parseBrowseParams", () => {
     expect(dropped.map((d) => d.key)).toEqual(["tool", "source", "sortField", "sortAsc"]);
   });
 
-  it("drops scope unless the source is toolr", () => {
+  it("drops scope unless the source is seedr", () => {
     expect(parseBrowseParams(params("scope=user"), skills).dropped).toEqual([
       { key: "scope", value: "user", reason: "scope only applies to Seedr-sourced items" },
     ]);
     expect(parseBrowseParams(params("source=community&scope=user"), skills).filters.scope).toBeNull();
-    expect(parseBrowseParams(params("source=toolr&scope=user"), skills).filters.scope).toBe("user");
+    expect(parseBrowseParams(params("source=seedr&scope=user"), skills).filters.scope).toBe("user");
+  });
+
+  it("resolves a deprecated source value, so an old ?source=toolr link still filters", () => {
+    const { filters, dropped } = parseBrowseParams(params("source=toolr&scope=user"), skills);
+    expect(filters.source).toBe("seedr");
+    expect(filters.scope).toBe("user");
+    expect(dropped).toEqual([]);
   });
 
   it("drops plugin-only parameters on capability pages (cross-category navigation)", () => {
@@ -101,7 +108,7 @@ describe("filterItems", () => {
   it("filters by agent, source and scope", () => {
     expect(filterItems(ITEMS, { ...base, tool: "gemini" }, skills, search).map((i) => i.slug)).toEqual(["alpha"]);
     expect(filterItems(ITEMS, { ...base, source: "community" }, skills, search).map((i) => i.slug)).toEqual(["beta", "integ"]);
-    expect(filterItems(ITEMS, { ...base, source: "toolr", scope: "user" }, skills, search).map((i) => i.slug)).toEqual(["alpha"]);
+    expect(filterItems(ITEMS, { ...base, source: "seedr", scope: "user" }, skills, search).map((i) => i.slug)).toEqual(["alpha"]);
   });
 
   it("filters plugins by type and wrapped capability", () => {
@@ -133,7 +140,7 @@ describe("sortItems", () => {
 
 describe("chips and updates", () => {
   it("lists the active filters as chips with human labels", () => {
-    const { filters } = parseBrowseParams(params("q=pdf&tool=claude&source=toolr&scope=local&sortField=updated"), skills);
+    const { filters } = parseBrowseParams(params("q=pdf&tool=claude&source=seedr&scope=local&sortField=updated"), skills);
     expect(activeFilterChips(filters)).toEqual([
       { key: "q", label: "Search", value: "pdf" },
       { key: "source", label: "Source", value: "Seedr" },
@@ -144,7 +151,7 @@ describe("chips and updates", () => {
 
   it("clears dependants together with their parent", () => {
     expect(paramUpdatesFor("source", "community")).toEqual({ source: "community", scope: null });
-    expect(paramUpdatesFor("source", "toolr")).toEqual({ source: "toolr" });
+    expect(paramUpdatesFor("source", "seedr")).toEqual({ source: "seedr" });
     expect(paramUpdatesFor("source", null)).toEqual({ source: null, scope: null });
     expect(paramUpdatesFor("pluginType", "package")).toEqual({ pluginType: "package", ext: null });
     expect(paramUpdatesFor("pluginType", "wrapper")).toEqual({ pluginType: "wrapper" });

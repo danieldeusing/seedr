@@ -35,7 +35,7 @@ describe("validateLive", () => {
     expect(report.digestsVerified).toBe(13);
   });
 
-  it("samples digests deterministically and always verifies toolr items from disk", async () => {
+  it("samples digests deterministically and always verifies first-party items from disk", async () => {
     const report = await live({ sample: 2 });
     expect(report.failures).toEqual([]);
     expect(report.digestsVerified).toBe(3);
@@ -74,7 +74,7 @@ describe("validateLive", () => {
     expect(report.failures).toEqual([{ key: "plugin/stripe", message: expect.stringMatching(/Gave up on .* after 4 attempt/), transient: true }]);
   });
 
-  it("fails toolr items whose disk content no longer matches the compiled digest", async () => {
+  it("fails first-party items whose disk content no longer matches the compiled digest", async () => {
     writeFileSync(join(world.registryDir, "hooks", "agentwatch", "agentwatch.sh"), "#!/bin/sh\necho changed\n");
     // compile has not run since the edit, so the manifest digest is stale — but readAllItems recomputes it
     // from disk; the mismatch surfaces when the declared tree no longer matches the directory

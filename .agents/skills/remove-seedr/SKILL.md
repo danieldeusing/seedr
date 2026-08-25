@@ -1,16 +1,16 @@
 ---
-name: remove-toolr
+name: remove-seedr
 description: |
-  Remove a toolr-sourced item from the seedr registry.
-  Trigger on: "/remove-toolr <slug>", "remove toolr item", "delete toolr skill/hook/agent/plugin".
+  Remove a first-party item from the seedr registry.
+  Trigger on: "/remove-seedr <slug>", "remove seedr item", "delete seedr skill/hook/agent/plugin".
   Finds the item by (type, slug) through the operations CLI, confirms with the user, and removes
   it through a transaction that deletes the directory, recompiles the manifests and rolls back
   on any failure.
 ---
 
-# Remove Toolr Item
+# Remove Seedr Item
 
-Remove a first-party (`sourceType: "toolr"`) item from the seedr registry.
+Remove a first-party (`seedr`) item from the seedr registry.
 
 All registry mutations go through `scripts/registry-op.ts` (`@seedr/registry-ops`). Never
 `rm` a registry directory or run `pnpm compile` by hand in this workflow — the transaction does
@@ -20,8 +20,8 @@ both, and undoes both if anything fails.
 
 ### 1. Parse the argument
 
-Extract `<slug>` from the user's input (e.g. `/remove-toolr pre-commit-lint`). The user may
-also give a type (`/remove-toolr skill pre-commit-lint`).
+Extract `<slug>` from the user's input (e.g. `/remove-seedr pre-commit-lint`). The user may
+also give a type (`/remove-seedr skill pre-commit-lint`).
 
 ### 2. Look up the item
 
@@ -34,8 +34,10 @@ Prints every item as JSON: `type`, `slug`, `sourceType`, `name`, `hash`. Find th
 skill and a plugin). If more than one matches and the user gave no type, ask which one with
 AskUserQuestion.
 
-Verify `sourceType === "toolr"`. If it is `community` or `official`, tell the user:
-> "Found `<slug>` (`<type>`) but it has sourceType `<actual>`, not `toolr`. Use `/remove-community` instead."
+Verify the item is first-party. Its `sourceType` reads `seedr` — or still `toolr`, the
+deprecated spelling the registry stores until the migration runs. If it is `community` or
+`official`, tell the user:
+> "Found `<slug>` (`<type>`) but it has sourceType `<actual>`, not `seedr`. Use `/remove-community` instead."
 
 If nothing matches:
 > "No item with slug `<slug>` found in the registry."
@@ -70,7 +72,7 @@ the OS temp directory):
   "kind": "remove",
   "type": "<type>",
   "slug": "<slug>",
-  "sourceType": "toolr",
+  "sourceType": "seedr",
   "expectedHash": "<hash from step 2>"
 }
 ```
@@ -96,7 +98,7 @@ changes first — the operation will not mix its diff with theirs. Do not work a
 
 ## Important notes
 
-- Only removes items with `sourceType: "toolr"` — refuse community/official items via this skill
+- Only removes first-party items — refuse community/official items via this skill
 - Always confirm before deleting — no `--force` shortcut
 - The `expectedHash` guard means an item that changed between `list` and `run` is refused:
   re-run `list` and try again

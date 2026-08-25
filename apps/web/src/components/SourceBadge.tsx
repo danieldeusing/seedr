@@ -5,8 +5,10 @@ import type { SourceType } from "@/lib/types";
 
 const sourceDescriptions: Record<SourceType, string> = {
   official: "Published by the tool maker",
-  toolr: "Published by Daniel Deusing",
+  seedr: "Published by Daniel Deusing",
   community: "Community contribution",
+  // deprecated value; items are canonicalised on load, so it never reaches the UI
+  toolr: "Published by Daniel Deusing",
 };
 
 interface SourceBadgeProps {

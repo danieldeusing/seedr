@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { typeDirName } from "@seedr/registry-ops/pure";
+import { isFirstParty, typeDirName } from "@seedr/registry-ops/pure";
 export { typeDirName };
 import type {
   RegistryManifest,
@@ -63,7 +63,7 @@ const REGISTRY_PATH = process.env.SEEDR_REGISTRY_DIR || resolveLocalRegistryPath
  * thing that stays mutable: the CLI trusts whatever the registry says an item
  * is, and then pins and verifies the *content* it downloads from third-party
  * hosts (`sourceRevision` + `contentDigest`, see docs/registry-integrity.md).
- * First-party (`toolr`) content is fetched from this same URL.
+ * First-party (`seedr`) content is fetched from this same URL.
  */
 const DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main/registry";
 
@@ -261,12 +261,12 @@ interface ItemLocation {
 }
 
 /**
- * Where an item's content lives. First-party (`toolr`) items come from the
+ * Where an item's content lives. First-party (`seedr`) items come from the
  * registry itself; everything else resolves to its pinned upstream commit
  * (see `resolveItemSource`).
  */
 function getItemBaseUrl(item: RegistryItem): ItemLocation {
-  if (item.sourceType === "toolr") {
+  if (isFirstParty(item.sourceType)) {
     assertValidSlug(item.slug);
     const typeDir = typeDirName(item.type);
     return {
@@ -340,7 +340,7 @@ export async function fetchItemFile(item: RegistryItem, relativePath: string): P
  */
 export function getItemSourcePath(item: RegistryItem): string | null {
   // External items (official/community) don't have local paths
-  if (item.sourceType !== "toolr") {
+  if (!isFirstParty(item.sourceType)) {
     return null;
   }
 
@@ -493,7 +493,7 @@ async function downloadFileSet(
  * removed. Only a verified tree is moved into place (an existing entry at
  * `destPath` is replaced; the caller must have proven that path is contained).
  *
- * First-party (`toolr`) items are verified whenever they carry a digest;
+ * First-party (`seedr`) items are verified whenever they carry a digest;
  * those compiled before digests existed are installed unverified from the
  * registry trust root.
  */
@@ -504,7 +504,7 @@ export async function fetchItemToDestination(
   const location = getItemBaseUrl(item);
   const fileSet = await resolveFileSet(item);
 
-  if (fileSet.digest === null && item.sourceType !== "toolr") {
+  if (fileSet.digest === null && !isFirstParty(item.sourceType)) {
     throw integrityError(item, "the registry entry carries no contentDigest; refusing to install unverifiable content");
   }
 

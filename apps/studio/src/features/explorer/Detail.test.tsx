@@ -17,7 +17,7 @@ describe("Detail", () => {
     render(<Detail item={playwright} />);
 
     expect(screen.getByRole("heading", { name: "Playwright" })).toBeInTheDocument();
-    expect(screen.getByText("toolr")).toBeInTheDocument();
+    expect(screen.getByText("seedr")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "docs" })).toBeInTheDocument();
 
     // the first file is selected on its own and previewed (Monaco under jsdom is a <pre>)

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
@@ -84,6 +84,7 @@ describe("ExternalLinkDialog", () => {
 
 describe("AppHeader", () => {
   test("is the identity strip and nothing else", () => {
+    useStudio.setState({ repo: null });
     render(<AppHeader />);
     expect(screen.getByText("seedr-studio")).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
@@ -122,6 +123,7 @@ describe("Modal", () => {
 
 describe("RepoBadge", () => {
   const CONFIG = '[core]\n\trepositoryformatversion = 0\n[remote "origin"]\n\turl = git@github.com:danieldeusing/seedr.git\n\tfetch = +refs/heads/*\n[branch "main"]\n';
+  const FORK = "/Users/me/forks/seedr-fork";
 
   test("reads owner/repo from either URL spelling, and copes with no remote", () => {
     expect(originSlug(CONFIG)).toBe("danieldeusing/seedr");
@@ -130,21 +132,33 @@ describe("RepoBadge", () => {
     expect(originSlug("[core]\n\tbare = false\n")).toBeNull();
   });
 
-  test("names the open checkout and its remote in the title bar", async () => {
+  test("says nothing while Studio is on the default checkout", () => {
+    useStudio.setState({ repo: { root: "/Users/me/seedr", name: "seedr", isDefault: true } });
+    render(<AppHeader />);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  test("anywhere else it warns, names the folder and its remote, and offers to re-baseline", async () => {
     onCommand("read_text", () => CONFIG);
-    useStudio.setState({ repo: { root: "/Users/me/forks/seedr-fork", name: "seedr-fork" } });
+    onCommand("set_default_repo", () => ({ root: FORK, name: "seedr-fork", isDefault: true }));
+    useStudio.setState({ repo: { root: FORK, name: "seedr-fork", isDefault: false } });
 
     render(<AppHeader />);
 
-    expect(screen.getByText("seedr-fork")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(`Attention: outside the default folder — ${FORK}`);
     expect(await screen.findByText("danieldeusing/seedr")).toBeInTheDocument();
-    expect(screen.getByText("seedr-fork").parentElement).toHaveAttribute("data-tip", "/Users/me/forks/seedr-fork");
+    expect(screen.getByText(/outside the default folder/)).toHaveAttribute("data-tip", FORK);
+
+    await userEvent.click(screen.getByRole("button", { name: "make this the default" }));
+    expect(invoke).toHaveBeenCalledWith("set_default_repo");
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   });
 
   test("shows nothing before a checkout is open", () => {
     useStudio.setState({ repo: null });
     render(<AppHeader />);
     expect(screen.getByText("seedr-studio")).toBeInTheDocument();
-    expect(screen.queryByText(/\//)).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { onCommand } from "@/test/mockIpc";
 import { GitPanel } from "./GitPanel";
-import { PUBLISH_JOB_TOOLS, publishPrompt, readVerdict, usePublish } from "./publishStore";
+import { PUBLISH_JOB_CAPABILITIES, publishPrompt, readVerdict, usePublish } from "./publishStore";
 import { pushBranches } from "./workflows";
 
 const BRANCHES = ["*\tmain\torigin/main", " \tprod\torigin/prod", " \tfeat/x\t"].join("\n");
@@ -53,9 +53,9 @@ describe("publish prompt and verdict", () => {
   });
 
   test("the job may run git, and may not run anything else", () => {
-    expect(PUBLISH_JOB_TOOLS).toContain("Bash(git:*)");
-    expect(PUBLISH_JOB_TOOLS.join(" ")).not.toContain("npx");
-    expect(PUBLISH_JOB_TOOLS).not.toContain("Write");
+    expect(PUBLISH_JOB_CAPABILITIES).toContain("shell:git");
+    expect(PUBLISH_JOB_CAPABILITIES.join(" ")).not.toContain("npx");
+    expect(PUBLISH_JOB_CAPABILITIES).not.toContain("web");
   });
 });
 
@@ -86,7 +86,7 @@ describe("PublishPanel", () => {
 
     await waitFor(() => expect(screen.getByText("Pushed to main, prod.")).toBeInTheDocument());
     const job = requests.find((request) => request.program === "claude");
-    expect(job?.args.at(-1)).toBe(PUBLISH_JOB_TOOLS.join(","));
+    expect(job?.args.at(-1)).toBe("Read,Write,Edit,Glob,Grep,Bash(git:*)");
     expect(job?.stdin).toContain("then bring it to: prod");
   });
 

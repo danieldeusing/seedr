@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { cancelProcess } from "@/api/agent";
 import { runAgentJob } from "@/api/agentJob";
+import type { JobCapability } from "@/features/author/adapters";
 import type { ChangedPath } from "@/api/git";
 
 /**
@@ -14,7 +15,7 @@ import type { ChangedPath } from "@/api/git";
 export const PUBLISH_TASK = "git-publish";
 
 /** Read and edit the worktree, and run git. No package manager, no network fetch. */
-export const PUBLISH_JOB_TOOLS = ["Read", "Edit", "Glob", "Grep", "Bash(git:*)"];
+export const PUBLISH_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "shell:git"];
 
 /**
  * The repo's standing git rules (.agents/rules/git-workflow.md), restated for an
@@ -86,7 +87,7 @@ export const usePublish = create<PublishState>((set, get) => ({
       const outcome = await runAgentJob({
         taskId: PUBLISH_TASK,
         prompt: publishPrompt(plan),
-        allowedTools: PUBLISH_JOB_TOOLS,
+        capabilities: PUBLISH_JOB_CAPABILITIES,
         onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
       });
       if (!outcome.ok) {

@@ -5,7 +5,6 @@ import { useUpdateParams } from "@/hooks/useUpdateParams";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { homeMeta } from "../../scripts/site-meta.mjs";
 import Fuse from "fuse.js";
-// toolr-design-ignore-next-line
 import { Sprout, X } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -39,7 +38,7 @@ const displayTypes: ComponentType[] = [
   "mcp",
 ];
 
-import { canonicalAgent } from "@seedr/registry-ops/pure";
+import { canonicalAgent, canonicalSourceType } from "@seedr/registry-ops/pure";
 import { agentOptions, sourceOptions, scopeOptions } from "@/lib/filterOptions";
 
 /** A URL value is used only when it names one of the offered options. */
@@ -56,12 +55,13 @@ export function Home() {
   const query = searchParams.get("q") ?? "";
   // an old `?tool=gemini` link still filters, as antigravity
   const toolFilter = canonicalAgent(searchParams.get("tool"));
-  // Validated, not cast: an unknown `?source=Toolr` used to match nothing and
+  // Validated, not cast: an unknown `?source=Seedr` used to match nothing and
   // render "0 results" with the bogus value shown as the active filter, and
-  // `?scope=` applied without `source=toolr` filtered with its control hidden.
-  const sourceFilter = pickValid<SourceType>(searchParams.get("source"), sourceOptions);
+  // `?scope=` applied without `source=seedr` filtered with its control hidden.
+  // An old `?source=toolr` link still filters, as seedr.
+  const sourceFilter = pickValid<SourceType>(canonicalSourceType(searchParams.get("source")), sourceOptions);
   const rawScope = pickValid<ScopeType>(searchParams.get("scope"), scopeOptions);
-  const scopeFilter = sourceFilter === "toolr" ? rawScope : null;
+  const scopeFilter = sourceFilter === "seedr" ? rawScope : null;
 
   const setQuery = (value: string) => {
     // When clearing query, also clear filters
@@ -73,8 +73,8 @@ export function Home() {
   };
   const setToolFilter = (value: string) => updateParams({ tool: value || null });
   const setSourceFilter = (value: string) => {
-    // Clear scope filter when switching away from toolr
-    if (value !== "toolr") {
+    // Clear scope filter when switching away from seedr
+    if (value !== "seedr") {
       updateParams({ source: value || null, scope: null });
     } else {
       updateParams({ source: value });
@@ -97,7 +97,7 @@ export function Home() {
     }
 
     if (sourceFilter) {
-      results = results.filter((item) => (item.sourceType ?? "toolr") === sourceFilter);
+      results = results.filter((item) => (item.sourceType ?? "seedr") === sourceFilter);
     }
 
     if (scopeFilter) {
@@ -149,7 +149,7 @@ export function Home() {
                 allLabel="Source"
               />
 
-              {sourceFilter === "toolr" && (
+              {sourceFilter === "seedr" && (
                 <FilterDropdown
                   value={scopeFilter ?? ""}
                   options={scopeOptions}

@@ -25,7 +25,7 @@ function host(requests: RunRequest[] = []) {
     requests.push(request);
     if (request.program === "claude" && request.args[0] === "--version") return ok(request, "2.1.226");
     if (request.program === "claude" && request.args[0] === "--help") return ok(request, "--output-format --json-schema --tools");
-    if (request.program === "claude") return ok(request, JSON.stringify({ type: "result", is_error: false, result: "", structured_output: { description: "Drives a real browser.", longDescription: LONG } }));
+    if (request.program === "claude") return ok(request, JSON.stringify({ type: "result", is_error: false, result: "UPDATED mcp/playwright" }));
     if (request.args.includes("hash")) return ok(request, JSON.stringify({ hash: "abcdef0123456789" }));
     return ok(request, JSON.stringify({ ok: true, kind: "update", type: "mcp", slug: "playwright", item: {}, changedPaths: ["registry/mcp/playwright/item.json", "registry/mcp/manifest.json"], headBefore: "abc1234def" }));
   });
@@ -43,7 +43,7 @@ describe("updateStore", () => {
     expect(updateRefusal(pdf)).toMatch(/official items are refreshed by the sync/);
     expect(updateRefusal(playwright)).toBeNull();
 
-    const form = { name: "Playwright", prompt: "", description: "Drives a browser.", longDescription: LONG, compatibility: ["claude" as const], targetScope: "" as const };
+    const form = { name: "Playwright", prompt: "", refreshMeta: true, description: "Drives a browser.", longDescription: LONG, compatibility: ["claude" as const], targetScope: "" as const };
     expect(toPatch(playwright, form)).toEqual({});
     expect(toPatch(playwright, { ...form, name: "Playwright MCP", targetScope: "project" })).toEqual({ name: "Playwright MCP", targetScope: "project" });
     expect(formProblems(playwright, { ...form, compatibility: [] }).map((p) => p.field)).toEqual(["compatibility"]);
@@ -96,20 +96,43 @@ describe("updateStore", () => {
     expect(useUpdate.getState().error).toMatch(/uncommitted changes/);
   });
 
-  test("redraft digests the item's own files through the scoped fs and fills the descriptions", async () => {
+  test("a prompt makes it an agent job that carries the metadata edits along", async () => {
     const { playwright } = await items();
     const requests = host();
     await useUpdate.getState().start(playwright);
-    await useUpdate.getState().redraft();
-    expect(useUpdate.getState().form.description).toBe("Drives a real browser.");
-    const draft = requests.find((r) => r.program === "claude" && r.args[0] === "-p");
-    expect(draft?.stdin).toContain("### mcp.md");
-    expect(draft?.stdin).toContain("### docs/notes.md");
+    useUpdate.setState({ form: { ...useUpdate.getState().form, prompt: "make it handle timeouts", name: "Playwright MCP" } });
+
+    await useUpdate.getState().apply();
+
+    const job = requests.find((request) => request.args.includes("--allowedTools"));
+    expect(job?.args.at(-1)).toBe("Read,Write,Edit,Glob,Grep,Skill,Bash(npx tsx scripts/registry-op.ts:*)");
+    expect(job?.args.at(-1)).not.toContain("Bash(git");
+    expect(job?.stdin).toContain("make it handle timeouts");
+    expect(job?.stdin).toContain("- name: Playwright MCP");
+    expect(job?.stdin).toContain("rewrite `description`");
+    expect(job?.stdin).toContain("UPDATED <type>/<slug>");
+    // The transaction is the agent's to run, so Studio does not also run one.
+    expect(requests.filter((request) => request.program === "npx" && request.args.includes("run"))).toHaveLength(0);
+    expect(useUpdate.getState().phase).toBe("done");
   });
+
+  test("metadata off tells the agent to leave the descriptions alone", async () => {
+    const { playwright } = await items();
+    const requests = host();
+    await useUpdate.getState().start(playwright);
+    useUpdate.setState({ form: { ...useUpdate.getState().form, prompt: "tighten the wording", refreshMeta: false, description: "Mine, by hand." } });
+
+    await useUpdate.getState().apply();
+
+    const job = requests.find((request) => request.args.includes("--allowedTools"));
+    expect(job?.stdin).toContain("Leave `description` and `longDescription` exactly as they are");
+    expect(job?.stdin).not.toContain("- description:");
+  });
+
 });
 
 describe("UpdateForm", () => {
-  test("edits a toolr item and applies the change", async () => {
+  test("edits a first-party item and applies the change", async () => {
     const { playwright } = await items();
     host();
     const onDone = vi.fn();

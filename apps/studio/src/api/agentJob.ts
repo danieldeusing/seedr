@@ -1,3 +1,6 @@
+import type { CanonicalCodingAgent } from "@seedr/shared";
+import { adapterFor, type JobCapability } from "@/features/author/adapters";
+import { useAgentSettings } from "@/features/settings/agentSettings";
 import { onProcessOutput, runProcess, type RunOutcome } from "./agent";
 
 /**
@@ -94,24 +97,34 @@ export function jobResult(outcome: RunOutcome): AgentJobResult {
 export interface AgentJobRequest {
   taskId: string;
   prompt: string;
-  /** Exactly the tools this job may use, e.g. `Read`, `Bash(git status:*)`. */
-  allowedTools: string[];
-  program?: string;
+  /** Exactly what this job may do, e.g. `read`, `shell:git`. Each adapter spells these in its own CLI's tool names. */
+  capabilities: JobCapability[];
+  /** Defaults to the agent chosen in settings. */
+  agent?: CanonicalCodingAgent;
   timeoutMs?: number;
   onEvent?(event: AgentJobEvent): void;
 }
 
-export function agentJobArgs(allowedTools: string[]): string[] {
-  return ["-p", "--output-format", "stream-json", "--verbose", "--allowedTools", allowedTools.join(",")];
+export function agentJobArgs(capabilities: JobCapability[]): string[] {
+  return adapterFor("claude").job("", capabilities).args;
 }
 
+/**
+ * Run one job with whichever agent is chosen. The adapter owns the spelling —
+ * the flag that means "not interactive", where the prompt goes, how tools are
+ * permitted, what the output looks like — and everything above this line is the
+ * same for all of them.
+ */
 export async function runAgentJob(
-  { taskId, prompt, allowedTools, program = "claude", timeoutMs = AGENT_JOB_TIMEOUT_MS, onEvent }: AgentJobRequest,
+  { taskId, prompt, capabilities, agent = useAgentSettings.getState().preferred, timeoutMs = AGENT_JOB_TIMEOUT_MS, onEvent }: AgentJobRequest,
   run: typeof runProcess = runProcess
 ): Promise<AgentJobResult> {
-  const unlisten = onEvent ? await onProcessOutput(taskId, ({ line }) => parseStreamLine(line).forEach(onEvent)) : null;
+  const adapter = adapterFor(agent);
+  const invocation = adapter.job(prompt, capabilities);
+  const unlisten = onEvent ? await onProcessOutput(taskId, ({ line }) => adapter.readLine(line).forEach(onEvent)) : null;
   try {
-    return jobResult(await run({ taskId, program, args: agentJobArgs(allowedTools), stdin: prompt, cwd: "", timeoutMs }));
+    const outcome = await run({ taskId, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), cwd: "", timeoutMs });
+    return adapter.readOutcome(outcome);
   } finally {
     unlisten?.();
   }

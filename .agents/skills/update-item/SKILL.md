@@ -1,7 +1,7 @@
 ---
 name: update-item
 description: |
-  Update a first-party (toolr) item in the seedr registry: its metadata, its descriptions, or
+  Update a first-party (seedr) item in the seedr registry: its metadata, its descriptions, or
   its content files. Trigger on: "/update-item <type> <slug> <instruction>", "update item",
   "revise the description of", "change the skill content of". Drafts the change, shows it, and
   applies it through a transaction that validates the result, recompiles the manifests and
@@ -32,7 +32,8 @@ npx tsx scripts/registry-op.ts list
 ```
 
 Find the `(type, slug)` entry (ask with AskUserQuestion if the slug exists under several types)
-and keep its `hash`. It must be `sourceType: "toolr"`; otherwise stop:
+and keep its `hash`. It must be first-party — `sourceType` reads `seedr`, or still `toolr`,
+the deprecated spelling the registry stores until the migration runs. Otherwise stop:
 > "`<slug>` (`<type>`) is a synced `<sourceType>` item — edits would be overwritten by the next
 > sync. Change it upstream instead."
 
@@ -106,7 +107,7 @@ failure is printed verbatim — fix the draft and run again; never bypass it.
 
 ## Important notes
 
-- toolr items only; synced items are refused by the operation itself
+- first-party items only; synced items are refused by the operation itself
 - One item per run; several items are several runs
 - Never hand-patch a failed validation into passing — the rules are the same ones the commit
   gate enforces

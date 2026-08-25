@@ -2,6 +2,7 @@ import { existsSync, lstatSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
 import { storageAgents } from "../agents.js";
+import { isFirstParty } from "../sourceTypes.js";
 import { itemStateHash } from "../hash.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
 import { fileTree, readItem } from "../read.js";
@@ -41,8 +42,8 @@ function insideItemDir(dir: string, editPath: string): string {
  */
 export function update(registryDir: string, op: UpdateOp): OpResult {
   const current = readItem(registryDir, op.type, op.slug);
-  if (current.sourceType !== "toolr") {
-    throw new Error(`Only toolr items can be updated; ${op.type} "${op.slug}" is ${current.sourceType} and would be overwritten by the next sync`);
+  if (!isFirstParty(current.sourceType)) {
+    throw new Error(`Only first-party items can be updated; ${op.type} "${op.slug}" is ${current.sourceType} and would be overwritten by the next sync`);
   }
   const actualHash = itemStateHash(registryDir, op.type, op.slug);
   if (actualHash !== op.expectedHash) {

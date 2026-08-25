@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { FileTreeNode } from "@seedr/shared";
+import { isFirstParty } from "@seedr/registry-ops/pure";
 import { fs } from "@/api/fs";
 import { testInstall, type TestInstallOutcome } from "@/api/testInstall";
 import { loadFileTree, type StudioItem } from "@/features/explorer/registry";
@@ -31,7 +32,7 @@ interface TestState {
 
 export const testRefusal = (item: StudioItem): string | null => {
   if (item.type === "command") return "the CLI has no install handler for command items yet";
-  return item.item.sourceType === "toolr" ? null : `${item.item.sourceType ?? "synced"} items install from their upstream repository — test them with the CLI online`;
+  return isFirstParty(item.item.sourceType) ? null : `${item.item.sourceType ?? "synced"} items install from their upstream repository — test them with the CLI online`;
 };
 
 /** Every file path in a tree, relative, with forward slashes. */

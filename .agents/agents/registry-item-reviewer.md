@@ -35,8 +35,9 @@ Determine which items to review, in this order:
   `sourceType`, `compatibility` (non-empty), and `author`. `community` items also require
   `externalUrl`.
 - **Consistency** — `type` matches the parent folder (e.g. `skill` ↔ `registry/skills/`), `slug`
-  matches the directory name, `sourceType` is one of `toolr`/`community`/`official`. For `toolr`
-  items, `author` matches this checkout's own identity — compare against `npx tsx
+  matches the directory name, `sourceType` is one of `seedr`/`community`/`official` (`toolr` is
+  accepted as a deprecated alias of `seedr`). For first-party items, `author` matches this
+  checkout's own identity — compare against `npx tsx
   scripts/registry-op.ts identity` (a fork attributes its items to its own owner, never to
   the upstream author).
 - **`description` quality** — exactly one sentence; leads with what the item *does* (verb-first,
@@ -46,7 +47,7 @@ Determine which items to review, in this order:
   specifics (languages, counts, included components, approach); a differentiator; no marketing
   filler. Structured markdown when warranted: a bullet list with **bold** category names for 3+
   like items, backticks for file names/commands/identifiers (never for brand or pattern names).
-- **Accuracy** — for `toolr` items, spot-check the description against the item's actual content
+- **Accuracy** — for first-party items, spot-check the description against the item's actual content
   (`SKILL.md`, `plugin.json`, hook scripts) in the same directory; flag claims the content doesn't
   support.
 
@@ -54,7 +55,7 @@ Determine which items to review, in this order:
 
 1. Read the two rule files above.
 2. Resolve the review scope.
-3. For each `item.json`: read it, count `longDescription` words, and for toolr items read the
+3. For each `item.json`: read it, count `longDescription` words, and for first-party items read the
    adjacent content file to sanity-check accuracy.
 4. Check every field against the Focus Areas.
 

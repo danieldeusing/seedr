@@ -218,11 +218,11 @@ rows to the text form (`rw-` · `cgaxo`), next to the theme dropdown. Each item'
 pairs a resizable, collapsible metadata pane (stacking on narrow panes) with a Monaco file
 preview (self-hosted, read-only) offering syntax, formatted-markdown and plain views; a
 file's right-click menu carries "open with default app" and the view modes. Everything
-else — add capability, edit, test install, git status — opens as a dialog over the
-workspace, `data-tip` hovers replace inline notes, and every external link (markdown links
-included) goes through a confirmation dialog, scheme-gated in both the webview and the
-host's `open_external`. Run from source — there are no
-installers:
+else — add capability, edit, test install, git, settings — opens as a dialog over the
+workspace, `data-tip` hovers replace inline notes (every form label explains its own
+vocabulary), and every external link (markdown links included) goes through a confirmation
+dialog, scheme-gated in both the webview and the host's `open_external`. Run from source —
+there are no installers:
 
 ```bash
 pnpm --filter @seedr/studio tauri:dev                  # needs Rust (cargo) on the machine
@@ -231,15 +231,23 @@ pnpm --filter @seedr/studio test                       # vitest + jsdom; coverag
 cd apps/studio/src-tauri && cargo test                 # the host's path-scoping tests
 ```
 
-**Add capability** (the Author screen) is the one end-to-end mutation today: you pick the
-source folder and supply what the model must not guess (type, slug, name, agents, scope,
-author — prefilled from `registry-op.ts identity`); "draft descriptions with Claude" sends a
-size-capped digest of the source to `claude -p --output-format json --json-schema … --tools ""
---max-turns 1` — one turn, no tools, answer validated by the same validator the commit gate uses, rejected
-twice means failure, never a hand-repaired JSON; "add to registry" runs the `add-local`
-operation through `scripts/registry-op.ts` as a transaction (clean worktree required, rollback
-on any failure). Claude Code is probed at startup (`--version`, `--help` flags) and disabled
-with a diagnostic rather than degraded.
+**Add capability** (the Author screen) takes one of three routes, chosen by the `from` field.
+*A local folder* is the deterministic one: you supply what the model must not guess (type,
+slug, name, agents, scope, author — prefilled from `registry-op.ts identity`), "draft
+descriptions with Claude" sends a size-capped digest of the source to `claude -p
+--output-format json --json-schema … --tools "" --max-turns 1` — one turn, no tools, answer
+validated by the same validator the commit gate uses, rejected twice means failure, never a
+hand-repaired JSON — and "add to registry" runs the `add-local` operation through
+`scripts/registry-op.ts` as a transaction (clean worktree required, rollback on any failure).
+*A git repository* and *the agent writes it* are agent jobs instead: Studio composes the
+prompt (this repo's own `/add-community` or `/add-toolr` skill, the type's pre-prompt, every
+filled field as a hint the agent honours and every empty one for it to derive) and streams
+`claude -p --output-format stream-json --verbose --allowedTools …` line by line. A job's tools
+are named, never assumed — read/write the checkout, `WebFetch`, `Bash(npx tsx
+scripts/registry-op.ts:*)`; no `git`, so a job cannot commit — and it must end with `ADDED
+<type>/<slug>`, which is how the explorer knows what to open. Each description says who
+writes it, you or the agent. Claude Code is probed at startup (`--version`, `--help` flags)
+and disabled with a diagnostic rather than degraded.
 
 **Update** (the edit button on a toolr item's detail) patches name, descriptions, agents and
 scope — optionally redrafted by Claude from the item's own files — as a hash-guarded `update`
@@ -250,8 +258,21 @@ CLI — `node node_modules/tsx/dist/cli.mjs packages/cli/src/cli.ts add <slug> -
 --agents all --scope project --method copy --yes` — in a scratch directory it creates and
 removes, then shows every file written and, for a skill, checks each of the item's files
 arrived byte for byte; synced items are not offered because they install from their
-upstream repository. **git status** shows branch, head, the changed paths and each one's
-diff; v1 ships no commit or push — that stays in your terminal.
+upstream repository. **git** has two views: *status* shows branch, head, the changed paths
+and each one's diff; *publish* picks the target branches, takes a commit message and notes,
+and hands the job to the agent with `Bash(git:*)` and file edits allowed and nothing else —
+the prompt restates this repo's rules (no `--no-verify`, no cherry-pick between branches, no
+amending what is pushed, pull first, stop on a conflict) and asks for `PUBLISHED <branches>`
+or `STOPPED <why>` back. Studio reads `.github/workflows` to mark the branches whose push
+starts a workflow, so choosing `prod` says out loud that it deploys and publishes; the run
+takes a second, explicit confirmation of the exact targets.
+
+**Settings** holds two pages. *Coding agents* probes each canonical agent's CLI
+(`claude`, `copilot`, `agy`, `codex`, `opencode`) with `--version` and lets a binary a GUI
+launch cannot see on PATH be pointed at directly — the host validates the path, keeps it per
+machine and applies it wherever a run names the bare program; `npx` and `git` are deliberately
+not overridable. *Pre-prompts* holds the standing context per capability type, once for adds
+and once for edits, which the add and edit dialogs prefill into their prompt field.
 
 Architecture, deliberately small: the Rust host (`src-tauri/src/lib.rs`) is a read-only,
 root-scoped filesystem bridge plus a registry watcher — every path crosses the IPC boundary
@@ -263,7 +284,10 @@ so a GUI launch finds `claude` and `npx`; every child gets `SEEDR_NO_TELEMETRY=1
 folders for drafts are readable only after the native picker returned them in this session. Registry semantics live in
 TypeScript: the webview imports `@seedr/registry-ops/pure` (paths, the validator, the operation
 types), so Studio, `compile`, the commit gate and the skills all share one definition of an
-item. Mutations go through `scripts/registry-op.ts` transactions; the agent never gets tools. `src/core/lib/tauriInvoke.ts` is the only importer of Tauri's IPC, and
+item. Mutations go through `scripts/registry-op.ts` transactions. Two kinds of agent run, kept
+apart on purpose: the *drafting adapter* gets no tools and one turn, while an *agent job*
+(add from a repository or a prompt, publish) names the tools it allows and Claude Code denies
+the rest — in `-p` there is nobody to ask, so a tool outside the list fails visibly. `src/core/lib/tauriInvoke.ts` is the only importer of Tauri's IPC, and
 the test harness (`src/test/mockIpc.ts`) rejects unknown commands instead of resolving
 `undefined`.
 

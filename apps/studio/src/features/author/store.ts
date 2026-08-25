@@ -3,6 +3,7 @@ import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, CANONICAL_AGENTS, parseOp, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess, onProcessOutput, pickPath } from "@/api/agent";
 import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
+import type { JobCapability } from "./adapters";
 import { configuredAuthor } from "@/features/settings/authorSettings";
 import { useAgentSettings } from "@/features/settings/agentSettings";
 import { prePromptFor } from "@/features/settings/prePrompts";
@@ -81,7 +82,7 @@ const JOB_TASK = "author-job";
  * operations CLI — which is what actually mutates the registry, as a
  * transaction. No `git`, so a job cannot commit, and no unscoped shell.
  */
-export const ADD_JOB_TOOLS = ["Read", "Write", "Edit", "Glob", "Grep", "Skill", "WebFetch", "Bash(gh api:*)", "Bash(npx tsx scripts/registry-op.ts:*)"];
+export const ADD_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "skills", "web", "shell:gh api", "shell:npx tsx scripts/registry-op.ts"];
 
 /** The last line an add job must print, so Studio can open what was added. */
 const ADDED_LINE = /^ADDED\s+([a-z]+)\/([A-Za-z0-9._-]+)$/m;
@@ -364,7 +365,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
       const outcome: AgentJobResult = await runAgentJob({
         taskId: JOB_TASK,
         prompt: jobPrompt(form),
-        allowedTools: ADD_JOB_TOOLS,
+        capabilities: ADD_JOB_CAPABILITIES,
         onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
       });
       if (!outcome.ok) {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { emit, invoke, onCommand } from "@/test/mockIpc";
-import { ADD_JOB_TOOLS, emptyForm, formProblems, githubProblem, jobPrompt, parseAdded, toOp, useAuthor } from "./store";
+import { ADD_JOB_CAPABILITIES, emptyForm, formProblems, githubProblem, jobPrompt, parseAdded, toOp, useAuthor } from "./store";
 
 const LONG = "Reads `item.json` files and " + "checks every description carefully ".repeat(10);
 const HELP = "--output-format --json-schema --tools";
@@ -179,7 +179,7 @@ describe("jobs — a repository or a prompt", () => {
     expect(useAuthor.getState().phase).toBe("done");
     expect(useAuthor.getState().result).toMatchObject({ kind: "job", added: { type: "plugin", slug: "superpowers" } });
     expect(requests[0]?.args).toContain("--allowedTools");
-    expect(requests[0]?.args.at(-1)).toBe(ADD_JOB_TOOLS.join(","));
+    expect(requests[0]?.args.at(-1)).toBe("Read,Write,Edit,Glob,Grep,Skill,WebFetch,Bash(gh api:*),Bash(npx tsx scripts/registry-op.ts:*)");
     expect(requests[0]?.args.at(-1)).not.toContain("Bash(git");
   });
 
@@ -212,9 +212,9 @@ describe("what an add job may run", () => {
   test("reads GitHub and runs the operations CLI, and nothing else", () => {
     // The add-community skill is written against `gh api`; without it every
     // repository job would fail on a denial.
-    expect(ADD_JOB_TOOLS).toContain("Bash(gh api:*)");
-    expect(ADD_JOB_TOOLS).toContain("Bash(npx tsx scripts/registry-op.ts:*)");
-    expect(ADD_JOB_TOOLS.some((tool) => /^Bash\((git|rm|sh|bash)/.test(tool))).toBe(false);
+    expect(ADD_JOB_CAPABILITIES).toContain("shell:gh api");
+    expect(ADD_JOB_CAPABILITIES).toContain("shell:npx tsx scripts/registry-op.ts");
+    expect(ADD_JOB_CAPABILITIES.some((capability: string) => /^shell:(git|rm|sh|bash)\b/.test(capability))).toBe(false);
     expect(jobPrompt({ ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/o/r" })).toContain("never with -X");
   });
 });

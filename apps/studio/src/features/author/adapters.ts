@@ -23,13 +23,51 @@ export interface AgentInvocation {
   stdin?: string;
 }
 
+/**
+ * What a job needs to be allowed to do, said once in terms that mean the same
+ * thing everywhere. Tool *names* are not portable — Claude Code calls them
+ * `Read` and `Bash(git:*)`, Copilot calls the same things `view` and
+ * `bash(git:*)`, and codex and opencode have no allowlist at all — so a job
+ * names capabilities and each adapter spells them.
+ */
+export type JobCapability = "read" | "edit" | "search" | "skills" | "web" | `shell:${string}`;
+
+const shellPrefix = (capability: JobCapability): string | null => (capability.startsWith("shell:") ? capability.slice("shell:".length) : null);
+
+/** Whether a job intends to change anything, which is the only tool question codex and agy answer. */
+export const writesFiles = (capabilities: JobCapability[]): boolean => capabilities.some((capability) => capability === "edit" || capability.startsWith("shell:"));
+
+const CLAUDE_TOOLS: Record<Exclude<JobCapability, `shell:${string}`>, string[]> = {
+  read: ["Read"],
+  edit: ["Write", "Edit"],
+  search: ["Glob", "Grep"],
+  skills: ["Skill"],
+  web: ["WebFetch"],
+};
+
+// Copilot's own names, from asking it: bash, view, create, edit, web_fetch,
+// skill, grep, glob. Its shell specifier is `bash(<prefix>:*)`, verified by run.
+const COPILOT_TOOLS: Record<Exclude<JobCapability, `shell:${string}`>, string[]> = {
+  read: ["view"],
+  edit: ["create", "edit"],
+  search: ["grep", "glob"],
+  skills: ["skill"],
+  web: ["web_fetch"],
+};
+
+const spell = (capabilities: JobCapability[], table: Record<string, string[]>, shell: (prefix: string) => string): string[] =>
+  capabilities.flatMap((capability) => {
+    const prefix = shellPrefix(capability);
+    return prefix ? [shell(prefix)] : (table[capability] ?? []);
+  });
+
 export interface AgentAdapter {
   /** The binary; the settings page can point this at another path. */
   program: string;
   /** One prompt, no tools, answering with JSON. */
   draft(prompt: string): AgentInvocation;
-  /** One prompt that may use the named tools inside the checkout. */
-  job(prompt: string, allowedTools: string[]): AgentInvocation;
+  /** One prompt that may do the named things inside the checkout. */
+  job(prompt: string, capabilities: JobCapability[]): AgentInvocation;
   /** True when this CLI can be told to answer against a JSON schema. */
   schemaEnforced: boolean;
   /** One line of the agent's output, as something a person can read. */
@@ -182,7 +220,10 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   claude: {
     program: AGENT_PROGRAMS.claude,
     draft: (prompt) => ({ args: ["-p", "--output-format", "json", "--json-schema", JSON.stringify(DRAFT_SCHEMA), "--tools", "", "--max-turns", "1"], stdin: prompt }),
-    job: (prompt, allowedTools) => ({ args: ["-p", "--output-format", "stream-json", "--verbose", "--allowedTools", allowedTools.join(",")], stdin: prompt }),
+    job: (prompt, capabilities) => ({
+      args: ["-p", "--output-format", "stream-json", "--verbose", "--allowedTools", spell(capabilities, CLAUDE_TOOLS, (prefix) => `Bash(${prefix}:*)`).join(",")],
+      stdin: prompt,
+    }),
     schemaEnforced: true,
     readLine: readClaudeLine,
     readOutcome: readClaudeOutcome,
@@ -196,7 +237,7 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   antigravity: {
     program: AGENT_PROGRAMS.antigravity,
     draft: (prompt) => ({ args: [`--print=${prompt}`, "--output-format", "json", "--disable-slash-commands"] }),
-    job: (prompt) => ({ args: [`--print=${prompt}`, "--output-format", "stream-json", "--mode", "accept-edits"] }),
+    job: (prompt, capabilities) => ({ args: [`--print=${prompt}`, "--output-format", "stream-json", "--mode", writesFiles(capabilities) ? "accept-edits" : "plan"] }),
     schemaEnforced: false,
     readLine: readAgyLine,
     readOutcome: readAgyOutcome,
@@ -207,7 +248,9 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   copilot: {
     program: AGENT_PROGRAMS.copilot,
     draft: (prompt) => ({ args: ["--no-color", "--log-level", "none", "-p", prompt] }),
-    job: (prompt, allowedTools) => ({ args: ["--no-color", "--log-level", "none", ...allowedTools.flatMap((tool) => ["--allow-tool", tool]), "-p", prompt] }),
+    job: (prompt, capabilities) => ({
+      args: ["--no-color", "--log-level", "none", ...spell(capabilities, COPILOT_TOOLS, (prefix) => `bash(${prefix}:*)`).flatMap((tool) => ["--allow-tool", tool]), "-p", prompt],
+    }),
     schemaEnforced: false,
     readLine: (text) => line("text", text),
     readOutcome: readPlainOutcome,
@@ -219,7 +262,7 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   codex: {
     program: AGENT_PROGRAMS.codex,
     draft: (prompt) => ({ args: ["exec", "--color", "never", "-s", "read-only", "-"], stdin: prompt }),
-    job: (prompt) => ({ args: ["exec", "--color", "never", "-s", "workspace-write", "-"], stdin: prompt }),
+    job: (prompt, capabilities) => ({ args: ["exec", "--color", "never", "-s", writesFiles(capabilities) ? "workspace-write" : "read-only", "-"], stdin: prompt }),
     schemaEnforced: false,
     readLine: (text) => line("text", text),
     readOutcome: readPlainOutcome,

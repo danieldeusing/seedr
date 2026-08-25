@@ -7,7 +7,7 @@ import { mockFs, onCommand } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
 import { loadRegistry, type StudioItem } from "@/features/explorer/registry";
 import { UpdateForm } from "./UpdateForm";
-import { formProblems, toPatch, updateRefusal, UPDATE_JOB_TOOLS, useUpdate } from "./updateStore";
+import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
 const LONG = "Reads `item.json` files and " + "checks every description carefully ".repeat(10);
 const ok = (request: RunRequest, stdout: string) => ({ taskId: request.taskId, status: "ok", exitCode: 0, stdout, stderr: "", durationMs: 1 });
@@ -105,7 +105,7 @@ describe("updateStore", () => {
     await useUpdate.getState().apply();
 
     const job = requests.find((request) => request.args.includes("--allowedTools"));
-    expect(job?.args.at(-1)).toBe(UPDATE_JOB_TOOLS.join(","));
+    expect(job?.args.at(-1)).toBe("Read,Write,Edit,Glob,Grep,Skill,Bash(npx tsx scripts/registry-op.ts:*)");
     expect(job?.args.at(-1)).not.toContain("Bash(git");
     expect(job?.stdin).toContain("make it handle timeouts");
     expect(job?.stdin).toContain("- name: Playwright MCP");

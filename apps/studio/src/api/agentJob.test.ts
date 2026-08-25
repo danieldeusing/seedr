@@ -69,10 +69,10 @@ describe("runAgentJob", () => {
     });
 
     const events: AgentJobEvent[] = [];
-    const result = await runAgentJob({ taskId: "job-1", prompt: "do it", allowedTools: ["Read", "Bash(git status:*)"], onEvent: (event) => events.push(event) });
+    const result = await runAgentJob({ taskId: "job-1", prompt: "do it", capabilities: ["read", "shell:git status"], onEvent: (event) => events.push(event) });
 
     expect(result).toEqual({ ok: true, text: "done", denials: [] });
-    expect(request?.args).toEqual(agentJobArgs(["Read", "Bash(git status:*)"]));
+    expect(request?.args).toEqual(agentJobArgs(["read", "shell:git status"]));
     expect(request?.args).toContain("Read,Bash(git status:*)");
     expect(request?.stdin).toBe("do it");
     expect(request?.cwd).toBe("");

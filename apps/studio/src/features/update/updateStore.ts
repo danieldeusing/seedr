@@ -3,6 +3,7 @@ import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { CANONICAL_AGENTS, canonicalAgents, isFirstParty, parseOp, validateItem, type UpdateOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess } from "@/api/agent";
 import { runAgentJob } from "@/api/agentJob";
+import type { JobCapability } from "@/features/author/adapters";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
 import { probeAgent, type AdapterProbe } from "@/features/author/claudeAdapter";
 import { useAgentSettings } from "@/features/settings/agentSettings";
@@ -58,7 +59,7 @@ interface UpdateState {
  * through the operations CLI, which is the only thing allowed to write
  * `item.json`. No network, no `git`: this is an edit, not a publish.
  */
-export const UPDATE_JOB_TOOLS = ["Read", "Write", "Edit", "Glob", "Grep", "Skill", "Bash(npx tsx scripts/registry-op.ts:*)"];
+export const UPDATE_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "skills", "shell:npx tsx scripts/registry-op.ts"];
 
 const UPDATE_TASK = "update-job";
 const LOG_CAP = 200;
@@ -178,7 +179,7 @@ export const useUpdate = create<UpdateState>((set, get) => ({
         const outcome = await runAgentJob({
           taskId: UPDATE_TASK,
           prompt: updateJobPrompt(target, form, patch),
-          allowedTools: UPDATE_JOB_TOOLS,
+          capabilities: UPDATE_JOB_CAPABILITIES,
           onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
         });
         if (!outcome.ok) {

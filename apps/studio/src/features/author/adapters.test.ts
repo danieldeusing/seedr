@@ -10,7 +10,7 @@ describe("adapters", () => {
     for (const agent of CANONICAL_AGENTS) {
       const adapter = adapterFor(agent);
       expect(adapter.program).toBeTruthy();
-      for (const invocation of [adapter.draft("PROMPT"), adapter.job("PROMPT", ["Read"])]) {
+      for (const invocation of [adapter.draft("PROMPT"), adapter.job("PROMPT", ["read"])]) {
         // Non-interactive, always: no adapter may open a terminal session.
         expect(invocation.args.join(" ")).toMatch(/-p\b|--print|exec|run/);
         // The prompt is either on stdin or somewhere in argv — never dropped,
@@ -23,17 +23,23 @@ describe("adapters", () => {
 
   test("the tool boundary is spelled the way each CLI spells it", () => {
     expect(adapterFor("claude").draft("p").args).toEqual(expect.arrayContaining(["--tools", "", "--max-turns", "1"]));
-    expect(adapterFor("claude").job("p", ["Read", "Bash(git:*)"]).args.at(-1)).toBe("Read,Bash(git:*)");
-    // Copilot allows tools one flag at a time, and takes the prompt on argv.
-    expect(adapterFor("copilot").job("p", ["Read", "Edit"]).args).toEqual(expect.arrayContaining(["--allow-tool", "Read", "--allow-tool", "Edit"]));
+    expect(adapterFor("claude").job("p", ["read", "shell:git"]).args.at(-1)).toBe("Read,Bash(git:*)");
+    // The same capabilities, spelled in Copilot's own tool names — asking it for
+    // `Read` or `Bash(git:*)` would allow nothing at all.
+    expect(adapterFor("copilot").job("p", ["read", "edit", "shell:git"]).args).toEqual(
+      expect.arrayContaining(["--allow-tool", "view", "--allow-tool", "create", "--allow-tool", "edit", "--allow-tool", "bash(git:*)"])
+    );
     expect(adapterFor("copilot").job("p", []).stdin).toBeUndefined();
-    // Codex has no allowlist: its sandbox is the boundary, read-only for a draft.
+    // Codex has no allowlist: its sandbox is the boundary, and it widens only
+    // for a job that actually changes something.
     expect(adapterFor("codex").draft("p").args).toEqual(expect.arrayContaining(["-s", "read-only"]));
-    expect(adapterFor("codex").job("p", []).args).toEqual(expect.arrayContaining(["-s", "workspace-write"]));
+    expect(adapterFor("codex").job("p", ["edit"]).args).toEqual(expect.arrayContaining(["-s", "workspace-write"]));
+    expect(adapterFor("codex").job("p", ["read"]).args).toEqual(expect.arrayContaining(["-s", "read-only"]));
+    expect(adapterFor("antigravity").job("p", ["read"]).args).toEqual(expect.arrayContaining(["--mode", "plan"]));
     // agy's -p is a value flag: bare, it takes the next argument as the prompt.
     expect(adapterFor("antigravity").draft("p").args[0]).toBe("--print=p");
     expect(adapterFor("antigravity").draft("p").args).not.toContain("-p");
-    expect(adapterFor("antigravity").job("p", []).args).toEqual(expect.arrayContaining(["--mode", "accept-edits"]));
+    expect(adapterFor("antigravity").job("p", ["edit"]).args).toEqual(expect.arrayContaining(["--mode", "accept-edits"]));
   });
 
   test("a draft asks for a schema only where the schema binds the answer", () => {

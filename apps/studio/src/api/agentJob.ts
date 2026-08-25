@@ -1,5 +1,5 @@
 import type { CanonicalCodingAgent } from "@seedr/shared";
-import { adapterFor } from "@/features/author/adapters";
+import { adapterFor, type JobCapability } from "@/features/author/adapters";
 import { useAgentSettings } from "@/features/settings/agentSettings";
 import { onProcessOutput, runProcess, type RunOutcome } from "./agent";
 
@@ -97,16 +97,16 @@ export function jobResult(outcome: RunOutcome): AgentJobResult {
 export interface AgentJobRequest {
   taskId: string;
   prompt: string;
-  /** Exactly the tools this job may use, e.g. `Read`, `Bash(git status:*)`. */
-  allowedTools: string[];
+  /** Exactly what this job may do, e.g. `read`, `shell:git`. Each adapter spells these in its own CLI's tool names. */
+  capabilities: JobCapability[];
   /** Defaults to the agent chosen in settings. */
   agent?: CanonicalCodingAgent;
   timeoutMs?: number;
   onEvent?(event: AgentJobEvent): void;
 }
 
-export function agentJobArgs(allowedTools: string[]): string[] {
-  return adapterFor("claude").job("", allowedTools).args;
+export function agentJobArgs(capabilities: JobCapability[]): string[] {
+  return adapterFor("claude").job("", capabilities).args;
 }
 
 /**
@@ -116,11 +116,11 @@ export function agentJobArgs(allowedTools: string[]): string[] {
  * same for all of them.
  */
 export async function runAgentJob(
-  { taskId, prompt, allowedTools, agent = useAgentSettings.getState().preferred, timeoutMs = AGENT_JOB_TIMEOUT_MS, onEvent }: AgentJobRequest,
+  { taskId, prompt, capabilities, agent = useAgentSettings.getState().preferred, timeoutMs = AGENT_JOB_TIMEOUT_MS, onEvent }: AgentJobRequest,
   run: typeof runProcess = runProcess
 ): Promise<AgentJobResult> {
   const adapter = adapterFor(agent);
-  const invocation = adapter.job(prompt, allowedTools);
+  const invocation = adapter.job(prompt, capabilities);
   const unlisten = onEvent ? await onProcessOutput(taskId, ({ line }) => adapter.readLine(line).forEach(onEvent)) : null;
   try {
     const outcome = await run({ taskId, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), cwd: "", timeoutMs });

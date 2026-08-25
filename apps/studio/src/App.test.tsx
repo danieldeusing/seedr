@@ -14,7 +14,7 @@ beforeEach(() => {
 describe("App", () => {
   test("starts on onboarding without a repo and opens the explorer after choosing one", async () => {
     onCommand("get_repo", () => null);
-    onCommand("pick_repo", () => ({ root: "/repo", name: "repo" }));
+    onCommand("pick_repo", () => ({ root: "/repo", name: "repo", isDefault: true }));
     mockFs(registryFiles());
 
     render(<App />);
@@ -29,10 +29,10 @@ describe("App", () => {
   });
 
   test("switches to the add-capability pane and back to an item", async () => {
-    onCommand("get_repo", () => ({ root: "/repo", name: "repo" }));
+    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true }));
     onCommand("run_process", (args) => ({ taskId: (args?.request as { taskId: string }).taskId, status: "not-found", exitCode: null, stdout: "", stderr: "", durationMs: 1 }));
     mockFs(registryFiles());
-    useStudio.setState({ repo: { root: "/repo", name: "repo" } });
+    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true } });
 
     render(<App />);
     // wait for the loaded explorer first: the empty state carries an add button too,

@@ -32,12 +32,13 @@ export function isLegacyAgent(value: unknown): value is LegacyCodingAgent {
 }
 
 /**
- * B1 (plan §5): what registry DATA may carry today. The published CLI (0.1.87)
- * reads `main` live and crashes on ids it does not know, so every writer stores
- * `gemini`, never `antigravity`, until a CLI that understands both has shipped.
- * B2 is one flip: run scripts/migrate-agent-ids.ts and empty this table.
+ * What registry DATA may carry that the canonical vocabulary would not write.
+ * Empty since 2026-08-25: the published CLI understands `antigravity` (0.1.88
+ * carries the canonical list and resolves `gemini`), so the data was migrated
+ * and writers now store the canonical id. `gemini` stays an accepted alias in
+ * AGENT_ALIASES — old data and old flags still resolve — but nothing writes it.
  */
-export const STORAGE_ALIASES: Partial<Record<CanonicalCodingAgent, LegacyCodingAgent>> = { antigravity: "gemini" };
+export const STORAGE_ALIASES: Partial<Record<CanonicalCodingAgent, LegacyCodingAgent>> = {};
 
 /** The canonical, deduplicated agent list downgraded to the ids data may store during B1. */
 export function storageAgents(values: readonly unknown[]): CodingAgent[] {

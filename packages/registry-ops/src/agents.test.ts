@@ -9,8 +9,11 @@ describe("agent vocabulary", () => {
     expect(canonicalAgent(42)).toBeNull();
   });
 
-  test("storageAgents downgrades antigravity to the stored gemini alias (B1)", () => {
-    expect(storageAgents(["antigravity", "claude", "gemini"])).toEqual(["claude", "gemini"]);
+  test("storageAgents writes canonical ids, and still reads the old ones", () => {
+    // The downgrade table is empty now that the published CLI understands
+    // antigravity, so a stored `gemini` resolves on the way in and never on the
+    // way out.
+    expect(storageAgents(["antigravity", "claude", "gemini"])).toEqual(["claude", "antigravity"]);
     expect(storageAgents(["claude", "cursor"])).toEqual(["claude"]);
     expect(storageAgents([])).toEqual([]);
   });

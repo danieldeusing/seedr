@@ -7,6 +7,7 @@ import { PaneResizeHandle } from "@/core/PaneResizeHandle";
 import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
+import { NO_OPS, useHasOps } from "./repoCapability";
 import { testRefusal } from "@/features/test/testStore";
 import { FlaskConical, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Pencil } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
@@ -72,6 +73,7 @@ function MetaFields({ item }: { item: StudioItem["item"] }) {
 const STACK_BELOW_PX = 860;
 
 export function Detail({ item, onEdit, onTest }: DetailProps) {
+  const hasOps = useHasOps();
   const [tree, setTree] = useState<FileTreeNode[] | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
   const [metaWidth, setMetaWidth] = useState(340);
@@ -119,10 +121,16 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           </div>
           <span className="flex items-center gap-3">
             {onTest && !testRefusal(item) && (
-              <IconButton icon={FlaskConical} ariaLabel={`test install ${item.slug}`} tip="test install — the real CLI, into a scratch directory" onClick={onTest} />
+              <IconButton
+                icon={FlaskConical}
+                ariaLabel={`test install ${item.slug}`}
+                tip={hasOps ? "test install — the real CLI, into a scratch directory" : NO_OPS}
+                onClick={onTest}
+                disabled={!hasOps}
+              />
             )}
             {onEdit && isFirstParty(item.item.sourceType) && (
-              <IconButton icon={Pencil} ariaLabel={`edit ${item.slug}`} tip="edit this item" onClick={onEdit} />
+              <IconButton icon={Pencil} ariaLabel={`edit ${item.slug}`} tip={hasOps ? "edit this item" : NO_OPS} onClick={onEdit} disabled={!hasOps} />
             )}
             <RemoveButton item={item} />
           </span>

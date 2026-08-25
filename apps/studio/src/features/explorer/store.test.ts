@@ -4,7 +4,7 @@ import { registryFiles } from "@/test/fixtures";
 import { REGISTRY_CHANGED } from "@/api/watch";
 import { selectedItem, useStudio } from "./store";
 
-const repo = { root: "/repo", name: "repo", isDefault: true };
+const repo = { root: "/repo", name: "repo", isDefault: true, hasOps: true };
 
 beforeEach(() => {
   useStudio.setState({ repo: null, items: [], problems: [], loading: false, error: null, selected: null });
@@ -60,11 +60,11 @@ describe("useStudio", () => {
   });
 
   test("makeRepoDefault re-baselines the open checkout, and says so when the host cannot", async () => {
-    const elsewhere = { root: "/forks/seedr", name: "seedr", isDefault: false };
+    const elsewhere = { root: "/forks/seedr", name: "seedr", isDefault: false, hasOps: true };
     useStudio.setState({ repo: elsewhere });
-    onCommand("set_default_repo", () => ({ ...elsewhere, isDefault: true }));
+    onCommand("set_default_repo", () => ({ ...elsewhere, isDefault: true, hasOps: true }));
     await useStudio.getState().makeRepoDefault();
-    expect(useStudio.getState().repo).toEqual({ ...elsewhere, isDefault: true });
+    expect(useStudio.getState().repo).toEqual({ ...elsewhere, isDefault: true, hasOps: true });
 
     onCommand("set_default_repo", () => {
       throw new Error("No configuration directory to record the default checkout in");
@@ -98,5 +98,34 @@ describe("useStudio", () => {
     await useStudio.getState().refresh();
     expect(useStudio.getState().error).toBe("disk on fire");
     expect(useStudio.getState().loading).toBe(false);
+  });
+});
+
+describe("a registry without the operations CLI", () => {
+  test("opens read-only, and the actions that would change it say why", async () => {
+    const readOnly = { root: "/internal/seedr-internal", name: "seedr-internal", isDefault: false, hasOps: false };
+    onCommand("pick_repo", () => readOnly);
+    mockFs(registryFiles());
+
+    await useStudio.getState().chooseRepo();
+
+    expect(useStudio.getState().repo).toEqual(readOnly);
+    expect(useStudio.getState().repoError).toBeNull();
+    expect(useStudio.getState().items.length).toBeGreaterThan(0);
+  });
+
+  test("a folder that is not a registry at all is refused, and the open checkout stays", async () => {
+    useStudio.setState({ repo, repoError: null });
+    onCommand("pick_repo", () => {
+      throw new Error("Not a seedr registry: no registry/ directory");
+    });
+
+    await useStudio.getState().chooseRepo();
+
+    expect(useStudio.getState().repoError).toMatch(/no registry\/ directory/);
+    expect(useStudio.getState().repo).toEqual(repo);
+
+    useStudio.getState().clearRepoError();
+    expect(useStudio.getState().repoError).toBeNull();
   });
 });

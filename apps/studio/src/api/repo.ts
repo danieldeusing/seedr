@@ -11,6 +11,12 @@ export interface RepoInfo {
    * webview never has to compare paths itself.
    */
   isDefault: boolean;
+  /**
+   * Whether `scripts/registry-op.ts` is in this checkout. Without it the
+   * registry can be read, searched and previewed but not changed, because every
+   * mutation runs through that script as a transaction.
+   */
+  hasOps: boolean;
 }
 
 /** Opens the folder picker; `null` when the user cancelled. */

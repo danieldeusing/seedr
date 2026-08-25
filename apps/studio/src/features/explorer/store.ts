@@ -22,6 +22,7 @@ interface StudioState {
   /** Restore the host's selected repo on start, then load and watch it. */
   init(): Promise<void>;
   chooseRepo(): Promise<void>;
+  clearRepoError(): void;
   /** Make the open checkout the one Studio calls home. */
   makeRepoDefault(): Promise<void>;
   refresh(): Promise<void>;
@@ -57,6 +58,10 @@ export const useStudio = create<StudioState>((set, get) => ({
     } catch (error) {
       set({ error: (error as Error).message });
     }
+  },
+
+  clearRepoError() {
+    set({ repoError: null });
   },
 
   async chooseRepo() {

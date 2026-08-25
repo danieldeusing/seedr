@@ -30,14 +30,14 @@ export function isLegacySourceType(value: unknown): value is LegacySourceType {
 }
 
 /**
- * B1: what registry DATA may carry today. The published CLI (0.1.87) reads
- * `main` live and branches on `sourceType === "toolr"` to decide whether an
- * item's content comes from the registry itself or from a pinned upstream, so
- * every writer stores `toolr`, never `seedr`, until a CLI that understands both
- * has shipped. B2 is one flip: run scripts/migrate-source-types.ts and empty
- * this table.
+ * What registry DATA may carry that the canonical vocabulary would not write.
+ * Empty since 2026-08-25: the published CLI understands `seedr` (0.1.89 carries
+ * CANONICAL_SOURCE_TYPES and resolves `toolr`), so the data was migrated and
+ * writers store the canonical value. `toolr` stays an accepted alias in
+ * SOURCE_TYPE_ALIASES — old data and old input still resolve — but nothing
+ * writes it.
  */
-export const STORAGE_SOURCE_TYPES: Partial<Record<CanonicalSourceType, LegacySourceType>> = { seedr: "toolr" };
+export const STORAGE_SOURCE_TYPES: Partial<Record<CanonicalSourceType, LegacySourceType>> = {};
 
 /** The value data may store during B1 for a canonical source type. */
 export function storageSourceType(value: CanonicalSourceType): SourceType {

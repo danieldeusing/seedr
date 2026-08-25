@@ -12,8 +12,8 @@ describe("source-type vocabulary", () => {
     expect(canonicalSourceType(42)).toBeNull();
   });
 
-  test("storageSourceType downgrades seedr to the stored toolr alias (B1)", () => {
-    expect(storageSourceType("seedr")).toBe("toolr");
+  test("storageSourceType writes the canonical value now that the downgrade table is empty", () => {
+    expect(storageSourceType("seedr")).toBe("seedr");
     expect(storageSourceType("community")).toBe("community");
     expect(storageSourceType("official")).toBe("official");
   });

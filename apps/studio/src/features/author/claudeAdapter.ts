@@ -1,7 +1,7 @@
 import type { CanonicalCodingAgent } from "@seedr/shared";
 import { runProcess, type RunOutcome } from "@/api/agent";
 import { AGENT_LABELS } from "@seedr/registry-ops/pure";
-import { adapterFor } from "./adapters";
+import { adapterFor, jsonCandidates } from "./adapters";
 import { buildPrompt, parseDraft, type DraftRequest, type DraftResult } from "./metadataContract";
 
 /**
@@ -14,7 +14,9 @@ import { buildPrompt, parseDraft, type DraftRequest, type DraftResult } from "./
  * there is nothing to hijack and nothing to half-apply.
  */
 export const CLAUDE_MIN_VERSION = [2, 1, 0] as const;
-export const DRAFT_TIMEOUT_MS = 120_000;
+// opencode took over 90 seconds to answer a one-line prompt on a warm machine;
+// a draft is a single shot, so it waits rather than failing a slow agent.
+export const DRAFT_TIMEOUT_MS = 300_000;
 
 export interface AdapterProbe {
   available: boolean;
@@ -115,7 +117,7 @@ export function normaliseClaudeOutcome(outcome: RunOutcome): NormalisedOutcome {
 }
 
 export function claudeDraftArgs(): string[] {
-  return adapterFor("claude").draftArgs();
+  return adapterFor("claude").draft("").args;
 }
 
 /**
@@ -134,17 +136,24 @@ export async function draftWith(
   const base = buildPrompt(request);
   const failed = (message: string) => message.startsWith(`${adapter.program} `);
   const attempt = async (index: number, prompt: string): Promise<DraftResult> => {
-    const args = adapter.draftArgs();
-    const raw = await run({
-      taskId: `${taskId}-${index}`,
-      program: adapter.program,
-      args: adapter.promptOnStdin ? args : [...args, prompt],
-      ...(adapter.promptOnStdin ? { stdin: prompt } : {}),
-      timeoutMs: DRAFT_TIMEOUT_MS,
-    });
-    const outcome = agent === "claude" || agent === "antigravity" ? normaliseClaudeOutcome(raw) : normalisePlainOutcome(raw);
-    if (outcome.status !== "ok") return { ok: false, errors: [`${adapter.program} ${outcome.status}: ${outcome.text || "no output"}`] };
-    return parseDraft(outcome.structured ?? outcome.text);
+    const invocation = adapter.draft(prompt);
+    const raw = await run({ taskId: `${taskId}-${index}`, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), timeoutMs: DRAFT_TIMEOUT_MS });
+    const verdict = adapter.readOutcome(raw);
+    if (!verdict.ok) return { ok: false, errors: [`${adapter.program} failed: ${verdict.text || "no output"}`] };
+    if (adapter.schemaEnforced) {
+      const outcome = normaliseClaudeOutcome(raw);
+      return parseDraft(outcome.structured ?? outcome.text);
+    }
+    // A plain-text agent frames its answer, and may print more than one object:
+    // the answer is the first candidate the validator accepts, which is why the
+    // rules do real work here rather than the framing.
+    const candidates = jsonCandidates(verdict.text);
+    let last: DraftResult = { ok: false, errors: ["the answer had no JSON in it"] };
+    for (const candidate of candidates) {
+      last = parseDraft(candidate);
+      if (last.ok) return last;
+    }
+    return last;
   };
 
   const first = await attempt(0, base);

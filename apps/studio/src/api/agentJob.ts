@@ -106,7 +106,7 @@ export interface AgentJobRequest {
 }
 
 export function agentJobArgs(allowedTools: string[]): string[] {
-  return adapterFor("claude").jobArgs(allowedTools);
+  return adapterFor("claude").job("", allowedTools).args;
 }
 
 /**
@@ -120,17 +120,10 @@ export async function runAgentJob(
   run: typeof runProcess = runProcess
 ): Promise<AgentJobResult> {
   const adapter = adapterFor(agent);
-  const args = adapter.jobArgs(allowedTools);
+  const invocation = adapter.job(prompt, allowedTools);
   const unlisten = onEvent ? await onProcessOutput(taskId, ({ line }) => adapter.readLine(line).forEach(onEvent)) : null;
   try {
-    const outcome = await run({
-      taskId,
-      program: adapter.program,
-      args: adapter.promptOnStdin ? args : [...args, prompt],
-      ...(adapter.promptOnStdin ? { stdin: prompt } : {}),
-      cwd: "",
-      timeoutMs,
-    });
+    const outcome = await run({ taskId, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), cwd: "", timeoutMs });
     return adapter.readOutcome(outcome);
   } finally {
     unlisten?.();

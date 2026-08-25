@@ -32,6 +32,8 @@ export interface AddLocalForm {
   name: string;
   compatibility: CodingAgent[];
   targetScope: ScopeType | "";
+  /** A label slug from the checkout's catalogue, or "" for none. */
+  label: string;
   authorName: string;
   authorUrl: string;
   externalUrl: string;
@@ -102,6 +104,7 @@ function hints(form: AddLocalForm): string {
     form.name.trim() ? `name: ${form.name.trim()}` : null,
     `agents: ${form.compatibility.join(", ")}`,
     form.targetScope ? `default scope: ${form.targetScope}` : null,
+    form.label ? `label: ${form.label}` : null,
     form.authorName.trim() && form.sourceKind === "agent" ? `author: ${form.authorName.trim()}` : null,
     form.description.trim() ? `description: ${form.description.trim()}` : null,
     form.longDescription.trim() ? `longDescription: ${form.longDescription.trim()}` : null,
@@ -156,6 +159,7 @@ export const emptyForm = (): AddLocalForm => ({
   name: "",
   compatibility: ["claude"],
   targetScope: "",
+  label: "",
   authorName: "",
   authorUrl: "",
   externalUrl: "",
@@ -178,6 +182,7 @@ export function toOp(form: AddLocalForm): AddLocalOp {
     author: form.authorUrl.trim() ? { name: form.authorName.trim(), url: form.authorUrl.trim() } : { name: form.authorName.trim() },
     ...(form.externalUrl.trim() ? { externalUrl: form.externalUrl.trim() } : {}),
     ...(form.targetScope ? { targetScope: form.targetScope } : {}),
+    ...(form.label ? { label: form.label } : {}),
   };
 }
 
@@ -346,8 +351,11 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     }
     set({ phase: "applying", error: null, result: null });
     try {
-      const outcome = await runRegistryOp(parseOp(toOp(get().form)));
-      set({ phase: "done", result: { kind: "op", type: outcome.type, slug: outcome.slug, changedPaths: outcome.changedPaths, headBefore: outcome.headBefore } });
+      const op = toOp(get().form);
+      const outcome = await runRegistryOp(parseOp(op));
+      // An add always names its item; the result type allows absence because the
+      // catalogue operation has no item to name.
+      set({ phase: "done", result: { kind: "op", type: outcome.type ?? op.type, slug: outcome.slug ?? op.slug, changedPaths: outcome.changedPaths, headBefore: outcome.headBefore } });
     } catch (error) {
       // The CLI already rolled back; the message says why.
       set({ phase: "idle", error: (error as Error).message });

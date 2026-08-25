@@ -29,6 +29,8 @@ export interface UpdateForm {
   longDescription: string;
   compatibility: CodingAgent[];
   targetScope: ScopeType | "";
+  /** A label slug from the checkout's catalogue, or "" for none. */
+  label: string;
 }
 
 interface UpdateState {
@@ -96,6 +98,7 @@ const formFor = (item: StudioItem): UpdateForm => ({
   // a stored `gemini` shows as antigravity; saving then writes the canonical id
   compatibility: canonicalAgents(item.item.compatibility ?? []),
   targetScope: item.item.targetScope ?? "",
+  label: item.item.label ?? "",
 });
 
 /** Only the fields that differ from the item on disk, so the patch says what changed. */
@@ -108,6 +111,8 @@ export function toPatch(item: StudioItem, form: UpdateForm): UpdateOp["patch"] {
   if (form.compatibility.join(",") !== (item.item.compatibility ?? []).join(",")) patch.compatibility = form.compatibility;
   const scope = form.targetScope || undefined;
   if (scope !== item.item.targetScope) patch.targetScope = scope;
+  const label = form.label || undefined;
+  if (label !== item.item.label) patch.label = label;
   return patch;
 }
 

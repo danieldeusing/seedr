@@ -13,6 +13,7 @@ import { ItemCard } from "@/components/ItemCard";
 import { TypeIcon } from "@/components/TypeIcon";
 import { NotFound } from "@/routes/NotFound";
 import { getItemsByType, fuseOptions } from "@/lib/registry";
+import { labelCatalogue } from "@/lib/labels";
 import { pluralize } from "@/lib/text";
 import { typeLabelPlural, typeTextColors, pathToType } from "@/lib/colors";
 import { agentOptions, sourceOptions, scopeOptions } from "@/lib/filterOptions";
@@ -30,6 +31,7 @@ import {
   type BrowseContext,
   type BrowseFilters,
   type DroppedParam,
+  type FilterOption,
   type FilterParamKey,
 } from "@/lib/browseFilters";
 import type { ComponentType, RegistryItem } from "@/lib/types";
@@ -43,6 +45,7 @@ function useBrowseFilters(componentType: ComponentType) {
     () => ({
       componentType,
       hasWrappers: componentType !== "plugin" && items.some((item) => item.type === "plugin" && item.pluginType === "wrapper"),
+      labels: labelCatalogue.map((definition) => ({ value: definition.slug, label: definition.name })),
     }),
     [componentType, items]
   );
@@ -103,6 +106,9 @@ function BrowseFilterBar({ filters, context, placeholder, setFilter }: FilterBar
       {filters.source === "seedr" && (
         <FilterDropdown value={filters.scope ?? "all"} options={scopeOptions} onChange={(value) => setFilter("scope", value)} allLabel="Scope" />
       )}
+      {filters.source === "seedr" && context.labels.length > 0 && (
+        <FilterDropdown value={filters.label ?? "all"} options={context.labels} onChange={(value) => setFilter("label", value)} allLabel="Label" />
+      )}
       <FilterDropdown value={filters.tool ?? "all"} options={agentOptions} onChange={(value) => setFilter("tool", value)} allLabel="Coding Agent" />
       <SortDropdown
         field={filters.sortField}
@@ -117,14 +123,15 @@ function BrowseFilterBar({ filters, context, placeholder, setFilter }: FilterBar
 
 interface ActiveFiltersProps {
   filters: BrowseFilters;
+  labels: FilterOption[];
   ignored: DroppedParam[];
   setFilter: (key: FilterParamKey, value: string | null) => void;
   resetFilters: () => void;
 }
 
 /** Every active filter as a removable chip, plus a reset action and the dropped-parameter notice. */
-function ActiveFilters({ filters, ignored, setFilter, resetFilters }: ActiveFiltersProps) {
-  const chips = activeFilterChips(filters);
+function ActiveFilters({ filters, labels, ignored, setFilter, resetFilters }: ActiveFiltersProps) {
+  const chips = activeFilterChips(filters, labels);
   if (chips.length === 0 && ignored.length === 0) return null;
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2" data-testid="active-filters">
@@ -217,7 +224,7 @@ function BrowsePage({ componentType }: { componentType: ComponentType }) {
       </div>
 
       <BrowseFilterBar filters={filters} context={context} placeholder={`Search ${label.toLowerCase()}...`} setFilter={setFilter} />
-      <ActiveFilters filters={filters} ignored={ignored} setFilter={setFilter} resetFilters={resetFilters} />
+      <ActiveFilters filters={filters} labels={context.labels} ignored={ignored} setFilter={setFilter} resetFilters={resetFilters} />
       <BrowseResults items={filteredItems} componentType={componentType} filters={filters} setFilter={setFilter} />
     </div>
   );

@@ -1,6 +1,7 @@
 export * from "./paths.js";
 export * from "./agents.js";
 export * from "./sourceTypes.js";
+export * from "./labels.js";
 export * from "./fsPaths.js";
 export * from "./validate.js";
 export * from "./hash.js";
@@ -14,5 +15,6 @@ export { addLocal } from "./ops/addLocal.js";
 export { addRemote } from "./ops/addRemote.js";
 export { update } from "./ops/update.js";
 export { remove } from "./ops/remove.js";
+export { setLabels } from "./ops/setLabels.js";
 export * from "./tx.js";
 export * from "./migrate.js";

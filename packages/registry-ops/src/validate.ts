@@ -1,6 +1,7 @@
 import type { ComponentType, FileTreeNode, RegistryItem } from "@seedr/shared";
 import { KNOWN_AGENTS } from "./agents.js";
 import { KNOWN_SOURCE_TYPES, isFirstParty } from "./sourceTypes.js";
+import { isLabelSlug } from "./labels.js";
 import { MAX_SLUG_LENGTH, SLUG_PATTERN, isComponentType, isValidSlug, typeDirName } from "./paths.js";
 
 /**
@@ -36,7 +37,7 @@ const PINNED_TREE_URL = /^https:\/\/github\.com\/[^/]+\/[^/]+\/tree\/([0-9a-f]{4
 /** Every field an item.json may carry; anything else is a typo or a smuggled key. */
 export const KNOWN_FIELDS = new Set([
   "slug", "name", "type", "description", "longDescription", "compatibility", "featured",
-  "pluginType", "wrapper", "integration", "package", "sourceType", "targetScope",
+  "pluginType", "wrapper", "integration", "package", "sourceType", "targetScope", "label",
   "contentHash", "marketplace", "author", "externalUrl", "updatedAt", "contents",
   // immutable source identity and provenance (docs/registry-integrity.md)
   "sourceRevision", "contentDigest", "pluginSource", "marketplaceRef", "strict",
@@ -189,6 +190,12 @@ function checkAuthor(item: Item, push: Push): void {
   }
   if (item.marketplace !== undefined && !isNonEmptyString(item.marketplace)) {
     push("marketplace", "must be a non-empty string when present");
+  }
+  // Only the shape, never whether the catalogue defines it: this validator is pure
+  // and runs in the webview, where registry/labels.json cannot be read. The ops
+  // check existence (assertLabelDefined).
+  if (item.label !== undefined && !isLabelSlug(item.label)) {
+    push("label", `must be a label slug when present (got ${JSON.stringify(item.label)})`);
   }
 }
 

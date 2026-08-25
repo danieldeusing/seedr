@@ -7,6 +7,7 @@ import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
+import { LabelRow } from "@/features/settings/LabelRow";
 import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
 import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
@@ -171,6 +172,8 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           />
         </div>
       </div>
+
+      <LabelRow value={form.label} onChange={(label) => setField("label", label)} disabled={busy || !!refusal} id="update-label" />
 
       <div className="field-row">
         <label className="lbl" htmlFor="update-description" data-tip="One sentence: what it does. Shown in every list.">

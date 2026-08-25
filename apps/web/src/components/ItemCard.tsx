@@ -8,7 +8,9 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/Tooltip";
 import { TypeIcon } from "./TypeIcon";
 import { SourceBadge } from "./SourceBadge";
 import { ScopeBadge } from "./ScopeBadge";
+import { LabelBadge } from "./LabelBadge";
 import { formatRelativeTime } from "@/lib/text";
+import { labelDefinition } from "@/lib/labels";
 import { typeLabels, typeTextColors, agentLabels, pluginTypeToBadgeColor, typeToPath, sourceLabels, scopeLabels } from "@/lib/colors";
 import { capabilityTypes } from "@/lib/capabilityTypes";
 import { cn } from "@/lib/utils";
@@ -81,6 +83,8 @@ interface ItemCardProps {
  */
 export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onToolClick, onPluginTypeClick, onDateClick }: ItemCardProps) {
   const pluginBadge = item.pluginType ? PLUGIN_TYPE_BADGES[item.pluginType] : null;
+  // A label the catalogue no longer defines is shown as nothing rather than as a raw slug.
+  const itemLabel = labelDefinition(item.label);
   // The registry derives the owner from the repo (registry-ops identity), so a
   // fork credits its own owner rather than this one.
   const authorName = item.author?.name;
@@ -110,6 +114,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
               <ScopeBadge scope={item.targetScope} />
             </FilterControl>
           )}
+          {itemLabel && <LabelBadge label={itemLabel} />}
         </div>
         <Tooltip>
           <TooltipTrigger asChild>

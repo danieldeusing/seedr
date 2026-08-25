@@ -3,7 +3,7 @@ import type { CanonicalSourceType, ComponentType, RegistryItem, RegistryManifest
 import { contentDigestOfDir, contentHash } from "./hash.js";
 import { indexManifestPath, typeDir, typeManifestPath } from "./fsPaths.js";
 import { ALL_TYPES, typeDirName } from "./paths.js";
-import { listItems } from "./read.js";
+import { listItems, readLabels } from "./read.js";
 import { canonicalSourceType, isFirstParty } from "./sourceTypes.js";
 import { omit } from "./util.js";
 
@@ -43,7 +43,9 @@ export function collectItems(registryDir: string): RegistryItem[] {
 /**
  * Write the per-type manifests and the index. `longDescription` is stripped
  * everywhere and `contents` from plugins — both stay in item.json and are loaded
- * on demand. Writes are byte-identical to what `pnpm compile` has always produced.
+ * on demand. An item's `label` is card-level data and stays in the per-type
+ * manifests; the index carries the catalogue those slugs resolve against, so one
+ * fetch gives a consumer both.
  */
 export function compileRegistry(registryDir: string): CompileResult {
   const items = collectItems(registryDir);
@@ -63,7 +65,7 @@ export function compileRegistry(registryDir: string): CompileResult {
     types[type] = { file: `${typeDirName(type)}/manifest.json`, count: typeItems.length };
   }
 
-  const index: RegistryManifestIndex = { version: MANIFEST_VERSION, types };
+  const index: RegistryManifestIndex = { version: MANIFEST_VERSION, types, labels: readLabels(registryDir) };
   writeFileSync(indexManifestPath(registryDir), JSON.stringify(index, null, 2) + "\n");
   return { items, counts };
 }

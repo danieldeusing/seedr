@@ -33,6 +33,36 @@ export type SourceType = CanonicalSourceType | LegacySourceType;
 
 export type ScopeType = "user" | "project" | "local";
 
+/**
+ * Badge accents a label may wear. Exactly the web app's `BadgeColor`
+ * (apps/web/src/lib/colors.ts): a label's colour is picked once in the
+ * catalogue and rendered by every surface, so the two lists have to agree.
+ */
+export type LabelColor =
+  | "neutral"
+  | "green"
+  | "red"
+  | "blue"
+  | "orange"
+  | "purple"
+  | "amber"
+  | "emerald"
+  | "indigo"
+  | "teal"
+  | "violet"
+  | "pink";
+
+/**
+ * One entry of the label catalogue (`registry/labels.json`). Items reference a
+ * label by `slug`; the display name and colour are defined here only, so
+ * renaming or recolouring a label touches no item.
+ */
+export interface LabelDefinition {
+  slug: string;
+  name: string;
+  color: LabelColor;
+}
+
 export interface Author {
   name: string;
   url?: string;
@@ -113,6 +143,8 @@ export interface RegistryItem {
   package?: Record<string, number>;
   sourceType?: SourceType;
   targetScope?: ScopeType;
+  /** Slug of the one label this item carries, from `registry/labels.json`. Absent means unlabelled. */
+  label?: string;
   /** Legacy short hash (16 hex) over git blob ids. Superseded by `contentDigest`; kept for older clients. */
   contentHash?: string;
   /** Marketplace name (e.g. "claude-plugins-official"). See `marketplaceRef` for the pinned identity. */
@@ -156,6 +188,8 @@ export interface ManifestTypeDescriptor {
 export interface RegistryManifestIndex {
   version: string;
   types: Record<ComponentType, ManifestTypeDescriptor>;
+  /** A copy of `registry/labels.json`, so one fetch of the index resolves every item's label. */
+  labels: LabelDefinition[];
 }
 
 export interface TypeManifest {

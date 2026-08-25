@@ -6,6 +6,7 @@ import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
+import { LabelRow } from "@/features/settings/LabelRow";
 import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
 import { formProblems, useAuthor, type SourceKind } from "./store";
 
@@ -238,6 +239,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           />
         </div>
       </div>
+
+      <LabelRow value={form.label} onChange={(label) => setField("label", label)} disabled={busy} id="author-label" />
 
       <div className="field-row">
         <label className="lbl" htmlFor="author-author" data-tip={TIPS.author}>

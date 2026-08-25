@@ -9,6 +9,8 @@ import { Explorer } from "./features/explorer/Explorer";
 import { selectedItem, useStudio } from "./features/explorer/store";
 import { GitPanel } from "./features/git/GitPanel";
 import { Onboarding } from "./features/onboarding/Onboarding";
+import { useAgentSettings } from "./features/settings/agentSettings";
+import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { TestPanel } from "./features/test/TestPanel";
 import { UpdateForm } from "./features/update/UpdateForm";
 
@@ -17,7 +19,7 @@ import { UpdateForm } from "./features/update/UpdateForm";
  * over it (Daniel's call, matching configr): selecting a capability is the one
  * in-page navigation.
  */
-type DialogKind = null | "author" | "git" | "update" | "test";
+type DialogKind = null | "author" | "git" | "update" | "test" | "settings";
 
 export function App() {
   const [dialog, setDialog] = useState<DialogKind>(null);
@@ -30,10 +32,13 @@ export function App() {
   const init = useStudio((s) => s.init);
   const chooseRepo = useStudio((s) => s.chooseRepo);
   const select = useStudio((s) => s.select);
+  const initAgents = useAgentSettings((s) => s.init);
 
   useEffect(() => {
     void init();
-  }, [init]);
+    // Custom agent paths reach the host before anything asks an agent to run.
+    void initAgents();
+  }, [init, initAgents]);
 
   // After a successful add the watcher refreshes the list; show the new item.
   const onAdded = useCallback(
@@ -66,6 +71,7 @@ export function App() {
             onSelect={select}
             onAddCapability={() => setDialog("author")}
             onGitStatus={() => setDialog("git")}
+            onSettings={() => setDialog("settings")}
             onSwitchRepo={() => void chooseRepo()}
           />
         </aside>
@@ -84,8 +90,13 @@ export function App() {
         </Modal>
       )}
       {dialog === "git" && (
-        <Modal title="git status" onClose={close} size="full">
+        <Modal title="git" onClose={close} size="full">
           <GitPanel />
+        </Modal>
+      )}
+      {dialog === "settings" && (
+        <Modal title="settings — coding agents" onClose={close} size="xl">
+          <SettingsPanel />
         </Modal>
       )}
       {dialog === "update" && current && (

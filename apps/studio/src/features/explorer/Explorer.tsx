@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, GitBranch, Pencil, Plus, Rows3 } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, GitBranch, Pencil, Plus, Rows3, Settings } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { Input } from "@/core/ui/Input";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
@@ -18,6 +18,7 @@ interface ExplorerProps {
   /** The explorer owns the workspace controls, configr-style: add in the header, the rest in the footer. */
   onAddCapability(): void;
   onGitStatus(): void;
+  onSettings(): void;
   onSwitchRepo(): void;
 }
 
@@ -88,7 +89,7 @@ const matches = (item: StudioItem, query: string): boolean => {
  * every group at once, and per row the `rw-`/`r--` ownership mode plus the
  * agent matrix — which coding agents the capability is for.
  */
-export function Explorer({ items, problems, selected, onSelect, onAddCapability, onGitStatus, onSwitchRepo }: ExplorerProps) {
+export function Explorer({ items, problems, selected, onSelect, onAddCapability, onGitStatus, onSettings, onSwitchRepo }: ExplorerProps) {
   const counts = countByType(items);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<ComponentType>>(new Set());
@@ -225,7 +226,8 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
           </div>
         </details>
         <ThemeMenu direction="up" align="left" />
-        <IconButton icon={GitBranch} ariaLabel="git status" tip="Branch, head and the changed paths" onClick={onGitStatus} />
+        <IconButton icon={GitBranch} ariaLabel="git" tip="Branch, changes, and publishing them" onClick={onGitStatus} />
+        <IconButton icon={Settings} ariaLabel="settings" tip="Coding agents Studio can run" onClick={onSettings} />
         <span className="flex-1" />
         <IconButton icon={FolderInput} ariaLabel="switch repo" tip="Point Studio at another seedr checkout — e.g. a private fork" onClick={onSwitchRepo} />
       </div>

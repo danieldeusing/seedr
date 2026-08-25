@@ -9,7 +9,7 @@ import { Explorer } from "./Explorer";
 import { loadRegistry } from "./registry";
 
 const SEARCH = "search capabilities";
-const controls = { onAddCapability: () => {}, onGitStatus: () => {}, onSwitchRepo: () => {} };
+const controls = { onAddCapability: () => {}, onGitStatus: () => {}, onSettings: () => {}, onSwitchRepo: () => {} };
 
 beforeEach(() => {
   useRowStyle.setState({ style: "icons" });

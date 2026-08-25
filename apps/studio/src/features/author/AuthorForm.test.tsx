@@ -27,7 +27,8 @@ describe("AuthorForm", () => {
     const onAdded = vi.fn();
     render(<AuthorForm onAdded={onAdded} />);
 
-    expect(await screen.findByText("Claude Code 2.1.226")).toBeInTheDocument();
+    expect(await screen.findByText("2.1.226")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "drafting agent" })).toHaveTextContent("Claude Code");
     expect(screen.getByLabelText("author")).toHaveValue("Acme");
 
     await userEvent.click(screen.getByRole("button", { name: "choose folder" }));
@@ -46,11 +47,11 @@ describe("AuthorForm", () => {
 
   test("keeps the submit disabled and names the problems until the form is valid", async () => {
     render(<AuthorForm onAdded={() => {}} />);
-    await screen.findByText("Claude Code 2.1.226");
+    await screen.findByText("2.1.226");
     expect(screen.getByRole("button", { name: "add to registry" })).toBeDisabled();
     expect(screen.getByText(/choose the file or folder to add/)).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("slug"), "Bad Slug");
-    expect(screen.getByText(/slug: must match/)).toBeInTheDocument();
+    expect(screen.getByText(/must match/)).toBeInTheDocument();
   });
 
   test("shows the agent diagnostic and disables drafting when Claude is unavailable", async () => {

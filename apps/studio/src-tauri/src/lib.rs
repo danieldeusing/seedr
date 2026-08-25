@@ -11,6 +11,7 @@ mod executor;
 mod source;
 mod test_install;
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -195,17 +196,62 @@ fn watch_registry(app: AppHandle, repo: State<Repo>, watcher: State<RegistryWatc
     Ok(())
 }
 
-/// Everything the webview may run: the registry CLI (`npx`), the probed coding
-/// agent, and read-only `git`. A compromised webview must not become a shell.
-const RUNNABLE_PROGRAMS: [&str; 3] = ["npx", "claude", "git"];
+/// Everything the webview may run: the registry CLI (`npx`), read-only `git`,
+/// and the coding-agent CLIs the settings page probes. A compromised webview
+/// must not become a shell.
+const RUNNABLE_PROGRAMS: [&str; 7] = ["npx", "claude", "git", "copilot", "agy", "codex", "opencode"];
+
+/// The programs a user may point at a custom binary (Settings → coding agents).
+/// `npx` and `git` stay resolution-only: overriding infrastructure would be a
+/// quiet way to swap what every transaction runs.
+const OVERRIDABLE_PROGRAMS: [&str; 5] = ["claude", "copilot", "agy", "codex", "opencode"];
+
+/// Custom binary paths per agent CLI, set from the settings page and applied
+/// wherever the executor would otherwise resolve the bare name on PATH.
+#[derive(Default)]
+struct ProgramOverrides(Mutex<HashMap<String, PathBuf>>);
+
+impl ProgramOverrides {
+    fn set(&self, program: &str, path: Option<&str>) -> Result<(), String> {
+        if !OVERRIDABLE_PROGRAMS.contains(&program) {
+            return Err(format!("{program}: not a program with a configurable path"));
+        }
+        let mut map = self.0.lock().map_err(|e| e.to_string())?;
+        match path {
+            None | Some("") => {
+                map.remove(program);
+            }
+            Some(path) => {
+                let path = PathBuf::from(path);
+                if !path.is_file() {
+                    return Err(format!("{}: not a file", path.display()));
+                }
+                map.insert(program.to_string(), path);
+            }
+        }
+        Ok(())
+    }
+
+    fn resolve(&self, program: &str) -> Option<PathBuf> {
+        self.0.lock().ok().and_then(|map| map.get(program).cloned())
+    }
+}
+
+#[tauri::command]
+fn set_program_override(program: String, path: Option<String>, overrides: State<ProgramOverrides>) -> Result<(), String> {
+    overrides.set(&program, path.as_deref())
+}
 
 /// Run a bounded child process with its working directory inside the repo.
 /// Output lines stream to the webview as `process-output` events.
 #[tauri::command]
-async fn run_process(app: AppHandle, mut request: RunRequest, repo: State<'_, Repo>, registry: State<'_, Registry>) -> Result<RunOutcome, String> {
+async fn run_process(app: AppHandle, mut request: RunRequest, repo: State<'_, Repo>, registry: State<'_, Registry>, overrides: State<'_, ProgramOverrides>) -> Result<RunOutcome, String> {
     let root = current_root(&repo)?;
     if !RUNNABLE_PROGRAMS.contains(&request.program.as_str()) {
         return Err(format!("{}: not a program Studio runs", request.program));
+    }
+    if let Some(path) = overrides.resolve(&request.program) {
+        request.program = path.display().to_string();
     }
     request.cwd = Some(match request.cwd.as_deref().and_then(|p| p.to_str()) {
         Some(rel) if !rel.is_empty() => scoped(&root, rel)?,
@@ -285,6 +331,7 @@ pub fn run() {
         .manage(RegistryWatcher::default())
         .manage(Registry::default())
         .manage(PickedPaths::default())
+        .manage(ProgramOverrides::default())
         .invoke_handler(tauri::generate_handler![
             pick_repo,
             get_repo,
@@ -296,6 +343,7 @@ pub fn run() {
             watch_registry,
             run_process,
             cancel_process,
+            set_program_override,
             pick_path,
             read_source_files,
             test_install
@@ -325,6 +373,22 @@ mod tests {
         let path = scoped(&root, "registry/skills/pdf/item.json").expect("inside");
         assert!(path.ends_with("item.json"));
         assert!(scoped(&root, "registry/not-yet-there").is_ok(), "a missing path is allowed so exists() can answer");
+    }
+
+    #[test]
+    fn program_overrides_take_only_agent_clis_and_only_real_files() {
+        let overrides = ProgramOverrides::default();
+        assert!(overrides.set("git", Some("/bin/ls")).unwrap_err().contains("not a program with a configurable path"));
+        assert!(overrides.set("claude", Some("/definitely/not/here")).unwrap_err().contains("not a file"));
+
+        let file = std::env::temp_dir().join(format!("seedr-override-{}", std::process::id()));
+        fs::write(&file, "#!/bin/sh\n").expect("fixture");
+        overrides.set("claude", Some(file.to_str().expect("utf8"))).expect("set");
+        assert_eq!(overrides.resolve("claude"), Some(file.clone()));
+
+        overrides.set("claude", None).expect("clear");
+        assert_eq!(overrides.resolve("claude"), None);
+        fs::remove_file(&file).expect("cleanup");
     }
 
     #[test]

@@ -5,6 +5,9 @@ import { Check, ChevronDown } from "lucide-react";
 export interface SelectOption<T extends string> {
   value: T;
   label: string;
+  /** Shown but not choosable — the `tip` says why. */
+  disabled?: boolean;
+  tip?: string;
 }
 
 interface SelectProps<T extends string> {
@@ -60,17 +63,21 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel, 
       return;
     }
     if (event.key === "Escape") setOpen(false);
-    else if (event.key === "ArrowDown") {
+    else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
-      setHighlighted((current) => Math.min(options.length - 1, current + 1));
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setHighlighted((current) => Math.max(0, current - 1));
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      setHighlighted((current) => {
+        let next = current + direction;
+        while (options[next]?.disabled) next += direction;
+        return options[next] ? next : current;
+      });
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       const option = options[highlighted];
-      if (option) onChange(option.value);
-      setOpen(false);
+      if (option && !option.disabled) {
+        onChange(option.value);
+        setOpen(false);
+      }
     } else if (event.key === "Tab") {
       setOpen(false);
     }
@@ -111,14 +118,22 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel, 
                   type="button"
                   role="option"
                   aria-selected={isSelected}
-                  onMouseEnter={() => setHighlighted(index)}
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                    triggerRef.current?.focus();
-                  }}
-                  className={`flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
-                    index === highlighted || isSelected ? "bg-violet-600/20 text-neutral-200" : "text-neutral-400 hover:bg-neutral-700"
+                  aria-disabled={option.disabled || undefined}
+                  data-tip={option.tip}
+                  onMouseEnter={option.disabled ? undefined : () => setHighlighted(index)}
+                  onClick={
+                    option.disabled
+                      ? undefined
+                      : () => {
+                          onChange(option.value);
+                          setOpen(false);
+                          triggerRef.current?.focus();
+                        }
+                  }
+                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
+                    option.disabled
+                      ? "cursor-not-allowed text-neutral-600"
+                      : `cursor-pointer ${index === highlighted || isSelected ? "bg-violet-600/20 text-neutral-200" : "text-neutral-400 hover:bg-neutral-700"}`
                   }`}
                 >
                   <Check className={`h-3 w-3 shrink-0 ${isSelected ? "" : "invisible"}`} aria-hidden="true" />

@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
-import type { ComponentType, ScopeType } from "@seedr/shared";
-import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CanonicalCodingAgent, ComponentType, ScopeType } from "@seedr/shared";
+import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import { Ban, Check, FolderOpen, Sparkles } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { Select } from "@/core/ui/Select";
+import { AgentSelect } from "@/features/settings/AgentSelect";
+import { DRAFT_CERTIFIED } from "@/features/settings/agentSettings";
 import { formProblems, useAuthor } from "./store";
 
 // The CLI has no install handler for `command` items yet (plan trap 12); until
@@ -42,6 +44,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const busy = phase === "probing" || phase === "drafting" || phase === "applying";
   // the design system styles text inputs, selects and textareas itself
   const formRef = useRef<HTMLFormElement>(null);
+  const [agent, setAgent] = useState<CanonicalCodingAgent>("claude");
   const input = "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
   if (phase === "done" && outcome) {
@@ -186,9 +189,12 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       <Problems errors={problemFor("longDescription")} />
 
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
-        <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
-          {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : probe === null ? "probing Claude Code…" : probe.available ? `Claude Code ${probe.version}` : probe.diagnostic}
-        </span>
+        <div className="flex min-w-0 items-center gap-2">
+          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="drafting agent" disabled={busy} />
+          <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
+            {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : probe === null ? "probing…" : probe.available ? probe.version : probe.diagnostic}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           {phase === "drafting" ? (
             <IconButton icon={Ban} ariaLabel="cancel the draft" tip="cancel the draft" onClick={() => void cancel()} />
@@ -220,5 +226,12 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
 
 function Problems({ errors }: { errors: { field: string; message: string }[] }) {
   if (errors.length === 0) return null;
-  return <p className="mb-2 pl-[var(--field-label-w)] text-destructive">{formatErrors(errors)}</p>;
+  // An empty label cell puts the message exactly on the value column — the
+  // field is evident from the row above, so the "field:" prefix goes.
+  return (
+    <div className="field-row">
+      <span className="lbl" />
+      <p className="field-val text-sm text-red-400">{errors.map((error) => error.message).join("; ")}</p>
+    </div>
+  );
 }

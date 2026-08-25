@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef } from "react";
-import type { ScopeType } from "@seedr/shared";
-import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CanonicalCodingAgent, ScopeType } from "@seedr/shared";
+import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import type { StudioItem } from "@/features/explorer/registry";
 import { Check, Sparkles, X } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { Select } from "@/core/ui/Select";
+import { AgentSelect } from "@/features/settings/AgentSelect";
+import { DRAFT_CERTIFIED } from "@/features/settings/agentSettings";
 import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
 interface UpdateFormProps {
@@ -41,6 +43,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   // the design system styles text inputs, selects and textareas itself
   const input = "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
   const formRef = useRef<HTMLFormElement>(null);
+  const [agent, setAgent] = useState<CanonicalCodingAgent>("claude");
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
 
   if (phase === "done" && outcome) {
@@ -142,9 +145,12 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       <Problems errors={problemFor("longDescription")} />
 
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
-        <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
+        <div className="flex min-w-0 items-center gap-2">
+          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="drafting agent" disabled={busy || !!refusal} />
+          <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
           {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : changed.length === 0 ? "nothing changed yet" : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
-        </span>
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           <IconButton icon={Sparkles} ariaLabel="redraft descriptions with Claude" tip="redraft descriptions with Claude" onClick={() => void redraft()} disabled={busy || !!refusal || !probe?.available} spin={phase === "drafting"} />
           <IconButton icon={X} ariaLabel="cancel" tip="cancel" onClick={close} />
@@ -167,5 +173,12 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
 
 function Problems({ errors }: { errors: { field: string; message: string }[] }) {
   if (errors.length === 0) return null;
-  return <p className="mb-2 pl-[var(--field-label-w)] text-destructive">{formatErrors(errors)}</p>;
+  // An empty label cell puts the message exactly on the value column — the
+  // field is evident from the row above, so the "field:" prefix goes.
+  return (
+    <div className="field-row">
+      <span className="lbl" />
+      <p className="field-val text-sm text-red-400">{errors.map((error) => error.message).join("; ")}</p>
+    </div>
+  );
 }

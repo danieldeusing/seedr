@@ -137,6 +137,69 @@ fn list_dir(rel: String, repo: State<Repo>) -> Result<Vec<DirEntry>, String> {
     Ok(out)
 }
 
+/// A skill Claude Code can be asked for by name, for the prompt fields'
+/// autocomplete: this checkout's own, and the ones installed for the user.
+#[derive(Serialize)]
+struct SkillEntry {
+    name: String,
+    description: String,
+    /// `project` for a skill in this checkout, `user` for one in ~/.claude.
+    scope: &'static str,
+}
+
+/// The `description:` of a SKILL.md, from its YAML frontmatter. First match wins;
+/// a skill without one is still listed, by name alone.
+fn skill_description(text: &str) -> String {
+    let mut lines = text.lines();
+    if lines.next().map(str::trim) != Some("---") {
+        return String::new();
+    }
+    for line in lines {
+        let trimmed = line.trim();
+        if trimmed == "---" {
+            break;
+        }
+        if let Some(value) = trimmed.strip_prefix("description:") {
+            return value.trim().trim_matches(['"', '\'']).to_string();
+        }
+    }
+    String::new()
+}
+
+/// Every `<dir>/<name>/SKILL.md` under one skills directory. The name is a
+/// directory entry, never a caller's string, so no path can be composed here.
+fn skills_in(dir: &Path, scope: &'static str, out: &mut Vec<SkillEntry>) {
+    let Ok(entries) = fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path().join("SKILL.md");
+        if !path.is_file() {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name.starts_with('.') || out.iter().any(|skill| skill.name == name) {
+            continue;
+        }
+        let description = fs::read_to_string(&path).map(|text| skill_description(&text)).unwrap_or_default();
+        out.push(SkillEntry { name, description, scope });
+    }
+}
+
+/// What `claude` in this checkout could be asked for by name. The project's own
+/// skills come first, so a repo skill wins over a user skill of the same name —
+/// which is also how Claude Code resolves them.
+#[tauri::command]
+fn list_skills(repo: State<Repo>) -> Result<Vec<SkillEntry>, String> {
+    let root = current_root(&repo)?;
+    let mut skills = Vec::new();
+    skills_in(&root.join(".agents/skills"), "project", &mut skills);
+    skills_in(&root.join(".claude/skills"), "project", &mut skills);
+    if let Some(home) = dirs::home_dir() {
+        skills_in(&home.join(".claude/skills"), "user", &mut skills);
+    }
+    skills.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(skills)
+}
+
 #[tauri::command]
 fn read_text(rel: String, repo: State<Repo>) -> Result<String, String> {
     let file = scoped(&current_root(&repo)?, &rel)?;
@@ -344,6 +407,7 @@ pub fn run() {
             run_process,
             cancel_process,
             set_program_override,
+            list_skills,
             pick_path,
             read_source_files,
             test_install
@@ -373,6 +437,40 @@ mod tests {
         let path = scoped(&root, "registry/skills/pdf/item.json").expect("inside");
         assert!(path.ends_with("item.json"));
         assert!(scoped(&root, "registry/not-yet-there").is_ok(), "a missing path is allowed so exists() can answer");
+    }
+
+    #[test]
+    fn skills_are_read_from_their_directories_with_the_frontmatter_description() {
+        let dir = std::env::temp_dir().join(format!("seedr-skills-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        for (name, body) in [
+            ("add-toolr", "---\nname: add-toolr\ndescription: \"Add local items\"\n---\n# body\n"),
+            ("bare", "# no frontmatter\n"),
+        ] {
+            fs::create_dir_all(dir.join(name)).expect("fixture");
+            fs::write(dir.join(name).join("SKILL.md"), body).expect("fixture");
+        }
+        // A directory without a SKILL.md is not a skill, and neither is a file.
+        fs::create_dir_all(dir.join("not-a-skill")).expect("fixture");
+        fs::write(dir.join("loose.md"), "x").expect("fixture");
+
+        let mut skills = Vec::new();
+        skills_in(&dir, "project", &mut skills);
+        skills.sort_by(|a, b| a.name.cmp(&b.name));
+        assert_eq!(skills.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["add-toolr", "bare"]);
+        assert_eq!(skills[0].description, "Add local items");
+        assert_eq!(skills[1].description, "");
+
+        // The first directory scanned wins, the way Claude Code resolves a name.
+        skills_in(&dir, "user", &mut skills);
+        assert_eq!(skills.len(), 2);
+        assert_eq!(skills[0].scope, "project");
+
+        // A missing directory is simply no skills, never an error.
+        let mut none = Vec::new();
+        skills_in(&dir.join("gone"), "user", &mut none);
+        assert!(none.is_empty());
+        fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     #[test]

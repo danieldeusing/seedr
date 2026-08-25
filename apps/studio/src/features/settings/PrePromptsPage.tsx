@@ -1,5 +1,6 @@
 import type { ComponentType } from "@seedr/shared";
 import { ALL_TYPES } from "@seedr/registry-ops/pure";
+import { PromptField } from "@/core/ui/PromptField";
 import { usePrePrompts, type PrePromptJob } from "./prePrompts";
 
 const PLACEHOLDER: Record<PrePromptJob, string> = {
@@ -28,13 +29,7 @@ function TypeCard({ type }: { type: ComponentType }) {
             {job}
           </label>
           <div className="field-val">
-            <textarea
-              id={`preprompt-${type}-${job}`}
-              className={textarea}
-              value={prompts[job]}
-              placeholder={PLACEHOLDER[job]}
-              onChange={(event) => setPrompt(type, job, event.target.value)}
-            />
+            <PromptField id={`preprompt-${type}-${job}`} className={textarea} value={prompts[job]} placeholder={PLACEHOLDER[job]} onChange={(text) => setPrompt(type, job, text)} />
           </div>
         </div>
       ))}

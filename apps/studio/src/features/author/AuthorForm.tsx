@@ -3,6 +3,7 @@ import type { CanonicalCodingAgent, ComponentType, ScopeType } from "@seedr/shar
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import { Ban, Check, FolderOpen, Sparkles } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
+import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { DRAFT_CERTIFIED } from "@/features/settings/agentSettings";
@@ -110,7 +111,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   return (
     <form
       ref={formRef}
-      className="flex h-full min-h-0 flex-col overflow-y-auto p-6 text-xs"
+      className="flex h-full min-h-0 flex-col overflow-y-auto p-6 pb-10 text-xs"
       onSubmit={(event) => {
         event.preventDefault();
         void apply();
@@ -161,12 +162,12 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           prompt
         </label>
         <div className="field-val">
-          <textarea
+          <PromptField
             id="author-prompt"
             className={`${input} min-h-16`}
             value={form.prompt}
-            onChange={(e) => setField("prompt", e.target.value)}
-            placeholder={byAgent ? "what the agent should know — which skill to use, what to watch out for" : "extra context for drafting the descriptions"}
+            onChange={(value) => setField("prompt", value)}
+            placeholder={byAgent ? "what the agent should know — type / for a skill" : "extra context for drafting the descriptions"}
             disabled={busy}
           />
         </div>

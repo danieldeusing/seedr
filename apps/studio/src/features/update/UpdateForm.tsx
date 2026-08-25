@@ -4,6 +4,7 @@ import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-op
 import type { StudioItem } from "@/features/explorer/registry";
 import { Check, Sparkles, X } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
+import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { DRAFT_CERTIFIED } from "@/features/settings/agentSettings";
@@ -68,7 +69,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   return (
     <form
       ref={formRef}
-      className="flex h-full min-h-0 flex-col overflow-y-auto p-6 text-xs"
+      className="flex h-full min-h-0 flex-col overflow-y-auto p-6 pb-10 text-xs"
       onSubmit={(event) => {
         event.preventDefault();
         void apply();
@@ -88,12 +89,12 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           prompt
         </label>
         <div className="field-val">
-          <textarea
+          <PromptField
             id="update-prompt"
             className={`${input} min-h-16`}
             value={form.prompt}
-            onChange={(e) => setField("prompt", e.target.value)}
-            placeholder="what the agent should know when redrafting"
+            onChange={(value) => setField("prompt", value)}
+            placeholder="what the agent should know when redrafting — type / for a skill"
             disabled={busy || !!refusal}
           />
         </div>

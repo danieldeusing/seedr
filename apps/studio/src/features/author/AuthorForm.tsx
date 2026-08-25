@@ -3,6 +3,7 @@ import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@seedr/registry-ops/pure";
 import { Ban, Check, FolderOpen, Sparkles } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
+import { Select } from "@/core/ui/Select";
 import { formProblems, useAuthor } from "./store";
 
 // The CLI has no install handler for `command` items yet (plan trap 12); until
@@ -91,13 +92,14 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           type
         </label>
         <div className="field-val">
-          <select id="author-type" value={form.type} onChange={(e) => setField("type", e.target.value as ComponentType)} disabled={busy}>
-            {AUTHORABLE_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+          <Select
+            id="author-type"
+            ariaLabel="type"
+            value={form.type}
+            options={AUTHORABLE_TYPES.map((type) => ({ value: type, label: type }))}
+            onChange={(type) => setField("type", type)}
+            disabled={busy}
+          />
         </div>
       </div>
 
@@ -121,16 +123,19 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       </div>
       <Problems errors={problemFor("name")} />
 
-      <fieldset className="field-row" disabled={busy}>
-        <legend className="lbl">agents</legend>
+      {/* A legend cannot sit in the field-row grid, which is what pushed the
+          checkboxes out of the value column and wrapped names mid-word. Same
+          table-style row as every other field: label column, value column. */}
+      <div className="field-row" role="group" aria-label="agents">
+        <span className="lbl">agents</span>
         <div className="field-val">
           {CANONICAL_AGENTS.map((agent) => (
-            <label key={agent} className="mr-3">
-              <input type="checkbox" checked={form.compatibility.includes(agent)} onChange={() => toggleAgent(agent)} /> {AGENT_LABELS[agent]}
+            <label key={agent} className="flex cursor-pointer items-center gap-1.5 text-neutral-300 whitespace-nowrap">
+              <input type="checkbox" className="accent-violet-500" checked={form.compatibility.includes(agent)} onChange={() => toggleAgent(agent)} disabled={busy} /> {AGENT_LABELS[agent]}
             </label>
           ))}
         </div>
-      </fieldset>
+      </div>
       <Problems errors={problemFor("compatibility")} />
 
       <div className="field-row">
@@ -138,14 +143,14 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           scope
         </label>
         <div className="field-val">
-          <select id="author-scope" value={form.targetScope} onChange={(e) => setField("targetScope", e.target.value as ScopeType | "")} disabled={busy}>
-            <option value="">no default scope</option>
-            {KNOWN_SCOPES.map((scope) => (
-              <option key={scope} value={scope}>
-                {scope}
-              </option>
-            ))}
-          </select>
+          <Select<ScopeType | "">
+            id="author-scope"
+            ariaLabel="scope"
+            value={form.targetScope}
+            options={[{ value: "" as const, label: "no default scope" }, ...KNOWN_SCOPES.map((scope) => ({ value: scope, label: scope }))]}
+            onChange={(scope) => setField("targetScope", scope)}
+            disabled={busy}
+          />
         </div>
       </div>
 

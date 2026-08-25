@@ -4,6 +4,7 @@ import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, formatErrors } from "@see
 import type { StudioItem } from "@/features/explorer/registry";
 import { Check, Sparkles, X } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
+import { Select } from "@/core/ui/Select";
 import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
 interface UpdateFormProps {
@@ -89,16 +90,19 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       </div>
       <Problems errors={problemFor("name")} />
 
-      <fieldset className="field-row" disabled={busy || !!refusal}>
-        <legend className="lbl">agents</legend>
+      {/* A legend cannot sit in the field-row grid, which is what pushed the
+          checkboxes out of the value column and wrapped names mid-word. Same
+          table-style row as every other field: label column, value column. */}
+      <div className="field-row" role="group" aria-label="agents">
+        <span className="lbl">agents</span>
         <div className="field-val">
           {CANONICAL_AGENTS.map((agent) => (
-            <label key={agent} className="mr-3">
-              <input type="checkbox" checked={form.compatibility.includes(agent)} onChange={() => toggleAgent(agent)} /> {AGENT_LABELS[agent]}
+            <label key={agent} className="flex cursor-pointer items-center gap-1.5 text-neutral-300 whitespace-nowrap">
+              <input type="checkbox" className="accent-violet-500" checked={form.compatibility.includes(agent)} onChange={() => toggleAgent(agent)} disabled={busy || !!refusal} /> {AGENT_LABELS[agent]}
             </label>
           ))}
         </div>
-      </fieldset>
+      </div>
       <Problems errors={problemFor("compatibility")} />
 
       <div className="field-row">
@@ -106,14 +110,14 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           scope
         </label>
         <div className="field-val">
-          <select id="update-scope" value={form.targetScope} onChange={(e) => setField("targetScope", e.target.value as ScopeType | "")} disabled={busy || !!refusal}>
-            <option value="">no default scope</option>
-            {KNOWN_SCOPES.map((scope) => (
-              <option key={scope} value={scope}>
-                {scope}
-              </option>
-            ))}
-          </select>
+          <Select<ScopeType | "">
+            id="update-scope"
+            ariaLabel="scope"
+            value={form.targetScope}
+            options={[{ value: "" as const, label: "no default scope" }, ...KNOWN_SCOPES.map((scope) => ({ value: scope, label: scope }))]}
+            onChange={(scope) => setField("targetScope", scope)}
+            disabled={busy || !!refusal}
+          />
         </div>
       </div>
 

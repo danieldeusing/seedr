@@ -20,6 +20,12 @@ tauri-build = { version = "2.6", features = [] }
 notify = "8"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Dependabot flags `glib 0.18.5` (RUSTSEC: Iterator unsoundness) reachable through
+# tauri -> gtk 0.18 -> atk -> glib. It cannot be fixed here: `gtk` is unmaintained at
+# 0.18.2 ("use gtk4 instead") and pins `glib ^0.18`, so glib >= 0.20 does not exist on
+# that line. It clears when Tauri migrates off the gtk3 bindings. The path is also
+# Linux-only (gtk/atk are Tauri's Linux backend) and Studio's own code never touches
+# glib collections. Re-check when Tauri publishes past 2.11.5.
 tauri = { version = "2.11", features = [] }
 tauri-plugin-dialog = "2.7"
 tauri-plugin-opener = "2.5"

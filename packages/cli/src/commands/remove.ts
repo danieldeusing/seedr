@@ -153,10 +153,12 @@ export async function runRemove(name: string, options: RemoveOptions, cwd: strin
     console.log(brand(`Successfully removed from ${successCount} agent(s)`));
     return 0;
   }
-  // Agents were detected or named, yet nothing came off: report the failure
-  // rather than letting a script read silence as success.
+  // The item is absent, which is the state the caller asked for — removal is
+  // idempotent, and naming the agents explicitly must not change the verdict.
+  // Exit 1 is reserved for "could not do what was asked" (see the settings
+  // branch above), not for "already done".
   console.log(chalk.yellow("Nothing to remove"));
-  return 1;
+  return 0;
 }
 
 export const removeCommand = new Command("remove")

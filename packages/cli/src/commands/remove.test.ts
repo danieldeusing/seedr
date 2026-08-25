@@ -166,11 +166,13 @@ describe("runRemove", () => {
     expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/No handler found for type "command"/));
   });
 
-  it("exits non-zero when named agents yielded nothing, so a script can tell", async () => {
+  it("stays idempotent: removing an absent item succeeds whether or not agents are named", async () => {
     const { runRemove } = await import("./remove.js");
-    // The user named agents and asked for a removal that did not happen —
-    // exit 0 here let scripts read "we could not tell" as success.
-    expect(await runRemove(TEST_SKILL, { type: "skill", yes: true, agents: "all" }, PROJECT)).toBe(1);
+    // The end state the caller asked for already holds. Exit 1 is reserved for
+    // "could not do what was asked" — and it must not depend on whether the
+    // agents were named, since auto-detection reports 0 for the same state.
+    expect(await runRemove(TEST_SKILL, { type: "skill", yes: true, agents: "all" }, PROJECT)).toBe(0);
+    expect(await runRemove(TEST_SKILL, { type: "skill", yes: true }, PROJECT)).toBe(0);
     expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/Nothing to remove/));
   });
 

@@ -174,6 +174,12 @@ manifests keep each item's `label` (it is card-level data, unlike `longDescripti
 vocabulary, the strict parser and the `set-labels` operation are described in
 [.agents/rules/registry-structure.md](.agents/rules/registry-structure.md).
 
+Every surface reads that one catalogue: `seedr list --label <slug>` filters the CLI's listing
+(and treats a label no item carries as an error, naming the ones in use, because that is almost
+always a typo); the web app shows a label badge on the card and offers a Label filter beside
+Scope, under the first-party source; Studio manages the catalogue in settings → labels and
+offers the picker in add and edit.
+
 ### Deprecated spellings in registry data
 
 Two values in `item.json` were renamed, in code first and then in the data, because the

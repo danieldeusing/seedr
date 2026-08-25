@@ -39,6 +39,7 @@ export interface ListOptions {
   installed?: boolean;
   agents?: string;
   scope?: string;
+  label?: string;
 }
 
 export interface InstalledGroup {
@@ -97,8 +98,7 @@ export async function runList(options: ListOptions, cwd: string = process.cwd())
 
   const type = options.type as ComponentType | undefined;
   if (!options.installed) {
-    await listAvailable(type);
-    return 0;
+    return listAvailable(type, options.label);
   }
 
   const agents = resolveListAgents(options.agents);
@@ -119,6 +119,7 @@ export const listCommand = new Command("list")
   .option("-i, --installed", "Show only installed items")
   .option("-a, --agents <agents>", "Comma-separated coding agents or 'all' (installed check)", "all")
   .option("--scope <scope>", "Scope for installed check (project, user, local)", "project")
+  .option("--label <label>", "Filter by label (see the registry's labels.json)")
   .action(async (options: ListOptions) => {
     try {
       const exitCode = await runList(options);
@@ -128,12 +129,22 @@ export const listCommand = new Command("list")
     }
   });
 
-async function listAvailable(type?: ComponentType): Promise<void> {
-  const items = await listItems(type);
+async function listAvailable(type?: ComponentType, label?: string): Promise<number> {
+  const all = await listItems(type);
+  // A label that no item carries is almost always a typo, so it is worth an exit
+  // code and the list of labels that do exist, rather than a silent empty page.
+  const items = label ? all.filter((item) => item.label === label) : all;
+
+  if (items.length === 0 && label) {
+    const known = [...new Set(all.map((item) => item.label).filter(Boolean))].sort();
+    console.log(chalk.red(`No item carries the label "${label}".`));
+    if (known.length > 0) console.log(chalk.gray(`Labels in use: ${known.join(", ")}`));
+    return 1;
+  }
 
   if (items.length === 0) {
     console.log(chalk.yellow("No items found in registry"));
-    return;
+    return 0;
   }
 
   // Group by type
@@ -159,6 +170,7 @@ async function listAvailable(type?: ComponentType): Promise<void> {
   console.log(
     chalk.gray(`Total: ${items.length} items. Use 'npx @danieldeusing/seedr add <name>' to install.`)
   );
+  return 0;
 }
 
 async function listInstalled(params: {

@@ -59,7 +59,7 @@ describe("add-local", () => {
     const result = applyOp(registry, addLocalOp({ targetScope: "project", externalUrl: "https://github.com/fork-owner/seedr/tree/main/registry/skills/new-skill" }));
 
     // The B1 storage value (STORAGE_SOURCE_TYPES), not the canonical `seedr`.
-    expect(result.item?.sourceType).toBe("toolr");
+    expect(result.item?.sourceType).toBe("seedr");
     expect(result.item?.targetScope).toBe("project");
     expect(result.item?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(result.item?.contents?.files).toEqual([

@@ -7,7 +7,7 @@ import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { DRAFT_CERTIFIED } from "@/features/settings/agentSettings";
-import { formProblems, useAuthor, type FieldSource, type SourceKind } from "./store";
+import { formProblems, useAuthor, type SourceKind } from "./store";
 
 // The CLI has no install handler for `command` items yet (plan trap 12); until
 // it does, Studio does not offer authoring them.
@@ -17,11 +17,6 @@ const SOURCE_KINDS: { value: SourceKind; label: string }[] = [
   { value: "folder", label: "a local folder" },
   { value: "repo", label: "a git repository" },
   { value: "agent", label: "the agent writes it" },
-];
-
-const FIELD_SOURCES: { value: FieldSource; label: string }[] = [
-  { value: "mine", label: "I write it" },
-  { value: "agent", label: "the agent drafts it" },
 ];
 
 /** What each label means, in one line — hover explains the vocabulary. */
@@ -36,8 +31,8 @@ const TIPS = {
   agents: "The coding agents this capability supports. Installing it for an agent it does not list is refused.",
   scope: "Where the CLI installs it by default — the project, or the user's home.",
   author: "Who made it. For a repository this is its owner; for our own items it is prefilled from this checkout's git remote.",
-  description: "One sentence: what it does. Shown in every list.",
-  longDescription: "The TL;DR on the detail page — what is inside, how much, what makes it different. At least 30 words.",
+  description: "One sentence: what it does. Shown in every list. Leave it empty and the agent writes it.",
+  longDescription: "The TL;DR on the detail page — what is inside, how much, what makes it different, in at least 30 words. Leave it empty and the agent writes it.",
 };
 
 interface AuthorFormProps {
@@ -266,15 +261,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           description
         </label>
         <div className="field-val">
-          <Select<FieldSource> ariaLabel="who writes the description" value={form.descriptionSource} options={FIELD_SOURCES} onChange={(source) => setField("descriptionSource", source)} disabled={busy} />
-          <input
-            id="author-description"
-            className={input}
-            value={form.description}
-            onChange={(e) => setField("description", e.target.value)}
-            placeholder={form.descriptionSource === "agent" ? "the agent writes this" : ""}
-            disabled={busy || form.descriptionSource === "agent"}
-          />
+          <input id="author-description" className={input} value={form.description} onChange={(e) => setField("description", e.target.value)} placeholder="leave empty and the agent writes it" disabled={busy} />
         </div>
       </div>
       <Problems errors={problemFor("description")} />
@@ -284,14 +271,13 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           tl;dr
         </label>
         <div className="field-val">
-          <Select<FieldSource> ariaLabel="who writes the tl;dr" value={form.longDescriptionSource} options={FIELD_SOURCES} onChange={(source) => setField("longDescriptionSource", source)} disabled={busy} />
           <textarea
             id="author-long"
             className={`${input} min-h-24`}
             value={form.longDescription}
             onChange={(e) => setField("longDescription", e.target.value)}
-            placeholder={form.longDescriptionSource === "agent" ? "the agent writes this" : ""}
-            disabled={busy || form.longDescriptionSource === "agent"}
+            placeholder="leave empty and the agent writes it"
+            disabled={busy}
           />
         </div>
       </div>

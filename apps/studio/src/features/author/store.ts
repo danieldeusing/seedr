@@ -15,9 +15,6 @@ import { draftWithClaude, probeClaude, type AdapterProbe } from "./claudeAdapter
  */
 export type SourceKind = "folder" | "repo" | "agent";
 
-/** Who writes a description: the user, or the agent on the next draft. */
-export type FieldSource = "mine" | "agent";
-
 /** The fields the model must not guess (plan §7): the user fills these in. */
 export interface AddLocalForm {
   sourceKind: SourceKind;
@@ -27,8 +24,6 @@ export interface AddLocalForm {
   prompt: string;
   /** Once the prompt is edited by hand, changing the type stops rewriting it. */
   promptTouched: boolean;
-  descriptionSource: FieldSource;
-  longDescriptionSource: FieldSource;
   type: ComponentType;
   slug: string;
   name: string;
@@ -102,8 +97,8 @@ function hints(form: AddLocalForm): string {
     `agents: ${form.compatibility.join(", ")}`,
     form.targetScope ? `default scope: ${form.targetScope}` : null,
     form.authorName.trim() && form.sourceKind === "agent" ? `author: ${form.authorName.trim()}` : null,
-    form.descriptionSource === "mine" && form.description.trim() ? `description: ${form.description.trim()}` : null,
-    form.longDescriptionSource === "mine" && form.longDescription.trim() ? `longDescription: ${form.longDescription.trim()}` : null,
+    form.description.trim() ? `description: ${form.description.trim()}` : null,
+    form.longDescription.trim() ? `longDescription: ${form.longDescription.trim()}` : null,
   ].filter(Boolean);
   return lines.join("\n");
 }
@@ -119,9 +114,9 @@ export function jobPrompt(form: AddLocalForm): string {
       ? `/add-community ${form.repoUrl.trim()}`
       : `Author a new first-party ${form.type} capability for this registry, then add it with the /add-toolr skill.`;
   const descriptions =
-    form.descriptionSource === "agent" || form.longDescriptionSource === "agent"
-      ? "Write the descriptions yourself, following .agents/rules/registry-descriptions.md."
-      : "Use the descriptions given below verbatim.";
+    form.description.trim() && form.longDescription.trim()
+      ? "Use the descriptions given above verbatim."
+      : "Write the missing descriptions yourself, following .agents/rules/registry-descriptions.md.";
   return [
     task,
     form.prompt.trim(),
@@ -150,8 +145,6 @@ export const emptyForm = (): AddLocalForm => ({
   repoUrl: "",
   prompt: prePromptFor("skill", "add"),
   promptTouched: false,
-  descriptionSource: "mine",
-  longDescriptionSource: "mine",
   type: "skill",
   slug: "",
   name: "",
@@ -223,7 +216,10 @@ export function formProblems(form: AddLocalForm): ValidationError[] {
     ...(op.targetScope ? { targetScope: op.targetScope } : {}),
   });
   if (!form.sourcePath) problems.unshift({ field: "sourcePath", message: "choose the file or folder to add" });
-  return problems;
+  // An empty description is not a problem to fix: submitting drafts it. One that
+  // is filled in and breaks a rule still is.
+  const drafted = [!form.description.trim() && "description", !form.longDescription.trim() && "longDescription"].filter(Boolean);
+  return problems.filter((problem) => !drafted.includes(problem.field));
 }
 
 export const useAuthor = create<AuthorState>((set, get) => ({
@@ -315,9 +311,19 @@ export const useAuthor = create<AuthorState>((set, get) => ({
       return;
     }
     if (form.sourceKind !== "folder") return get().runJob();
+    // The transaction needs both descriptions; whatever was left empty is
+    // drafted now, so "leave it empty" is a real answer and not a dead end.
+    if (!form.description.trim() || !form.longDescription.trim()) {
+      await get().draft();
+      const drafted = get().form;
+      if (!drafted.description.trim() || !drafted.longDescription.trim()) {
+        if (get().draftErrors.length === 0) set({ draftErrors: ["the draft came back empty — write the descriptions yourself"] });
+        return;
+      }
+    }
     set({ phase: "applying", error: null, result: null });
     try {
-      const outcome = await runRegistryOp(parseOp(toOp(form)));
+      const outcome = await runRegistryOp(parseOp(toOp(get().form)));
       set({ phase: "done", result: { kind: "op", type: outcome.type, slug: outcome.slug, changedPaths: outcome.changedPaths, headBefore: outcome.headBefore } });
     } catch (error) {
       // The CLI already rolled back; the message says why.

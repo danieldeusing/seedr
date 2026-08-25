@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RunRequest } from "@/api/agent";
@@ -108,15 +108,17 @@ describe("AuthorForm — where the capability comes from", () => {
     expect(prompt).toHaveValue("hooks are scripts and mine");
   });
 
-  test("handing a description to the agent locks the field rather than hiding it", async () => {
+  test("an empty description says who fills it in, and does not block the submit", async () => {
     render(<AuthorForm onAdded={() => {}} />);
     await screen.findByText("2.1.226");
-    expect(screen.getByLabelText("description")).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: "choose folder" }));
 
-    await choose("who writes the description", "the agent drafts it");
-
-    expect(screen.getByLabelText("description")).toBeDisabled();
-    expect(screen.getByLabelText("description")).toHaveAttribute("placeholder", "the agent writes this");
+    for (const label of ["description", "tl;dr"]) {
+      expect(screen.getByLabelText(label)).toHaveAttribute("placeholder", "leave empty and the agent writes it");
+      expect(screen.getByLabelText(label)).toBeEnabled();
+    }
+    expect(screen.queryByText(/is missing 'description'/)).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "add to registry" })).toBeEnabled());
   });
 
   test("every label explains itself on hover", () => {

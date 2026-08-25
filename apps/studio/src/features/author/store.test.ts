@@ -152,7 +152,7 @@ describe("jobs — a repository or a prompt", () => {
   });
 
   test("the job prompt names the repo's own skill, carries the hints and asks for the ADDED line", () => {
-    const prompt = jobPrompt({ ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/obra/superpowers ", prompt: "use the marketplace entry", slug: "superpowers", longDescriptionSource: "agent" });
+    const prompt = jobPrompt({ ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/obra/superpowers ", prompt: "use the marketplace entry", slug: "superpowers" });
     expect(prompt).toContain("/add-community https://github.com/obra/superpowers");
     expect(prompt).toContain("use the marketplace entry");
     expect(prompt).toContain("slug: superpowers");
@@ -216,5 +216,40 @@ describe("what an add job may run", () => {
     expect(ADD_JOB_TOOLS).toContain("Bash(npx tsx scripts/registry-op.ts:*)");
     expect(ADD_JOB_TOOLS.some((tool) => /^Bash\((git|rm|sh|bash)/.test(tool))).toBe(false);
     expect(jobPrompt({ ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/o/r" })).toContain("never with -X");
+  });
+});
+
+describe("descriptions left empty", () => {
+  test("are drafted on submit rather than refused", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), sourcePath: "/src/pdf", slug: "pdf", name: "PDF", authorName: "Me" }, probe: PROBE_OK });
+    expect(formProblems(useAuthor.getState().form)).toEqual([]);
+    onCommand("read_source_files", () => ({ files: { "SKILL.md": "# PDF" }, skipped: [] }));
+    const requests = scriptHost({
+      claude: () => ({ stdout: draftEnvelope }),
+      "npx tsx scripts/registry-op.ts": () => ({ stdout: JSON.stringify({ ok: true, kind: "add-local", type: "skill", slug: "pdf", item: {}, changedPaths: ["registry/skills/pdf/item.json"], headBefore: "abc1234" }) }),
+    });
+
+    await useAuthor.getState().apply();
+
+    expect(requests.map((request) => request.program)).toEqual(["claude", "npx"]);
+    expect(useAuthor.getState().phase).toBe("done");
+    expect(JSON.parse(requests[1]?.stdin ?? "{}")).toMatchObject({ description: "Fills PDF forms." });
+  });
+
+  test("a failed draft stops the add and says why", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), sourcePath: "/src/pdf", slug: "pdf", name: "PDF", authorName: "Me" }, probe: PROBE_OK });
+    onCommand("read_source_files", () => ({ files: { "SKILL.md": "# PDF" }, skipped: [] }));
+    const requests = scriptHost({ claude: () => ({ stdout: JSON.stringify({ type: "result", is_error: true, result: "rate limited" }) }) });
+
+    await useAuthor.getState().apply();
+
+    expect(requests.every((request) => request.program === "claude")).toBe(true);
+    expect(useAuthor.getState().phase).toBe("idle");
+    expect(useAuthor.getState().draftErrors[0]).toMatch(/rate limited/);
+  });
+
+  test("a description that is filled in but too short is still refused", () => {
+    const form = { ...emptyForm(), sourcePath: "/src/pdf", slug: "pdf", name: "PDF", authorName: "Me", description: "Fills forms.", longDescription: "too short" };
+    expect(formProblems(form).map((p) => p.field)).toEqual(["longDescription"]);
   });
 });

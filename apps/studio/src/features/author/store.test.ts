@@ -207,3 +207,14 @@ describe("jobs — a repository or a prompt", () => {
     expect(invoke).toHaveBeenCalledWith("cancel_process", { taskId: "author-job" });
   });
 });
+
+describe("what an add job may run", () => {
+  test("reads GitHub and runs the operations CLI, and nothing else", () => {
+    // The add-community skill is written against `gh api`; without it every
+    // repository job would fail on a denial.
+    expect(ADD_JOB_TOOLS).toContain("Bash(gh api:*)");
+    expect(ADD_JOB_TOOLS).toContain("Bash(npx tsx scripts/registry-op.ts:*)");
+    expect(ADD_JOB_TOOLS.some((tool) => /^Bash\((git|rm|sh|bash)/.test(tool))).toBe(false);
+    expect(jobPrompt({ ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/o/r" })).toContain("never with -X");
+  });
+});

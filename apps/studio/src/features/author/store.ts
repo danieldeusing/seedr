@@ -76,12 +76,12 @@ const DRAFT_TASK = "author-draft";
 const JOB_TASK = "author-job";
 
 /**
- * Least privilege for an add job: read and write the checkout, fetch the
- * repository being added, and run the operations CLI — which is what actually
- * mutates the registry, as a transaction. No `git`, so a job cannot commit,
- * and no unscoped shell.
+ * Least privilege for an add job: read and write the checkout, look the source
+ * repository up (the add-community skill is built on `gh api`), and run the
+ * operations CLI — which is what actually mutates the registry, as a
+ * transaction. No `git`, so a job cannot commit, and no unscoped shell.
  */
-export const ADD_JOB_TOOLS = ["Read", "Write", "Edit", "Glob", "Grep", "Skill", "WebFetch", "Bash(npx tsx scripts/registry-op.ts:*)"];
+export const ADD_JOB_TOOLS = ["Read", "Write", "Edit", "Glob", "Grep", "Skill", "WebFetch", "Bash(gh api:*)", "Bash(npx tsx scripts/registry-op.ts:*)"];
 
 /** The last line an add job must print, so Studio can open what was added. */
 const ADDED_LINE = /^ADDED\s+([a-z]+)\/([A-Za-z0-9._-]+)$/m;
@@ -127,7 +127,7 @@ export function jobPrompt(form: AddLocalForm): string {
     form.prompt.trim(),
     `Honour these where they are given, derive the rest:\n${hints(form)}`,
     descriptions,
-    "Do not commit or push. Finish with a final line of exactly `ADDED <type>/<slug>`.",
+    "Read GitHub, never write to it: `gh api` for lookups only, never with -X, --method or -f. Do not commit or push. Finish with a final line of exactly `ADDED <type>/<slug>`.",
   ]
     .filter(Boolean)
     .join("\n\n");

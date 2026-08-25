@@ -378,7 +378,7 @@ export const addCommand = new Command("add")
     "-a, --agents <agents>",
     "Comma-separated coding agents or 'all' (claude,copilot,antigravity,codex,opencode; 'gemini' is a deprecated alias of antigravity). " +
       "Every named agent must support the item; 'all' means all compatible agents. " +
-      "MCP servers: claude, gemini, codex, opencode (copilot's format is unverified)"
+      "MCP servers: claude, codex, opencode (copilot's and antigravity's formats are unverified)"
   )
   .option("-s, --scope <scope>", "Installation scope: project, user, or local")
   .option("-m, --method <method>", "Installation method: symlink or copy")

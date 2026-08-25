@@ -209,6 +209,8 @@ describe("pure helpers", () => {
 
 describe("runAdd", () => {
   beforeEach(() => {
+    // runAdd reaches interactive prompts here; they require a terminal.
+    process.stdin.isTTY = true;
     vol.reset();
     vol.fromJSON({
       "/registry/skills/test-skill/SKILL.md": SKILL_CONTENT,

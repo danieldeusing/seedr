@@ -1,5 +1,5 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { cpSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { makeTempDir } from "./test/tempDir.js";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "vitest";
 import { collectItems, compileRegistry } from "./compile.js";
@@ -99,7 +99,7 @@ describe("compile", () => {
   test("reproduces the committed manifests of the real registry byte for byte", () => {
     const realRegistry = resolve(import.meta.dirname, "../../../registry");
     // Compiled into a copy so the test never writes into the repo.
-    const copy = mkdtempSync(join(tmpdir(), "seedr-real-registry-"));
+    const copy = makeTempDir("seedr-real-registry-");
     cpSync(realRegistry, copy, { recursive: true });
     compileRegistry(copy);
     const manifests = ["manifest.json", ...readdirSync(realRegistry, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => join(e.name, "manifest.json"))];

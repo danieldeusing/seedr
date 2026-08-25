@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import * as ui from "../utils/ui.js";
 import chalk from "chalk";
 import ora from "ora";
 import { join } from "node:path";
@@ -6,7 +7,6 @@ import { brand } from "../utils/ui.js";
 import type { CodingAgent } from "../types.js";
 import { ALL_AGENTS, CODING_AGENTS, getAgentPath } from "../config/agents.js";
 import { parseAgentsArgStrict } from "../utils/detection.js";
-import { promptConfirm } from "../utils/prompts.js";
 import { ensureDir, exists, writeTextFile } from "../utils/fs.js";
 import { handleCommandError } from "../utils/errors.js";
 
@@ -67,7 +67,8 @@ export async function runInit(options: InitOptions, cwd: string = process.cwd())
   console.log("");
 
   if (!options.yes) {
-    const confirmed = await promptConfirm("Proceed?");
+    const answer = await ui.confirm("Proceed?");
+    const confirmed = !ui.prompts.isCancel(answer) && answer;
     if (!confirmed) {
       console.log(chalk.yellow("Cancelled"));
       return 0;

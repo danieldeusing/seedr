@@ -74,9 +74,11 @@ describe("json utilities", () => {
       expect(result).toEqual({ key: "value" });
     });
 
-    it("rethrows errors other than a missing file", async () => {
+    it("names the malformed file and keeps the parse error as the cause", async () => {
       vol.fromJSON({ "/broken.json": "{not json" });
-      await expect(readJson("/broken.json")).rejects.toThrow(SyntaxError);
+      // Seven config files reach readJson; the bare SyntaxError named none of them.
+      await expect(readJson("/broken.json")).rejects.toThrow(/\/broken\.json is not valid JSON/);
+      await expect(readJson("/broken.json")).rejects.toHaveProperty("cause.name", "SyntaxError");
     });
   });
 

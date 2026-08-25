@@ -15,6 +15,11 @@ export async function readJson<T = Record<string, unknown>>(
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return {} as T;
     }
+    if (error instanceof SyntaxError) {
+      // Seven different config files reach this; without the path the user
+      // cannot tell which one is malformed.
+      throw new Error(`${path} is not valid JSON: ${error.message}`, { cause: error });
+    }
     throw error;
   }
 }

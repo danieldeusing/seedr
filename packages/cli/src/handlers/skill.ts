@@ -33,10 +33,20 @@ function getScopeRoot(scope: InstallScope, cwd: string): string {
   return scope === "user" ? homedir() : cwd;
 }
 
-/** `<scopeRoot>/.agents/skills/<slug>`, proven contained. */
+/** The shared `<scopeRoot>/.agents/skills` directory the central install lives in. */
+function centralSkillsDir(scope: InstallScope, cwd: string): string {
+  return dirname(getAgentsPath("skill", "any-slug", scope, cwd));
+}
+
+/**
+ * `<scopeRoot>/.agents/skills/<slug>`, proven contained in the SCOPE ROOT —
+ * not merely in `.agents/skills`, which is itself a path a symlink could point
+ * outside the project (`resolveContained` deliberately allows a symlinked root).
+ */
 async function resolveCentralPath(slug: string, scope: InstallScope, cwd: string): Promise<string> {
-  const central = getAgentsPath("skill", slug, scope, cwd);
-  return resolveContained(dirname(central), slug);
+  const scopeRoot = getScopeRoot(scope, cwd);
+  const centralDir = centralSkillsDir(scope, cwd);
+  return resolveContained(scopeRoot, relative(scopeRoot, centralDir), slug);
 }
 
 /** `<agent skills dir>/<slug>`, proven contained in the scope root. */
@@ -157,7 +167,7 @@ export async function installSkill(
   }
 
   for (const agent of agents) {
-    // Gemini, Codex, and OpenCode already read .agents/skills/, so skip
+    // Antigravity, Codex and OpenCode already read .agents/skills/, so skip
     // the symlink when content is installed centrally. For single-agent
     // installs, copy directly to the agent's own directory instead.
     if (READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent) && central) {
@@ -193,10 +203,15 @@ export async function uninstallSkill(
 ): Promise<boolean> {
   assertValidSlug(slug, SLUG_LABEL);
   const destPath = await resolveAgentSkillPath(agent, slug, scope, cwd);
-  if (!destPath) return false;
-
   // A symlink entry (symlink installs) is unlinked, never followed.
-  return removePathEntry(destPath);
+  if (destPath && (await removePathEntry(destPath))) return true;
+
+  // A symlink install for an agent that reads `.agents/skills` directly writes
+  // only there, so that is the copy to remove when the agent has none of its own.
+  if (READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent)) {
+    return removePathEntry(await resolveCentralPath(slug, scope, cwd));
+  }
+  return false;
 }
 
 export async function getInstalledSkills(
@@ -204,17 +219,24 @@ export async function getInstalledSkills(
   scope: InstallScope,
   cwd: string = process.cwd()
 ): Promise<string[]> {
-  const destDir = getContentPath(agent, "skill", scope, cwd);
-  if (!destDir || !(await exists(destDir))) {
-    return [];
-  }
+  // Symlink installs put the content only in the shared `.agents/skills` for
+  // agents that read it directly, so both directories are "installed" for them.
+  const dirs = new Set<string>();
+  const own = getContentPath(agent, "skill", scope, cwd);
+  if (own) dirs.add(own);
+  if (READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent)) dirs.add(centralSkillsDir(scope, cwd));
 
-  // Slugs never start with a dot, so hidden entries (a leftover staging
-  // directory, editor files) are never reported as installed skills.
-  const entries = await readdir(destDir, { withFileTypes: true });
-  return entries
-    .filter((entry) => (entry.isDirectory() || entry.isSymbolicLink()) && !entry.name.startsWith("."))
-    .map((entry) => entry.name);
+  const slugs = new Set<string>();
+  for (const dir of dirs) {
+    if (!(await exists(dir))) continue;
+    // Slugs never start with a dot, so hidden entries (a leftover staging
+    // directory, editor files) are never reported as installed skills.
+    const entries = await readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if ((entry.isDirectory() || entry.isSymbolicLink()) && !entry.name.startsWith(".")) slugs.add(entry.name);
+    }
+  }
+  return [...slugs];
 }
 
 export async function planSkill(

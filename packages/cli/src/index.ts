@@ -21,5 +21,4 @@ export {
 } from "./config/registry.js";
 
 export { installSkill, uninstallSkill, getInstalledSkills } from "./handlers/skill.js";
-export { convertSkillToTool, parseSkillMarkdown } from "./converters/index.js";
 export { detectInstalledAgents, detectProjectAgents, isAgentInstalled } from "./utils/detection.js";

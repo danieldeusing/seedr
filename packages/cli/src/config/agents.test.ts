@@ -54,12 +54,10 @@ describe("agents", () => {
       expect(claude.contentTypes).toHaveProperty("mcp");
     });
 
-    it("should have directory structure for skills in all agents", () => {
+    it("puts skills under skills/ for every agent", () => {
       for (const agent of ALL_AGENTS) {
         const skillConfig = CODING_AGENTS[agent].contentTypes.skill;
         expect(skillConfig).toBeDefined();
-        expect(skillConfig?.structure).toBe("directory");
-        expect(skillConfig?.mainFile).toBe("SKILL.md");
         expect(skillConfig?.path).toBe("skills");
       }
     });
@@ -76,7 +74,7 @@ describe("agents", () => {
     it("should return config for supported type", () => {
       const config = getContentTypeConfig("claude", "skill");
       expect(config).toBeDefined();
-      expect(config?.structure).toBe("directory");
+      expect(config?.path).toBe("skills");
     });
 
     it("should return undefined for unsupported type", () => {
@@ -84,11 +82,9 @@ describe("agents", () => {
       expect(config).toBeUndefined();
     });
 
-    it("should return json-merge for hooks", () => {
+    it("resolves hooks to the agent root, the handler owns the merge target", () => {
       const config = getContentTypeConfig("claude", "hook");
-      expect(config?.structure).toBe("json-merge");
-      expect(config?.mergeTarget).toBe("settings.json");
-      expect(config?.mergeField).toBe("hooks");
+      expect(config?.path).toBe("");
     });
   });
 

@@ -42,7 +42,13 @@ async function mount(name: string) {
   polyfillConstructableStylesheets();
   const html = readFileSync(join(playgroundsDir, `${name}.html`), "utf8");
   const body = /<body>([\s\S]*)<\/body>/.exec(html)?.[1] ?? "";
-  document.body.innerHTML = body.replace(/<script[^>]*><\/script>/g, "");
+  // A fresh <body> per mount. Listeners bound to document.body itself survive
+  // an innerHTML swap, so 23 mounts left 23 live click handlers and a later
+  // playground's [data-action] fired an earlier playground's handler — the
+  // suite only passed in declared order.
+  const fresh = document.createElement("body");
+  document.body.replaceWith(fresh);
+  fresh.innerHTML = body.replace(/<script[^>]*><\/script>/g, "");
   vi.resetModules();
   await import(/* @vite-ignore */ join(playgroundsDir, `${name}.js`));
 }

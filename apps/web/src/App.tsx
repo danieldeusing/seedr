@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { NavigationProvider } from "./contexts/NavigationContext";
 import { Header } from "./components/Header";
 import { StatusBar } from "./components/StatusBar";
@@ -20,6 +21,7 @@ export function App() {
         <div className="flex min-h-screen flex-col pb-16 sm:pb-8">
           {!isEmbed && <Header />}
           <main className="flex-grow">
+            <AppErrorBoundary>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/privacy" element={<Privacy />} />
@@ -28,6 +30,7 @@ export function App() {
               <Route path="/:type/:slug" element={<Detail />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </AppErrorBoundary>
           </main>
           {!isEmbed && <StatusBar />}
         </div>

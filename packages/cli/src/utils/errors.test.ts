@@ -22,6 +22,27 @@ describe("handleCommandError", () => {
 
     handleCommandError("string failure");
 
-    expect(errorSpy).toHaveBeenCalledWith("Error: Unknown error");
+    // A thrown string used to degrade to "Unknown error" — zero information.
+    expect(errorSpy).toHaveBeenCalledWith("Error: string failure");
+  });
+
+  it("prints the wrapped cause chain, which is what names the real failure", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(process, "exit").mockImplementation((() => undefined) as never);
+
+    const root = new Error("getaddrinfo ENOTFOUND registry.example");
+    handleCommandError(new Error("Registry unreachable: https://registry.example/manifest.json", { cause: root }));
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Registry unreachable"));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("caused by: getaddrinfo ENOTFOUND"));
+  });
+
+  it("handles a non-Error cause without crashing", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(process, "exit").mockImplementation((() => undefined) as never);
+
+    handleCommandError(new Error("outer", { cause: { code: 500 } }));
+
+    expect(errorSpy).toHaveBeenCalledWith("Error: outer");
   });
 });

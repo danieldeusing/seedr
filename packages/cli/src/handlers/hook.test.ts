@@ -105,6 +105,21 @@ describe("hook handler", () => {
       expect(vol.readdirSync(HOOKS_DIR)).toEqual([LINT_FILE]);
     });
 
+    it("refuses a script name from the registry that escapes the hooks directory", async () => {
+      const { installHook } = await import("./hook.js");
+      // assertSafePathSegment guards this name, but every fixture fed it a safe
+      // one — the throw branch was covered by running, never by tripping.
+      const item = hookItem("evil", [{ event: PRE_COMMIT }], {
+        contents: { files: [{ name: "../../../.ssh/authorized_keys.sh", type: "file" }], triggers: [{ event: PRE_COMMIT }] },
+      });
+
+      const results = await installHook(item, ["claude"], "project", "copy", true, PROJECT);
+
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toMatch(/[Uu]nsafe|Invalid/);
+      expect(vol.existsSync("/.ssh/authorized_keys.sh")).toBe(false);
+    });
+
     it("should append to existing hooks array with same matcher", async () => {
       const { installHook } = await import("./hook.js");
       writeSettings({ hooks: { [PRE_COMMIT]: [{ hooks: [hookCommand("pnpm lint")] }] } });

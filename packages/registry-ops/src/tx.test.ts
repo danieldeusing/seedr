@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { makeTempDir } from "./test/tempDir.js";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { itemStateHash } from "./hash.js";
@@ -8,7 +8,7 @@ import { TransactionError, runRegistryTransaction } from "./tx.js";
 import type { AddLocalOp, RemoveOp } from "./ops/types.js";
 
 function makeSource(): string {
-  const dir = mkdtempSync(join(tmpdir(), "seedr-tx-source-"));
+  const dir = makeTempDir("seedr-tx-source-");
   writeFileSync(join(dir, "SKILL.md"), "# Tx skill\n");
   return dir;
 }
@@ -30,6 +30,32 @@ const status = (repo: string) => git(repo, "status", "--porcelain", "--untracked
 const lockPath = (repo: string) => join(repo, ".git", "seedr-ops.lock");
 
 describe("runRegistryTransaction", () => {
+  test("rolls back when the operation touched a path outside its allowlist", async () => {
+    const repo = makeRepo();
+    const strayFile = join(repo, "registry", "skills", "stray.md");
+
+    // The transaction's core promise (AGENTS.md): only the item's own paths and
+    // the manifests may change. Only the happy path was tested — this branch,
+    // the actual guarantee, had none. The stray write is made real, then seen
+    // through the injected git runner exactly as a real `status` would report it.
+    // status runs twice: the clean-worktree precondition, then the verify. The
+    // stray write belongs to the operation, i.e. after the precondition passed.
+    let statusCalls = 0;
+    const runner = async (args: string[], cwd: string) => {
+      if (args[0] === "status" && ++statusCalls === 2) writeFileSync(strayFile, "stray\n");
+      return git(cwd, ...args);
+    };
+
+    await expect(runRegistryTransaction(addOp(), { repoRoot: repo, git: runner })).rejects.toThrow(
+      /outside its allowlist/
+    );
+
+    // rollback restored the worktree: the stray file and the new item are gone
+    expect(existsSync(strayFile)).toBe(false);
+    expect(existsSync(join(repo, "registry", "skills", "tx-skill"))).toBe(false);
+    expect(status(repo)).toBe("");
+  });
+
   test("applies, compiles, and reports only allowlisted changed paths", async () => {
     const repo = makeRepo();
     const { result, changedPaths, headBefore } = await runRegistryTransaction(addOp(), { repoRoot: repo });

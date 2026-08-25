@@ -1,5 +1,6 @@
 import type { IFuseOptions } from "fuse.js";
 import { canonicalAgents, typeDirName } from "@seedr/registry-ops/pure";
+import { itemsInCategory } from "../../scripts/site-meta.mjs";
 import type { RegistryManifest, RegistryItem, ComponentType, FileTreeNode } from "./types";
 
 // Import split manifest files (bundled at build time)
@@ -72,15 +73,8 @@ export const fuseOptions: IFuseOptions<RegistryItem> = {
 };
 
 export function getItemsByType(type: ComponentType): RegistryItem[] {
-  if (type === "plugin") {
-    return manifest.items.filter((item) => item.type === type);
-  }
-  // Include wrapper plugins that wrap this capability type
-  return manifest.items.filter(
-    (item) =>
-      item.type === type ||
-      (item.type === "plugin" && item.pluginType === "wrapper" && item.wrapper === type)
-  );
+  // One definition, shared with the prerendered <meta> (see site-meta.mjs).
+  return itemsInCategory(manifest.items, type);
 }
 
 export function getItem(slug: string, type?: ComponentType): RegistryItem | undefined {

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
+import { PLUGIN_TYPE_BADGES } from "@/lib/pluginBadges";
 import { Link } from "react-router-dom";
 // toolr-design-ignore-next-line
-import { Clock, Package, Plug, Puzzle } from "lucide-react";
+import { Clock,} from "lucide-react";
 import { CodingAgentIcon } from "./ui/CodingAgentIcon";
 import { Label } from "./ui/Label";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/Tooltip";
@@ -63,15 +64,6 @@ function FilterControl({ label, onClick, className, children }: { label: string;
   );
 }
 
-const PLUGIN_TYPE_BADGES: Record<PluginType, { text: string; icon: typeof Package; description: (item: RegistryItem) => string }> = {
-  package: { text: "Package", icon: Package, description: () => "Bundles multiple capabilities (skills, hooks, agents, etc.) into a single plugin" },
-  wrapper: { text: "Wrapper", icon: Puzzle, description: (item) => `Wraps a single ${item.wrapper} capability as a plugin` },
-  integration: {
-    text: "Integration",
-    icon: Plug,
-    description: () => "Integrates an external tool with your AI assistant. Installing adds it to enabledPlugins — the README explains how to set up the tool itself.",
-  },
-};
 
 interface ItemCardProps {
   item: RegistryItem;
@@ -90,7 +82,9 @@ interface ItemCardProps {
  */
 export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onToolClick, onPluginTypeClick, onDateClick }: ItemCardProps) {
   const pluginBadge = item.pluginType ? PLUGIN_TYPE_BADGES[item.pluginType] : null;
-  const authorName = item.sourceType === "toolr" ? "Daniel Deusing" : item.author?.name;
+  // The registry derives the owner from the repo (registry-ops identity), so a
+  // fork credits its own owner rather than this one.
+  const authorName = item.author?.name;
 
   return (
     <article

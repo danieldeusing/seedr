@@ -61,6 +61,21 @@ export function notFoundMeta() {
   return { path: "/404", title: `Page not found — ${SITE_NAME}`, description: "This page does not exist.", index: false };
 }
 
+/**
+ * The items a category page lists. Wrapper plugins are cross-listed on the
+ * capability page they wrap, so this is NOT the raw per-type manifest length —
+ * the app (getItemsByType) and the prerendered <meta> must agree or a page
+ * ships a description contradicting what it renders.
+ * @param {{ type: string, pluginType?: string, wrapper?: string }[]} items
+ * @param {keyof typeof TYPE_PATHS} type
+ */
+export function itemsInCategory(items, type) {
+  if (type === "plugin") return items.filter((item) => item.type === "plugin");
+  return items.filter(
+    (item) => item.type === type || (item.type === "plugin" && item.pluginType === "wrapper" && item.wrapper === type)
+  );
+}
+
 /** @param {keyof typeof TYPE_PATHS} type @param {number} count */
 export function categoryMeta(type, count) {
   const plural = TYPE_LABELS_PLURAL[type];

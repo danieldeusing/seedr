@@ -11,7 +11,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE_NAME, SITE_ORIGIN, TYPE_PATHS, canonicalUrl, categoryMeta, homeMeta, impressumMeta, itemMeta, notFoundMeta, privacyMeta } from "./site-meta.mjs";
+import { SITE_NAME, SITE_ORIGIN, TYPE_PATHS, canonicalUrl, categoryMeta, homeMeta, impressumMeta, itemMeta, itemsInCategory, notFoundMeta, privacyMeta } from "./site-meta.mjs";
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const registryDir = join(webRoot, "..", "..", "registry");
@@ -37,9 +37,10 @@ export function readRegistry(dir = registryDir) {
 /** All routes with their metadata; items carry `lastmod` for the sitemap. */
 export function collectRoutes(itemsByType) {
   const routes = [homeMeta(), privacyMeta(), impressumMeta()];
+  const allItems = Object.values(itemsByType).flat();
   for (const type of Object.keys(TYPE_PATHS)) {
     const items = itemsByType[type] ?? [];
-    routes.push(categoryMeta(type, items.length));
+    routes.push(categoryMeta(type, itemsInCategory(allItems, type).length));
     for (const item of items) {
       routes.push({ ...itemMeta(item), lastmod: item.updatedAt ? item.updatedAt.slice(0, 10) : undefined });
     }

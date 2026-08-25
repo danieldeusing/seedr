@@ -12,7 +12,7 @@ vi.mock("node:os", () => ({
 }));
 
 const ITEMS: RegistryItem[] = [
-  { slug: "pdf", name: "PDF", type: "skill", description: "Read PDFs", compatibility: ["claude", "codex"], featured: true },
+  { slug: "pdf", name: "PDF", type: "skill", description: "Read PDFs", compatibility: ["claude", "codex"], featured: true, label: "project-x" },
   { slug: "lint-hook", name: "Lint", type: "hook", description: "Lint on commit", compatibility: ["claude"] },
 ];
 
@@ -197,5 +197,39 @@ describe("runList", () => {
     const { runList } = await import("./list.js");
     expect(await runList({}, PROJECT)).toBe(0);
     expect(output()).toContain("No items found in registry");
+  });
+});
+
+describe("list --label", () => {
+  beforeEach(() => {
+    vol.reset();
+    writeFixtures();
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vol.reset();
+    vi.restoreAllMocks();
+  });
+
+  const printed = () => vi.mocked(console.log).mock.calls.map((call) => call.join(" ")).join("\n");
+
+  it("keeps only the items carrying the label", async () => {
+    const { runList } = await import("./list.js");
+    expect(await runList({ label: "project-x" }, PROJECT)).toBe(0);
+    const text = printed();
+    expect(text).toContain("pdf");
+    expect(text).not.toContain("lint-hook");
+    expect(text).toContain("Total: 1 items");
+  });
+
+  it("treats a label nobody carries as an error, and names the ones in use", async () => {
+    const { runList } = await import("./list.js");
+    // Silently printing nothing would read as "the registry is empty", which is
+    // the wrong thing to conclude from a typo.
+    expect(await runList({ label: "typo" }, PROJECT)).toBe(1);
+    const text = printed();
+    expect(text).toContain('No item carries the label "typo".');
+    expect(text).toContain("Labels in use: project-x");
   });
 });

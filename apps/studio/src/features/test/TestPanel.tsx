@@ -46,7 +46,6 @@ export function TestPanel({ item }: TestPanelProps) {
         )}
         {outcome && (
           <>
-            <p className="prompt break-all text-muted-foreground">{outcome.command.join(" ")}</p>
             {verdict && (
               <p className={`mt-3 ${verdict.ok ? "text-primary" : "text-destructive"}`} data-testid="test-verdict">
                 {verdict.ok
@@ -68,9 +67,21 @@ export function TestPanel({ item }: TestPanelProps) {
                 </li>
               ))}
             </ul>
-            <pre className="mt-4 whitespace-pre-wrap leading-relaxed text-muted-foreground" data-testid="test-output">
-              {[outcome.run.stdout, outcome.run.stderr].filter(Boolean).join("\n")}
-            </pre>
+            {/* The run itself reads as what it is: a terminal window. */}
+            <div className="mt-4 overflow-hidden border border-neutral-700">
+              <div className="flex h-6 shrink-0 items-center gap-1.5 border-b border-neutral-700 bg-neutral-960 px-2">
+                <span className="size-2 rounded-full bg-neutral-600" aria-hidden="true" />
+                <span className="size-2 rounded-full bg-neutral-600" aria-hidden="true" />
+                <span className="size-2 rounded-full bg-neutral-600" aria-hidden="true" />
+                <span className="ml-1.5 text-xss tracking-wider text-neutral-500 uppercase">console — scratch directory</span>
+              </div>
+              <div className="bg-neutral-960/50 p-3">
+                <p className="prompt break-all">{outcome.command.join(" ")}</p>
+                <pre className="mt-2 leading-relaxed whitespace-pre-wrap text-neutral-400" data-testid="test-output">
+                  {[outcome.run.stdout, outcome.run.stderr].filter(Boolean).join("\n")}
+                </pre>
+              </div>
+            </div>
           </>
         )}
       </div>

@@ -31,7 +31,7 @@ describe("AuthorForm", () => {
     render(<AuthorForm onAdded={onAdded} />);
 
     expect(await screen.findByText("2.1.226")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "drafting agent" })).toHaveTextContent("Claude Code");
+    expect(screen.getByRole("button", { name: "coding agent" })).toHaveTextContent("Claude Code");
     expect(screen.getByLabelText("author")).toHaveValue("Acme");
 
     await userEvent.click(screen.getByRole("button", { name: "choose folder" }));

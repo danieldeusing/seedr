@@ -18,9 +18,21 @@ export const AGENT_PROGRAMS: Record<CanonicalCodingAgent, string> = {
   opencode: "opencode",
 };
 
-/** The agents with a certified adapter per job — the others are visible but not selectable. */
-export const DRAFT_CERTIFIED: readonly CanonicalCodingAgent[] = ["claude"];
-export const GIT_CERTIFIED: readonly CanonicalCodingAgent[] = ["claude"];
+/**
+ * Every agent here has a non-interactive mode Studio knows how to drive, so
+ * every agent can do every job. What is certified is the *spelling* of the run
+ * (see features/author/adapters.ts), not the model behind it — an agent that is
+ * not installed says so through its probe instead of being hidden.
+ */
+export const DRAFT_CERTIFIED: readonly CanonicalCodingAgent[] = CANONICAL_AGENTS;
+export const GIT_CERTIFIED: readonly CanonicalCodingAgent[] = CANONICAL_AGENTS;
+
+const PREFERRED_KEY = "studio-preferred-agent";
+
+const loadPreferred = (): CanonicalCodingAgent => {
+  const stored = localStorage.getItem(PREFERRED_KEY);
+  return CANONICAL_AGENTS.find((agent) => agent === stored) ?? "claude";
+};
 
 export type AgentProbe =
   | { state: "unprobed" | "probing" | "missing" }
@@ -50,6 +62,9 @@ const setHostOverride = (agent: CanonicalCodingAgent, path: string | null): Prom
 interface AgentSettingsState {
   overrides: Partial<Record<CanonicalCodingAgent, string>>;
   probes: Record<CanonicalCodingAgent, AgentProbe>;
+  /** The agent the dialogs run, remembered between sessions. */
+  preferred: CanonicalCodingAgent;
+  setPreferred(agent: CanonicalCodingAgent): void;
   /** Push the stored overrides to the host (dropping any whose file is gone), then probe. */
   init(): Promise<void>;
   probe(agent: CanonicalCodingAgent): Promise<void>;
@@ -61,6 +76,12 @@ interface AgentSettingsState {
 export const useAgentSettings = create<AgentSettingsState>((set, get) => ({
   overrides: loadOverrides(),
   probes: Object.fromEntries(CANONICAL_AGENTS.map((agent) => [agent, { state: "unprobed" }])) as Record<CanonicalCodingAgent, AgentProbe>,
+  preferred: loadPreferred(),
+
+  setPreferred(agent) {
+    localStorage.setItem(PREFERRED_KEY, agent);
+    set({ preferred: agent });
+  },
 
   async init() {
     const overrides = { ...get().overrides };

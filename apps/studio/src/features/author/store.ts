@@ -4,10 +4,11 @@ import { ALL_TYPES, CANONICAL_AGENTS, parseOp, validateItem, type AddLocalOp, ty
 import { cancelProcess, onProcessOutput, pickPath } from "@/api/agent";
 import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
 import { configuredAuthor } from "@/features/settings/authorSettings";
+import { useAgentSettings } from "@/features/settings/agentSettings";
 import { prePromptFor } from "@/features/settings/prePrompts";
 import { repoIdentity, runRegistryOp } from "@/api/registryCli";
 import { readSourceFiles } from "@/api/source";
-import { draftWithClaude, probeClaude, type AdapterProbe } from "./claudeAdapter";
+import { draftWith, probeAgent, type AdapterProbe } from "./claudeAdapter";
 
 /**
  * Where a capability's content comes from. A folder is copied by the
@@ -274,7 +275,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
   async prepare() {
     set({ phase: "probing", error: null });
     try {
-      const [probe, identity] = await Promise.all([probeClaude(), repoIdentity().catch(() => null)]);
+      const [probe, identity] = await Promise.all([probeAgent(useAgentSettings.getState().preferred), repoIdentity().catch(() => null)]);
       // Settings wins over the checkout: a fork's remote is not who authored this.
       const configured = configuredAuthor();
       const defaultAuthor = {
@@ -312,7 +313,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     const unlisten = await onProcessOutput(`${DRAFT_TASK}-0`, (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.line] }));
     try {
       const { files } = await readSourceFiles(form.sourcePath);
-      const result = await draftWithClaude({ type: form.type, slug: form.slug, name: form.name, compatibility: form.compatibility, files, notes: form.prompt }, undefined, DRAFT_TASK);
+      const result = await draftWith(useAgentSettings.getState().preferred, { type: form.type, slug: form.slug, name: form.name, compatibility: form.compatibility, files, notes: form.prompt }, undefined, DRAFT_TASK);
       if (result.ok) {
         set({ form: { ...get().form, description: result.draft.description, longDescription: result.draft.longDescription }, phase: "idle" });
       } else {

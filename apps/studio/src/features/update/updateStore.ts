@@ -4,7 +4,8 @@ import { CANONICAL_AGENTS, canonicalAgents, parseOp, validateItem, type UpdateOp
 import { cancelProcess } from "@/api/agent";
 import { runAgentJob } from "@/api/agentJob";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
-import { probeClaude, type AdapterProbe } from "@/features/author/claudeAdapter";
+import { probeAgent, type AdapterProbe } from "@/features/author/claudeAdapter";
+import { useAgentSettings } from "@/features/settings/agentSettings";
 import { prePromptFor } from "@/features/settings/prePrompts";
 import type { StudioItem } from "@/features/explorer/registry";
 
@@ -127,7 +128,7 @@ export const useUpdate = create<UpdateState>((set, get) => ({
 
   async start(item) {
     set({ target: item, expectedHash: null, form: formFor(item), phase: "idle", draftErrors: [], error: updateRefusal(item), outcome: null, jobReport: null, log: [] });
-    if (!get().probe) set({ probe: await probeClaude() });
+    if (!get().probe) set({ probe: await probeAgent(useAgentSettings.getState().preferred) });
     if (updateRefusal(item)) return;
     try {
       set({ expectedHash: await itemHash(item.type, item.slug) });

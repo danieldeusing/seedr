@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { CanonicalCodingAgent, ComponentType, ScopeType } from "@seedr/shared";
+import { useEffect, useMemo, useRef } from "react";
+import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import { Ban, Check, FolderOpen } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
-import { DRAFT_CERTIFIED } from "@/features/settings/agentSettings";
+import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
 import { formProblems, useAuthor, type SourceKind } from "./store";
 
 // The CLI has no install handler for `command` items yet (plan trap 12); until
@@ -68,7 +68,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   /** A repository or a prompt is carried out by the agent, not by the transaction. */
   const byAgent = form.sourceKind !== "folder";
   const formRef = useRef<HTMLFormElement>(null);
-  const [agent, setAgent] = useState<CanonicalCodingAgent>("claude");
+  const agent = useAgentSettings((state) => state.preferred);
+  const setAgent = useAgentSettings((state) => state.setPreferred);
   /** For a repository, what the agent works out from the source unless overridden. */
   const derivedPlaceholder = form.sourceKind === "repo" ? "derived from the source" : "";
   const input =
@@ -271,7 +272,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
 
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
-          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="drafting agent" disabled={busy} />
+          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="coding agent" disabled={busy} />
           <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
             {phase === "drafting"
               ? "drafting…"

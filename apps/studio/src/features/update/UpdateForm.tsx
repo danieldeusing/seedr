@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { CanonicalCodingAgent, ScopeType } from "@seedr/shared";
+import { useEffect, useMemo, useRef } from "react";
+import type { ScopeType } from "@seedr/shared";
 import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import type { StudioItem } from "@/features/explorer/registry";
 import { Ban, Check, X } from "lucide-react";
@@ -7,7 +7,7 @@ import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
-import { DRAFT_CERTIFIED } from "@/features/settings/agentSettings";
+import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
 import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
 interface UpdateFormProps {
@@ -48,7 +48,8 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   // the design system styles text inputs, selects and textareas itself
   const input = "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
   const formRef = useRef<HTMLFormElement>(null);
-  const [agent, setAgent] = useState<CanonicalCodingAgent>("claude");
+  const agent = useAgentSettings((state) => state.preferred);
+  const setAgent = useAgentSettings((state) => state.setPreferred);
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
 
   if (phase === "done" && (outcome || jobReport !== null)) {
@@ -193,7 +194,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
 
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
-          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="update" ariaLabel="updating agent" disabled={busy || !!refusal || !asked} />
+          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="update" ariaLabel="coding agent" disabled={busy || !!refusal} />
           <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
             {phase === "running"
               ? "the agent is working…"

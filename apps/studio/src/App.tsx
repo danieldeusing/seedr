@@ -95,7 +95,7 @@ export function App() {
         </Modal>
       )}
       {dialog === "settings" && (
-        <Modal title="settings — coding agents" onClose={close} size="xl">
+        <Modal title="settings" onClose={close} size="full">
           <SettingsPanel />
         </Modal>
       )}

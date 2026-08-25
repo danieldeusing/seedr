@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
 import { AppHeader } from "./AppHeader";
+import { Modal } from "./Modal";
 import { ExternalLinkDialog } from "./ExternalLinkDialog";
 import { safeExternalUrl, useExternalLink } from "./externalUrl";
 import { ThemeMenu } from "./ThemeMenu";
@@ -84,5 +85,35 @@ describe("AppHeader", () => {
     render(<AppHeader />);
     expect(screen.getByText("seedr-studio")).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
+  });
+});
+
+describe("Modal", () => {
+  test("every size stops at the viewport, so its own scroll area is the one that moves", () => {
+    for (const size of ["lg", "xl", "full"] as const) {
+      const { unmount } = render(
+        <Modal title="settings" size={size} onClose={() => {}}>
+          <p>tall</p>
+        </Modal>
+      );
+      const panel = screen.getByRole("dialog").querySelector("div.relative");
+      expect(panel?.className).toMatch(/max-h-\[90vh\]|h-\[90vh\]/);
+      unmount();
+    }
+  });
+
+  test("Escape and the backdrop both dismiss", async () => {
+    const onClose = vi.fn();
+    render(
+      <Modal title="settings" onClose={onClose}>
+        <p>body</p>
+      </Modal>
+    );
+
+    await userEvent.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(screen.getByRole("dialog").querySelector("div.absolute")!);
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 });

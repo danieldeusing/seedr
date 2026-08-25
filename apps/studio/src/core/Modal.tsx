@@ -10,9 +10,12 @@ interface ModalProps {
   children: ReactNode;
 }
 
+// Every size stops at the viewport: a panel taller than the screen is centred
+// past both edges, and its own scroll area never engages because the panel grew
+// with the content instead of holding it.
 const SIZE_CLASSES: Record<NonNullable<ModalProps["size"]>, string> = {
-  lg: "max-w-2xl w-full mx-4",
-  xl: "max-w-4xl w-full mx-4",
+  lg: "max-w-2xl w-full mx-4 max-h-[90vh]",
+  xl: "max-w-4xl w-full mx-4 max-h-[90vh]",
   full: "w-[80vw] max-w-[1440px] h-[90vh]",
 };
 

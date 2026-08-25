@@ -1,8 +1,10 @@
 import { runProcess, type RunOutcome } from "./agent";
 
 /**
- * Git, read-only (plan §6.6: status and diff in v1, no commit or push). Runs the
- * system git through the bounded executor in the repo root.
+ * Git through the bounded executor, in the repo root, with the machine's own
+ * config and credentials. Studio reads the worktree itself — status, diff,
+ * branches — and hands publishing to a coding agent, which is the part that
+ * needs judgement (pull, conflicts, which branch merges into which).
  */
 export interface ChangedPath {
   /** The two porcelain columns, e.g. " M", "??", "A ". */
@@ -46,6 +48,32 @@ export async function gitSummary(run: typeof runProcess = runProcess): Promise<G
     git("git-status", ["status", "--porcelain=v1", "-z", "--untracked-files=all"]),
   ]);
   return { branch: check(branch, "git rev-parse").trim(), head: check(head, "git rev-parse").trim(), changes: parsePorcelain(check(status, "git status")) };
+}
+
+export interface BranchInfo {
+  name: string;
+  current: boolean;
+  /** The remote-tracking branch, when the local one has an upstream. */
+  upstream: string | null;
+}
+
+/** Every local branch, in git's own order, with the checked-out one marked. */
+export async function gitBranches(run: typeof runProcess = runProcess): Promise<BranchInfo[]> {
+  const outcome = await run({
+    taskId: "git-branches",
+    program: "git",
+    args: ["for-each-ref", "--format=%(HEAD)%09%(refname:short)%09%(upstream:short)", "refs/heads"],
+    cwd: "",
+    timeoutMs: 30_000,
+  });
+  return check(outcome, "git for-each-ref")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const [head = "", name = "", upstream = ""] = line.split("\t");
+      return { name, current: head.trim() === "*", upstream: upstream || null };
+    })
+    .filter((branch) => branch.name);
 }
 
 /** The unified diff of one path — tracked changes only; an untracked file is shown by reading it. */

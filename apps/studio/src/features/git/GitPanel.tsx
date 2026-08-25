@@ -3,13 +3,10 @@ import { RotateCw } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { fs } from "@/api/fs";
 import { gitDiff, gitSummary, type GitSummary } from "@/api/git";
+import { PublishPanel } from "./PublishPanel";
 
 type Summary = { kind: "loading" } | { kind: "ready"; summary: GitSummary } | { kind: "error"; message: string };
 
-/**
- * What a commit would contain, and nothing more: v1 ships status and diff only
- * (plan §6.6). Committing stays in the terminal the maintainer already has open.
- */
 /** Unified-diff ink: additions succeed, removals are destructive, hunk heads point. */
 function diffLineClass(line: string): string | undefined {
   if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("diff --git") || line.startsWith("index ")) return "text-muted-foreground";
@@ -32,10 +29,15 @@ function DiffText({ text }: { text: string }) {
   );
 }
 
+/**
+ * The worktree, and what to do with it: what a commit would contain, and — on
+ * the publish view — the branches it should end up on.
+ */
 export function GitPanel() {
   const [state, setState] = useState<Summary>({ kind: "loading" });
   const [selected, setSelected] = useState<string | null>(null);
   const [diff, setDiff] = useState<string | null>(null);
+  const [view, setView] = useState<"status" | "publish">("status");
 
   const refresh = useCallback(async () => {
     setState({ kind: "loading" });
@@ -72,6 +74,17 @@ export function GitPanel() {
           </span>
         )}
         <span className="flex-1" />
+        {(["status", "publish"] as const).map((name) => (
+          <button
+            key={name}
+            type="button"
+            aria-current={view === name ? "page" : undefined}
+            onClick={() => setView(name)}
+            className={`cursor-pointer px-2 py-0.5 transition-colors ${view === name ? "bg-violet-500/20 text-neutral-200" : "text-neutral-400 hover:bg-neutral-960/50 hover:text-neutral-200"}`}
+          >
+            {name}
+          </button>
+        ))}
         <IconButton icon={RotateCw} ariaLabel="refresh" tip="Re-read the worktree" onClick={() => void refresh()} />
       </header>
       {state.kind === "loading" && <p className="p-6 text-muted-foreground">loading…</p>}
@@ -80,7 +93,8 @@ export function GitPanel() {
           {state.message}
         </p>
       )}
-      {state.kind === "ready" && (
+      {state.kind === "ready" && view === "publish" && <PublishPanel summary={state.summary} />}
+      {state.kind === "ready" && view === "status" && (
         <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
           <ul className="overflow-y-auto border-r border-border p-4">
             {state.summary.changes.length === 0 && <li className="text-muted-foreground">worktree clean — nothing to commit</li>}
@@ -103,7 +117,7 @@ export function GitPanel() {
           </pre>
         </div>
       )}
-      <footer className="border-t border-border px-6 py-2 text-muted-foreground">Commit and push from your terminal — pushing to the branch the CLI reads is live for every user at once.</footer>
+      <footer className="border-t border-border px-6 py-2 text-muted-foreground">Pushing to the branch the CLI reads is live for every user at once — check the diff before you publish.</footer>
     </section>
   );
 }

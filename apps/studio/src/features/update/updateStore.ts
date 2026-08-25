@@ -4,6 +4,7 @@ import { CANONICAL_AGENTS, canonicalAgents, parseOp, validateItem, type UpdateOp
 import { fs } from "@/api/fs";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
 import { draftWithClaude, probeClaude, type AdapterProbe } from "@/features/author/claudeAdapter";
+import { prePromptFor } from "@/features/settings/prePrompts";
 import { MAX_DIGEST_CHARS } from "@/features/author/metadataContract";
 import { loadFileTree, type StudioItem } from "@/features/explorer/registry";
 
@@ -14,6 +15,8 @@ import { loadFileTree, type StudioItem } from "@/features/explorer/registry";
  */
 export interface UpdateForm {
   name: string;
+  /** Context for the redraft; prefilled from settings → pre-prompts for this type. */
+  prompt: string;
   description: string;
   longDescription: string;
   compatibility: CodingAgent[];
@@ -44,6 +47,7 @@ export const updateRefusal = (item: StudioItem): string | null =>
 
 const formFor = (item: StudioItem): UpdateForm => ({
   name: item.item.name ?? "",
+  prompt: prePromptFor(item.type, "update"),
   description: item.item.description ?? "",
   longDescription: item.item.longDescription ?? "",
   // a stored `gemini` shows as antigravity; saving then writes the canonical id
@@ -131,7 +135,7 @@ export const useUpdate = create<UpdateState>((set, get) => ({
     set({ phase: "drafting", draftErrors: [] });
     try {
       const files = await readItemFiles(target.dir, await loadFileTree(fs, target.dir));
-      const result = await draftWithClaude({ type: target.type, slug: target.slug, name: form.name, compatibility: form.compatibility, files }, undefined, `update-draft-${target.slug}`);
+      const result = await draftWithClaude({ type: target.type, slug: target.slug, name: form.name, compatibility: form.compatibility, files, notes: form.prompt }, undefined, `update-draft-${target.slug}`);
       if (result.ok) set({ form: { ...get().form, description: result.draft.description, longDescription: result.draft.longDescription }, phase: "idle" });
       else set({ draftErrors: result.errors, phase: "idle" });
     } catch (error) {

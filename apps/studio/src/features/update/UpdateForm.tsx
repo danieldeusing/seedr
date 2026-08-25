@@ -84,7 +84,23 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       )}
 
       <div className="field-row mt-4">
-        <label className="lbl" htmlFor="update-name">
+        <label className="lbl" htmlFor="update-prompt" data-tip="Context for the redraft. Prefilled from settings → pre-prompts for this type; it is sent with the item's own files.">
+          prompt
+        </label>
+        <div className="field-val">
+          <textarea
+            id="update-prompt"
+            className={`${input} min-h-16`}
+            value={form.prompt}
+            onChange={(e) => setField("prompt", e.target.value)}
+            placeholder="what the agent should know when redrafting"
+            disabled={busy || !!refusal}
+          />
+        </div>
+      </div>
+
+      <div className="field-row">
+        <label className="lbl" htmlFor="update-name" data-tip="The display name, shown in the explorer and on the web.">
           name
         </label>
         <div className="field-val">
@@ -97,7 +113,9 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           checkboxes out of the value column and wrapped names mid-word. Same
           table-style row as every other field: label column, value column. */}
       <div className="field-row" role="group" aria-label="agents">
-        <span className="lbl">agents</span>
+        <span className="lbl" data-tip="The coding agents this capability supports. Installing it for an agent it does not list is refused.">
+          agents
+        </span>
         <div className="field-val">
           {CANONICAL_AGENTS.map((agent) => (
             <label key={agent} className="flex cursor-pointer items-center gap-1.5 text-neutral-300 whitespace-nowrap">
@@ -109,7 +127,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       <Problems errors={problemFor("compatibility")} />
 
       <div className="field-row">
-        <label className="lbl" htmlFor="update-scope">
+        <label className="lbl" htmlFor="update-scope" data-tip="Where the CLI installs it by default — the project, or the user's home.">
           scope
         </label>
         <div className="field-val">
@@ -125,7 +143,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       </div>
 
       <div className="field-row">
-        <label className="lbl" htmlFor="update-description">
+        <label className="lbl" htmlFor="update-description" data-tip="One sentence: what it does. Shown in every list.">
           description
         </label>
         <div className="field-val">
@@ -135,7 +153,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       <Problems errors={problemFor("description")} />
 
       <div className="field-row">
-        <label className="lbl" htmlFor="update-long">
+        <label className="lbl" htmlFor="update-long" data-tip="The TL;DR on the detail page — what is inside, how much, what makes it different. At least 30 words.">
           tl;dr
         </label>
         <div className="field-val">

@@ -200,6 +200,16 @@ export async function getItem(slug: string, type?: ComponentType): Promise<Regis
   return manifest.items.find((item) => item.slug === slug);
 }
 
+/**
+ * Every item with this slug. A slug is unique per type, not globally — the
+ * registry really does ship `skill-creator` as both a skill and a plugin — so a
+ * lookup without a type can be ambiguous and must not silently pick one.
+ */
+export async function getItemsBySlug(slug: string): Promise<RegistryItem[]> {
+  const manifest = await loadManifest();
+  return manifest.items.filter((item) => item.slug === slug);
+}
+
 export async function listItems(
   type?: ComponentType
 ): Promise<RegistryItem[]> {

@@ -2,7 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import type { CodingAgent, InstallScope, InstallMethod, RegistryItem } from "../types.js";
 import type { ComponentType } from "@seedr/shared";
-import { listItems, getItem, searchItems } from "../config/registry.js";
+import { listItems, getItem, getItemsBySlug, searchItems } from "../config/registry.js";
 import { isLegacyAgent } from "@seedr/registry-ops/pure";
 import { parseAgentsArgStrict } from "../utils/detection.js";
 import * as ui from "../utils/ui.js";
@@ -186,8 +186,27 @@ export function summarizeResults(results: InstallResult[]): { successful: Instal
 // ---------------------------------------------------------------------------
 
 async function resolveItemByName(itemName: string, type: ComponentType | undefined): Promise<RegistryItem | null | Cancelled> {
-  const item = await getItem(itemName, type);
-  if (item) return item;
+  if (type) {
+    const typed = await getItem(itemName, type);
+    if (typed) return typed;
+  } else {
+    // An exact slug can name items of several types (skill-creator is both a
+    // skill and a plugin). Taking the first match installed one of them with no
+    // sign the other existed.
+    const matches = await getItemsBySlug(itemName);
+    if (matches.length === 1) return matches[0]!;
+    if (matches.length > 1) {
+      const types = matches.map((match: RegistryItem) => match.type);
+      if (!ui.isInteractive()) {
+        ui.error(`"${itemName}" exists as ${types.join(" and ")}. Pass --type <${types.join("|")}> to choose.`);
+        return null;
+      }
+      ui.warn(`"${itemName}" exists as ${types.join(" and ")} — pass --type to skip this question.`);
+      const chosen = await ui.selectSkill(matches);
+      if (ui.prompts.isCancel(chosen)) return cancelPrompt();
+      return chosen as RegistryItem;
+    }
+  }
 
   const results = await searchItems(itemName);
   const filtered = type ? results.filter((r) => r.type === type) : results;

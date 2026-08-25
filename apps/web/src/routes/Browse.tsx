@@ -226,8 +226,8 @@ function BrowsePage({ componentType }: { componentType: ComponentType }) {
 export function Browse() {
   const { type } = useParams<{ type: string }>();
   useScrollRestoration();
-  const componentType = type ? pathToType(type) : undefined;
-  if (!componentType || !typeLabelPlural[componentType]) return <NotFound />;
+  const componentType = type ? pathToType(type) : null;
+  if (!componentType) return <NotFound />;
   // keyed so switching category resets every piece of page state
   return <BrowsePage key={componentType} componentType={componentType} />;
 }

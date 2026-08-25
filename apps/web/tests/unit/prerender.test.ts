@@ -120,3 +120,21 @@ describe("routes, sitemap and robots", () => {
     expect(renderRobots()).toBe(`User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`);
   });
 });
+
+describe("pathToType", () => {
+  it("resolves only the canonical plural segment, never a singular alias", async () => {
+    const { pathToType, typeToPath } = await import("../../src/lib/colors");
+
+    for (const [type, path] of Object.entries(typeToPath)) {
+      expect(pathToType(path)).toBe(type);
+    }
+    // `/skill/pdf` used to render a full page under a 404, with a "Not Found"
+    // breadcrumb and a canonical pointing at the alias.
+    for (const alias of ["skill", "hook", "agent", "plugin", "command", "mcp"]) {
+      expect(pathToType(alias)).toBeNull();
+    }
+    expect(pathToType("nonsense")).toBeNull();
+    // "settings" is legitimately its own plural
+    expect(pathToType("settings")).toBe("settings");
+  });
+});

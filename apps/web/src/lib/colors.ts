@@ -52,8 +52,20 @@ export const typeToPath: Record<ComponentType, string> = {
   mcp: "mcps",
 };
 
-export function pathToType(path: string): ComponentType {
-  return (path === "settings" ? "settings" : path.replace(/s$/, "")) as ComponentType;
+const typeByPath = new Map<string, ComponentType>(
+  Object.entries(typeToPath).map(([type, path]) => [path, type as ComponentType])
+);
+
+/**
+ * The type a URL segment names, or null when it names none.
+ *
+ * Stripping a trailing "s" was not injective — `/skill/pdf` and `/skills/pdf`
+ * both resolved, so six singular aliases rendered a complete page while Pages
+ * served 404, the breadcrumb read "Not Found", and the canonical pointed at
+ * the alias instead of the real URL.
+ */
+export function pathToType(path: string): ComponentType | null {
+  return typeByPath.get(path) ?? null;
 }
 
 // Type border colors for card indicators (using -500 to match configr)

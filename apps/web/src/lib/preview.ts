@@ -239,15 +239,43 @@ async function readCapped(response: Response, limit: number): Promise<Uint8Array
  * downloading is the largest one the file name allows (images may be bigger
  * than text); classifyPreview applies the exact per-kind limit afterwards.
  */
+/** A stalled fetch must not leave "Loading…" on screen forever. */
+export const PREVIEW_TIMEOUT_MS = 15_000;
+
 export async function loadPreview(
   path: string,
   url: string,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs: number = PREVIEW_TIMEOUT_MS
+): Promise<PreviewResult> {
+  // The whole read is bounded, not just the initial response: a host that
+  // answers and then trickles bytes would otherwise hang readCapped's loop.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetchAndClassify(path, url, fetchImpl, controller.signal, timeoutMs);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchAndClassify(
+  path: string,
+  url: string,
+  fetchImpl: typeof fetch,
+  signal: AbortSignal,
+  timeoutMs: number
 ): Promise<PreviewResult> {
   let response: Response;
   try {
-    response = await fetchImpl(url);
-  } catch {
+    response = await fetchImpl(url, { signal });
+  } catch (error) {
+    if (signal.aborted) {
+      return { kind: "error", message: `The file host did not respond within ${Math.round(timeoutMs / 1000)}s` };
+    }
+    // Keep the cause visible: a CSP block, a CORS rejection and an outage are
+    // otherwise indistinguishable to anyone with the console open.
+    console.error("preview fetch failed", url, error);
     return { kind: "error", message: "Could not reach the file host" };
   }
   if (!response.ok) {

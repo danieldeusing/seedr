@@ -256,3 +256,32 @@ describe("hasNulByte", () => {
     expect(hasNulByte(late)).toBe(true);
   });
 });
+
+describe("loadPreview timeout", () => {
+  it("gives up on a host that never responds, instead of loading forever", async () => {
+    // A fetch that only settles when aborted — the stalled-host case.
+    const stalling: typeof fetch = (_url, init) =>
+      new Promise((_resolve, reject) => {
+        const signal = (init as RequestInit | undefined)?.signal;
+        signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+      });
+
+    const result = await loadPreview("README.md", "https://example.test/README.md", stalling, 20);
+
+    expect(result.kind).toBe("error");
+    expect(result).toMatchObject({ message: expect.stringContaining("did not respond") });
+  });
+
+  it("passes the abort signal through to fetch", async () => {
+    let seenSignal: AbortSignal | undefined;
+    const spy: typeof fetch = async (_url, init) => {
+      seenSignal = (init as RequestInit | undefined)?.signal ?? undefined;
+      return new Response("# hi\n", { status: 200, headers: { "content-type": "text/markdown" } });
+    };
+
+    await loadPreview("README.md", "https://example.test/README.md", spy);
+
+    expect(seenSignal).toBeInstanceOf(AbortSignal);
+    expect(seenSignal?.aborted).toBe(false);
+  });
+});

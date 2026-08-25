@@ -12,7 +12,6 @@ export interface BreadcrumbSegment {
   onClick?: () => void;
 }
 
-const CONTENT_TYPES = ["skills", "plugins", "hooks", "agents", "mcps", "settings", "commands"];
 
 /*
  * Seedr's Back/Forward/history controls and the browser's buttons share ONE
@@ -90,8 +89,9 @@ function buildSegments(pathname: string, state: unknown, onNavigate: (path: stri
     { id: "home", label: "Home", icon: "home", color: "emerald", onClick: () => onNavigate("/") },
   ];
 
-  if (parts[0] && CONTENT_TYPES.includes(parts[0])) {
-    const componentType = pathToType(parts[0]);
+  const segmentType = parts[0] ? pathToType(parts[0]) : null;
+  if (segmentType) {
+    const componentType = segmentType;
     const fromType = (state as { from?: string } | null)?.from as ComponentType | undefined;
     const breadcrumbType = fromType && fromType !== componentType ? fromType : componentType;
 

@@ -18,7 +18,7 @@ import { getItem, getLongDescription, getFileTree } from "@/lib/registry";
 import { useTerminalSession } from "@/lib/useTerminalSession";
 import { loadPreview, type PreviewResult } from "@/lib/preview";
 import { resolveFileSource } from "@/lib/fileSource";
-import type { ComponentType, FileTreeNode, ScopeType, SourceType } from "@/lib/types";
+import type { FileTreeNode, ScopeType, SourceType } from "@/lib/types";
 
 // The markdown toolchain is only needed for the tl;dr on this page.
 const MarkdownText = lazy(() => import("@/components/detail/MarkdownText").then((m) => ({ default: m.MarkdownText })));
@@ -88,10 +88,10 @@ function buildDetailLabels(item: NonNullable<ReturnType<typeof getItem>>): Detai
 
 export function Detail() {
   const { type, slug } = useParams<{ type: string; slug: string }>();
-  const componentType = (type ? pathToType(type) : undefined) as ComponentType;
+  const componentType = type ? pathToType(type) : null;
   useScrollRestoration();
 
-  const item = slug ? getItem(slug, componentType) : undefined;
+  const item = slug && componentType ? getItem(slug, componentType) : undefined;
   usePageMeta(item ? itemMeta(item) : notFoundMeta());
 
   const [longDescription, setLongDescription] = useState<string>();
@@ -108,8 +108,8 @@ export function Detail() {
     setLongDescription(undefined);
     setFileTree(undefined);
     Promise.allSettled([
-      getLongDescription(slug, componentType).then(d => { if (!cancelled) setLongDescription(d); }),
-      getFileTree(slug, componentType).then(t => { if (!cancelled) setFileTree(t); }),
+      getLongDescription(slug, componentType ?? undefined).then(d => { if (!cancelled) setLongDescription(d); }),
+      getFileTree(slug, componentType ?? undefined).then(t => { if (!cancelled) setFileTree(t); }),
     ]).then((results) => {
       if (cancelled) return;
       // These are lazily-fetched per-item chunks: across a deploy, or on a CDN

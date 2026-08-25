@@ -53,10 +53,14 @@ const MCP: RegistryItem = {
 
 const MCP_MULTI: RegistryItem = { ...MCP, slug: "multi", compatibility: ["claude", "codex", "copilot"] };
 const HOOK: RegistryItem = { slug: "lint-hook", name: "Lint", type: "hook", description: "lint", compatibility: ["claude"], sourceType: "toolr" };
-const ITEMS = [SKILL, MCP, MCP_MULTI, HOOK];
+// The registry really ships these: `skill-creator` is both a skill and a plugin.
+const DUAL_SKILL: RegistryItem = { slug: "skill-creator", name: "Skill Creator", type: "skill", description: "Create skills", compatibility: ["claude"], sourceType: "toolr" };
+const DUAL_PLUGIN: RegistryItem = { slug: "skill-creator", name: "Skill Creator", type: "plugin", description: "Create skills", compatibility: ["claude"], sourceType: "community" };
+const ITEMS = [SKILL, MCP, MCP_MULTI, HOOK, DUAL_SKILL, DUAL_PLUGIN];
 
 vi.mock("../config/registry.js", () => ({
   getItem: vi.fn(async (slug: string, type?: string) => ITEMS.find((item) => item.slug === slug && (!type || item.type === type))),
+  getItemsBySlug: vi.fn(async (slug: string) => ITEMS.filter((item) => item.slug === slug)),
   searchItems: vi.fn(async (query: string) => ITEMS.filter((item) => item.slug.includes(query) || item.name.toLowerCase().includes(query.toLowerCase()))),
   listItems: vi.fn(async (type?: string) => ITEMS.filter((item) => !type || item.type === type)),
   getItemSourcePath: vi.fn((item: RegistryItem) => (item.sourceType === "toolr" ? `/registry/${item.type}s/${item.slug}` : null)),
@@ -74,6 +78,45 @@ const BASE_OPTIONS = { yes: true, scope: "project", method: "copy" };
 function snapshotVolume(): string {
   return JSON.stringify(vol.toJSON());
 }
+
+describe("resolveItemByName — same slug, two types", () => {
+  const realIsTTY = process.stdin.isTTY;
+  beforeEach(() => {
+    vol.reset();
+    vi.clearAllMocks();
+  });
+  afterEach(() => {
+    process.stdin.isTTY = realIsTTY;
+  });
+
+  const errorsFrom = async () => {
+    const clack = await import("@clack/prompts");
+    return vi.mocked(clack.log.error).mock.calls.map((call) => String(call[0])).join("\n");
+  };
+
+  it("refuses to guess and names both types when it cannot ask", async () => {
+    process.stdin.isTTY = false;
+    const { runAdd } = await import("./add.js");
+
+    // Taking the first match installed the skill and never mentioned that a
+    // plugin of the same name existed.
+    const code = await runAdd("skill-creator", { ...BASE_OPTIONS, agents: "claude" }, PROJECT);
+
+    expect(code).toBe(1);
+    expect(await errorsFrom()).toMatch(/"skill-creator" exists as skill and plugin\. Pass --type/);
+    expect(snapshotVolume()).toBe("{}");
+  });
+
+  it("resolves without asking once --type disambiguates", async () => {
+    process.stdin.isTTY = false;
+    const { runAdd } = await import("./add.js");
+
+    await runAdd("skill-creator", { ...BASE_OPTIONS, type: "plugin", agents: "claude" }, PROJECT);
+
+    // Whatever happens downstream, the ambiguity is gone: --type picked a side.
+    expect(await errorsFrom()).not.toMatch(/exists as .* Pass --type/);
+  });
+});
 
 describe("resolveRequestedAgents", () => {
   it("chooses nothing when --agents is absent so the caller can prompt", async () => {

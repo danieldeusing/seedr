@@ -10,6 +10,10 @@ import { CODING_AGENTS } from "../config/agents.js";
  * installed no files. Refuse loudly instead, naming the flag that answers the
  * question non-interactively.
  */
+export function isInteractive(): boolean {
+  return Boolean(process.stdin.isTTY);
+}
+
 export function assertInteractive(question: string, flag: string): void {
   if (process.stdin.isTTY) return;
   throw new Error(`${question} requires a terminal — pass ${flag} to run non-interactively`);

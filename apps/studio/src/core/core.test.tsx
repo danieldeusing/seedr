@@ -133,7 +133,7 @@ describe("RepoBadge", () => {
   });
 
   test("says nothing while Studio is on the default checkout", () => {
-    useStudio.setState({ repo: { root: "/Users/me/seedr", name: "seedr", isDefault: true } });
+    useStudio.setState({ repo: { root: "/Users/me/seedr", name: "seedr", isDefault: true, hasOps: true } });
     render(<AppHeader />);
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
@@ -141,8 +141,8 @@ describe("RepoBadge", () => {
 
   test("anywhere else it warns, names the folder and its remote, and offers to re-baseline", async () => {
     onCommand("read_text", () => CONFIG);
-    onCommand("set_default_repo", () => ({ root: FORK, name: "seedr-fork", isDefault: true }));
-    useStudio.setState({ repo: { root: FORK, name: "seedr-fork", isDefault: false } });
+    onCommand("set_default_repo", () => ({ root: FORK, name: "seedr-fork", isDefault: true, hasOps: true }));
+    useStudio.setState({ repo: { root: FORK, name: "seedr-fork", isDefault: false, hasOps: true } });
 
     render(<AppHeader />);
 

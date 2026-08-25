@@ -7,6 +7,7 @@ import { mockFs, onCommand } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
 import { Detail } from "@/features/explorer/Detail";
 import { loadRegistry, type StudioItem } from "@/features/explorer/registry";
+import { useStudio } from "@/features/explorer/store";
 import { TestPanel } from "./TestPanel";
 import { judge, testRefusal, useTest } from "./testStore";
 
@@ -44,6 +45,9 @@ const bothRoots = { ".claude/skills/notes/SKILL.md": SKILL_MD, ".claude/skills/n
 
 beforeEach(() => {
   useTest.getState().reset();
+  // Detail's actions are gated on the open checkout having the operations CLI,
+  // which is what makes them able to change anything.
+  useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
 });
 
 describe("judge", () => {

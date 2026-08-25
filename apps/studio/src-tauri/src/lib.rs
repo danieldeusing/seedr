@@ -43,6 +43,9 @@ struct RepoInfo {
     /// case: the title bar warns, because changing the wrong registry by
     /// accident is the mistake this app can make.
     is_default: bool,
+    /// Whether `scripts/registry-op.ts` is here. Without it the registry can be
+    /// read but not changed, and the actions that would change it say so.
+    has_ops: bool,
 }
 
 #[derive(Serialize)]
@@ -86,14 +89,16 @@ fn repo_info(path: &Path) -> Result<RepoInfo, String> {
     if !path.join("registry").is_dir() {
         return Err("Not a seedr registry: no registry/ directory".to_string());
     }
-    if !path.join("scripts").join("registry-op.ts").is_file() {
-        return Err("Not a seedr checkout: scripts/registry-op.ts is missing".to_string());
-    }
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.display().to_string());
-    Ok(RepoInfo { root: path.display().to_string(), name, is_default: is_default_repo(path) })
+    // A registry without the operations CLI is still worth opening — it can be
+    // read, searched and previewed. What it cannot do is change anything, since
+    // every mutation goes through that script as a transaction, so this is a
+    // capability the webview reports rather than a reason to refuse the folder.
+    let has_ops = path.join("scripts").join("registry-op.ts").is_file();
+    Ok(RepoInfo { root: path.display().to_string(), name, is_default: is_default_repo(path), has_ops })
 }
 
 
@@ -664,11 +669,17 @@ mod tests {
     }
 
     #[test]
-    fn repo_info_requires_a_registry_and_the_ops_cli() {
+    fn repo_info_requires_a_registry_and_reports_whether_it_can_be_changed() {
         let root = temp_root("repo-info");
-        assert_eq!(repo_info(&root).expect("valid").name, root.file_name().expect("name").to_string_lossy());
+        let full = repo_info(&root).expect("valid");
+        assert_eq!(full.name, root.file_name().expect("name").to_string_lossy());
+        assert!(full.has_ops);
+
+        // A registry-only checkout opens; it just cannot be changed from here.
         fs::remove_file(root.join("scripts").join("registry-op.ts")).expect("remove");
-        assert!(repo_info(&root).unwrap_err().contains("registry-op.ts"));
+        assert!(!repo_info(&root).expect("still a registry").has_ops);
+
+        // Without a registry at all there is nothing to show.
         assert!(repo_info(&root.join("registry").join("skills")).unwrap_err().contains("no registry/"));
     }
 }

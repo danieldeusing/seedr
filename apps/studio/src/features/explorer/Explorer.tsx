@@ -8,6 +8,7 @@ import { CodingAgentIcon } from "@/core/CodingAgentIcon";
 import { useRowStyle, type RowStyle } from "@/core/rowStyle";
 import { ThemeMenu } from "@/core/ThemeMenu";
 import { countByType, type StudioItem } from "./registry";
+import { NO_OPS, useHasOps } from "./repoCapability";
 import type { Selection } from "./store";
 
 interface ExplorerProps {
@@ -91,6 +92,7 @@ const matches = (item: StudioItem, query: string): boolean => {
  */
 export function Explorer({ items, problems, selected, onSelect, onAddCapability, onGitStatus, onSettings, onSwitchRepo }: ExplorerProps) {
   const counts = countByType(items);
+  const hasOps = useHasOps();
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<ComponentType>>(new Set());
   const rowStyle = useRowStyle((s) => s.style);
@@ -121,7 +123,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
           Add the first one with <code className="text-primary">/add-seedr</code> in Claude Code, or right here:
         </p>
         <span className="mt-3 inline-flex items-center gap-2">
-          <IconButton icon={Plus} ariaLabel="add capability" tip="Add a capability to the registry" accentColor="violet" onClick={onAddCapability} />
+          <IconButton icon={Plus} ariaLabel="add capability" tip={hasOps ? "Add a capability to the registry" : NO_OPS} accentColor="violet" onClick={onAddCapability} disabled={!hasOps} />
           <span className="text-sm text-neutral-500">add capability</span>
         </span>
       </div>
@@ -134,7 +136,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
       <div className="flex h-[36px] shrink-0 items-center gap-1.5 border-b border-neutral-700 bg-neutral-800/40 px-3">
         <span className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">Explorer</span>
         <span className="flex-1" />
-        <IconButton icon={Plus} ariaLabel="add capability" tip="Add a capability to the registry" accentColor="violet" size="xs" onClick={onAddCapability} />
+        <IconButton icon={Plus} ariaLabel="add capability" tip={hasOps ? "Add a capability to the registry" : NO_OPS} accentColor="violet" size="xs" onClick={onAddCapability} disabled={!hasOps} />
         <IconButton
           icon={allCollapsed ? ChevronsUpDown : ChevronsDownUp}
           ariaLabel={allCollapsed ? "expand all groups" : "collapse all groups"}

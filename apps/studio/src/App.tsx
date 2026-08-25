@@ -28,6 +28,7 @@ export function App() {
   const problems = useStudio((s) => s.problems);
   const error = useStudio((s) => s.error);
   const repoError = useStudio((s) => s.repoError);
+  const clearRepoError = useStudio((s) => s.clearRepoError);
   const selected = useStudio((s) => s.selected);
   const current = useStudio(selectedItem);
   const init = useStudio((s) => s.init);
@@ -60,9 +61,9 @@ export function App() {
       <AppHeader />
       <div className="grid min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
-          {(repoError ?? error) && (
+          {error && (
             <p className="m-4 text-xs text-destructive" role="alert">
-              {repoError ?? error}
+              {error}
             </p>
           )}
           <Explorer
@@ -108,6 +109,24 @@ export function App() {
       {dialog === "test" && current && (
         <Modal title={`test install ${itemKey}`} onClose={close} size="full">
           <TestPanel key={itemKey} item={current} />
+        </Modal>
+      )}
+      {/* Picking a folder is a deliberate act, so its refusal gets a dialog. A
+          line in the sidebar reads as nothing having happened, which is exactly
+          how a rejected checkout was reported before. */}
+      {repoError && (
+        <Modal title="that folder cannot be opened" onClose={clearRepoError} size="lg">
+          <section className="p-6 text-xs">
+            <p className="text-destructive" role="alert">
+              {repoError}
+            </p>
+            <p className="mt-3 text-muted-foreground">
+              Studio opens a folder that holds a <code className="text-primary">registry/</code> directory. It is still open on {repo.name}.
+            </p>
+            <button type="button" onClick={clearRepoError} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
+              back to {repo.name}
+            </button>
+          </section>
         </Modal>
       )}
       <ExternalLinkDialog />

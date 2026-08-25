@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { MessageSquareText, Terminal, type LucideIcon } from "lucide-react";
+import { MessageSquareText, Terminal, UserRound, type LucideIcon } from "lucide-react";
+import { AuthorPage } from "./AuthorPage";
 import { CodingAgentsPage } from "./CodingAgentsPage";
 import { PrePromptsPage } from "./PrePromptsPage";
 
-type Page = "agents" | "pre-prompts";
+type Page = "agents" | "pre-prompts" | "author";
 
 const PAGES: { id: Page; label: string; icon: LucideIcon; tip: string }[] = [
   { id: "agents", label: "coding agents", icon: Terminal, tip: "The agent CLIs Studio can run, and where they are" },
   { id: "pre-prompts", label: "pre-prompts", icon: MessageSquareText, tip: "Standing context per capability type, for adds and edits" },
+  { id: "author", label: "author", icon: UserRound, tip: "Who the items you add are credited to" },
 ];
 
 /** Settings, configr's shape: a nav on the left, one page on the right. */
@@ -33,7 +35,11 @@ export function SettingsPanel() {
           </button>
         ))}
       </nav>
-      <div className="min-w-0 flex-1 overflow-y-auto p-4">{page === "agents" ? <CodingAgentsPage /> : <PrePromptsPage />}</div>
+      <div className="min-w-0 flex-1 overflow-y-auto p-4">
+        {page === "agents" && <CodingAgentsPage />}
+        {page === "pre-prompts" && <PrePromptsPage />}
+        {page === "author" && <AuthorPage />}
+      </div>
     </section>
   );
 }

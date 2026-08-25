@@ -3,6 +3,7 @@ import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, CANONICAL_AGENTS, parseOp, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess, onProcessOutput, pickPath } from "@/api/agent";
 import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
+import { configuredAuthor } from "@/features/settings/authorSettings";
 import { prePromptFor } from "@/features/settings/prePrompts";
 import { repoIdentity, runRegistryOp } from "@/api/registryCli";
 import { readSourceFiles } from "@/api/source";
@@ -46,6 +47,8 @@ export type AddResult =
 interface AuthorState {
   form: AddLocalForm;
   probe: AdapterProbe | null;
+  /** Settings' author, or what the checkout's remote says — the prefill to restore. */
+  defaultAuthor: { name: string; url: string };
   phase: Phase;
   draftErrors: string[];
   /** Capped live output of the running agent / operation. */
@@ -54,6 +57,7 @@ interface AuthorState {
   error: string | null;
   setField<K extends keyof AddLocalForm>(field: K, value: AddLocalForm[K]): void;
   setType(type: ComponentType): void;
+  setSourceKind(kind: SourceKind): void;
   toggleAgent(agent: CodingAgent): void;
   chooseSource(): Promise<void>;
   /** Probe Claude and prefill author/externalUrl from the repo's identity. */
@@ -225,6 +229,7 @@ export function formProblems(form: AddLocalForm): ValidationError[] {
 export const useAuthor = create<AuthorState>((set, get) => ({
   form: emptyForm(),
   probe: null,
+  defaultAuthor: { name: "", url: "" },
   phase: "idle",
   draftErrors: [],
   log: [],
@@ -242,6 +247,14 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     // An untouched prompt follows the type, so the pre-prompt configured for a
     // hook is not the one a skill is added with.
     set({ form: { ...form, type, prompt: form.promptTouched ? form.prompt : prePromptFor(type, "add") } });
+  },
+
+  setSourceKind(kind) {
+    const { form } = get();
+    // A repository carries its own author, so the fields start empty and say so
+    // — still editable, for the case where the repo is wrong about it.
+    const author = kind === "repo" ? { authorName: "", authorUrl: "" } : { authorName: form.authorName || get().defaultAuthor.name, authorUrl: form.authorUrl || get().defaultAuthor.url };
+    set({ form: { ...form, sourceKind: kind, ...author } });
   },
 
   toggleAgent(agent) {
@@ -262,14 +275,22 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     set({ phase: "probing", error: null });
     try {
       const [probe, identity] = await Promise.all([probeClaude(), repoIdentity().catch(() => null)]);
+      // Settings wins over the checkout: a fork's remote is not who authored this.
+      const configured = configuredAuthor();
+      const defaultAuthor = {
+        name: configured.name || identity?.authorName || "",
+        url: configured.url || (identity?.owner ? `https://github.com/${identity.owner}` : ""),
+      };
       const { form } = get();
+      const derived = form.sourceKind === "repo";
       set({
         probe,
+        defaultAuthor,
         phase: "idle",
         form: {
           ...form,
-          authorName: form.authorName || identity?.authorName || "",
-          authorUrl: form.authorUrl || (identity?.owner ? `https://github.com/${identity.owner}` : ""),
+          authorName: derived ? form.authorName : form.authorName || defaultAuthor.name,
+          authorUrl: derived ? form.authorUrl : form.authorUrl || defaultAuthor.url,
         },
       });
     } catch (error) {

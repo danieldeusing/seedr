@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CanonicalCodingAgent, ScopeType } from "@seedr/shared";
 import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import type { StudioItem } from "@/features/explorer/registry";
-import { Check, Sparkles, X } from "lucide-react";
+import { Ban, Check, X } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
@@ -23,8 +23,10 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const draftErrors = useUpdate((s) => s.draftErrors);
   const error = useUpdate((s) => s.error);
   const outcome = useUpdate((s) => s.outcome);
+  const jobReport = useUpdate((s) => s.jobReport);
+  const log = useUpdate((s) => s.log);
   const target = useUpdate((s) => s.target);
-  const { start, setField, toggleAgent, redraft, apply, reset } = useUpdate.getState();
+  const { start, setField, toggleAgent, apply, cancel, reset } = useUpdate.getState();
 
   useEffect(() => {
     // The watcher rebuilds every StudioItem object on any registry event; the form
@@ -40,25 +42,39 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const refusal = updateRefusal(item);
   const problems = useMemo(() => formProblems(item, form), [item, form]);
   const changed = useMemo(() => Object.keys(toPatch(item, form)), [item, form]);
-  const busy = phase === "drafting" || phase === "applying";
+  const busy = phase === "applying" || phase === "running";
+  // A prompt turns this from a metadata patch into a change to the capability.
+  const asked = form.prompt.trim().length > 0;
   // the design system styles text inputs, selects and textareas itself
   const input = "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
   const formRef = useRef<HTMLFormElement>(null);
   const [agent, setAgent] = useState<CanonicalCodingAgent>("claude");
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
 
-  if (phase === "done" && outcome) {
+  if (phase === "done" && (outcome || jobReport !== null)) {
     return (
       <section className="p-6 text-xs" aria-live="polite">
-        <p className="prompt">registry-op run --op update</p>
-        <p className="mt-4 text-primary">
-          Updated {outcome.type}/{outcome.slug} at {outcome.headBefore.slice(0, 7)}.
-        </p>
-        <ul className="mt-2 text-muted-foreground">
-          {outcome.changedPaths.map((path) => (
-            <li key={path}>{path}</li>
-          ))}
-        </ul>
+        <p className="prompt">{outcome ? "registry-op run --op update" : "agent job"}</p>
+        {outcome ? (
+          <>
+            <p className="mt-4 text-primary">
+              Updated {outcome.type}/{outcome.slug} at {outcome.headBefore.slice(0, 7)}.
+            </p>
+            <ul className="mt-2 text-muted-foreground">
+              {outcome.changedPaths.map((path) => (
+                <li key={path}>{path}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            <p className="mt-4 text-primary">
+              The agent finished with {item.type}/{item.slug}.
+            </p>
+            <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap text-muted-foreground">{jobReport}</pre>
+            <p className="mt-4 text-muted-foreground">Review it with git status before committing.</p>
+          </>
+        )}
         <button type="button" onClick={close} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
           back to the item
         </button>
@@ -99,6 +115,18 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           />
         </div>
       </div>
+
+      {asked && (
+        <div className="field-row">
+          <span className="lbl" data-tip="Off when you have written the description yourself and want it kept exactly as it is.">metadata</span>
+          <div className="field-val">
+            <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-neutral-300">
+              <input type="checkbox" className="accent-violet-500" checked={form.refreshMeta} onChange={() => setField("refreshMeta", !form.refreshMeta)} disabled={busy || !!refusal} /> let the agent rewrite the
+              description and tl;dr to match
+            </label>
+          </div>
+        </div>
+      )}
 
       <div className="field-row">
         <label className="lbl" htmlFor="update-name" data-tip="The display name, shown in the explorer and on the web.">
@@ -165,21 +193,42 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
 
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
-          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="drafting agent" disabled={busy || !!refusal} />
+          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="update" ariaLabel="updating agent" disabled={busy || !!refusal || !asked} />
           <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
-          {phase === "drafting" ? "drafting…" : phase === "applying" ? "applying…" : changed.length === 0 ? "nothing changed yet" : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
+            {phase === "running"
+              ? "the agent is working…"
+              : phase === "applying"
+                ? "applying…"
+                : asked
+                  ? `the agent changes the ${item.type}${changed.length > 0 ? `, and ${changed.length} field${changed.length === 1 ? "" : "s"} with it` : ""}`
+                  : changed.length === 0
+                    ? "nothing changed yet"
+                    : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <IconButton icon={Sparkles} ariaLabel="redraft descriptions with Claude" tip="redraft descriptions with Claude" onClick={() => void redraft()} disabled={busy || !!refusal || !probe?.available} spin={phase === "drafting"} />
+          {phase === "running" && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
           <IconButton icon={X} ariaLabel="cancel" tip="cancel" onClick={close} />
-          <IconButton icon={Check} ariaLabel={`apply ${changed.length} change${changed.length === 1 ? "" : "s"}`} tip="apply the changes" accentColor="violet" onClick={() => formRef.current?.requestSubmit()} disabled={busy || !!refusal || changed.length === 0 || problems.length > 0} spin={phase === "applying"} />
+          <IconButton
+            icon={Check}
+            ariaLabel={asked ? "hand it to the agent" : `apply ${changed.length} change${changed.length === 1 ? "" : "s"}`}
+            tip={asked ? "hand it to the agent" : "apply the changes"}
+            accentColor="violet"
+            onClick={() => formRef.current?.requestSubmit()}
+            disabled={busy || !!refusal || (!asked && changed.length === 0) || problems.length > 0 || (asked && !probe?.available)}
+            spin={busy}
+          />
         </div>
       </div>
       {draftErrors.length > 0 && (
         <p className="mt-3 text-destructive" role="alert">
           Draft rejected: {draftErrors.join("; ")}
         </p>
+      )}
+      {log.length > 0 && (
+        <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap border border-border bg-muted p-2" aria-live="polite" aria-label="agent output">
+          {log.join("\n")}
+        </pre>
       )}
       {error && !refusal && (
         <p className="mt-3 text-destructive" role="alert">

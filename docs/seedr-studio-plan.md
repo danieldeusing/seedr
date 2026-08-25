@@ -6,7 +6,7 @@
 > (`antigravity` canonical, `gemini` a resolved alias) across CLI, web, the Pages function,
 > the sync and Studio. **Implementation notes — where reality differed from this document:**
 >
-> - §2.6: configr lives at `~/Work/twiced/toolr/configr`, not under `apps/`.
+> - §2.6: configr lives in a sibling workspace, not under `apps/`.
 > - §6.2: the installed agents on the implementation machine were Claude Code 2.1.226, `agy`
 >   1.1.11, Copilot 1.0.78, codex 0.147.0, opencode 1.18.16 — every row is version-pinned,
 >   re-probe before P6 work. Claude Code 2.1.x has `--json-schema`; the adapter uses it with
@@ -100,7 +100,7 @@ bounded, tool-free, structured-output contract. §3.1 explains why.
 
 seedr is a registry of AI-coding-agent capabilities (skills, hooks, agents, plugins, MCP
 servers, settings, commands). Authoring an item today means opening Claude Code in the
-repo, typing `/add-toolr <path>`, answering interactive questions, and remembering to
+repo, typing `/add-seedr <path>`, answering interactive questions, and remembering to
 commit. There is no single place to see the registry, extend it, revise it, test it and
 ship it.
 
@@ -175,7 +175,7 @@ ESLint is a **single flat config at the repo root**. Its React block is scoped t
 ```
 registry/
 ├── manifest.json          # generated index (version + per-type {file, count})
-├── skills/     manifest.json + <slug>/item.json (+ content files for toolr items)
+├── skills/     manifest.json + <slug>/item.json (+ content files for first-party items)
 ├── plugins/    manifest.json + <slug>/item.json
 ├── hooks/      manifest.json + <slug>/item.json + <slug>.sh
 ├── mcp/        manifest.json + <slug>/item.json     ← NOT "mcps"
@@ -194,7 +194,7 @@ Canonical type: `RegistryItem` in `packages/shared/src/index.ts`.
 ```ts
 type CodingAgent   = "claude" | "copilot" | "gemini" | "codex" | "opencode";  // §5 changes this
 type ComponentType = "skill" | "hook" | "agent" | "plugin" | "command" | "settings" | "mcp";
-type SourceType    = "official" | "toolr" | "community";
+type SourceType    = "official" | "seedr" | "community";
 type ScopeType     = "user" | "project" | "local";
 type PluginType    = "package" | "wrapper" | "integration";
 ```
@@ -220,7 +220,7 @@ by compile, Studio and the commit gate.
 
 `pnpm compile` assembles `item.json` files into generated manifests, stripping
 `longDescription` everywhere and `contents` from plugin manifests, and adding
-`contentHash` for toolr items. **Never hand-edit a `manifest.json`.**
+`contentHash` for first-party items. **Never hand-edit a `manifest.json`.**
 
 > ⚠️ **The published CLI reads the registry from `main`, not from a release.**
 > `packages/cli/src/config/registry.ts:51` hardcodes
@@ -235,12 +235,12 @@ In `.claude/skills/` (Workstream A moves them). **They are the specification for
 operations must do — they are not the execution mechanism.** Known defects, all verified:
 
 - **Every add/remove skill blocks on an interactive question**, with direct
-  `AskUserQuestion` instructions well past any preamble (e.g. `add-toolr/SKILL.md:43`,
+  `AskUserQuestion` instructions well past any preamble (e.g. `add-seedr/SKILL.md:43`,
   `add-community/SKILL.md:148`).
-- **`registry/<type>s` is used throughout** (`add-toolr:227,239,303`,
+- **`registry/<type>s` is used throughout** (`add-seedr:227,239,303`,
   `add-community:269,275,278`, `remove-community:49`) — wrong for `mcp` and `settings`,
   and now live because an MCP item exists.
-- **Upstream identity is hardcoded**: `add-toolr/SKILL.md:238-239` writes
+- **Upstream identity is hardcoded**: `add-seedr/SKILL.md:238-239` writes
   `"author": {"name": "Daniel Deusing", …}` and an `externalUrl` pointing at
   `danieldeusing/seedr/tree/main` into *every* generated item. A fork produces items
   attributed to the upstream author.
@@ -301,7 +301,7 @@ Treat its availability and the latest published version as unverified until chec
 
 - **configr** — `/Users/daniel/Work/danieldeusing/apps/configr`. Tauri v2 + React 19 +
   Vite + zustand + Monaco. The UI/architecture model.
-- **toolr-app** — `/Users/daniel/Work/twiced/toolr/toolr-app`. Contains agent-execution
+- **configr's companion app** — a sibling checkout of configr's. Contains agent-execution
   machinery whose *lessons* are valuable; see §11 for why we copy far less of it than
   revision 1 assumed.
 
@@ -322,7 +322,7 @@ suppress the skill's interactive questions. The review rejected this, and verifi
 confirmed the rejection:
 
 - **The suppression contract is unenforceable.** The skills issue direct
-  `AskUserQuestion` instructions deep in their body (`add-toolr:43`,
+  `AskUserQuestion` instructions deep in their body (`add-seedr:43`,
   `add-community:148`). A preamble asking the model not to ask is a *request*, not a
   guarantee. With `stdin` closed, a violating run can stall, half-apply changes, or exit
   0 having done nothing.
@@ -334,7 +334,7 @@ confirmed the rejection:
   (dangerous!)"*. Uniform safe auto-execution across five agents does not exist.
 - **Revision 1's invocation table was wrong.** `codex exec --full-auto` does not exist in
   **codex-cli 0.149.0** (it was carried over from an older version documented in
-  toolr-app). Copilot's `--no-ask-user` — the exact feature needed — was missed entirely.
+  configr's companion app). Copilot's `--no-ask-user` — the exact feature needed — was missed entirely.
 - **The skills cannot run on Windows** (`cp -r`, `rm -rf`, `base64 -d`, `find | sort`),
   and neither can the compile hook (`jq`) or the commit gate (`bash` + `python3`).
 - **There was no transaction boundary.** A cancelled or timed-out run could leave copied
@@ -591,7 +591,7 @@ Antigravity and OpenCode stop mattering — **we do not grant them tools at all*
 **Ship P3 with Claude certified only.** Add adapters one at a time, each gated on passing
 the same recorded-fixture conformance suite. Do not advertise five agents until five pass.
 
-Execution requirements (lessons from toolr-app, not its code):
+Execution requirements (lessons from configr's companion app, not its code):
 
 - One id: `taskId === the key the PID is registered under`, so cancel cannot no-op.
 - **Kill the whole process tree**: Unix process group (`setsid`/`process_group(0)` + kill
@@ -683,7 +683,7 @@ Fork safety fixes beyond config:
 - **Derive identity, never fabricate it.** Author and `externalUrl` come from the repo's
   actual remote and default branch (`git remote get-url`, `git symbolic-ref`), confirmed
   by the user. If they cannot be derived, **omit `externalUrl`** rather than writing an
-  upstream URL. This also fixes `add-toolr:238-239` for the CLI path.
+  upstream URL. This also fixes `add-seedr:238-239` for the CLI path.
 - Make the CLI's registry base URL **configurable** so a fork's CLI reads the fork's data
   (`packages/cli/src/config/registry.ts:51`).
 
@@ -745,7 +745,7 @@ implementation, two front doors, no prose contract in between.
 
 `update-item` (new): takes `(type, slug)` + a free-text instruction, drafts a patch,
 validates, applies transactionally. It may not change `slug` or `type` — that is a remove
-plus an add. **v1 restricts Update to `sourceType: "toolr"` items**; synced items would
+plus an add. **v1 restricts Update to first-party items**; synced items would
 have edits overwritten by the next sync.
 
 ---
@@ -762,7 +762,7 @@ end-to-end path is proved before breadth is added.
 | **P2** | Workstream B **stage B1** only (dual-id, alias, sync + `VALID_TOOLS`), published from `prod` | A published CLI understands both ids; structured identifier assertions pass |
 | **P3** | Studio scaffold + **Explorer/Detail** (read-only, no mutation) | Browsable, file-watched, empty-registry state; root `test` script + turbo task + CI wired; coverage gate **enforced from here on** |
 | **P4** | Agent adapter — **Claude only** — plus §7 metadata generation, bounded and probed | One complete **Add-local** flow end-to-end with a real transaction and rollback; process-tree cancellation verified on all three OSes |
-| **P5** | Remaining flows: Update (toolr only), Remove, plus §6.5 Test action and Git status/diff | Each flow transactional with verified postconditions; Test really installs into a temp dir |
+| **P5** | Remaining flows: Update (first-party only), Remove, plus §6.5 Test action and Git status/diff | Each flow transactional with verified postconditions; Test really installs into a temp dir |
 | **P6** | Additional agent adapters, one at a time, behind capability gates | Each new adapter passes the recorded-fixture conformance suite before being offered |
 | **P7** | Workstream B **stage B2** (data migration), then **B3** (alias removal) in a documented breaking release | Structured checks pass; sync no longer reintroduces `gemini` |
 
@@ -818,7 +818,7 @@ pnpm --filter @seedr/studio test
    not installation (§2.4).
 7. **The skills use `registry/<type>s`**, wrong for `mcp`/`settings` — and an MCP item now
    exists.
-8. **`add-toolr:238-239` hardcodes upstream author and `externalUrl`** — a fork produces
+8. **`add-seedr:238-239` hardcodes upstream author and `externalUrl`** — a fork produces
    misattributed items.
 9. **The compile hook needs `jq`; the commit gate needs bash + python3** — both fail on a
    stock Windows box.
@@ -837,7 +837,7 @@ pnpm --filter @seedr/studio test
 
 Revision 1 over-promised here. The review found the "copy verbatim" event struct lacks the
 success/duration/permission fields §6.2 needs, that the parser reads inconsistent cost
-keys, and that configr's `toolr-core` (~8.4k Rust lines, with a configr-specific watcher)
+keys, and that configr's core crate (~8.4k Rust lines, with a configr-specific watcher)
 conflicts with the flat crate this app wants.
 
 **Therefore:** write a small Studio-specific executor and registry watcher. Copy only
@@ -845,15 +845,15 @@ small, pure, well-understood functions, **after** writing tests for them.
 
 | Source | Use it for |
 |---|---|
-| `toolr-app/.../cli_executor/stream_parser.rs` | **Reference** for per-agent output shapes and flags — then re-derive against installed versions (revision 1 inherited a stale codex flag exactly this way) |
-| `toolr-app/.../process_manager.rs` | Reference for the PID registry and cancel; note its verified bugs: cancel no-ops when ids diverge, only the direct PID is killed, streaming has no timeout |
+| the companion app's `cli_executor/stream_parser.rs` | **Reference** for per-agent output shapes and flags — then re-derive against installed versions (revision 1 inherited a stale codex flag exactly this way) |
+| the companion app's `process_manager.rs` | Reference for the PID registry and cancel; note its verified bugs: cancel no-ops when ids diverge, only the direct PID is killed, streaming has no timeout |
 | `configr/src/core/lib/tauriInvoke.ts` | The single-boundary IPC pattern (tiny; copy) |
 | `configr/src/components/editor/*` | Read-only Monaco setup and the lazy boundary — **only if** Monaco survives §12's simplification question |
 | `configr/src/index.css` | The estate-token → Tailwind bridge |
-| `configr/eslint-plugin-toolr-design.js` | Design guardrails; rewrite the path zones |
+| configr's design-guardrail ESLint plugin | Design guardrails; rewrite the path zones |
 | `configr/src/test/{setup,consoleGate}.ts` | Test harness — **fix the unknown-command-returns-undefined behaviour** before adopting |
 
-Do not copy `crates/toolr-configr` (configr's domain crate, ~58k lines), `src/features/*`,
+Do not copy configr's domain crate (~58k lines), `src/features/*`,
 or its fixtures. Known extraction leaks: `ScopeBadge` imports an app store;
 `explorer-tree.ts` imports configr's `CODING_AGENTS`.
 

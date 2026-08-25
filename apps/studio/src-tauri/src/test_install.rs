@@ -215,7 +215,8 @@ mod tests {
             fs::read_to_string(root.join("registry").join("skills").join(name).join("item.json"))
                 .ok()
                 .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
-                .is_some_and(|item| item["sourceType"] == "toolr")
+                // `toolr` is the deprecated spelling of `seedr` that the registry still stores.
+                .is_some_and(|item| item["sourceType"] == "seedr" || item["sourceType"] == "toolr")
         })
     }
 

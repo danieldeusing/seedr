@@ -35,7 +35,8 @@ than one matches and the user gave no type, ask which one with AskUserQuestion.
 
 Verify `sourceType === "community"`:
 
-- `toolr` → "Found `<slug>` (`<type>`) but it is a first-party item. Use `/remove-toolr` instead."
+- `seedr` (or the deprecated `toolr`) → "Found `<slug>` (`<type>`) but it is a first-party item.
+  Use `/remove-seedr` instead."
 - `official` → "`<slug>` (`<type>`) is an official item synced from Anthropic. It cannot be
   removed: the daily sync would restore it." Stop here.
 
@@ -98,7 +99,7 @@ changes first. Do not work around this.
 
 ## Important notes
 
-- Only removes items with `sourceType: "community"` — toolr items go through `/remove-toolr`,
+- Only removes items with `sourceType: "community"` — first-party items go through `/remove-seedr`,
   official items cannot be removed
 - Always confirm before removing — no `--force` shortcut
 - A removed community item will NOT reappear after `pnpm sync` unless it matches a freshly

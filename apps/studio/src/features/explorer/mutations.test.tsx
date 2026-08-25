@@ -42,7 +42,7 @@ describe("remove", () => {
 
     expect(useMutations.getState().phase).toBe("done");
     expect(requests[0]?.args).toEqual(["tsx", "scripts/registry-op.ts", "hash", "mcp", "playwright"]);
-    expect(JSON.parse(requests[1]?.stdin ?? "{}")).toEqual({ v: 1, kind: "remove", type: "mcp", slug: "playwright", sourceType: "toolr", expectedHash: "48761aa0e888b3ae" });
+    expect(JSON.parse(requests[1]?.stdin ?? "{}")).toEqual({ v: 1, kind: "remove", type: "mcp", slug: "playwright", sourceType: "seedr", expectedHash: "48761aa0e888b3ae" });
   });
 
   test("a refused transaction is shown and the phase returns to idle", async () => {

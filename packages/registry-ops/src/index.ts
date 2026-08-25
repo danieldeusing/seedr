@@ -1,5 +1,6 @@
 export * from "./paths.js";
 export * from "./agents.js";
+export * from "./sourceTypes.js";
 export * from "./fsPaths.js";
 export * from "./validate.js";
 export * from "./hash.js";

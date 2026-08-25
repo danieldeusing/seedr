@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
-import { CANONICAL_AGENTS, canonicalAgents, parseOp, validateItem, type UpdateOp, type ValidationError } from "@seedr/registry-ops/pure";
+import { CANONICAL_AGENTS, canonicalAgents, isFirstParty, parseOp, validateItem, type UpdateOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess } from "@/api/agent";
 import { runAgentJob } from "@/api/agentJob";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
@@ -84,7 +84,7 @@ export function updateJobPrompt(item: StudioItem, form: UpdateForm, patch: Updat
 }
 
 export const updateRefusal = (item: StudioItem): string | null =>
-  item.item.sourceType === "toolr" ? null : `${item.item.sourceType ?? "synced"} items are refreshed by the sync — edit them upstream`;
+  isFirstParty(item.item.sourceType) ? null : `${item.item.sourceType ?? "synced"} items are refreshed by the sync — edit them upstream`;
 
 const formFor = (item: StudioItem): UpdateForm => ({
   name: item.item.name ?? "",

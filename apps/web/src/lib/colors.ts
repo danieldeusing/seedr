@@ -1,4 +1,4 @@
-import { AGENT_LABELS } from "@seedr/registry-ops/pure";
+import { AGENT_LABELS, SOURCE_TYPE_LABELS } from "@seedr/registry-ops/pure";
 import type { ComponentType, CodingAgent, SourceType, ScopeType } from "./types";
 
 // Tailwind color names used by badge accents (see Label in components/ui/Label.tsx)
@@ -114,14 +114,16 @@ export const typeBreadcrumbColor: Record<ComponentType, string> = {
 // Source to badge color mapping (matches configr)
 export const sourceToBadgeColor: Record<SourceType, BadgeColor> = {
   official: "amber",
-  toolr: "blue",
+  seedr: "blue",
   community: "violet",
+  // deprecated value; items are canonicalised on load, so it never reaches the UI
+  toolr: "blue",
 };
 
 export const sourceLabels: Record<SourceType, string> = {
-  official: "Official",
-  toolr: "Seedr",
-  community: "Community",
+  ...SOURCE_TYPE_LABELS,
+  // deprecated value; items are canonicalised on load, so it never reaches the UI
+  toolr: SOURCE_TYPE_LABELS.seedr,
 };
 
 export const agentLabels: Record<CodingAgent, string> = {

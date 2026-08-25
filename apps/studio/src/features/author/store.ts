@@ -117,7 +117,7 @@ export function jobPrompt(form: AddLocalForm): string {
   const task =
     form.sourceKind === "repo"
       ? `/add-community ${form.repoUrl.trim()}`
-      : `Author a new first-party ${form.type} capability for this registry, then add it with the /add-toolr skill.`;
+      : `Author a new first-party ${form.type} capability for this registry, then add it with the /add-seedr skill.`;
   const descriptions =
     form.description.trim() && form.longDescription.trim()
       ? "Use the descriptions given above verbatim."
@@ -215,7 +215,7 @@ export function formProblems(form: AddLocalForm): ValidationError[] {
     description: op.description,
     longDescription: op.longDescription,
     compatibility: op.compatibility,
-    sourceType: "toolr",
+    sourceType: "seedr",
     author: op.author,
     ...(op.externalUrl ? { externalUrl: op.externalUrl } : {}),
     ...(op.targetScope ? { targetScope: op.targetScope } : {}),

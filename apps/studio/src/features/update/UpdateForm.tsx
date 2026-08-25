@@ -15,7 +15,7 @@ interface UpdateFormProps {
   onDone(): void;
 }
 
-/** Edit a toolr item's metadata; applied as one hash-guarded `update` transaction. */
+/** Edit a first-party item's metadata; applied as one hash-guarded `update` transaction. */
 export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const form = useUpdate((s) => s.form);
   const probe = useUpdate((s) => s.probe);

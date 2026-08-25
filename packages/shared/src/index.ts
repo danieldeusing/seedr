@@ -18,7 +18,18 @@ export type ComponentType =
   | "settings"
   | "mcp";
 
-export type SourceType = "official" | "toolr" | "community";
+/**
+ * Where an item comes from. `seedr` — this registry's own, first-party content —
+ * replaced `toolr` in 2026-08, when the product stopped being part of a "toolr
+ * suite". `toolr` stays accepted as a deprecated alias that resolves to `seedr`
+ * everywhere, and is still what writers store, until the published CLI
+ * understands the new name. The runtime vocabulary lives in
+ * `@seedr/registry-ops/pure`.
+ */
+export type CanonicalSourceType = "official" | "seedr" | "community";
+/** @deprecated alias of `"seedr"`; resolved on read, still written to data during B1. */
+export type LegacySourceType = "toolr";
+export type SourceType = CanonicalSourceType | LegacySourceType;
 
 export type ScopeType = "user" | "project" | "local";
 

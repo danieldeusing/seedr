@@ -17,7 +17,7 @@ Every item whose content is fetched from a remote repository carries:
 | `marketplaceRef` | Plugins only: `{ name, url, sha }` of the marketplace the entry was read from. |
 | `license` | `{ spdx?, file?, installAs?, note? }` — see §3. |
 
-First-party (`toolr`) items live in this repository. Their `contentDigest` is computed by
+First-party (`seedr`) items live in this repository. Their `contentDigest` is computed by
 `pnpm compile` from the files on disk, and the CLI verifies it the same way after download.
 They carry no `sourceRevision`: the compiled manifest and the files travel in the same commit.
 

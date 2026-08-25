@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { vol } from "memfs";
+import { isFirstParty } from "@seedr/registry-ops/pure";
 import type { RegistryItem } from "@seedr/shared";
 
 const TEST_AGENT = "test-agent";
@@ -14,7 +15,7 @@ vi.mock("node:fs/promises", async () => {
 // Mock the registry module
 vi.mock("../config/registry.js", () => ({
   getItemSourcePath: vi.fn((item: RegistryItem) => {
-    if (item.sourceType === "toolr") {
+    if (isFirstParty(item.sourceType)) {
       return `/registry/agents/${item.slug}`;
     }
     return null;
@@ -38,7 +39,7 @@ function agentItem(overrides: Partial<RegistryItem> = {}): RegistryItem {
     type: "agent",
     description: "A test agent",
     compatibility: ["claude"],
-    sourceType: "toolr",
+    sourceType: "seedr",
     ...overrides,
   };
 }

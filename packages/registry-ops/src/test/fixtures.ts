@@ -10,14 +10,14 @@ export const LONG = "Reads `item.json` files and " + "checks every description c
 export const FIXTURE_SHA = "a".repeat(40);
 export const FIXTURE_DIGEST = "b".repeat(64);
 
-export const toolrSkill: RegistryItem = {
+export const seedrSkill: RegistryItem = {
   slug: "alpha",
   name: "Alpha",
   type: "skill",
   description: "Does alpha things.",
   longDescription: LONG,
   compatibility: ["claude"],
-  sourceType: "toolr",
+  sourceType: "seedr",
   author: { name: "Test Author" },
   contents: {
     files: [
@@ -59,7 +59,8 @@ export const officialSkill: RegistryItem = {
   contentDigest: FIXTURE_DIGEST,
 };
 
-export const toolrMcp: RegistryItem = {
+/** Carries the deprecated `toolr` spelling on purpose: the real registry still stores it. */
+export const seedrMcp: RegistryItem = {
   slug: "delta",
   name: "Delta",
   type: "mcp",
@@ -86,10 +87,10 @@ export function writeItem(registryDir: string, typeDir: string, item: RegistryIt
 export function makeRegistry(): string {
   const registryDir = join(makeTempDir("seedr-registry-ops-"), "registry");
   mkdirSync(registryDir);
-  writeItem(registryDir, "skills", toolrSkill, { "SKILL.md": "# Alpha\n", "references/notes.md": "notes\n" });
+  writeItem(registryDir, "skills", seedrSkill, { "SKILL.md": "# Alpha\n", "references/notes.md": "notes\n" });
   writeItem(registryDir, "plugins", communityPlugin);
   writeItem(registryDir, "skills", officialSkill);
-  writeItem(registryDir, "mcp", toolrMcp, { "mcp.md": "config\n" });
+  writeItem(registryDir, "mcp", seedrMcp, { "mcp.md": "config\n" });
   return registryDir;
 }
 

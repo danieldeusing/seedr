@@ -23,7 +23,7 @@ describe("compileManifest", () => {
     expect(typeDirName("skill")).toBe("skills");
   });
 
-  it("computes contentDigest and the legacy contentHash for toolr items from disk", () => {
+  it("computes contentDigest and the legacy contentHash for first-party items from disk", () => {
     emptyRegistry(registryDir);
     writeItem(
       registryDir,
@@ -33,7 +33,7 @@ describe("compileManifest", () => {
         type: "skill",
         description: "Say hello.",
         compatibility: ["claude"],
-        sourceType: "toolr",
+        sourceType: "seedr",
         author: { name: "Daniel" },
         contents: { files: [{ name: "SKILL.md", type: "file" }, { name: "references", type: "directory", children: [{ name: "a.md", type: "file" }] }] },
       },
@@ -81,7 +81,7 @@ describe("compileManifest", () => {
       type: "skill",
       description: "x",
       compatibility: ["claude"],
-      sourceType: "toolr",
+      sourceType: "seedr",
       author: { name: "A" },
       contents: { files: [] },
     });

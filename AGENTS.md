@@ -160,23 +160,43 @@ import pluginsData from "@registry/plugins/manifest.json";
 const allItems = [...skillsData.items, ...pluginsData.items, ...];
 ```
 
+### Staged renames in registry data
+
+Two values in `item.json` have been renamed in code but not yet in data, because the published
+CLI reads `main` live and would break on the new spelling:
+
+| Field | Canonical now | Still stored as | Vocabulary | Flip with |
+|---|---|---|---|---|
+| `sourceType` | `seedr` | `toolr` | `packages/registry-ops/src/sourceTypes.ts` | `scripts/migrate-source-types.ts` |
+| `compatibility` | `antigravity` | `gemini` | `packages/registry-ops/src/agents.ts` | `scripts/migrate-agent-ids.ts` |
+
+Both work the same way. Code reads and writes the canonical value; the deprecated one is
+accepted everywhere on input, resolved on read, and is what every writer still puts on disk —
+that last part is the `STORAGE_*` table in each vocabulary file. Never write the new value into
+`registry/**` by hand.
+
+Each flip is one commit: empty the `STORAGE_*` table, run that migration script, verify, commit.
+Each script's header carries its precondition — check `npm view @danieldeusing/seedr version`
+first, because a migration ahead of the CLI breaks installs for every client. The two are
+independent and gated on different releases.
+
 ## Managing Registry Items
 
 Skills for adding and removing items from `registry/manifest.json`:
 
-### `/add-toolr <path>` — Add local toolr items
+### `/add-seedr <path>` — Add local first-party items
 
-For first-party content maintained in this repo. Copies files into `registry/` and adds a manifest entry with `sourceType: "toolr"`.
+For first-party content maintained in this repo. Copies files into `registry/` and adds a manifest entry with the first-party source type.
 
 ```bash
 # Example: add a hook from a local path
-/add-toolr /Users/daniel/project/.claude/hooks/pre-commit-lint
+/add-seedr /Users/daniel/project/.claude/hooks/pre-commit-lint
 ```
 
 - Auto-detects content type from path segments (`/skills/`, `/hooks/`, `/agents/`, etc.)
 - Asks for name, scope, compatibility, and description via interactive prompts
 - Copies content to `registry/<type>s/<slug>/`
-- Toolr items are preserved across syncs
+- First-party items are preserved across syncs
 
 ### `/add-community <github-url>` — Add community GitHub repos
 
@@ -192,7 +212,7 @@ For third-party content hosted on GitHub. Metadata-only in the manifest (no loca
 - Adds manifest entry with `sourceType: "community"`
 - Community items are re-synced from their GitHub repos on `pnpm sync`
 
-### `/update-item <type> <slug> <instruction>` — Update a toolr item
+### `/update-item <type> <slug> <instruction>` — Update a first-party item
 
 Patches an existing first-party item — metadata, descriptions or content files — without a
 remove-and-add. Drafts the change, shows it, and applies it through the operations CLI with the
@@ -212,7 +232,7 @@ rather than from a constant — a fork attributes its items to its own owner.
 
 A desktop capability manager for a seedr checkout, wearing the estate look on configr's
 structure: an overlay title bar (the strip IS the macOS title bar), and a searchable
-explorer with collapsible type groups whose rows show ownership (pencil = toolr/editable,
+explorer with collapsible type groups whose rows show ownership (pencil = first-party/editable,
 eye = synced/read-only) and the supported agents' brand marks — a footer dropdown flips the
 rows to the text form (`rw-` · `cgaxo`), next to the theme dropdown. Each item's detail
 pairs a resizable, collapsible metadata pane (stacking on narrow panes) with a Monaco file
@@ -240,7 +260,7 @@ validated by the same validator the commit gate uses, rejected twice means failu
 hand-repaired JSON — and "add to registry" runs the `add-local` operation through
 `scripts/registry-op.ts` as a transaction (clean worktree required, rollback on any failure).
 *A git repository* and *the agent writes it* are agent jobs instead: Studio composes the
-prompt (this repo's own `/add-community` or `/add-toolr` skill, the type's pre-prompt, every
+prompt (this repo's own `/add-community` or `/add-seedr` skill, the type's pre-prompt, every
 filled field as a hint the agent honours and every empty one for it to derive) and streams
 `claude -p --output-format stream-json --verbose --allowedTools …` line by line. A job's tools
 are named, never assumed — read/write the checkout, `WebFetch`, `Bash(npx tsx
@@ -249,7 +269,7 @@ scripts/registry-op.ts:*)`; no `git`, so a job cannot commit — and it must end
 writes it, you or the agent. Claude Code is probed at startup (`--version`, `--help` flags)
 and disabled with a diagnostic rather than degraded.
 
-**Update** (the edit button on a toolr item's detail) patches name, descriptions, agents and
+**Update** (the edit button on a first-party item's detail) patches name, descriptions, agents and
 scope — optionally redrafted by Claude from the item's own files — as a hash-guarded `update`
 transaction; synced items are read-only with the reason. **Remove** is a two-step button on
 the detail header, hash-guarded too; official items are refused because the daily sync would
@@ -291,16 +311,16 @@ the rest — in `-p` there is nobody to ask, so a tool outside the list fails vi
 the test harness (`src/test/mockIpc.ts`) rejects unknown commands instead of resolving
 `undefined`.
 
-### `/remove-toolr <slug>` — Remove local toolr items
+### `/remove-seedr <slug>` — Remove local first-party items
 
-Removes a toolr-sourced item by slug. Deletes local files from `registry/<type>s/<slug>/` and removes the manifest entry.
+Removes a first-party item by slug. Deletes local files from `registry/<type>s/<slug>/` and removes the manifest entry.
 
 ```bash
 # Example: remove a hook
-/remove-toolr pre-commit-lint
+/remove-seedr pre-commit-lint
 ```
 
-- Looks up item by slug with `sourceType: "toolr"`
+- Looks up the item by slug among the first-party ones
 - Confirms with user before deleting
 - Deletes local directory and manifest entry
 

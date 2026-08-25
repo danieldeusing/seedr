@@ -31,7 +31,7 @@ interface LabelProps {
   className?: string;
 }
 
-/** Colored badge with border-focused styling and a tooltip (replaces @toolr/ui-design's Label). */
+/** Colored badge with border-focused styling and a tooltip (replaces the vendored design library's Label). */
 export function Label({ text, accentColor, icon: Icon, tooltip, size = "sm", className }: LabelProps) {
   return (
     <Tooltip>

@@ -113,7 +113,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         void apply();
       }}
     >
-      <p className="prompt">{form.sourceKind === "folder" ? "add-local" : form.sourceKind === "repo" ? "add-community" : "add-toolr"}</p>
+      <p className="prompt">{form.sourceKind === "folder" ? "add-local" : form.sourceKind === "repo" ? "add-community" : "add-seedr"}</p>
 
       <div className="field-row mt-4">
         <span className="lbl" data-tip={TIPS.from}>

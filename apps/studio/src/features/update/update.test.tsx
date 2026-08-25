@@ -132,7 +132,7 @@ describe("updateStore", () => {
 });
 
 describe("UpdateForm", () => {
-  test("edits a toolr item and applies the change", async () => {
+  test("edits a first-party item and applies the change", async () => {
     const { playwright } = await items();
     host();
     const onDone = vi.fn();

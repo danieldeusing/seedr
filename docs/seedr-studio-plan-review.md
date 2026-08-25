@@ -10,7 +10,7 @@ No. This plan is not safe to execute as written. Its central premise—treating 
 
 ## 2. Blockers
 
-1. **The dual-mode skill contract is wishful thinking (§§3, 6.2, 7).** The existing skills contain later, direct instructions to use `AskUserQuestion`, including `.claude/skills/add-toolr/SKILL.md:43` and `.claude/skills/add-community/SKILL.md:148`. A short Parameters section does not reliably override those instructions. With `stdin = null`, an agent can ask in prose, hit a denied tool, or report missing data and exit 0 after partial changes. Markdown skills also cannot import the claimed TypeScript schema, so “cannot drift” is false.
+1. **The dual-mode skill contract is wishful thinking (§§3, 6.2, 7).** The existing skills contain later, direct instructions to use `AskUserQuestion`, including `.claude/skills/add-seedr/SKILL.md:43` and `.claude/skills/add-community/SKILL.md:148`. A short Parameters section does not reliably override those instructions. With `stdin = null`, an agent can ask in prose, hit a denied tool, or report missing data and exit 0 after partial changes. Markdown skills also cannot import the claimed TypeScript schema, so “cannot drift” is false.
 
    **Fix:** reverse settled decisions 8, 9 and 12 before implementation. Extract deterministic Node/Rust operations for fetch/copy/delete/path resolution/compile/validate. Let the model produce bounded structured metadata or a proposed patch without tools; validate and apply it in host code. Use a versioned discriminated operation schema and operation-specific postconditions. Cost: moderate now, severe if deferred until after P4.
 
@@ -38,7 +38,7 @@ No. This plan is not safe to execute as written. Its central premise—treating 
 
    **Fix:** perform a staged dual-ID rollout with a deprecated `gemini` alias, publish compatible CLI code first, then migrate registry data, then remove the alias in a documented breaking release. Replace grep acceptance with structured checks of coding-agent identifiers. Reversing the “clean break” is cheap now.
 
-6. **Fork safety is contradicted by current skills and §6.4.** `add-toolr` writes Daniel’s author, repository and `main` branch into every generated item at `.claude/skills/add-toolr/SKILL.md:225`. Community URLs also assume `main`. The committed Studio config simultaneously contains per-user preferred agents and binary overrides while claiming to contain no paths, and defaults deploy policy to upstream-specific `prod`.
+6. **Fork safety is contradicted by current skills and §6.4.** `add-seedr` writes Daniel’s author, repository and `main` branch into every generated item at `.claude/skills/add-seedr/SKILL.md:225`. Community URLs also assume `main`. The committed Studio config simultaneously contains per-user preferred agents and binary overrides while claiming to contain no paths, and defaults deploy policy to upstream-specific `prod`.
 
    **Fix:** split configuration:
 
@@ -70,7 +70,7 @@ No. This plan is not safe to execute as written. Its central premise—treating 
 
    **Recommendation:** pin the plan to a commit or re-verify immediately before implementation. Acceptance should derive item/test counts rather than hardcode them.
 
-4. **§11 overstates how copy-ready the reference code is.** The “copy verbatim” event type lacks the very success, duration and permission fields §6.2 requires. The parser reads inconsistent Claude cost keys; stderr handling and event names can leave the UI hanging. Configr’s `toolr-core` is roughly 8,454 Rust lines, its watcher is Configr-specific, and the proposed flat Studio crate conflicts with copying a separate Cargo crate.
+4. **§11 overstates how copy-ready the reference code is.** The “copy verbatim” event type lacks the very success, duration and permission fields §6.2 requires. The parser reads inconsistent Claude cost keys; stderr handling and event names can leave the UI hanging. Configr’s core crate is roughly 8,454 Rust lines, its watcher is Configr-specific, and the proposed flat Studio crate conflicts with copying a separate Cargo crate.
 
    **Recommendation:** define a small Studio-specific executor and registry watcher. Copy only proven pure parsing or opener functions after tests; do not transplant the crate.
 
@@ -91,7 +91,7 @@ No. This plan is not safe to execute as written. Its central premise—treating 
    - Remove `onConflict`; preflight already rejects collisions and Update is separate.
    - Defer marketplace batch ingestion; its discovery, per-item metadata and all-or-nothing behavior are undefined.
    - Leave `audit-descriptions` interactive; Studio has no audit flow.
-   - Start Update with `toolr` items only; synced fields are overwritten later.
+   - Start Update with first-party items only; synced fields are overwritten later.
    - Do not copy the 15-editor opener table; use the OS default.
    - Consider deferring Monaco to a plain read-only viewer.
    - Launch with one certified agent adapter rather than five nominally supported ones.
@@ -118,4 +118,4 @@ No. This plan is not safe to execute as written. Its central premise—treating 
 
 ## 6. What the plan gets right
 
-It correctly identifies `(type, slug)` as the registry identity, generated manifests as derived data, runtime disk reads as necessary, and several real executor bugs in `toolr-app`. Read-only viewing, one visible run at a time, minimal webview capabilities and system Git credential reuse are sensible starting constraints. Those strengths do not rescue the unsafe mutation contract.
+It correctly identifies `(type, slug)` as the registry identity, generated manifests as derived data, runtime disk reads as necessary, and several real executor bugs in configr’s companion app. Read-only viewing, one visible run at a time, minimal webview capabilities and system Git credential reuse are sensible starting constraints. Those strengths do not rescue the unsafe mutation contract.

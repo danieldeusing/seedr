@@ -1,7 +1,7 @@
 //! Bounded child-process execution, independent of Tauri so it can be tested
 //! without an app handle.
 //!
-//! Lessons from toolr-app's executor, applied rather than copied (plan §6.2):
+//! Lessons from configr's companion app's executor, applied rather than copied (plan §6.2):
 //! one id — the task id IS the registry key, so cancel cannot no-op; the whole
 //! process tree is killed (Unix process group, Windows Job Object with
 //! kill-on-close); stdout and stderr are drained concurrently so a child blocked

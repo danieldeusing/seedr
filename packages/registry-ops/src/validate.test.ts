@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { LONG, toolrSkill } from "./test/fixtures.js";
+import { LONG, seedrSkill } from "./test/fixtures.js";
 import { MIN_LONG_DESCRIPTION_WORDS, assertStructurallyValid, gateErrors, longDescriptionProblems, structuralErrors, validateItem } from "./validate.js";
 
 const fields = (errors: ReturnType<typeof validateItem>) => errors.map((e) => e.field);
 
 describe("validateItem", () => {
   test("a complete item has no errors", () => {
-    expect(validateItem(toolrSkill)).toEqual([]);
+    expect(validateItem(seedrSkill)).toEqual([]);
   });
 
   test("rejects non-objects outright", () => {
@@ -16,7 +16,7 @@ describe("validateItem", () => {
 
   test("reports structural problems field by field", () => {
     const errors = validateItem({
-      ...toolrSkill,
+      ...seedrSkill,
       slug: "Bad Slug",
       type: "mcps",
       sourceType: "vendor",
@@ -36,11 +36,11 @@ describe("validateItem", () => {
   });
 
   test("an empty compatibility list is a structural error", () => {
-    expect(fields(validateItem({ ...toolrSkill, compatibility: [] }))).toEqual(["compatibility"]);
+    expect(fields(validateItem({ ...seedrSkill, compatibility: [] }))).toEqual(["compatibility"]);
   });
 
   test("checks the item against the directory it lives in", () => {
-    const errors = validateItem(toolrSkill, { expectedType: "plugin", expectedSlug: "other" });
+    const errors = validateItem(seedrSkill, { expectedType: "plugin", expectedSlug: "other" });
     expect(errors.map((e) => e.message)).toEqual([
       'is "alpha" but the directory is "other"',
       'is "skill" but the directory is for "plugins/" (plugin)',
@@ -48,14 +48,14 @@ describe("validateItem", () => {
   });
 
   test("the description gate is reported separately from structure", () => {
-    const errors = validateItem({ ...toolrSkill, longDescription: "too short" });
+    const errors = validateItem({ ...seedrSkill, longDescription: "too short" });
     expect(structuralErrors(errors)).toEqual([]);
     expect(gateErrors(errors)).toEqual([{ field: "longDescription", message: "longDescription too short (2 words, minimum 30)", gate: true }]);
   });
 
   test("assertStructurallyValid ignores gate errors and throws on structure", () => {
-    expect(() => assertStructurallyValid({ ...toolrSkill, longDescription: undefined })).not.toThrow();
-    expect(() => assertStructurallyValid({ ...toolrSkill, type: "nope" })).toThrow(/type: unknown type "nope"/);
+    expect(() => assertStructurallyValid({ ...seedrSkill, longDescription: undefined })).not.toThrow();
+    expect(() => assertStructurallyValid({ ...seedrSkill, type: "nope" })).toThrow(/type: unknown type "nope"/);
   });
 });
 

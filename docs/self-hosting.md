@@ -106,6 +106,9 @@ Create `registry/skills/my-team-skill/item.json`:
 }
 ```
 
+`"toolr"` is verbatim: it is the deprecated spelling of `seedr` that the data still carries
+until `scripts/migrate-source-types.ts` runs. Write it exactly as shown.
+
 Add the content file (e.g., `registry/skills/my-team-skill/SKILL.md`).
 
 ### Rebuild manifests
@@ -156,19 +159,19 @@ The codebase has several places that reference the upstream identity (author nam
 
 **Author & display names** — The web UI shows an author on every item card and detail page. Update:
 
-- `apps/web/src/components/ItemCard.tsx` — change the `sourceType === "toolr"` fallback to your company name
+- `apps/web/src/components/ItemCard.tsx` — change the first-party author fallback to your company name
 - `apps/web/src/routes/Detail.tsx` — same fallback for the detail page author
 - `apps/web/src/routes/Home.tsx` — header subtitle and copy
-- `apps/web/src/components/Header.tsx` — remove or replace icon links (Toolr, GitHub, etc.)
+- `apps/web/src/components/Header.tsx` — remove or replace icon links (GitHub, etc.)
 - New items need no change: the add/update skills, Seedr Studio and `scripts/registry-op.ts identity` all derive the author and `externalUrl` from your clone's own git remote and `user.name`
 
-**sourceType** (optional) — If you want to rename `"toolr"` to your own identifier (e.g., `"acme"`), search-and-replace across:
+**sourceType** (optional) — If you want to rename the first-party source type to your own identifier (e.g., `"acme"`), the vocabulary lives in one place:
 
 - `packages/shared/` — the `SourceType` type definition
-- `packages/registry-ops/src/validate.ts` — `KNOWN_SOURCE_TYPES`, which the validator, the operations and Seedr Studio all share
-- `packages/cli/src/config/registry.ts` — routing logic for item content
-- `apps/web/` — filters, badges, components that check `sourceType`
-- `registry/*/*/item.json` — all existing items with `"sourceType": "toolr"`
+- `packages/registry-ops/src/sourceTypes.ts` — the canonical values, the deprecated aliases and the storage table that everything else imports
+- `registry/*/*/item.json` — all existing items, rewritten with a migration like `scripts/migrate-source-types.ts`
+
+Nothing else branches on the literal: the CLI, the web app and Seedr Studio all go through `isFirstParty()`.
 
 **Install commands in the web UI** — The detail page shows `npx @danieldeusing/seedr add ...` commands. Update `apps/web/src/routes/Detail.tsx` to reference your package name and registry:
 

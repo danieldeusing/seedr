@@ -266,7 +266,7 @@ describe("plugin handler", () => {
       vol.mkdirSync("/registry/plugins/my-plugin/.claude-plugin", { recursive: true });
       vol.writeFileSync("/registry/plugins/my-plugin/.claude-plugin/plugin.json", JSON.stringify({ name: "my-plugin", version: "3.0.0" }));
       const { installPlugin } = await import("./plugin.js");
-      const item = pluginItem({ sourceType: "toolr", sourceRevision: undefined, pluginSource: { kind: "github", url: "https://github.com/owner/my-plugin", sha: SHA } });
+      const item = pluginItem({ sourceType: "seedr", sourceRevision: undefined, pluginSource: { kind: "github", url: "https://github.com/owner/my-plugin", sha: SHA } });
 
       const results = await installPlugin(item, ["claude"], "user", "copy", true, PROJECT);
 

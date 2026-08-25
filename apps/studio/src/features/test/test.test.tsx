@@ -17,6 +17,7 @@ function skillRepo(): Record<string, string | null> {
   return {
     ...registryFiles(),
     "registry/skills/notes": null,
+    // Spelled with the deprecated `toolr`, which is what the registry still stores.
     "registry/skills/notes/item.json": JSON.stringify({ slug: "notes", name: "Notes", type: "skill", description: "Takes notes.", compatibility: ["claude", "antigravity"], sourceType: "toolr" }),
     "registry/skills/notes/SKILL.md": SKILL_MD,
     "registry/skills/notes/scripts": null,

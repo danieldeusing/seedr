@@ -21,7 +21,7 @@ export function contentFiles(dir: string): string[] {
 }
 
 /**
- * The content hash recorded in manifests for toolr items: 16 hex chars over the
+ * The content hash recorded in manifests for first-party items: 16 hex chars over the
  * sorted relative paths and per-file sha1s. Null when the item has no content
  * files. Identical to what `pnpm compile` has always written.
  */

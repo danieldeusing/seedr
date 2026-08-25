@@ -159,7 +159,7 @@ describe("jobs — a repository or a prompt", () => {
     expect(prompt).toContain("agents: claude");
     expect(prompt).toContain("registry-descriptions.md");
     expect(prompt).toContain("ADDED <type>/<slug>");
-    expect(jobPrompt({ ...emptyForm(), sourceKind: "agent", prompt: "renames files" })).toContain("/add-toolr");
+    expect(jobPrompt({ ...emptyForm(), sourceKind: "agent", prompt: "renames files" })).toContain("/add-seedr");
   });
 
   test("parseAdded takes only a known type", () => {

@@ -52,7 +52,7 @@ export const useMutations = create<MutationState>((set, get) => ({
     }
     set({ phase: "removing", error: null, outcome: null });
     try {
-      const op: RemoveOp = { v: 1, kind: "remove", type: item.type, slug: item.slug, sourceType: item.item.sourceType ?? "toolr", expectedHash: armed.expectedHash };
+      const op: RemoveOp = { v: 1, kind: "remove", type: item.type, slug: item.slug, sourceType: item.item.sourceType ?? "seedr", expectedHash: armed.expectedHash };
       const outcome = await runRegistryOp(parseOp(op));
       set({ phase: "done", outcome, armed: null });
     } catch (error) {

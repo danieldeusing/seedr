@@ -5,7 +5,7 @@ export const agentOptions = CANONICAL_AGENTS.map((agent) => ({ value: agent, lab
 
 export const sourceOptions = [
   { value: "official", label: sourceLabels.official },
-  { value: "toolr", label: sourceLabels.toolr },
+  { value: "seedr", label: sourceLabels.seedr },
   { value: "community", label: sourceLabels.community },
 ];
 

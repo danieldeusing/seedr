@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { vol } from "memfs";
+import { isFirstParty } from "@seedr/registry-ops/pure";
 import type { RegistryItem } from "@seedr/shared";
 
 const TEST_SKILL = "test-skill";
@@ -15,7 +16,7 @@ vi.mock("node:fs/promises", async () => {
 // Mock the registry module
 vi.mock("../config/registry.js", () => ({
   getItemSourcePath: vi.fn((item: RegistryItem) => {
-    if (item.sourceType === "toolr") {
+    if (isFirstParty(item.sourceType)) {
       return `/registry/skills/${item.slug}`;
     }
     return null;
@@ -41,7 +42,7 @@ function skillItem(overrides: Partial<RegistryItem> = {}): RegistryItem {
     type: "skill",
     description: "A test skill",
     compatibility: ["claude"],
-    sourceType: "toolr",
+    sourceType: "seedr",
     ...overrides,
   };
 }
@@ -84,7 +85,7 @@ describe("skill handler", () => {
       expect(vol.existsSync(`${PROJECT}/.github/skills/test-skill/${SKILL_MD}`)).toBe(true);
     });
 
-    it("should use symlink when method is symlink and source is toolr", async () => {
+    it("should use symlink when method is symlink and the item is first-party", async () => {
       const { installSkill } = await import("./skill.js");
 
       const results = await installSkill(skillItem(), ["claude"], "project", "symlink", true, PROJECT);

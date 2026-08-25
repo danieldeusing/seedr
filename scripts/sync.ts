@@ -9,7 +9,7 @@
  *   - official marketplace   anthropics/claude-plugins-official (marketplace.json is the source of truth)
  *   - community items        one source per item, re-pinned from its repository's default branch
  *
- * The complete proposed registry is staged in memory first. Toolr items are never touched.
+ * The complete proposed registry is staged in memory first. First-party items are never touched.
  * A source that fails is carried over unchanged; deletions are computed only for sources
  * that completed, and only metadata-only directories are ever removed. The run aborts
  * without writing anything when proposed deletions exceed SYNC_MAX_DELETIONS (default 5),
@@ -23,7 +23,7 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { typeDirName } from "@seedr/registry-ops";
+import { isFirstParty, typeDirName } from "@seedr/registry-ops";
 import { DEFAULT_REGISTRY_DIR, compileManifest, readAllItems } from "./compile-manifest.js";
 import { findDuplicateItems, validateItem } from "./lib/validate-item.js";
 import { syncOfficialPlugins, syncOfficialSkills, type SourceContext } from "./sync/anthropic.js";
@@ -122,14 +122,14 @@ export async function runSync(options: SyncOptions = {}): Promise<SyncOutcome> {
 
   // 3. Everything synced that no official source owns is a community item with its own source.
   const officiallyOwned = new Set<ItemKey>([...skills.owned, ...plugins.owned]);
-  const communityItems = existingItems.filter((item) => item.sourceType !== "toolr" && !officiallyOwned.has(itemKey(item)));
+  const communityItems = existingItems.filter((item) => !isFirstParty(item.sourceType) && !officiallyOwned.has(itemKey(item)));
   if (communityItems.length > 0) log(`\n=== Community items (${communityItems.length}) ===`);
   const communityResults = await mapConcurrent(communityItems, COMMUNITY_CONCURRENCY, (item) => syncCommunityItem(ctx, item));
   communityItems.forEach((item, index) => sources.push({ name: `community:${itemKey(item)}`, result: communityResults[index]! }));
 
   // 4. Stage the proposed registry.
   const proposed = new Map<ItemKey, ManifestItem>();
-  for (const item of existingItems) if (item.sourceType === "toolr") proposed.set(itemKey(item), item);
+  for (const item of existingItems) if (isFirstParty(item.sourceType)) proposed.set(itemKey(item), item);
 
   const deletions: { key: ItemKey; reason: string }[] = [];
   for (const { name, result } of sources) {
@@ -177,7 +177,7 @@ export async function runSync(options: SyncOptions = {}): Promise<SyncOutcome> {
     );
   }
 
-  // 5. Validate the whole proposed registry (carried-over and toolr items included).
+  // 5. Validate the whole proposed registry (carried-over and first-party items included).
   const violations: string[] = [];
   for (const item of proposed.values()) {
     violations.push(...validateItem(item, { file: `${typeDirName(item.type)}/${item.slug}/item.json` }));
@@ -187,10 +187,10 @@ export async function runSync(options: SyncOptions = {}): Promise<SyncOutcome> {
     return abort(`${violations.length} validation violation(s):\n    ${violations.join("\n    ")}`);
   }
 
-  // 6. Write. Only synced items are written; toolr items are never touched.
+  // 6. Write. Only synced items are written; first-party items are never touched.
   log(dryRun ? "\n=== Proposed writes (dry run) ===" : "\n=== Writing ===");
   for (const [key, item] of proposed) {
-    if (item.sourceType === "toolr") continue;
+    if (isFirstParty(item.sourceType)) continue;
     const path = itemPath(registryDir, item);
     const serialized = serializeItem(item);
     const previous = existsSync(path) ? readFileSync(path, "utf-8") : null;
@@ -224,7 +224,7 @@ export async function runSync(options: SyncOptions = {}): Promise<SyncOutcome> {
   for (const entry of outcome.carriedOver) log(`    - ${entry.key}: ${entry.reason}`);
   log(`  failed sources (${outcome.failedSources.length}):${outcome.failedSources.length ? "" : " -"}`);
   for (const source of outcome.failedSources) log(`    - ${source.name}: ${source.reason}`);
-  log(`  toolr items untouched: ${existingItems.filter((item) => item.sourceType === "toolr").length}`);
+  log(`  first-party items untouched: ${existingItems.filter((item) => isFirstParty(item.sourceType)).length}`);
   log(`  GitHub requests: ${client.stats.requests} (retries ${client.stats.retries}, blob cache hits ${client.stats.blobCacheHits})`);
 
   if (dryRun) {

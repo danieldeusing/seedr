@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileTreeNode } from "@seedr/shared";
-import { formatErrors } from "@seedr/registry-ops/pure";
+import { formatErrors, isFirstParty } from "@seedr/registry-ops/pure";
 import { fs, openPath } from "@/api/fs";
 import { useExternalLink } from "@/core/externalUrl";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
@@ -121,7 +121,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
             {onTest && !testRefusal(item) && (
               <IconButton icon={FlaskConical} ariaLabel={`test install ${item.slug}`} tip="test install — the real CLI, into a scratch directory" onClick={onTest} />
             )}
-            {onEdit && item.item.sourceType === "toolr" && (
+            {onEdit && isFirstParty(item.item.sourceType) && (
               <IconButton icon={Pencil} ariaLabel={`edit ${item.slug}`} tip="edit this item" onClick={onEdit} />
             )}
             <RemoveButton item={item} />

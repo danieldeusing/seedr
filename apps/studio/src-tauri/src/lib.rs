@@ -548,7 +548,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("seedr-skills-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         for (name, body) in [
-            ("add-toolr", "---\nname: add-toolr\ndescription: \"Add local items\"\n---\n# body\n"),
+            ("add-seedr", "---\nname: add-seedr\ndescription: \"Add local items\"\n---\n# body\n"),
             ("bare", "# no frontmatter\n"),
         ] {
             fs::create_dir_all(dir.join(name)).expect("fixture");
@@ -561,7 +561,7 @@ mod tests {
         let mut skills = Vec::new();
         skills_in(&dir, "project", &mut skills);
         skills.sort_by(|a, b| a.name.cmp(&b.name));
-        assert_eq!(skills.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["add-toolr", "bare"]);
+        assert_eq!(skills.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["add-seedr", "bare"]);
         assert_eq!(skills[0].description, "Add local items");
         assert_eq!(skills[1].description, "");
 

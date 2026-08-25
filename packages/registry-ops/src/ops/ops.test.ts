@@ -54,10 +54,11 @@ describe("parseOp", () => {
 });
 
 describe("add-local", () => {
-  test("copies the source tree, derives the file tree and writes a toolr item", () => {
+  test("copies the source tree, derives the file tree and writes a first-party item", () => {
     const registry = makeRegistry();
     const result = applyOp(registry, addLocalOp({ targetScope: "project", externalUrl: "https://github.com/fork-owner/seedr/tree/main/registry/skills/new-skill" }));
 
+    // The B1 storage value (STORAGE_SOURCE_TYPES), not the canonical `seedr`.
     expect(result.item?.sourceType).toBe("toolr");
     expect(result.item?.targetScope).toBe("project");
     expect(result.item?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -160,7 +161,7 @@ describe("update", () => {
   test("refuses a stale hash, a synced item, an escaping edit path and an invalid patch", () => {
     const registry = makeRegistry();
     expect(() => applyOp(registry, updateOp(registry, { expectedHash: "0000000000000000" }))).toThrow(/changed since it was read/);
-    expect(() => applyOp(registry, updateOp(registry, { slug: "gamma", expectedHash: itemStateHash(registry, "skill", "gamma") as string }))).toThrow(/Only toolr items/);
+    expect(() => applyOp(registry, updateOp(registry, { slug: "gamma", expectedHash: itemStateHash(registry, "skill", "gamma") as string }))).toThrow(/Only first-party items/);
     expect(() => applyOp(registry, updateOp(registry, { contentEdits: [{ path: "../../escape.md", content: "x" }] }))).toThrow(/escapes the item directory/);
     expect(() => applyOp(registry, updateOp(registry, { patch: { compatibility: [] } }))).toThrow(/compatibility/);
     expect(readItem(registry, "skill", "alpha").description).toBe("Does alpha things.");
@@ -173,7 +174,7 @@ describe("remove", () => {
     kind: "remove",
     type: "skill",
     slug: "alpha",
-    sourceType: "toolr",
+    sourceType: "seedr",
     expectedHash: itemStateHash(registry, "skill", "alpha") as string,
     ...overrides,
   });
@@ -187,7 +188,7 @@ describe("remove", () => {
   test("refuses a stale hash, a source-type mismatch, an official item and an unknown item", () => {
     const registry = makeRegistry();
     expect(() => applyOp(registry, removeOp(registry, { expectedHash: "0000000000000000" }))).toThrow(/changed since it was read/);
-    expect(() => applyOp(registry, removeOp(registry, { sourceType: "community" }))).toThrow(/is toolr, not community/);
+    expect(() => applyOp(registry, removeOp(registry, { sourceType: "community" }))).toThrow(/is seedr, not community/);
     expect(() => applyOp(registry, removeOp(registry, { slug: "gamma", sourceType: "official", expectedHash: itemStateHash(registry, "skill", "gamma") as string }))).toThrow(/Official items cannot be removed/);
     expect(() => applyOp(registry, removeOp(registry, { slug: "nope", expectedHash: "x" }))).toThrow(/No skill item "nope"/);
     expect(existsSync(join(registry, "skills", "alpha"))).toBe(true);
@@ -278,7 +279,7 @@ describe("remove", () => {
     const updated = applyOp(registry, { v: 1, kind: "update", type: "skill", slug, expectedHash: itemStateHash(registry, "skill", slug) as string, patch: { name: "Local 2" } });
     expect((updated.item as { name: string }).name).toBe("Local 2");
 
-    const removed = applyOp(registry, { v: 1, kind: "remove", type: "skill", slug, sourceType: "toolr", expectedHash: itemStateHash(registry, "skill", slug) as string });
+    const removed = applyOp(registry, { v: 1, kind: "remove", type: "skill", slug, sourceType: "seedr", expectedHash: itemStateHash(registry, "skill", slug) as string });
     expect(removed.kind).toBe("remove");
     expect(existsSync(join(registry, "skills", slug))).toBe(false);
   });

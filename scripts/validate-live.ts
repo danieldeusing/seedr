@@ -5,7 +5,7 @@
  * Usage: pnpm validate:live [--all] [--sample N] [--only <type>/<slug>]
  *
  * For every item:
- *   - toolr: every declared file exists on disk and the digest recomputes (always).
+ *   - first-party: every declared file exists on disk and the digest recomputes (always).
  *   - synced: the pinned commit is reachable, every file in `contents.files` exists in the
  *     tree at that commit, the license file exists when one is recorded, the marketplace file
  *     at `marketplaceRef.sha` still names that marketplace, and — for plugins — a
@@ -21,7 +21,7 @@
 
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, join, sep } from "node:path";
-import { typeDirName } from "@seedr/registry-ops";
+import { isFirstParty, typeDirName } from "@seedr/registry-ops";
 import { DEFAULT_REGISTRY_DIR, readAllItems } from "./compile-manifest.js";
 import { flattenFileTree } from "./lib/validate-item.js";
 import { MARKETPLACE_FILE, PLUGIN_JSON } from "./sync/anthropic.js";
@@ -93,7 +93,7 @@ function collectDiskFiles(dir: string, prefix = ""): string[] {
   return files;
 }
 
-function checkToolr(registryDir: string, item: ManifestItem): void {
+function checkFirstParty(registryDir: string, item: ManifestItem): void {
   const dir = join(registryDir, typeDirName(item.type), item.slug);
   const onDisk = collectDiskFiles(dir).sort();
   const declared = flattenFileTree(item.contents?.files ?? []);
@@ -176,7 +176,7 @@ export async function validateLive(options: LiveOptions = {}): Promise<LiveRepor
   const items = readAllItems({ registryDir })
     .filter((item) => !options.only || options.only.includes(itemKey(item)))
     .sort((a, b) => itemKey(a).localeCompare(itemKey(b), "en"));
-  const syncedKeys = items.filter((item) => item.sourceType !== "toolr").map(itemKey);
+  const syncedKeys = items.filter((item) => !isFirstParty(item.sourceType)).map(itemKey);
   const digestKeys = options.all ? new Set(syncedKeys) : pickSample(syncedKeys, options.sample ?? 12);
 
   const report: LiveReport = { checked: 0, digestsVerified: 0, failures: [] };
@@ -186,8 +186,8 @@ export async function validateLive(options: LiveOptions = {}): Promise<LiveRepor
     const key = itemKey(item);
     report.checked++;
     try {
-      if (item.sourceType === "toolr") {
-        checkToolr(registryDir, item);
+      if (isFirstParty(item.sourceType)) {
+        checkFirstParty(registryDir, item);
         report.digestsVerified++;
         log(`  ✓ ${key} (disk, digest ok)`);
       } else {

@@ -139,7 +139,12 @@ export async function draftWith(
     const invocation = adapter.draft(prompt);
     const raw = await run({ taskId: `${taskId}-${index}`, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), timeoutMs: DRAFT_TIMEOUT_MS });
     const verdict = adapter.readOutcome(raw);
-    if (!verdict.ok) return { ok: false, errors: [`${adapter.program} failed: ${verdict.text || "no output"}`] };
+    // A run the user stopped, or one the watchdog ended, is not a refusal by the
+    // agent — say which it was rather than blaming the answer.
+    if (!verdict.ok) {
+      const how = raw.status === "cancelled" || raw.status === "timeout" ? raw.status : "failed";
+      return { ok: false, errors: [`${adapter.program} ${how}: ${verdict.text || "no output"}`] };
+    }
     if (adapter.schemaEnforced) {
       const outcome = normaliseClaudeOutcome(raw);
       return parseDraft(outcome.structured ?? outcome.text);

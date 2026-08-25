@@ -3,6 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, realpathSync, rmdirSync, rmSync, r
 import { basename, join } from "node:path";
 import type { FileTreeNode, RegistryItem } from "@seedr/shared";
 import { canonicalAgent, storageAgents } from "../agents.js";
+import { storageSourceType } from "../sourceTypes.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
 import { fileTree, itemExists } from "../read.js";
 import { assertStructurallyValid, formatErrors, validateItem } from "../validate.js";
@@ -61,7 +62,7 @@ function pruneEmptyDirs(dir: string): void {
 }
 
 /**
- * Copy a local source tree into the registry as a first-party (`toolr`) item.
+ * Copy a local source tree into the registry as a first-party (`seedr`) item.
  * The item is validated in full — including the description gate — before a
  * single byte is written, so a rejected operation leaves no trace.
  */
@@ -88,7 +89,9 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
     description: op.description,
     longDescription: op.longDescription,
     compatibility: storageAgents(op.compatibility),
-    sourceType: "toolr",
+    // Stored in the B1 vocabulary (STORAGE_SOURCE_TYPES): still `toolr`, because
+    // the published CLI decides where content comes from by that exact string.
+    sourceType: storageSourceType("seedr"),
     author: op.author,
     ...(op.externalUrl ? { externalUrl: op.externalUrl } : {}),
     ...(op.targetScope ? { targetScope: op.targetScope } : {}),

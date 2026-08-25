@@ -6,6 +6,7 @@
  */
 export * from "./paths.js";
 export * from "./agents.js";
+export * from "./sourceTypes.js";
 export * from "./validate.js";
 export * from "./ops/types.js";
 export { parseOp } from "./ops/parse.js";

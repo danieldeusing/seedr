@@ -401,6 +401,13 @@ GitHub Actions workflows in `.github/workflows/`:
 | `sync.yml` | schedule / manual | Re-sync community registry items from their GitHub repos |
 | `test-email.yml` | manual | Smoke-test the SMTP sync-notification setup |
 
+**Promote with a merge, never a fast-forward.** The release commits its version bump to `prod`
+and copies it to `main` as a *different* commit, so the branches diverge by one commit each way
+after every release and `git push origin origin/main:prod` is rejected. Promote with
+`git checkout prod && git merge main && git push origin prod` (the repo's no-cherry-pick rule is
+the same reason). And judge a deploy by what is being served, not by the job going green — the
+web job spent months uploading to a preview URL and reporting success.
+
 ## npm Publishing
 
 The CLI is published to npm as `@danieldeusing/seedr`. Push to `prod` branch triggers `.github/workflows/deploy.yml` (publish-cli job).

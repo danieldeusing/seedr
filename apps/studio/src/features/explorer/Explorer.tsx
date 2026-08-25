@@ -96,8 +96,12 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
   const rowStyle = useRowStyle((s) => s.style);
   const setRowStyle = useRowStyle((s) => s.setStyle);
 
+  // Every type is listed, empty ones included: a registry with no agents is a
+  // fact about it, and hiding the group makes the gap look like a missing
+  // feature. While searching, only the groups that still match are shown.
   const populatedTypes = useMemo(() => ALL_TYPES.filter((type) => items.some((i) => i.type === type)), [items]);
   const searching = query.trim().length > 0;
+  const shownTypes = searching ? populatedTypes : ALL_TYPES;
 
   const toggle = (type: ComponentType) => {
     setCollapsed((current) => {
@@ -136,7 +140,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
           ariaLabel={allCollapsed ? "expand all groups" : "collapse all groups"}
           tip={allCollapsed ? "expand all groups" : "collapse all groups"}
           size="xs"
-          onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(populatedTypes))}
+          onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(ALL_TYPES))}
         />
       </div>
       <div className="flex shrink-0 items-center border-b border-neutral-700 px-3 py-2">
@@ -153,20 +157,23 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
             </ul>
           </section>
         )}
-        {populatedTypes.map((type) => {
+        {shownTypes.map((type) => {
           const ofType = items.filter((i) => i.type === type).filter((i) => !searching || matches(i, query.trim()));
           // While searching, a group only shows when it still has matches.
           if (searching && ofType.length === 0) return null;
-          const isCollapsed = !searching && collapsed.has(type);
+          const empty = ofType.length === 0;
+          const isCollapsed = (!searching && collapsed.has(type)) || empty;
           return (
             <section key={type} className="mb-2">
               <button
                 type="button"
                 aria-expanded={!isCollapsed}
-                onClick={() => toggle(type)}
-                className="flex w-full cursor-pointer items-center gap-1 px-1 py-0.5 text-left text-sm font-medium text-accent-400 transition-colors hover:bg-neutral-960/50"
+                onClick={() => (empty ? undefined : toggle(type))}
+                data-tip={empty ? `No ${typeDirName(type)} in this registry yet` : undefined}
+                aria-disabled={empty || undefined}
+                className={`flex w-full items-center gap-1 px-1 py-0.5 text-left text-sm font-medium transition-colors ${empty ? "cursor-default text-neutral-600" : "cursor-pointer text-accent-400 hover:bg-neutral-960/50"}`}
               >
-                {isCollapsed ? <ChevronRight className="size-3 shrink-0" /> : <ChevronDown className="size-3 shrink-0" />}
+                {empty ? <ChevronRight className="size-3 shrink-0 opacity-40" /> : isCollapsed ? <ChevronRight className="size-3 shrink-0" /> : <ChevronDown className="size-3 shrink-0" />}
                 {typeDirName(type)}/ <span className="font-normal text-neutral-500">{searching ? `${ofType.length}/${counts[type]}` : counts[type]}</span>
               </button>
               {!isCollapsed && (

@@ -29,8 +29,11 @@ describe("Explorer", () => {
 
     expect(screen.getByRole("button", { name: /skills\/ 2/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /mcp\/ 1/ })).toBeInTheDocument();
-    // empty type groups are not rendered at all
-    expect(screen.queryByText(/settings\//)).toBeNull();
+    // An empty type is listed too, at zero, and does not open: the absence is a
+    // fact about this registry, not a missing group.
+    const empty = screen.getByRole("button", { name: /settings\/ 0/ });
+    expect(empty).toHaveAttribute("aria-disabled", "true");
+    expect(empty).toHaveAttribute("data-tip", "No settings in this registry yet");
     expect(screen.getByRole("alert")).toHaveTextContent("1 unreadable item file(s)");
     expect(screen.getByLabelText("1 validation problems")).toBeInTheDocument();
 

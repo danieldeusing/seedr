@@ -1,3 +1,5 @@
+import { RepoBadge } from "./RepoBadge";
+
 /**
  * Clearance for the macOS traffic lights, which AppKit draws over our top-left:
  * tauri.conf.json sets `titleBarStyle: "Overlay"` with `hiddenTitle: true`, so
@@ -10,9 +12,9 @@ const TRAFFIC_LIGHT_GUTTER = "pl-[78px]";
 const hasOverlayTitleBar = (): boolean => navigator.userAgent.includes("Mac OS X");
 
 /**
- * The window's identity strip, and nothing else — the workspace controls live
- * in the explorer (add in its header, git status / theme / switch repo in its
- * footer), exactly as configr keeps its title bar empty.
+ * The window's identity strip: the app, and which checkout it has open. The
+ * workspace controls live in the explorer (add in its header, git / settings /
+ * switch repo in its footer), the way configr keeps its title bar to identity.
  */
 export function AppHeader() {
   return (
@@ -26,6 +28,7 @@ export function AppHeader() {
         <span className="estate-brand-name">seedr-studio</span>
         <span className="estate-brand-cursor" aria-hidden="true" />
       </span>
+      <RepoBadge />
     </header>
   );
 }

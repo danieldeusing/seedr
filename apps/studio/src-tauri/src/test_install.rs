@@ -7,6 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 use serde::{Deserialize, Serialize};
 
@@ -46,9 +47,37 @@ fn is_slug(value: &str) -> bool {
 
 static COUNTER: AtomicU64 = AtomicU64::new(0);
 
+const SCRATCH_PREFIX: &str = "seedr-studio-test-";
+
+/// A finished test removes its own directory, whether it passed, failed or was
+/// cancelled; one only survives an abnormal exit — the app quit or crashed while
+/// the install was running. Sweeping at startup keeps those from piling up.
+/// Directories this process made, and any young enough to belong to a run in
+/// another Studio window, are left alone.
+pub fn sweep_scratch(temp: &Path, now: SystemTime, stale_after: Duration) -> usize {
+    let Ok(entries) = fs::read_dir(temp) else { return 0 };
+    let ours = format!("{SCRATCH_PREFIX}{}-", std::process::id());
+    let mut removed = 0;
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if !name.starts_with(SCRATCH_PREFIX) || name.starts_with(&ours) {
+            continue;
+        }
+        let age = entry.metadata().ok().and_then(|meta| meta.modified().ok()).and_then(|at| now.duration_since(at).ok());
+        if age.is_some_and(|age| age >= stale_after) && fs::remove_dir_all(entry.path()).is_ok() {
+            removed += 1;
+        }
+    }
+    removed
+}
+
+/// Long enough that a live install — bounded by a two-minute timeout — can never
+/// look stale, short enough that leftovers do not outlive a working day.
+pub const STALE_AFTER: Duration = Duration::from_secs(60 * 60);
+
 fn scratch_dir() -> Result<PathBuf, String> {
     let dir = std::env::temp_dir().join(format!(
-        "seedr-studio-test-{}-{}",
+        "{SCRATCH_PREFIX}{}-{}",
         std::process::id(),
         COUNTER.fetch_add(1, Ordering::SeqCst)
     ));
@@ -130,6 +159,36 @@ mod tests {
         assert!(command[1].ends_with("cli.mjs"));
         assert!(command[2].ends_with("cli.ts"));
         assert_eq!(&command[3..], ["add", "my-skill", "--type", "skill", "--agents", "all", "--scope", "project", "--method", "copy", "--yes"]);
+    }
+
+    #[test]
+    fn sweeping_takes_only_old_leftovers_from_other_runs() {
+        let temp = std::env::temp_dir().join(format!("seedr-sweep-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp);
+        let make = |name: &str| {
+            let dir = temp.join(name);
+            fs::create_dir_all(&dir).expect("fixture");
+            dir
+        };
+        let stale = make(&format!("{SCRATCH_PREFIX}999999-0"));
+        let ours = make(&format!("{SCRATCH_PREFIX}{}-0", std::process::id()));
+        let unrelated = make("someone-elses-temp-dir");
+
+        // An hour into the future every leftover is stale — except this process's
+        // own, which is never swept, and anything not ours to begin with.
+        let removed = sweep_scratch(&temp, SystemTime::now() + Duration::from_secs(7200), STALE_AFTER);
+
+        assert_eq!(removed, 1);
+        assert!(!stale.exists(), "an old leftover survived the sweep");
+        assert!(ours.exists(), "this process's own scratch directory was swept");
+        assert!(unrelated.exists(), "a directory that is not ours was removed");
+
+        // A young leftover belongs to a run that may still be going.
+        fs::create_dir_all(&stale).expect("fixture");
+        assert_eq!(sweep_scratch(&temp, SystemTime::now(), STALE_AFTER), 0);
+        assert!(stale.exists());
+
+        fs::remove_dir_all(&temp).expect("cleanup");
     }
 
     #[test]

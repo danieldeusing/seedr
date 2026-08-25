@@ -92,6 +92,27 @@ fn repo_info(path: &Path) -> Result<RepoInfo, String> {
 }
 
 
+/// Where the chosen checkout is remembered between launches: one line, one path.
+fn remembered_repo_file() -> Option<PathBuf> {
+    dirs::config_dir().map(|dir| dir.join("seedr-studio").join("repo"))
+}
+
+/// Remembering is best effort — a read-only config directory must not stop the
+/// app from opening the repository the user just picked.
+fn remember_repo_at(file: &Path, path: &Path) {
+    if let Some(parent) = file.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let _ = fs::write(file, path.display().to_string());
+}
+
+/// The remembered checkout, if it is still one. A moved or deleted folder is
+/// simply forgotten, so the next launch asks instead of failing.
+fn remembered_repo_at(file: &Path) -> Option<PathBuf> {
+    let path = PathBuf::from(fs::read_to_string(file).ok()?.trim());
+    repo_info(&path).ok().map(|_| path)
+}
+
 #[tauri::command]
 async fn pick_repo(app: AppHandle, repo: State<'_, Repo>) -> Result<Option<RepoInfo>, String> {
     let Some(picked) = app.dialog().file().blocking_pick_folder() else {
@@ -99,6 +120,9 @@ async fn pick_repo(app: AppHandle, repo: State<'_, Repo>) -> Result<Option<RepoI
     };
     let path = picked.into_path().map_err(|e| e.to_string())?;
     let info = repo_info(&path)?;
+    if let Some(file) = remembered_repo_file() {
+        remember_repo_at(&file, &path);
+    }
     *repo.0.lock().map_err(|e| e.to_string())? = Some(path);
     Ok(Some(info))
 }
@@ -373,20 +397,23 @@ async fn test_install(app: AppHandle, request: TestInstallRequest, repo: State<'
 }
 
 /// `SEEDR_STUDIO_REPO=<path>` launches straight into that checkout (it still has
-/// to pass `repo_info`); otherwise the first screen asks for one.
+/// to pass `repo_info`); failing that, the one picked last time; failing that,
+/// the first screen asks for one.
 fn preselected_repo() -> Repo {
-    let picked = std::env::var_os("SEEDR_STUDIO_REPO").map(PathBuf::from).filter(|path| match repo_info(path) {
+    let from_env = std::env::var_os("SEEDR_STUDIO_REPO").map(PathBuf::from).filter(|path| match repo_info(path) {
         Ok(_) => true,
         Err(reason) => {
             eprintln!("SEEDR_STUDIO_REPO ignored: {reason}");
             false
         }
     });
-    Repo(Mutex::new(picked))
+    Repo(Mutex::new(from_env.or_else(|| remembered_repo_file().as_deref().and_then(remembered_repo_at))))
 }
 
 pub fn run() {
     executor::enrich_path();
+    // Anything a previous run left behind when it was killed mid-install.
+    test_install::sweep_scratch(&std::env::temp_dir(), std::time::SystemTime::now(), test_install::STALE_AFTER);
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -516,6 +543,22 @@ mod tests {
         let _ = fs::remove_file(&link);
         std::os::unix::fs::symlink("/", &link).expect("symlink");
         assert!(scoped(&root, "escape").is_err());
+    }
+
+    #[test]
+    fn the_picked_repository_is_remembered_and_a_stale_one_is_forgotten() {
+        let root = temp_root("remember");
+        let file = std::env::temp_dir().join(format!("seedr-remember-{}", std::process::id())).join("repo");
+
+        assert_eq!(remembered_repo_at(&file), None, "nothing remembered yet");
+        remember_repo_at(&file, &root);
+        assert_eq!(remembered_repo_at(&file), Some(root.clone()));
+
+        // A folder that is no longer a checkout is forgotten, not reopened.
+        fs::remove_dir_all(root.join("registry")).expect("remove");
+        assert_eq!(remembered_repo_at(&file), None);
+
+        let _ = fs::remove_dir_all(file.parent().expect("parent"));
     }
 
     #[test]

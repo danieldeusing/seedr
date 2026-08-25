@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
 import { AppHeader } from "./AppHeader";
 import { Modal } from "./Modal";
+import { originSlug } from "./RepoBadge";
+import { useStudio } from "@/features/explorer/store";
 import { ExternalLinkDialog } from "./ExternalLinkDialog";
 import { safeExternalUrl, useExternalLink } from "./externalUrl";
 import { ThemeMenu } from "./ThemeMenu";
@@ -115,5 +117,34 @@ describe("Modal", () => {
 
     await userEvent.click(screen.getByRole("dialog").querySelector("div.absolute")!);
     expect(onClose).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("RepoBadge", () => {
+  const CONFIG = '[core]\n\trepositoryformatversion = 0\n[remote "origin"]\n\turl = git@github.com:danieldeusing/seedr.git\n\tfetch = +refs/heads/*\n[branch "main"]\n';
+
+  test("reads owner/repo from either URL spelling, and copes with no remote", () => {
+    expect(originSlug(CONFIG)).toBe("danieldeusing/seedr");
+    expect(originSlug('[remote "origin"]\n\turl = https://github.com/obra/superpowers\n')).toBe("obra/superpowers");
+    expect(originSlug('[remote "upstream"]\n\turl = git@github.com:someone/else.git\n')).toBeNull();
+    expect(originSlug("[core]\n\tbare = false\n")).toBeNull();
+  });
+
+  test("names the open checkout and its remote in the title bar", async () => {
+    onCommand("read_text", () => CONFIG);
+    useStudio.setState({ repo: { root: "/Users/me/forks/seedr-fork", name: "seedr-fork" } });
+
+    render(<AppHeader />);
+
+    expect(screen.getByText("seedr-fork")).toBeInTheDocument();
+    expect(await screen.findByText("danieldeusing/seedr")).toBeInTheDocument();
+    expect(screen.getByText("seedr-fork").parentElement).toHaveAttribute("data-tip", "/Users/me/forks/seedr-fork");
+  });
+
+  test("shows nothing before a checkout is open", () => {
+    useStudio.setState({ repo: null });
+    render(<AppHeader />);
+    expect(screen.getByText("seedr-studio")).toBeInTheDocument();
+    expect(screen.queryByText(/\//)).not.toBeInTheDocument();
   });
 });

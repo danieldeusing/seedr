@@ -84,10 +84,11 @@ seedr/
 ├── apps/web/             # React web app (seedr.danieldeusing.de)
 │   └── public/playgrounds/  # Interactive architecture playgrounds
 ├── packages/cli/         # CLI package (npx seedr)
-├── packages/registry-ops/ # Deterministic registry operations: paths, validator, add/update/remove, compile, transactions
+├── packages/registry-ops/ # Deterministic registry operations: paths, validator, labels, add/update/remove/set-labels, compile, transactions
 ├── apps/studio/          # Seedr Studio — desktop capability manager (Tauri v2 + React), run from source
 ├── registry/
-│   ├── manifest.json           # Index: version + type descriptors
+│   ├── manifest.json           # Index: version + type descriptors + labels
+│   ├── labels.json             # Label catalogue (editable source; `set-labels` writes it)
 │   ├── skills/                 # Skill content + item.json + manifest.json
 │   ├── plugins/                # Plugin item.json files + manifest.json
 │   ├── hooks/                  # Hook content + item.json + manifest.json
@@ -139,7 +140,8 @@ Each item has a source-of-truth `item.json` in `registry/<type>s/<slug>/`. Runni
     "plugin": { "file": "plugins/manifest.json", "count": 66 },
     "hook": { "file": "hooks/manifest.json", "count": 3 },
     "agent": { "file": "agents/manifest.json", "count": 0 }
-  }
+  },
+  "labels": [{ "slug": "project-x", "name": "Project X", "color": "violet" }]
 }
 ```
 
@@ -160,25 +162,37 @@ import pluginsData from "@registry/plugins/manifest.json";
 const allItems = [...skillsData.items, ...pluginsData.items, ...];
 ```
 
-### Staged renames in registry data
+**`labels.json`** — the label catalogue, an editable source file like `item.json`:
+```json
+{ "version": 1, "labels": [{ "slug": "project-x", "name": "Project X", "color": "violet" }] }
+```
 
-Two values in `item.json` have been renamed in code but not yet in data, because the published
-CLI reads `main` live and would break on the new spelling:
+One registry serves several projects, so an item may carry one optional `label` — the slug of a
+catalogue entry. The name and colour live only here, so renaming or recolouring a label touches
+no item. `pnpm compile` copies the catalogue into `registry/manifest.json`, and the per-type
+manifests keep each item's `label` (it is card-level data, unlike `longDescription`). The
+vocabulary, the strict parser and the `set-labels` operation are described in
+[.agents/rules/registry-structure.md](.agents/rules/registry-structure.md).
 
-| Field | Canonical now | Still stored as | Vocabulary | Flip with |
+### Deprecated spellings in registry data
+
+Two values in `item.json` were renamed, in code first and then in the data, because the
+published CLI reads `main` live and would have broken on the new spelling before it shipped:
+
+| Field | Canonical | Deprecated alias | Vocabulary | Data migrated |
 |---|---|---|---|---|
-| `sourceType` | `seedr` | `toolr` | `packages/registry-ops/src/sourceTypes.ts` | `scripts/migrate-source-types.ts` |
-| `compatibility` | `antigravity` | `gemini` | `packages/registry-ops/src/agents.ts` | `scripts/migrate-agent-ids.ts` |
+| `sourceType` | `seedr` | `toolr` | `packages/registry-ops/src/sourceTypes.ts` | 2026-08-25, CLI 0.1.89 |
+| `compatibility` | `antigravity` | `gemini` | `packages/registry-ops/src/agents.ts` | 2026-08-25, CLI 0.1.88 |
 
-Both work the same way. Code reads and writes the canonical value; the deprecated one is
-accepted everywhere on input, resolved on read, and is what every writer still puts on disk —
-that last part is the `STORAGE_*` table in each vocabulary file. Never write the new value into
-`registry/**` by hand.
+Both are done. The aliases are still accepted on input and resolved on read, so an old
+`item.json`, an old `--agents` flag and a fork that never migrated all still work; nothing
+writes them any more, and the `STORAGE_*` table in each vocabulary file is empty.
 
-Each flip is one commit: empty the `STORAGE_*` table, run that migration script, verify, commit.
-Each script's header carries its precondition — check `npm view @danieldeusing/seedr version`
-first, because a migration ahead of the CLI breaks installs for every client. The two are
-independent and gated on different releases.
+The pattern is worth keeping for the next rename: canonical in code, alias accepted, one
+`STORAGE_*` table holding writers to the old spelling, and a migration script whose header
+carries the precondition — check `npm view @danieldeusing/seedr version` first, because
+migrating the data ahead of the CLI breaks installs for every client. `scripts/migrate-source-types.ts`
+and `scripts/migrate-agent-ids.ts` are the worked examples; both are idempotent and now no-ops.
 
 ## Managing Registry Items
 

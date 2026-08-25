@@ -23,6 +23,7 @@ const KEY_ORDER: (keyof ManifestItem)[] = [
   "package",
   "sourceType",
   "targetScope",
+  "label",
   "author",
   "externalUrl",
   "marketplace",

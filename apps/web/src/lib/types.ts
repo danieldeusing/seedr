@@ -5,6 +5,7 @@ export type {
   SourceType,
   ScopeType,
   PluginType,
+  LabelDefinition,
   Author,
   RegistryItem,
   RegistryManifest,

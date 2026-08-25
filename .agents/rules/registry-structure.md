@@ -27,7 +27,8 @@ stale from a manual edit. You still run `pnpm compile` yourself in non-Claude wo
 
 ```
 registry/
-├── manifest.json              # Generated index: version + per-type { file, count }
+├── manifest.json              # Generated index: version + per-type { file, count } + labels
+├── labels.json                # Source of truth for the label catalogue (hand-edited or set-labels)
 ├── skills/
 │   ├── manifest.json          # Generated: all skill items
 │   └── <slug>/
@@ -72,9 +73,13 @@ Three kinds of generated files:
     "plugin": { "file": "plugins/manifest.json", "count": 66 },
     "hook": { "file": "hooks/manifest.json", "count": 3 },
     "agent": { "file": "agents/manifest.json", "count": 0 }
-  }
+  },
+  "labels": [{ "slug": "project-x", "name": "Project X", "color": "violet" }]
 }
 ```
+
+`labels` is a verbatim copy of `registry/labels.json`, so one fetch of the index gives a
+consumer both the type descriptors and the catalogue every item's `label` resolves against.
 
 **`registry/<type>/manifest.json`** — all items of one type:
 
@@ -86,7 +91,8 @@ Three kinds of generated files:
 ```
 
 Per-type manifests strip `longDescription` (loaded on demand from `item.json`), and plugin
-manifests also strip `contents`. `"toolr"` above is verbatim: it is the deprecated spelling of
+manifests also strip `contents`. An item's `label` is kept — it is card-level data, needed to
+render and filter a list. `"toolr"` above is verbatim: it is the deprecated spelling of
 `seedr` that the data still carries (see `sourceType` below).
 
 ## `item.json` Fields
@@ -102,6 +108,42 @@ manifests also strip `contents`. `"toolr"` above is verbatim: it is the deprecat
 | `compatibility` | Yes | Non-empty subset of `claude`, `copilot`, `antigravity`, `codex`, `opencode` (`gemini` is accepted only as a deprecated alias of `antigravity`; never write it) — the vocabulary lives in `packages/registry-ops/src/agents.ts` |
 | `author` | Yes | `{ name, url? }` |
 | `externalUrl` | Community | GitHub URL the CLI fetches content from at install time |
+| `label` | No | Slug of one entry in `registry/labels.json`. Absent means unlabelled |
+
+## The Label Catalogue
+
+One registry serves several projects, so an item may carry **one** `label` — a slug like
+`project-x` or `general`. The display name and colour are defined once, in
+`registry/labels.json`:
+
+```json
+{ "version": 1, "labels": [{ "slug": "project-x", "name": "Project X", "color": "violet" }] }
+```
+
+A label `slug` follows the item slug rule (`SLUG_PATTERN`), and `color` is one of
+`LABEL_COLORS` — the twelve badge accents the web app renders (`BadgeColor` in
+`apps/web/src/lib/colors.ts`). The vocabulary and the strict parser live in
+`packages/registry-ops/src/labels.ts` (`LABEL_COLORS`, `isLabelSlug`, `parseLabels`), exported
+from both `@seedr/registry-ops` and its `/pure` entry; `readLabels(registryDir)` is the disk
+read. A catalogue that cannot be parsed is an error, never a silently empty list.
+
+Who checks what:
+
+- **`validateItem`** checks the *shape* of `label` only. It stays pure and catalogue-free, so
+  it also runs in Studio's webview, where `registry/labels.json` cannot be read.
+- **The operations** check that the label *exists*. `add-local`, `add-remote` and `update`
+  refuse a label the catalogue does not define, naming it.
+- **`set-labels`** replaces the whole catalogue in one transaction and refuses to drop a label
+  items still carry, naming those items — a silently orphaned label is the bug it prevents.
+
+Change the catalogue through the operation, not by hand:
+
+```json
+{ "v": 1, "kind": "set-labels", "labels": [{ "slug": "project-x", "name": "Project X", "color": "violet" }] }
+```
+
+An `update` patch sets the label with a slug and clears it with `null` (an operation travels as
+JSON, which drops `undefined` keys); a patch that omits `label` leaves the current one alone.
 
 ## Sync vs Compile
 

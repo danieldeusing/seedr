@@ -5,7 +5,7 @@ import { defaultGit, type GitRunner } from "./identity.js";
 import { applyOp } from "./ops/apply.js";
 import { parseOp } from "./ops/parse.js";
 import type { OpResult, RegistryOp } from "./ops/types.js";
-import { itemExists, readItem } from "./read.js";
+import { itemExists, readItem, readLabels } from "./read.js";
 import { itemDir } from "./fsPaths.js";
 import { ALL_TYPES, typeDirName } from "./paths.js";
 import { formatErrors, validateItem } from "./validate.js";
@@ -142,10 +142,12 @@ export async function runRegistryTransaction(rawOp: unknown, options: Transactio
       const changedPaths = statusPaths(await git(["status", "--porcelain", "--untracked-files=all"], repoRoot));
       // Every manifest is compile's output and may legitimately change — including one
       // that was stale before this operation. Item content may change only under the
-      // operation's own (type, slug).
+      // operation's own (type, slug), and the catalogue only under its own operation.
       const allowed = new Set([`${registryRel}/manifest.json`, ...ALL_TYPES.map((type) => `${registryRel}/${typeDirName(type)}/manifest.json`)]);
-      const itemPrefix = `${registryRel}/${typeDirName(op.type)}/${op.slug}/`;
-      const stray = changedPaths.filter((path) => !allowed.has(path) && !path.startsWith(itemPrefix));
+      const catalogueOp = op.kind === "set-labels";
+      if (catalogueOp) allowed.add(`${registryRel}/labels.json`);
+      const itemPrefix = catalogueOp ? null : `${registryRel}/${typeDirName(op.type)}/${op.slug}/`;
+      const stray = changedPaths.filter((path) => !allowed.has(path) && !(itemPrefix !== null && path.startsWith(itemPrefix)));
       if (stray.length > 0) throw new TransactionError(`Operation touched paths outside its allowlist: ${stray.join(", ")}`, "verify");
       if ((await git(["rev-parse", "HEAD"], repoRoot)) !== headBefore) throw new TransactionError("HEAD moved during the operation", "verify");
       return { result, headBefore, changedPaths };
@@ -158,6 +160,15 @@ export async function runRegistryTransaction(rawOp: unknown, options: Transactio
 }
 
 function verifyPostconditions(registryDir: string, op: RegistryOp): void {
+  if (op.kind === "set-labels") {
+    // Reads the file back through the strict parser: what was written must be
+    // exactly what the next reader — compile, Studio, the web app — will get.
+    const written = readLabels(registryDir);
+    if (JSON.stringify(written) !== JSON.stringify(op.labels)) {
+      throw new TransactionError("The label catalogue on disk does not match the operation after apply", "verify");
+    }
+    return;
+  }
   const exists = itemExists(registryDir, op.type, op.slug);
   if (op.kind === "remove") {
     if (exists || existsSync(itemDir(registryDir, op.type, op.slug))) throw new TransactionError("Item directory still exists after remove", "verify");

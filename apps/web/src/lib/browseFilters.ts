@@ -4,8 +4,9 @@
  * Every parameter is validated against the options that apply to the current
  * category; anything invalid or irrelevant is reported as "dropped" so the page
  * can remove it from the URL and tell the visitor, instead of silently showing
- * zero results. Dependent parameters (`scope` needs `source=seedr`, `ext` needs
- * `pluginType=wrapper`) are cleared together with the parameter they depend on.
+ * zero results. Dependent parameters (`scope` and `label` need `source=seedr`,
+ * `ext` needs `pluginType=wrapper`) are cleared together with the parameter they
+ * depend on.
  */
 import { canonicalAgent, canonicalSourceType } from "@seedr/registry-ops/pure";
 import type { CodingAgent, ComponentType, PluginType, RegistryItem, ScopeType, SourceType } from "./types";
@@ -50,6 +51,8 @@ export interface BrowseFilters {
   tool: CodingAgent | null;
   source: SourceType | null;
   scope: ScopeType | null;
+  /** A label slug, validated against the catalogue the page was given. */
+  label: string | null;
   pluginType: PluginType | null;
   capability: CapabilityType | null;
   kind: ItemKind | null;
@@ -61,9 +64,11 @@ export interface BrowseContext {
   componentType: ComponentType;
   /** Whether wrapper plugins are listed alongside native items (capability pages only). */
   hasWrappers: boolean;
+  /** The label catalogue, as one option per definition; empty when none are defined. */
+  labels: FilterOption[];
 }
 
-export type FilterParamKey = "q" | "tool" | "source" | "scope" | "pluginType" | "ext" | "kind" | "sortField" | "sortAsc";
+export type FilterParamKey = "q" | "tool" | "source" | "scope" | "label" | "pluginType" | "ext" | "kind" | "sortField" | "sortAsc";
 
 export interface DroppedParam {
   key: FilterParamKey;
@@ -76,7 +81,7 @@ export interface ParsedBrowseParams {
   dropped: DroppedParam[];
 }
 
-const ALL_KEYS: FilterParamKey[] = ["q", "tool", "source", "scope", "pluginType", "ext", "kind", "sortField", "sortAsc"];
+const ALL_KEYS: FilterParamKey[] = ["q", "tool", "source", "scope", "label", "pluginType", "ext", "kind", "sortField", "sortAsc"];
 
 function pickValid<T extends string>(raw: string | null, allowed: readonly FilterOption[]): T | null {
   return raw !== null && allowed.some((option) => option.value === raw) ? (raw as T) : null;
@@ -105,6 +110,7 @@ export function parseBrowseParams(params: URLSearchParams, context: BrowseContex
   // canonicalised first, so an old `?source=toolr` link still filters (as seedr)
   const source = read<SourceType>("source", sourceOptions, true, "", (raw) => canonicalSourceType(raw) ?? raw);
   const scope = read<ScopeType>("scope", scopeOptions, source === "seedr", "scope only applies to Seedr-sourced items");
+  const label = read<string>("label", context.labels, source === "seedr", "labels only apply to Seedr-sourced items");
   const pluginType = read<PluginType>("pluginType", pluginTypeOptions, isPlugins, "plugin type only applies to the plugins page");
   const capability = read<CapabilityType>("ext", capabilityOptions, isPlugins && pluginType === "wrapper", "capability only applies to wrapper plugins");
   const kind = read<ItemKind>("kind", kindOptions, !isPlugins && context.hasWrappers, "kind only applies to capability pages that list wrappers");
@@ -115,7 +121,7 @@ export function parseBrowseParams(params: URLSearchParams, context: BrowseContex
   if (rawSortAsc === "false") sortAsc = false;
   else if (rawSortAsc !== null && rawSortAsc !== "true") dropped.push({ key: "sortAsc", value: rawSortAsc, reason: `"${rawSortAsc}" is not a sort direction` });
 
-  return { filters: { query, tool, source, scope, pluginType, capability, kind, sortField, sortAsc }, dropped };
+  return { filters: { query, tool, source, scope, label, pluginType, capability, kind, sortField, sortAsc }, dropped };
 }
 
 export function sortItems(items: RegistryItem[], field: SortField, ascending: boolean): RegistryItem[] {
@@ -143,6 +149,7 @@ export function filterItems(
   if (filters.tool) result = result.filter((item) => item.compatibility.includes(filters.tool!));
   if (filters.source) result = result.filter((item) => (item.sourceType ?? "seedr") === filters.source);
   if (filters.scope) result = result.filter((item) => (item.targetScope ?? "project") === filters.scope);
+  if (filters.label) result = result.filter((item) => item.label === filters.label);
   if (filters.pluginType) result = result.filter((item) => (item.pluginType ?? "package") === filters.pluginType);
   if (filters.capability) result = result.filter((item) => matchesCapability(item, filters.capability!));
   if (filters.kind === "native") result = result.filter((item) => item.type === context.componentType);
@@ -158,8 +165,11 @@ export interface FilterChip {
 
 const labelOf = (options: FilterOption[], value: string) => options.find((option) => option.value === value)?.label ?? value;
 
-/** The active filters as removable chips (sort is not a filter and gets no chip). */
-export function activeFilterChips(filters: BrowseFilters): FilterChip[] {
+/**
+ * The active filters as removable chips (sort is not a filter and gets no chip).
+ * `labels` is the catalogue the chip's display name is read from.
+ */
+export function activeFilterChips(filters: BrowseFilters, labels: FilterOption[]): FilterChip[] {
   const chips: FilterChip[] = [];
   if (filters.query) chips.push({ key: "q", label: "Search", value: filters.query });
   if (filters.kind) chips.push({ key: "kind", label: "Kind", value: labelOf(kindOptions, filters.kind) });
@@ -167,12 +177,13 @@ export function activeFilterChips(filters: BrowseFilters): FilterChip[] {
   if (filters.capability) chips.push({ key: "ext", label: "Capability", value: labelOf(capabilityOptions, filters.capability) });
   if (filters.source) chips.push({ key: "source", label: "Source", value: sourceLabels[filters.source] });
   if (filters.scope) chips.push({ key: "scope", label: "Scope", value: scopeLabels[filters.scope] });
+  if (filters.label) chips.push({ key: "label", label: "Label", value: labelOf(labels, filters.label) });
   if (filters.tool) chips.push({ key: "tool", label: "Coding Agent", value: agentLabels[filters.tool] });
   return chips;
 }
 
-export function hasActiveFilters(filters: BrowseFilters): boolean {
-  return activeFilterChips(filters).length > 0;
+export function hasActiveFilters(filters: BrowseFilters, labels: FilterOption[]): boolean {
+  return activeFilterChips(filters, labels).length > 0;
 }
 
 /**
@@ -182,7 +193,11 @@ export function hasActiveFilters(filters: BrowseFilters): boolean {
 export function paramUpdatesFor(key: FilterParamKey, value: string | null): Record<string, string | null> {
   const normalized = value === "" || value === "all" ? null : value;
   const updates: Record<string, string | null> = { [key]: normalized };
-  if (key === "source" && normalized !== "seedr") updates.scope = null;
+  // scope and label are Seedr-only filters, so they go wherever the source goes
+  if (key === "source" && normalized !== "seedr") {
+    updates.scope = null;
+    updates.label = null;
+  }
   if (key === "pluginType" && normalized !== "wrapper") updates.ext = null;
   if (key === "sortField" && normalized === "name") updates.sortField = null;
   if (key === "sortAsc" && normalized === "true") updates.sortAsc = null;

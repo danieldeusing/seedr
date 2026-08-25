@@ -5,7 +5,7 @@ import type { FileTreeNode, RegistryItem } from "@seedr/shared";
 import { canonicalAgent, storageAgents } from "../agents.js";
 import { storageSourceType } from "../sourceTypes.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
-import { fileTree, itemExists } from "../read.js";
+import { assertLabelDefined, fileTree, itemExists } from "../read.js";
 import { assertStructurallyValid, formatErrors, validateItem } from "../validate.js";
 import type { AddLocalOp, OpResult } from "./types.js";
 
@@ -95,11 +95,13 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
     author: op.author,
     ...(op.externalUrl ? { externalUrl: op.externalUrl } : {}),
     ...(op.targetScope ? { targetScope: op.targetScope } : {}),
+    ...(op.label ? { label: op.label } : {}),
     updatedAt: today(),
     contents: { files: [] },
   };
   const errors = validateItem(provisional);
   if (errors.length > 0) throw new Error(`Item would be invalid: ${formatErrors(errors)}`);
+  assertLabelDefined(registryDir, op.label);
 
   mkdirSync(dir, { recursive: true });
   if (sourceIsDir) copyDereferenced(op.sourcePath, dir);

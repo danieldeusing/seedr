@@ -24,3 +24,8 @@ export function typeManifestPath(registryDir: string, type: ComponentType): stri
 export function indexManifestPath(registryDir: string): string {
   return join(registryDir, "manifest.json");
 }
+
+/** The label catalogue — an editable source file, not compile output. */
+export function labelsPath(registryDir: string): string {
+  return join(registryDir, "labels.json");
+}

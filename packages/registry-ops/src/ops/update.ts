@@ -5,7 +5,7 @@ import { storageAgents } from "../agents.js";
 import { isFirstParty } from "../sourceTypes.js";
 import { itemStateHash } from "../hash.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
-import { fileTree, readItem } from "../read.js";
+import { assertLabelDefined, fileTree, readItem } from "../read.js";
 import { omit } from "../util.js";
 import { formatErrors, validateItem } from "../validate.js";
 import { today } from "./addLocal.js";
@@ -53,12 +53,21 @@ export function update(registryDir: string, op: UpdateOp): OpResult {
   const dir = itemDir(registryDir, op.type, op.slug);
   const edits = (op.contentEdits ?? []).map((edit) => ({ target: insideItemDir(dir, edit.path), content: edit.content }));
 
-  const next: RegistryItem = { ...omit(current, "contentHash"), ...op.patch, updatedAt: today() };
+  const { label, ...patchFields } = op.patch;
+  const next: RegistryItem = { ...omit(current, "contentHash"), ...patchFields, updatedAt: today() };
   // A patch names what changes inside contents (usually triggers); the file list stays.
   if (op.patch.contents) next.contents = { ...current.contents, ...op.patch.contents };
+  // The label is the one field a patch can clear, so it is applied by key rather
+  // than by spread: absent means "leave it", and `null` (JSON has no `undefined`)
+  // means "remove it".
+  if ("label" in op.patch) {
+    if (typeof label === "string") next.label = label;
+    else delete next.label;
+  }
   // Content edits change the file tree; validate against the tree they will produce.
   const errors = validateItem(next, { expectedType: op.type, expectedSlug: op.slug });
   if (errors.length > 0) throw new Error(`Item would be invalid: ${formatErrors(errors)}`);
+  assertLabelDefined(registryDir, next.label);
 
   for (const edit of edits) {
     mkdirSync(dirname(edit.target), { recursive: true });

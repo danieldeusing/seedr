@@ -40,9 +40,12 @@ function parseJsonStdout<T>(outcome: RunOutcome, what: string): T {
   }
 }
 
-export async function runRegistryOp(op: RegistryOp, taskId = `op-${op.kind}-${op.type}-${op.slug}`, run: typeof runProcess = runProcess): Promise<RegistryOpOutcome> {
+/** What an operation acts on, for the task id and the error text. `set-labels` acts on the catalogue, not an item. */
+const opTarget = (op: RegistryOp): string => ("type" in op ? `${op.type}/${op.slug}` : "labels");
+
+export async function runRegistryOp(op: RegistryOp, taskId = `op-${op.kind}-${opTarget(op).replace("/", "-")}`, run: typeof runProcess = runProcess): Promise<RegistryOpOutcome> {
   const outcome = await run({ taskId, program: "npx", args: cliArgs("run", "--op", "-"), stdin: JSON.stringify(op), cwd: "", timeoutMs: REGISTRY_OP_TIMEOUT_MS });
-  return parseJsonStdout<RegistryOpOutcome>(outcome, `${op.kind} ${op.type}/${op.slug}`);
+  return parseJsonStdout<RegistryOpOutcome>(outcome, `${op.kind} ${opTarget(op)}`);
 }
 
 /** The state hash an update or remove must present — read from disk by the CLI at that moment. */

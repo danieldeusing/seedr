@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import type { RegistryItem } from "@seedr/shared";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
-import { itemExists } from "../read.js";
+import { assertLabelDefined, itemExists } from "../read.js";
 import { omit } from "../util.js";
 import { formatErrors, validateItem } from "../validate.js";
 import { today } from "./addLocal.js";
@@ -27,6 +27,7 @@ export function addRemote(registryDir: string, op: AddRemoteOp): OpResult {
   };
   const errors = validateItem(item, { expectedType: op.type, expectedSlug: op.slug });
   if (errors.length > 0) throw new Error(`Item would be invalid: ${formatErrors(errors)}`);
+  assertLabelDefined(registryDir, op.label);
 
   mkdirSync(itemDir(registryDir, op.type, op.slug), { recursive: true });
   writeFileSync(itemJsonPath(registryDir, op.type, op.slug), JSON.stringify(item, null, 2) + "\n");

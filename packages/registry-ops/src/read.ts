@@ -1,7 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ComponentType, FileTreeNode, RegistryItem, RegistryManifestIndex, TypeManifest } from "@seedr/shared";
-import { indexManifestPath, itemDir, itemJsonPath, typeDir, typeManifestPath } from "./fsPaths.js";
+import type { ComponentType, FileTreeNode, LabelDefinition, RegistryItem, RegistryManifestIndex, TypeManifest } from "@seedr/shared";
+import { indexManifestPath, itemDir, itemJsonPath, labelsPath, typeDir, typeManifestPath } from "./fsPaths.js";
+import { parseLabels } from "./labels.js";
 import { ALL_TYPES, isValidSlug } from "./paths.js";
 import { assertStructurallyValid, structuralErrors, validateItem } from "./validate.js";
 import { isFirstParty } from "./sourceTypes.js";
@@ -115,6 +116,25 @@ export function readIndex(registryDir: string): RegistryManifestIndex {
 
 export function readTypeManifest(registryDir: string, type: ComponentType): TypeManifest {
   return readJson(typeManifestPath(registryDir, type)) as TypeManifest;
+}
+
+/** The label catalogue on disk. A checkout from before labels existed simply has none. */
+export function readLabels(registryDir: string): LabelDefinition[] {
+  const path = labelsPath(registryDir);
+  return existsSync(path) ? parseLabels(readJson(path)) : [];
+}
+
+/**
+ * Refuse a label the catalogue does not define, naming it. `validateItem` stays
+ * pure and catalogue-free, so the existence check lives here, where disk is.
+ */
+export function assertLabelDefined(registryDir: string, label: string | undefined): void {
+  if (label === undefined) return;
+  const defined = readLabels(registryDir);
+  if (!defined.some((entry) => entry.slug === label)) {
+    const known = defined.length > 0 ? defined.map((entry) => entry.slug).join(", ") : "none";
+    throw new Error(`Unknown label "${label}": registry/labels.json defines ${known}`);
+  }
 }
 
 /** The file tree under `dir`, directories first, sorted, item.json excluded. */

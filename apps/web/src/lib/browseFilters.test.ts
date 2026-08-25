@@ -8,13 +8,20 @@ import {
   resetFilterUpdates,
   sortItems,
   type BrowseContext,
+  type FilterOption,
 } from "./browseFilters";
 import type { RegistryItem } from "./types";
 
 const params = (query: string) => new URLSearchParams(query);
-const plugins: BrowseContext = { componentType: "plugin", hasWrappers: false };
-const skills: BrowseContext = { componentType: "skill", hasWrappers: true };
-const hooks: BrowseContext = { componentType: "hook", hasWrappers: false };
+// registry/labels.json ships empty, so the catalogue is a fixture here
+const LABELS: FilterOption[] = [
+  { value: "project-x", label: "Project X" },
+  { value: "general", label: "General" },
+];
+const plugins: BrowseContext = { componentType: "plugin", hasWrappers: false, labels: LABELS };
+const skills: BrowseContext = { componentType: "skill", hasWrappers: true, labels: LABELS };
+const hooks: BrowseContext = { componentType: "hook", hasWrappers: false, labels: LABELS };
+const unlabelled: BrowseContext = { ...skills, labels: [] };
 
 const item = (overrides: Partial<RegistryItem>): RegistryItem => ({
   slug: "x",
@@ -26,7 +33,7 @@ const item = (overrides: Partial<RegistryItem>): RegistryItem => ({
 });
 
 const ITEMS: RegistryItem[] = [
-  item({ slug: "alpha", name: "Alpha", type: "skill", sourceType: "seedr", targetScope: "user", compatibility: ["claude", "gemini"], updatedAt: "2026-01-01" }),
+  item({ slug: "alpha", name: "Alpha", type: "skill", sourceType: "seedr", targetScope: "user", label: "project-x", compatibility: ["claude", "gemini"], updatedAt: "2026-01-01" }),
   item({ slug: "beta", name: "Beta", type: "skill", sourceType: "community", compatibility: ["copilot"], updatedAt: "2026-03-01" }),
   item({ slug: "wrap", name: "Wrap", type: "plugin", pluginType: "wrapper", wrapper: "skill", sourceType: "official", updatedAt: "2026-02-01" }),
   item({ slug: "pack", name: "Pack", type: "plugin", pluginType: "package", package: { skill: 2, hook: 1 }, sourceType: "official" }),
@@ -35,12 +42,13 @@ const ITEMS: RegistryItem[] = [
 
 describe("parseBrowseParams", () => {
   it("reads valid parameters and defaults the rest", () => {
-    const { filters, dropped } = parseBrowseParams(params("q=pdf&tool=claude&source=seedr&scope=user&sortField=updated&sortAsc=false"), skills);
+    const { filters, dropped } = parseBrowseParams(params("q=pdf&tool=claude&source=seedr&scope=user&label=project-x&sortField=updated&sortAsc=false"), skills);
     expect(filters).toEqual({
       query: "pdf",
       tool: "claude",
       source: "seedr",
       scope: "user",
+      label: "project-x",
       pluginType: null,
       capability: null,
       kind: null,
@@ -65,6 +73,26 @@ describe("parseBrowseParams", () => {
     ]);
     expect(parseBrowseParams(params("source=community&scope=user"), skills).filters.scope).toBeNull();
     expect(parseBrowseParams(params("source=seedr&scope=user"), skills).filters.scope).toBe("user");
+  });
+
+  it("drops a label unless the source is seedr", () => {
+    expect(parseBrowseParams(params("label=project-x"), skills).dropped).toEqual([
+      { key: "label", value: "project-x", reason: "labels only apply to Seedr-sourced items" },
+    ]);
+    expect(parseBrowseParams(params("source=community&label=project-x"), skills).filters.label).toBeNull();
+    expect(parseBrowseParams(params("source=seedr&label=project-x"), skills).filters.label).toBe("project-x");
+  });
+
+  it("drops a label the catalogue does not define", () => {
+    const { filters, dropped } = parseBrowseParams(params("source=seedr&label=nope"), skills);
+    expect(filters.label).toBeNull();
+    expect(dropped).toEqual([{ key: "label", value: "nope", reason: '"nope" is not a known label' }]);
+  });
+
+  it("drops every label when the catalogue is empty", () => {
+    const { filters, dropped } = parseBrowseParams(params("source=seedr&label=project-x"), unlabelled);
+    expect(filters.label).toBeNull();
+    expect(dropped).toEqual([{ key: "label", value: "project-x", reason: '"project-x" is not a known label' }]);
   });
 
   it("resolves a deprecated source value, so an old ?source=toolr link still filters", () => {
@@ -111,6 +139,11 @@ describe("filterItems", () => {
     expect(filterItems(ITEMS, { ...base, source: "seedr", scope: "user" }, skills, search).map((i) => i.slug)).toEqual(["alpha"]);
   });
 
+  it("filters by label, keeping only the items that carry it", () => {
+    expect(filterItems(ITEMS, { ...base, label: "project-x" }, skills, search).map((i) => i.slug)).toEqual(["alpha"]);
+    expect(filterItems(ITEMS, { ...base, label: "general" }, skills, search)).toEqual([]);
+  });
+
   it("filters plugins by type and wrapped capability", () => {
     const pluginBase = parseBrowseParams(params(""), plugins).filters;
     expect(filterItems(ITEMS, { ...pluginBase, pluginType: "wrapper" }, plugins, search).map((i) => i.slug)).toEqual(["wrap"]);
@@ -140,19 +173,20 @@ describe("sortItems", () => {
 
 describe("chips and updates", () => {
   it("lists the active filters as chips with human labels", () => {
-    const { filters } = parseBrowseParams(params("q=pdf&tool=claude&source=seedr&scope=local&sortField=updated"), skills);
-    expect(activeFilterChips(filters)).toEqual([
+    const { filters } = parseBrowseParams(params("q=pdf&tool=claude&source=seedr&scope=local&label=project-x&sortField=updated"), skills);
+    expect(activeFilterChips(filters, skills.labels)).toEqual([
       { key: "q", label: "Search", value: "pdf" },
       { key: "source", label: "Source", value: "Seedr" },
       { key: "scope", label: "Scope", value: "Local" },
+      { key: "label", label: "Label", value: "Project X" },
       { key: "tool", label: "Coding Agent", value: "Claude Code" },
     ]);
   });
 
   it("clears dependants together with their parent", () => {
-    expect(paramUpdatesFor("source", "community")).toEqual({ source: "community", scope: null });
+    expect(paramUpdatesFor("source", "community")).toEqual({ source: "community", scope: null, label: null });
     expect(paramUpdatesFor("source", "seedr")).toEqual({ source: "seedr" });
-    expect(paramUpdatesFor("source", null)).toEqual({ source: null, scope: null });
+    expect(paramUpdatesFor("source", null)).toEqual({ source: null, scope: null, label: null });
     expect(paramUpdatesFor("pluginType", "package")).toEqual({ pluginType: "package", ext: null });
     expect(paramUpdatesFor("pluginType", "wrapper")).toEqual({ pluginType: "wrapper" });
     expect(paramUpdatesFor("tool", "all")).toEqual({ tool: null });
@@ -166,7 +200,7 @@ describe("chips and updates", () => {
   });
 
   it("resets every filter but keeps the sort, and removes dropped parameters", () => {
-    expect(resetFilterUpdates()).toEqual({ q: null, tool: null, source: null, scope: null, pluginType: null, ext: null, kind: null });
+    expect(resetFilterUpdates()).toEqual({ q: null, tool: null, source: null, scope: null, label: null, pluginType: null, ext: null, kind: null });
     expect(dropUpdates([{ key: "ext", value: "x", reason: "" }, { key: "scope", value: "y", reason: "" }])).toEqual({ ext: null, scope: null });
   });
 });

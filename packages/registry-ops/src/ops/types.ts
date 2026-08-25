@@ -1,4 +1,4 @@
-import type { Author, CodingAgent, ComponentType, HookTrigger, PluginType, RegistryItem, ScopeType, SourceType } from "@seedr/shared";
+import type { Author, CodingAgent, ComponentType, HookTrigger, LabelDefinition, PluginType, RegistryItem, ScopeType, SourceType } from "@seedr/shared";
 
 /**
  * Versioned, discriminated operation payloads. Anything that is not one of these
@@ -18,6 +18,8 @@ export interface AddLocalOp {
   author: Author;
   externalUrl?: string;
   targetScope?: ScopeType;
+  /** Slug of a label the catalogue already defines; the operation is refused otherwise. */
+  label?: string;
   /** Hook triggers, when the source is a hook script (extracted by the caller). */
   triggers?: HookTrigger[];
 }
@@ -40,6 +42,8 @@ export interface AddRemoteOp {
   marketplace?: string;
   updatedAt?: string;
   targetScope?: ScopeType;
+  /** Slug of a label the catalogue already defines; the operation is refused otherwise. */
+  label?: string;
   contents?: RegistryItem["contents"];
   // Immutable source identity (docs/registry-integrity.md): the caller — the
   // add-community skill or Studio, which already read the repository tree —
@@ -59,7 +63,14 @@ export interface FileEdit {
 }
 
 /** Fields an update may change — identity and provenance are not among them. */
-export type UpdatePatch = Partial<Omit<RegistryItem, "slug" | "type" | "sourceType" | "contentHash">>;
+export type UpdatePatch = Partial<Omit<RegistryItem, "slug" | "type" | "sourceType" | "contentHash" | "label">> & {
+  /**
+   * A slug sets the label, `null` clears it, and an absent key leaves it alone.
+   * `null` rather than `undefined` because an operation travels as JSON, which
+   * drops undefined keys — the clear would arrive as "no change".
+   */
+  label?: string | null;
+};
 
 export interface UpdateOp {
   v: 1;
@@ -80,12 +91,26 @@ export interface RemoveOp {
   expectedHash: string;
 }
 
-export type RegistryOp = AddLocalOp | AddRemoteOp | UpdateOp | RemoveOp;
+/**
+ * Replace the whole label catalogue in one transaction. It has no `(type, slug)`
+ * key because it acts on `registry/labels.json`, not on an item — and it refuses
+ * to drop a label items still carry, naming them.
+ */
+export interface SetLabelsOp {
+  v: 1;
+  kind: "set-labels";
+  labels: LabelDefinition[];
+}
+
+export type RegistryOp = AddLocalOp | AddRemoteOp | UpdateOp | RemoveOp | SetLabelsOp;
 
 export interface OpResult {
   kind: RegistryOp["kind"];
-  type: ComponentType;
-  slug: string;
-  /** The item as it now is on disk, or null after a remove. */
+  /** The item the operation acted on. Absent for `set-labels`, which acts on the catalogue. */
+  type?: ComponentType;
+  slug?: string;
+  /** The item as it now is on disk; null after a remove, and for `set-labels`. */
   item: RegistryItem | null;
+  /** The catalogue as it now is on disk. `set-labels` only. */
+  labels?: LabelDefinition[];
 }

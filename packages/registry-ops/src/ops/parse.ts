@@ -15,6 +15,12 @@ function requireString(op: Envelope, field: string): void {
   if (typeof op[field] !== "string" || op[field] === "") fail(`"${field}" must be a non-empty string`);
 }
 
+/** Every operation on one item is keyed by (type, slug); the catalogue operation is not. */
+function requireItemKey(op: Envelope): void {
+  if (!isComponentType(op.type)) fail(`unknown type ${JSON.stringify(op.type)}`);
+  if (!isValidSlug(op.slug)) fail(`invalid slug ${JSON.stringify(op.slug)}`);
+}
+
 function requireItemFields(op: Envelope): void {
   requireString(op, "name");
   if (!Array.isArray(op.compatibility)) fail('"compatibility" must be an array');
@@ -22,6 +28,7 @@ function requireItemFields(op: Envelope): void {
 }
 
 function checkUpdate(op: Envelope): void {
+  requireItemKey(op);
   requireString(op, "expectedHash");
   if (!isRecord(op.patch)) fail('"patch" must be an object');
   for (const locked of ["slug", "type", "sourceType", "contentHash"]) {
@@ -38,10 +45,12 @@ function checkUpdate(op: Envelope): void {
 
 const CHECKS: Record<string, (op: Envelope) => void> = {
   "add-local": (op) => {
+    requireItemKey(op);
     requireString(op, "sourcePath");
     requireItemFields(op);
   },
   "add-remote": (op) => {
+    requireItemKey(op);
     requireString(op, "externalUrl");
     requireString(op, "sourceRevision");
     requireString(op, "contentDigest");
@@ -49,10 +58,16 @@ const CHECKS: Record<string, (op: Envelope) => void> = {
   },
   update: checkUpdate,
   remove: (op) => {
+    requireItemKey(op);
     requireString(op, "expectedHash");
     if (!(KNOWN_SOURCE_TYPES as readonly string[]).includes(String(op.sourceType))) {
       fail(`unknown sourceType ${JSON.stringify(op.sourceType)}`);
     }
+  },
+  // The entries themselves are checked by parseLabels when the operation is applied,
+  // against the same catalogue file it will be read back from.
+  "set-labels": (op) => {
+    if (!Array.isArray(op.labels)) fail('"labels" must be an array');
   },
 };
 
@@ -66,8 +81,6 @@ export function parseOp(value: unknown): RegistryOp {
   if (value.v !== 1) fail(`unsupported version ${JSON.stringify(value.v)} (expected 1)`);
   const check = typeof value.kind === "string" ? CHECKS[value.kind] : undefined;
   if (!check) fail(`unknown kind ${JSON.stringify(value.kind)}`);
-  if (!isComponentType(value.type)) fail(`unknown type ${JSON.stringify(value.type)}`);
-  if (!isValidSlug(value.slug)) fail(`invalid slug ${JSON.stringify(value.slug)}`);
   check(value);
   return value as unknown as RegistryOp;
 }

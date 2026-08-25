@@ -43,7 +43,7 @@ describe("updateStore", () => {
     expect(updateRefusal(pdf)).toMatch(/official items are refreshed by the sync/);
     expect(updateRefusal(playwright)).toBeNull();
 
-    const form = { name: "Playwright", prompt: "", refreshMeta: true, description: "Drives a browser.", longDescription: LONG, compatibility: ["claude" as const], targetScope: "" as const };
+    const form = { name: "Playwright", prompt: "", refreshMeta: true, label: "", description: "Drives a browser.", longDescription: LONG, compatibility: ["claude" as const], targetScope: "" as const };
     expect(toPatch(playwright, form)).toEqual({});
     expect(toPatch(playwright, { ...form, name: "Playwright MCP", targetScope: "project" })).toEqual({ name: "Playwright MCP", targetScope: "project" });
     expect(formProblems(playwright, { ...form, compatibility: [] }).map((p) => p.field)).toEqual(["compatibility"]);

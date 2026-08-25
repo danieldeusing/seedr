@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { onCommand } from "@/test/mockIpc";
 import { AuthorForm } from "./AuthorForm";
+import { emptyPrePrompts, usePrePrompts } from "@/features/settings/prePrompts";
 import { emptyForm, useAuthor } from "./store";
 
 const LONG = "Reads `item.json` files and " + "checks every description carefully ".repeat(10);
@@ -66,5 +67,62 @@ describe("AuthorForm", () => {
     useAuthor.setState({ probe: { available: true, version: "2.1.226", diagnostic: null }, form: { ...emptyForm(), sourcePath: "/src/pdf", slug: "pdf", name: "PDF" }, draftErrors: ["the draft was rejected twice", "description is missing"] });
     render(<AuthorForm onAdded={() => {}} />);
     expect(await screen.findByRole("alert")).toHaveTextContent("Draft rejected: the draft was rejected twice; description is missing");
+  });
+});
+
+describe("AuthorForm — where the capability comes from", () => {
+  /** Open a Select by its label and choose one of its options. */
+  async function choose(selectLabel: string, option: string) {
+    await userEvent.click(screen.getByRole("button", { name: selectLabel }));
+    await userEvent.click(screen.getByRole("option", { name: option }));
+  }
+
+  test("a git repository asks for the URL instead of a folder, and refuses a non-github one", async () => {
+    render(<AuthorForm onAdded={() => {}} />);
+    await choose("source kind", "a git repository");
+
+    expect(screen.queryByRole("button", { name: "choose folder" })).not.toBeInTheDocument();
+    expect(screen.getByText(/paste the repository's URL/)).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText("repository"), "https://gitlab.com/o/r");
+    expect(screen.getByText(/only github.com repositories/)).toBeInTheDocument();
+
+    await userEvent.clear(screen.getByLabelText("repository"));
+    await userEvent.type(screen.getByLabelText("repository"), "https://github.com/obra/superpowers");
+    expect(screen.getByRole("button", { name: "hand it to the agent" })).toBeEnabled();
+  });
+
+  test("the prompt is the type's pre-prompt until it is edited by hand", async () => {
+    usePrePrompts.setState({ prompts: { ...emptyPrePrompts(), skill: { add: "use skill-creator", update: "" }, hook: { add: "hooks are scripts", update: "" } } });
+    useAuthor.getState().reset();
+    render(<AuthorForm onAdded={() => {}} />);
+
+    const prompt = screen.getByLabelText("prompt");
+    expect(prompt).toHaveValue("use skill-creator");
+
+    await choose("type", "hook");
+    expect(prompt).toHaveValue("hooks are scripts");
+
+    await userEvent.type(prompt, " and mine");
+    await choose("type", "skill");
+    expect(prompt).toHaveValue("hooks are scripts and mine");
+  });
+
+  test("handing a description to the agent locks the field rather than hiding it", async () => {
+    render(<AuthorForm onAdded={() => {}} />);
+    await screen.findByText("2.1.226");
+    expect(screen.getByLabelText("description")).toBeEnabled();
+
+    await choose("who writes the description", "the agent drafts it");
+
+    expect(screen.getByLabelText("description")).toBeDisabled();
+    expect(screen.getByLabelText("description")).toHaveAttribute("placeholder", "the agent writes this");
+  });
+
+  test("every label explains itself on hover", () => {
+    render(<AuthorForm onAdded={() => {}} />);
+    for (const label of ["from", "slug", "type", "name", "agents", "scope", "author", "description", "tl;dr", "prompt"]) {
+      expect(screen.getByText(label, { selector: ".lbl" })).toHaveAttribute("data-tip");
+    }
   });
 });

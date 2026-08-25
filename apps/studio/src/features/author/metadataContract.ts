@@ -18,6 +18,8 @@ export interface DraftRequest {
   compatibility: CodingAgent[];
   /** Relative path → file text, of the files that matter (SKILL.md, README, scripts…). */
   files: Record<string, string>;
+  /** The user's own context for this item, from the form's prompt field. */
+  notes?: string;
 }
 
 export interface MetadataDraft {
@@ -59,6 +61,7 @@ export function buildPrompt(request: DraftRequest): string {
     "",
     `Item: ${request.name} (${request.type}, slug "${request.slug}"), installed into: ${request.compatibility.join(", ")}.`,
     "",
+    ...(request.notes?.trim() ? [`What the maintainer says about it: ${request.notes.trim()}`, ""] : []),
     "Rules:",
     "- description: one sentence that says what it does; lead with the verb; no 'Use when…', no restating the name.",
     "- longDescription: 30–90 words of concrete facts a reader needs to decide whether to install — counts, file names, commands, approach. Markdown: bullets with **bold** category names when listing 3+ things; backticks for file names, commands and identifiers (never for brand or pattern names). No marketing language.",

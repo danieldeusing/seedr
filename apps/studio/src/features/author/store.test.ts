@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { emit, invoke, onCommand } from "@/test/mockIpc";
-import { emptyForm, formProblems, toOp, useAuthor } from "./store";
+import { ADD_JOB_TOOLS, emptyForm, formProblems, githubProblem, jobPrompt, parseAdded, toOp, useAuthor } from "./store";
 
 const LONG = "Reads `item.json` files and " + "checks every description carefully ".repeat(10);
 const HELP = "--output-format --json-schema --tools";
@@ -109,7 +109,7 @@ describe("useAuthor", () => {
     await useAuthor.getState().apply();
 
     expect(useAuthor.getState().phase).toBe("done");
-    expect(useAuthor.getState().outcome?.changedPaths).toEqual(["registry/skills/pdf/item.json"]);
+    expect(useAuthor.getState().result).toMatchObject({ kind: "op", changedPaths: ["registry/skills/pdf/item.json"] });
     expect(requests[0]?.args).toEqual(["tsx", "scripts/registry-op.ts", "run", "--op", "-"]);
     expect(JSON.parse(requests[0]?.stdin ?? "{}")).toMatchObject({ v: 1, kind: "add-local", slug: "pdf" });
   });
@@ -127,5 +127,83 @@ describe("useAuthor", () => {
     await useAuthor.getState().cancel();
     expect(invoke).toHaveBeenCalledWith("cancel_process", { taskId: "author-draft-0" });
     expect(invoke).toHaveBeenCalledWith("cancel_process", { taskId: "author-draft-1" });
+  });
+});
+
+describe("jobs — a repository or a prompt", () => {
+  test("only github repositories are accepted, with an owner and a name", () => {
+    expect(githubProblem("")).toBe("paste the repository's URL");
+    expect(githubProblem("github.com/obra/superpowers")).toBe("not a URL");
+    expect(githubProblem("http://github.com/obra/superpowers")).toBe("only https URLs are fetched");
+    expect(githubProblem("https://gitlab.com/obra/superpowers")).toMatch(/github.com/);
+    expect(githubProblem("https://github.com/obra")).toBe("name the owner and the repository");
+    expect(githubProblem("https://github.com/obra/superpowers")).toBeNull();
+    expect(githubProblem("https://github.com/obra/superpowers/tree/main/skills/x")).toBeNull();
+  });
+
+  test("what the form must have depends on where the capability comes from", () => {
+    const repo = { ...emptyForm(), sourceKind: "repo" as const };
+    expect(formProblems(repo).map((p) => p.field)).toEqual(["repoUrl"]);
+    expect(formProblems({ ...repo, repoUrl: "https://github.com/obra/superpowers" })).toEqual([]);
+
+    const agent = { ...emptyForm(), sourceKind: "agent" as const, prompt: "" };
+    expect(formProblems(agent).map((p) => p.field)).toEqual(["prompt"]);
+    expect(formProblems({ ...agent, prompt: "a skill that renames files" })).toEqual([]);
+  });
+
+  test("the job prompt names the repo's own skill, carries the hints and asks for the ADDED line", () => {
+    const prompt = jobPrompt({ ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/obra/superpowers ", prompt: "use the marketplace entry", slug: "superpowers", longDescriptionSource: "agent" });
+    expect(prompt).toContain("/add-community https://github.com/obra/superpowers");
+    expect(prompt).toContain("use the marketplace entry");
+    expect(prompt).toContain("slug: superpowers");
+    expect(prompt).toContain("agents: claude");
+    expect(prompt).toContain("registry-descriptions.md");
+    expect(prompt).toContain("ADDED <type>/<slug>");
+    expect(jobPrompt({ ...emptyForm(), sourceKind: "agent", prompt: "renames files" })).toContain("/add-toolr");
+  });
+
+  test("parseAdded takes only a known type", () => {
+    expect(parseAdded("blah\nADDED skill/pdf")).toEqual({ type: "skill", slug: "pdf" });
+    expect(parseAdded("ADDED nonsense/pdf")).toBeNull();
+    expect(parseAdded("nothing here")).toBeNull();
+  });
+
+  test("a repository is handed to the agent, and what it added is selected", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/obra/superpowers" }, probe: PROBE_OK });
+    const requests = scriptHost({
+      claude: () => ({ stdout: JSON.stringify({ type: "result", is_error: false, result: "Added it.\nADDED plugin/superpowers" }) }),
+    });
+
+    await useAuthor.getState().apply();
+
+    expect(useAuthor.getState().phase).toBe("done");
+    expect(useAuthor.getState().result).toMatchObject({ kind: "job", added: { type: "plugin", slug: "superpowers" } });
+    expect(requests[0]?.args).toContain("--allowedTools");
+    expect(requests[0]?.args.at(-1)).toBe(ADD_JOB_TOOLS.join(","));
+    expect(requests[0]?.args.at(-1)).not.toContain("Bash(git");
+  });
+
+  test("a refused tool is named, and the run stays open for a retry", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), sourceKind: "agent", prompt: "a skill that renames files" }, probe: PROBE_OK });
+    scriptHost({ claude: () => ({ stdout: JSON.stringify({ type: "result", is_error: true, result: "I could not run git", permission_denials: [{ tool_name: "Bash" }] }) }) });
+
+    await useAuthor.getState().apply();
+
+    expect(useAuthor.getState().phase).toBe("idle");
+    expect(useAuthor.getState().error).toBe("I could not run git");
+    expect(useAuthor.getState().draftErrors[0]).toMatch(/asked for Bash, which it is not allowed/);
+  });
+
+  test("without a working agent the job is refused before anything runs", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), sourceKind: "agent", prompt: "x" }, probe: { available: false, version: null, diagnostic: "Claude Code is not installed" } });
+    await useAuthor.getState().apply();
+    expect(useAuthor.getState().phase).toBe("idle");
+    expect(useAuthor.getState().error).toBe("Claude Code is not installed");
+  });
+
+  test("cancel kills the job's process", async () => {
+    useAuthor.setState({ phase: "running" });
+    await useAuthor.getState().cancel();
+    expect(invoke).toHaveBeenCalledWith("cancel_process", { taskId: "author-job" });
   });
 });

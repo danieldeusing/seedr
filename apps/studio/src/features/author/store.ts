@@ -162,11 +162,17 @@ function hints(form: AddLocalForm): string {
  * not accept. So when the tooling is borrowed, the prompt names the file.
  */
 function toolingReference(tooling: BorrowedTooling, relative: string, invocation: string): string {
-  return tooling ? `the instructions in ${tooling.root}/${relative}` : invocation;
+  return tooling ? `the instructions in ${tooling.toolingRoot}/${relative}` : invocation;
 }
 
-/** The checkout whose skills and rules this run borrows, or null when it has its own. */
-export type BorrowedTooling = { root: string } | null;
+/**
+ * The checkout whose skills and rules this run borrows, and the one being
+ * written to. Both are passed rather than read from a module global: the
+ * operations CLI needs `--repo <registry>` spelled out, and a blank there is
+ * not a failure anyone would notice — the CLI would quietly fall back to its
+ * own directory.
+ */
+export type BorrowedTooling = { toolingRoot: string; registryRoot: string } | null;
 
 /**
  * Studio already picks a checkout to borrow the operations CLI from when the
@@ -174,8 +180,8 @@ export type BorrowedTooling = { root: string } | null;
  * does not carry the skills that drive it either.
  */
 const borrowedTooling = (): BorrowedTooling => {
-  const tooling = useStudio.getState().toolingRepo;
-  return tooling ? { root: tooling.root } : null;
+  const { toolingRepo, repo } = useStudio.getState();
+  return toolingRepo && repo ? { toolingRoot: toolingRepo.root, registryRoot: repo.root } : null;
 };
 
 /**
@@ -188,11 +194,11 @@ export function jobPrompt(form: AddLocalForm, tooling: BorrowedTooling = null): 
   // `/add-community <url>` is the skill's own trigger form, so it stays exactly
   // that when the skill is local; only a borrowed one has to be named by file.
   const repoTask = tooling
-    ? `Add ${form.repoUrl.trim()} to this registry, following the instructions in ${tooling.root}/.agents/skills/add-community/SKILL.md.`
+    ? `Add ${form.repoUrl.trim()} to this registry, following the instructions in ${tooling.toolingRoot}/.agents/skills/add-community/SKILL.md.`
     : `/add-community ${form.repoUrl.trim()}`;
   const task =
     form.sourceKind === "repo" ? repoTask : `Author a new first-party ${form.type} capability for this registry, then add it with ${addSkill}.`;
-  const rules = tooling ? `${tooling.root}/.agents/rules/registry-descriptions.md` : ".agents/rules/registry-descriptions.md";
+  const rules = tooling ? `${tooling.toolingRoot}/.agents/rules/registry-descriptions.md` : ".agents/rules/registry-descriptions.md";
   const descriptions =
     form.description.trim() && form.longDescription.trim()
       ? "Use the descriptions given above verbatim."
@@ -204,7 +210,14 @@ export function jobPrompt(form: AddLocalForm, tooling: BorrowedTooling = null): 
     `Honour these where they are given, derive the rest:\n${hints(form)}`,
     descriptions,
     tooling
-      ? `Read that tooling from ${tooling.root}, but write only inside this checkout: it is the registry, and the other checkout is not yours to change.`
+      ? [
+          `Read that tooling from ${tooling.toolingRoot}, but write only inside this checkout: it is the registry, and the other checkout is not yours to change.`,
+          // The skill says `npx tsx scripts/registry-op.ts …`, which is a path
+          // relative to the agent's own directory. There is no such script in a
+          // registry-only checkout, and an agent that cannot run the operation
+          // writes item.json by hand instead.
+          `The operations CLI is not in this checkout either. Wherever the skill says \`npx tsx scripts/registry-op.ts <args>\`, run \`npx tsx ${tooling.toolingRoot}/scripts/registry-op.ts --repo ${tooling.registryRoot} <args>\` instead. Never write item.json yourself — the operation validates what it writes, and a hand-written one is refused.`,
+        ].join(" ")
       : "Work inside this checkout only. A CLI refuses to write outside it, so a scaffolding script that wants a scratch directory should be given one *inside* the checkout — remove it when you are done.",
     "Read GitHub, never write to it: `gh api` for lookups only, never with -X, --method or -f. Do not commit or push. Finish with a final line of exactly `ADDED <type>/<slug>`.",
   ]

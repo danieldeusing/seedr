@@ -190,11 +190,22 @@ async fn pick_repo(app: AppHandle, repo: State<'_, Repo>) -> Result<Option<RepoI
 /// Re-baseline: the open checkout becomes the one every other is measured
 /// against. Deliberate, because it is what silences the alert.
 #[tauri::command]
-fn set_default_repo(repo: State<Repo>) -> Result<RepoInfo, String> {
-    let root = current_root(&repo)?;
+fn set_default_repo(path: String, repo: State<Repo>) -> Result<RepoInfo, String> {
+    // Named explicitly rather than taken from the open checkout: the default is
+    // set in settings, where the folder being named may not be the one open.
+    let chosen = PathBuf::from(path);
+    repo_info(&chosen)?;
     let file = default_repo_file().ok_or_else(|| "No configuration directory to record the default checkout in".to_string())?;
-    write_repo_path(&file, &root);
-    repo_info(&root)
+    write_repo_path(&file, &chosen);
+    // The answer describes the checkout that is open, whose is_default may have
+    // just changed either way.
+    repo_info(&current_root(&repo)?)
+}
+
+/// The checkout Studio treats as home, if one has been recorded.
+#[tauri::command]
+fn default_repo() -> Option<String> {
+    default_repo_file().as_deref().and_then(default_repo_at).map(|path| path.display().to_string())
 }
 
 #[tauri::command]
@@ -507,6 +518,7 @@ pub fn run() {
             pick_repo,
             get_repo,
             set_default_repo,
+            default_repo,
             list_dir,
             read_text,
             path_exists,

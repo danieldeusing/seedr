@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
@@ -139,9 +139,8 @@ describe("RepoBadge", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  test("anywhere else it warns, names the folder and its remote, and offers to re-baseline", async () => {
+  test("anywhere else it warns and names the folder and its remote, and offers no way to agree", async () => {
     onCommand("read_text", () => CONFIG);
-    onCommand("set_default_repo", () => ({ root: FORK, name: "seedr-fork", isDefault: true, hasOps: true }));
     useStudio.setState({ repo: { root: FORK, name: "seedr-fork", isDefault: false, hasOps: true } });
 
     render(<AppHeader />);
@@ -150,9 +149,9 @@ describe("RepoBadge", () => {
     expect(await screen.findByText("danieldeusing/seedr")).toBeInTheDocument();
     expect(screen.getByText(/outside the default folder/)).toHaveAttribute("data-tip", FORK);
 
-    await userEvent.click(screen.getByRole("button", { name: "make this the default" }));
-    expect(invoke).toHaveBeenCalledWith("set_default_repo");
-    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    // Dismissing a warning next to the warning is agreement, not a decision —
+    // the default checkout is changed in settings instead.
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   test("shows nothing before a checkout is open", () => {

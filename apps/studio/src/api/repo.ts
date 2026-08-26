@@ -24,5 +24,9 @@ export const pickRepo = (): Promise<RepoInfo | null> => invoke<RepoInfo | null>(
 
 export const getRepo = (): Promise<RepoInfo | null> => invoke<RepoInfo | null>("get_repo");
 
-/** Makes the open checkout the default one, which is what silences the alert. */
-export const setDefaultRepo = (): Promise<RepoInfo> => invoke<RepoInfo>("set_default_repo");
+/** The checkout Studio treats as home, if one has been recorded. */
+export const defaultRepo = (): Promise<string | null> => invoke<string | null>("default_repo");
+
+/** Records a checkout as the default; answers with the open one, whose isDefault may have changed. */
+export const setDefaultRepo = (path: string): Promise<RepoInfo> => invoke<RepoInfo>("set_default_repo", { path });
+

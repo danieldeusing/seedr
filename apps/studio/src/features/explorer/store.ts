@@ -24,7 +24,8 @@ interface StudioState {
   chooseRepo(): Promise<void>;
   clearRepoError(): void;
   /** Make the open checkout the one Studio calls home. */
-  makeRepoDefault(): Promise<void>;
+  /** Record a checkout as the default. Resolves to an error, or null. */
+  makeRepoDefault(path: string): Promise<string | null>;
   refresh(): Promise<void>;
   select(selection: Selection | null): void;
 }
@@ -79,11 +80,14 @@ export const useStudio = create<StudioState>((set, get) => ({
     }
   },
 
-  async makeRepoDefault() {
+  async makeRepoDefault(path) {
     try {
-      set({ repo: await setDefaultRepo() });
+      // The host answers with the *open* checkout, whose isDefault may have
+      // changed in either direction by naming another folder as home.
+      set({ repo: await setDefaultRepo(path) });
+      return null;
     } catch (error) {
-      set({ error: (error as Error).message });
+      return (error as Error).message;
     }
   },
 

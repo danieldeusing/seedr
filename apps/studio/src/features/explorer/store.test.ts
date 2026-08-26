@@ -59,18 +59,25 @@ describe("useStudio", () => {
     expect(useStudio.getState().repoError).toBe("Not a seedr registry: no registry/ directory");
   });
 
-  test("makeRepoDefault re-baselines the open checkout, and says so when the host cannot", async () => {
+  test("makeRepoDefault records the named checkout, and reports what the host refused", async () => {
     const elsewhere = { root: "/forks/seedr", name: "seedr", isDefault: false, hasOps: true };
     useStudio.setState({ repo: elsewhere });
-    onCommand("set_default_repo", () => ({ ...elsewhere, isDefault: true, hasOps: true }));
-    await useStudio.getState().makeRepoDefault();
+    let named: string | undefined;
+    onCommand("set_default_repo", (args) => {
+      named = (args as { path: string }).path;
+      return { ...elsewhere, isDefault: true, hasOps: true };
+    });
+
+    expect(await useStudio.getState().makeRepoDefault("/forks/seedr")).toBeNull();
+    expect(named).toBe("/forks/seedr");
     expect(useStudio.getState().repo).toEqual({ ...elsewhere, isDefault: true, hasOps: true });
 
     onCommand("set_default_repo", () => {
       throw new Error("No configuration directory to record the default checkout in");
     });
-    await useStudio.getState().makeRepoDefault();
-    expect(useStudio.getState().error).toMatch(/No configuration directory/);
+    // The message goes back to whoever asked — the settings page — rather than
+    // into the registry error line, which is not what this is about.
+    expect(await useStudio.getState().makeRepoDefault("/nope")).toMatch(/No configuration directory/);
   });
 
   test("a registry change event refreshes, and a selection that disappeared is dropped", async () => {

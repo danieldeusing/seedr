@@ -1,5 +1,6 @@
 import type { CanonicalCodingAgent } from "@seedr/shared";
 import { runProcess, type RunOutcome } from "@/api/agent";
+import { openRepoRoot } from "@/api/registryCli";
 import { AGENT_LABELS } from "@seedr/registry-ops/pure";
 import { adapterFor, jsonCandidates } from "./adapters";
 import { buildPrompt, parseDraft, type DraftRequest, type DraftResult } from "./metadataContract";
@@ -117,7 +118,7 @@ export function normaliseClaudeOutcome(outcome: RunOutcome): NormalisedOutcome {
 }
 
 export function claudeDraftArgs(): string[] {
-  return adapterFor("claude").draft("").args;
+  return adapterFor("claude").draft("", "").args;
 }
 
 /**
@@ -136,7 +137,7 @@ export async function draftWith(
   const base = buildPrompt(request);
   const failed = (message: string) => message.startsWith(`${adapter.program} `);
   const attempt = async (index: number, prompt: string): Promise<DraftResult> => {
-    const invocation = adapter.draft(prompt);
+    const invocation = adapter.draft(prompt, openRepoRoot());
     const raw = await run({ taskId: `${taskId}-${index}`, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), timeoutMs: DRAFT_TIMEOUT_MS });
     const verdict = adapter.readOutcome(raw);
     // A run the user stopped, or one the watchdog ended, is not a refusal by the

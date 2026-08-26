@@ -27,6 +27,17 @@ export const AGENT_PROGRAMS: Record<CanonicalCodingAgent, string> = {
 export const DRAFT_CERTIFIED: readonly CanonicalCodingAgent[] = CANONICAL_AGENTS;
 export const GIT_CERTIFIED: readonly CanonicalCodingAgent[] = CANONICAL_AGENTS;
 
+/**
+ * Agents whose CLI cannot be told to refuse a command. Everyone else takes a
+ * deny-rule for `git`, so a job cannot commit, push or rewrite history whatever
+ * its prompt says. These two can: agy has no deny flag at all, and opencode's
+ * `run` ignored `OPENCODE_PERMISSION` under both the `bash` and the `shell` key
+ * — `git status` ran regardless. So a job there is bounded by its prompt and by
+ * the transaction that follows it, not by the tool itself, and the settings page
+ * says so rather than implying a boundary that is not there.
+ */
+export const NO_TOOL_DENIAL: readonly CanonicalCodingAgent[] = ["antigravity", "opencode"];
+
 const PREFERRED_KEY = "studio-preferred-agent";
 
 const loadPreferred = (): CanonicalCodingAgent => {

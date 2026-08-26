@@ -2,6 +2,7 @@ import type { CanonicalCodingAgent } from "@seedr/shared";
 import { adapterFor, type JobCapability } from "@/features/author/adapters";
 import { useAgentSettings } from "@/features/settings/agentSettings";
 import { onProcessOutput, runProcess, type RunOutcome } from "./agent";
+import { openRepoRoot } from "./registryCli";
 
 /**
  * A job an agent does *in* the checkout — adding a community item, publishing a
@@ -117,7 +118,7 @@ export interface AgentJobRequest {
 }
 
 export function agentJobArgs(capabilities: JobCapability[]): string[] {
-  return adapterFor("claude").job("", capabilities).args;
+  return adapterFor("claude").job("", capabilities, "").args;
 }
 
 /**
@@ -131,7 +132,7 @@ export async function runAgentJob(
   run: typeof runProcess = runProcess
 ): Promise<AgentJobResult> {
   const adapter = adapterFor(agent);
-  const invocation = adapter.job(prompt, capabilities);
+  const invocation = adapter.job(prompt, capabilities, openRepoRoot());
   const unlisten = onEvent ? await onProcessOutput(taskId, ({ line }) => adapter.readLine(line).forEach(onEvent)) : null;
   try {
     const outcome = await run({ taskId, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), cwd: "", timeoutMs });

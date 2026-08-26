@@ -75,13 +75,20 @@ const spell = (capabilities: JobCapability[], table: Record<string, string[]>, s
 /** True when a job may run commands at large, rather than named ones. */
 const hasOpenShell = (capabilities: JobCapability[]): boolean => capabilities.includes("shell");
 
+/** opencode's own name for the working directory, omitted when there is no checkout to name. */
+const runDir = (cwd: string): string[] => (cwd ? ["--dir", cwd] : []);
+
 export interface AgentAdapter {
   /** The binary; the settings page can point this at another path. */
   program: string;
-  /** One prompt, no tools, answering with JSON. */
-  draft(prompt: string): AgentInvocation;
-  /** One prompt that may do the named things inside the checkout. */
-  job(prompt: string, capabilities: JobCapability[]): AgentInvocation;
+  /**
+   * One prompt, no tools, answering with JSON. `cwd` is the open checkout's
+   * absolute path — required, not optional, because an agent that ignores it
+   * works on the wrong repository and says nothing about it.
+   */
+  draft(prompt: string, cwd: string): AgentInvocation;
+  /** One prompt that may do the named things inside the checkout at `cwd`. */
+  job(prompt: string, capabilities: JobCapability[], cwd: string): AgentInvocation;
   /** True when this CLI can be told to answer against a JSON schema. */
   schemaEnforced: boolean;
   /** One line of the agent's output, as something a person can read. */
@@ -259,7 +266,15 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   antigravity: {
     program: AGENT_PROGRAMS.antigravity,
     draft: (prompt) => ({ args: [`--print=${prompt}`, "--output-format", "json", "--disable-slash-commands"] }),
-    job: (prompt, capabilities) => ({ args: [`--print=${prompt}`, "--output-format", "stream-json", "--mode", writesFiles(capabilities) ? "accept-edits" : "plan"] }),
+    // `--mode accept-edits` covers edits and not commands: agy auto-denies any
+    // command in print mode and says so — "headless mode cannot prompt". Its own
+    // remedy is an allow-rule in its settings or this flag, and Studio will not
+    // write into another tool's configuration. The cost is real and worth
+    // knowing: agy has no deny-list, so for this one agent `git` is held off by
+    // the prompt alone rather than by the CLI.
+    job: (prompt, capabilities) => ({
+      args: [`--print=${prompt}`, "--output-format", "stream-json", ...(writesFiles(capabilities) ? ["--dangerously-skip-permissions"] : ["--mode", "plan"])],
+    }),
     schemaEnforced: false,
     readLine: readAgyLine,
     readOutcome: readAgyOutcome,
@@ -270,13 +285,19 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   copilot: {
     program: AGENT_PROGRAMS.copilot,
     draft: (prompt) => ({ args: ["--no-color", "--log-level", "none", "-p", prompt] }),
+    // Copilot's allowlist is a minefield of names it does not use consistently:
+    // it lists `bash` and permits `shell`, lists `create` and refuses it under
+    // that name. Its own help calls --allow-all-tools "required for
+    // non-interactive mode", so an open-shell job takes that and states the one
+    // boundary explicitly; a job with named capabilities still spells them.
     job: (prompt, capabilities) => ({
       args: [
         "--no-color",
         "--log-level",
         "none",
-        ...spell(capabilities, COPILOT_TOOLS, (prefix) => `shell(${prefix}:*)`, "shell").flatMap((tool) => ["--allow-tool", tool]),
-        ...(hasOpenShell(capabilities) ? ["--deny-tool", `shell(${DENIED_SHELL}:*)`] : []),
+        ...(hasOpenShell(capabilities)
+          ? ["--allow-all-tools", "--deny-tool", `shell(${DENIED_SHELL}:*)`]
+          : spell(capabilities, COPILOT_TOOLS, (prefix) => `shell(${prefix}:*)`, "shell").flatMap((tool) => ["--allow-tool", tool])),
         "-p",
         prompt,
       ],
@@ -301,8 +322,21 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // opencode takes the message as positional words; one argument is one message.
   opencode: {
     program: AGENT_PROGRAMS.opencode,
-    draft: (prompt) => ({ args: ["run", prompt] }),
-    job: (prompt) => ({ args: ["run", prompt] }),
+    // opencode is the one agent that does not work in the directory it is
+    // spawned in. Run from a second clone of this repository with no --dir, it
+    // authored the item correctly — and wrote every file into the *first*
+    // checkout, `pnpm compile` included, leaving the clone it was pointed at
+    // untouched. Its session is keyed to a project it resolves for itself, and
+    // --dir is the only thing that moves it.
+    draft: (prompt, cwd) => ({ args: ["run", ...runDir(cwd), prompt] }),
+    // `--auto` is opencode's headless grant, the same decision already made for
+    // every other agent here. Without it a job dies on its own scratch files:
+    // written inside the checkout they leave the worktree dirty and the
+    // transaction refuses to start, and written anywhere else opencode denies
+    // itself — "permission requested: external_directory (/tmp/*);
+    // auto-rejecting". There is nobody to ask in a `-p` run, so it must be
+    // settled up front.
+    job: (prompt, _capabilities, cwd) => ({ args: ["run", "--auto", ...runDir(cwd), prompt] }),
     schemaEnforced: false,
     readLine: (text) => line("text", text),
     readOutcome: readPlainOutcome,

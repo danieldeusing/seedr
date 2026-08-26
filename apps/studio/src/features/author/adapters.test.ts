@@ -3,6 +3,9 @@ import type { RunOutcome } from "@/api/agent";
 import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { adapterFor, jsonCandidates, summariseInput } from "./adapters";
 
+/** Every invocation names the checkout it is for; only opencode has to be told twice. */
+const REPO = "/checkout";
+
 const outcome = (over: Partial<RunOutcome> = {}): RunOutcome => ({ taskId: "t", status: "ok", exitCode: 0, stdout: "", stderr: "", durationMs: 1, ...over });
 
 describe("adapters", () => {
@@ -10,7 +13,7 @@ describe("adapters", () => {
     for (const agent of CANONICAL_AGENTS) {
       const adapter = adapterFor(agent);
       expect(adapter.program).toBeTruthy();
-      for (const invocation of [adapter.draft("PROMPT"), adapter.job("PROMPT", ["read"])]) {
+      for (const invocation of [adapter.draft("PROMPT", REPO), adapter.job("PROMPT", ["read"], REPO)]) {
         // Non-interactive, always: no adapter may open a terminal session.
         expect(invocation.args.join(" ")).toMatch(/-p\b|--print|exec|run/);
         // The prompt is either on stdin or somewhere in argv — never dropped,
@@ -22,30 +25,32 @@ describe("adapters", () => {
   });
 
   test("the tool boundary is spelled the way each CLI spells it", () => {
-    expect(adapterFor("claude").draft("p").args).toEqual(expect.arrayContaining(["--tools", "", "--max-turns", "1"]));
-    expect(adapterFor("claude").job("p", ["read", "shell:git"]).args.at(-1)).toBe("Read,Bash(git:*)");
+    expect(adapterFor("claude").draft("p", REPO).args).toEqual(expect.arrayContaining(["--tools", "", "--max-turns", "1"]));
+    expect(adapterFor("claude").job("p", ["read", "shell:git"], REPO).args.at(-1)).toBe("Read,Bash(git:*)");
     // The same capabilities, spelled in Copilot's own tool names — asking it for
     // `Read` or `Bash(git:*)` would allow nothing at all.
-    expect(adapterFor("copilot").job("p", ["read", "edit", "shell:git"]).args).toEqual(
+    expect(adapterFor("copilot").job("p", ["read", "edit", "shell:git"], REPO).args).toEqual(
       expect.arrayContaining(["--allow-tool", "view", "--allow-tool", "create", "--allow-tool", "edit", "--allow-tool", "shell(git:*)"])
     );
-    expect(adapterFor("copilot").job("p", []).stdin).toBeUndefined();
+    expect(adapterFor("copilot").job("p", [], REPO).stdin).toBeUndefined();
     // Codex has no allowlist: its sandbox is the boundary, and it widens only
     // for a job that actually changes something.
-    expect(adapterFor("codex").draft("p").args).toEqual(expect.arrayContaining(["-s", "read-only"]));
-    expect(adapterFor("codex").job("p", ["edit"]).args).toEqual(expect.arrayContaining(["-s", "workspace-write"]));
-    expect(adapterFor("codex").job("p", ["read"]).args).toEqual(expect.arrayContaining(["-s", "read-only"]));
-    expect(adapterFor("antigravity").job("p", ["read"]).args).toEqual(expect.arrayContaining(["--mode", "plan"]));
+    expect(adapterFor("codex").draft("p", REPO).args).toEqual(expect.arrayContaining(["-s", "read-only"]));
+    expect(adapterFor("codex").job("p", ["edit"], REPO).args).toEqual(expect.arrayContaining(["-s", "workspace-write"]));
+    expect(adapterFor("codex").job("p", ["read"], REPO).args).toEqual(expect.arrayContaining(["-s", "read-only"]));
+    expect(adapterFor("antigravity").job("p", ["read"], REPO).args).toEqual(expect.arrayContaining(["--mode", "plan"]));
     // agy's -p is a value flag: bare, it takes the next argument as the prompt.
-    expect(adapterFor("antigravity").draft("p").args[0]).toBe("--print=p");
-    expect(adapterFor("antigravity").draft("p").args).not.toContain("-p");
-    expect(adapterFor("antigravity").job("p", ["edit"]).args).toEqual(expect.arrayContaining(["--mode", "accept-edits"]));
+    expect(adapterFor("antigravity").draft("p", REPO).args[0]).toBe("--print=p");
+    expect(adapterFor("antigravity").draft("p", REPO).args).not.toContain("-p");
+    // agy auto-denies commands in print mode; --mode accept-edits does not cover
+    // them, and it has no deny-list, so this is the flag it asks for by name.
+    expect(adapterFor("antigravity").job("p", ["edit"], REPO).args).toContain("--dangerously-skip-permissions");
   });
 
   test("a draft asks for a schema only where the schema binds the answer", () => {
     const claude = adapterFor("claude");
     expect(claude.schemaEnforced).toBe(true);
-    const args = claude.draft("p").args;
+    const args = claude.draft("p", REPO).args;
     expect(args).toContain("--json-schema");
     expect(JSON.parse(args[args.indexOf("--json-schema") + 1] ?? "{}")).toMatchObject({ type: "object" });
 
@@ -54,7 +59,7 @@ describe("adapters", () => {
     // asking for one got back a summary of the work instead of the work.
     for (const agent of ["antigravity", "copilot", "codex", "opencode"] as const) {
       expect(adapterFor(agent).schemaEnforced).toBe(false);
-      expect(adapterFor(agent).draft("p").args).not.toContain("--json-schema");
+      expect(adapterFor(agent).draft("p", REPO).args).not.toContain("--json-schema");
     }
   });
 
@@ -137,27 +142,53 @@ describe("jsonCandidates", () => {
   });
 });
 
+describe("the checkout an agent works in", () => {
+  test("every agent is spawned in it, and opencode is also told its name", () => {
+    // opencode's shell resets to a project root of its own, so a job aimed at
+    // one checkout ran the operations CLI inside another. Nothing else needs
+    // the flag, and nothing else may grow one by accident.
+    const opencode = adapterFor("opencode").job("p", ["shell"], REPO).args;
+    expect(opencode[opencode.indexOf("--dir") + 1]).toBe(REPO);
+    expect(adapterFor("opencode").draft("p", REPO).args).toEqual(expect.arrayContaining(["--dir", REPO]));
+    for (const agent of CANONICAL_AGENTS.filter((candidate) => candidate !== "opencode")) {
+      expect(adapterFor(agent).job("p", ["shell"], REPO).args).not.toContain("--dir");
+    }
+  });
+
+  test("with no checkout open, the flag is left off rather than passed empty", () => {
+    expect(adapterFor("opencode").job("p", ["read"], "").args).not.toContain("--dir");
+  });
+});
+
 describe("an open shell", () => {
   test("is spelled per CLI, and git is denied alongside it", () => {
-    const claude = adapterFor("claude").job("p", ["read", "shell"]).args;
+    const claude = adapterFor("claude").job("p", ["read", "shell"], REPO).args;
     expect(claude[claude.indexOf("--allowedTools") + 1]).toBe("Read,Bash");
     expect(claude).toEqual(expect.arrayContaining(["--disallowedTools", "Bash(git:*)"]));
 
-    // Copilot lists the tool as `bash` and permits it as `shell`; only the second
-    // name is the one its allowlist answers to.
-    const copilot = adapterFor("copilot").job("p", ["edit", "shell"]).args;
-    expect(copilot).toEqual(expect.arrayContaining(["--allow-tool", "shell", "--deny-tool", "shell(git:*)"]));
+    // Copilot's per-tool names cannot be trusted — it lists `bash` and permits
+    // `shell`, lists `create` and refuses it — so an open shell takes the flag
+    // its help calls required for non-interactive mode, with git denied.
+    const copilot = adapterFor("copilot").job("p", ["edit", "shell"], REPO).args;
+    expect(copilot).toEqual(expect.arrayContaining(["--allow-all-tools", "--deny-tool", "shell(git:*)"]));
   });
 
   test("a job that names only specific commands gets no blanket denial", () => {
-    const publish = adapterFor("claude").job("p", ["read", "shell:git"]).args;
+    const publish = adapterFor("claude").job("p", ["read", "shell:git"], REPO).args;
     expect(publish[publish.indexOf("--allowedTools") + 1]).toBe("Read,Bash(git:*)");
     // Denying git here would contradict the one job that exists to run it.
     expect(publish).not.toContain("--disallowedTools");
   });
 
+  test("opencode takes its headless grant, and only for a job", () => {
+    // Its own scratch is the problem: inside the checkout it dirties the
+    // worktree the transaction requires clean, outside it opencode auto-rejects.
+    expect(adapterFor("opencode").job("p", ["shell"], REPO).args).toContain("--auto");
+    expect(adapterFor("opencode").draft("p", REPO).args).not.toContain("--auto");
+  });
+
   test("an open shell counts as changing things, for the CLIs that only answer that", () => {
-    expect(adapterFor("codex").job("p", ["shell"]).args).toEqual(expect.arrayContaining(["-s", "workspace-write"]));
-    expect(adapterFor("antigravity").job("p", ["shell"]).args).toEqual(expect.arrayContaining(["--mode", "accept-edits"]));
+    expect(adapterFor("codex").job("p", ["shell"], REPO).args).toEqual(expect.arrayContaining(["-s", "workspace-write"]));
+    expect(adapterFor("antigravity").job("p", ["shell"], REPO).args).toContain("--dangerously-skip-permissions");
   });
 });

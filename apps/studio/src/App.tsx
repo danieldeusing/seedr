@@ -64,7 +64,6 @@ export function App() {
   return (
     <div data-testid="app-shell" className="flex h-screen flex-col">
       <AppHeader />
-      <SignInBanner />
       <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: `${sidebarWidth}px auto minmax(0,1fr)` }} data-testid="workspace">
         <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
           {error && (
@@ -84,12 +83,17 @@ export function App() {
           />
         </aside>
         <PaneResizeHandle label="resize sidebar" onResize={(delta) => setSidebarWidth((width) => Math.max(200, Math.min(600, width + delta)))} />
-        <section className="min-h-0 overflow-hidden">
-          {current ? (
-            <Detail key={itemKey} item={current} onEdit={() => setDialog("update")} onTest={() => setDialog("test")} />
-          ) : (
-            <p className="p-6 text-xs text-muted-foreground">Select an item, or add a capability.</p>
-          )}
+        <section className="flex min-h-0 flex-col overflow-hidden">
+          {/* Beside the explorer rather than above it: the explorer is a list of
+              items, and a signed-out CLI is about the work done to one. */}
+          <SignInBanner />
+          <div className="min-h-0 flex-1">
+            {current ? (
+              <Detail key={itemKey} item={current} onEdit={() => setDialog("update")} onTest={() => setDialog("test")} />
+            ) : (
+              <p className="p-6 text-xs text-muted-foreground">Select an item, or add a capability.</p>
+            )}
+          </div>
         </section>
       </div>
 

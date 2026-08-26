@@ -288,7 +288,54 @@ describe("sign-in state", () => {
 
     // The same state, in front of someone about to fill in a form.
     render(<SignInBanner />);
-    expect(await screen.findByRole("status")).toHaveTextContent("Claude Code is signed out");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Claude Code");
+  });
+
+  test("names an agent that is signed out even when it is not the chosen one", async () => {
+    // The chosen agent is fine; two others are not. Saying nothing here is how
+    // someone finds out by picking Codex in a dialog and watching it fail.
+    useAgentSettings.setState({
+      preferred: "claude",
+      auth: { claude: { state: "in", account: null }, codex: { state: "out" }, opencode: { state: "out" }, copilot: { state: "unknown" }, antigravity: { state: "unknown" } },
+    });
+
+    render(<SignInBanner />);
+
+    const banner = await screen.findByRole("alert");
+    expect(banner).toHaveTextContent("2 coding agents are signed out");
+    expect(banner).not.toHaveTextContent("Claude Code");
+    // A row each, so each one can offer the sign-in that fixes it.
+    expect(screen.getByRole("button", { name: "sign in to OpenAI Codex" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sign in to OpenCode" })).toBeInTheDocument();
+    // Nothing the user picked is broken yet, so this is a warning, not an alert.
+    expect(banner.className).toContain("surface-warn");
+    expect(banner.className).not.toContain("surface-alert");
+  });
+
+  test("leads with the chosen agent, and still names the rest", async () => {
+    useAgentSettings.setState({
+      preferred: "claude",
+      auth: { claude: { state: "out" }, codex: { state: "out" }, opencode: { state: "in", account: null }, copilot: { state: "unknown" }, antigravity: { state: "unknown" } },
+    });
+
+    render(<SignInBanner />);
+
+    const banner = await screen.findByRole("alert");
+    expect(banner).toHaveTextContent("Claude Code — the chosen agent, so drafting and jobs fail");
+    expect(banner).toHaveTextContent("OpenAI Codex");
+    // The chosen agent is broken now, so the panel wears the destructive hue.
+    expect(banner.className).toContain("surface-alert");
+    expect(banner.className).not.toContain("surface-warn");
+  });
+
+  test("says nothing when no CLI reports being signed out", () => {
+    useAgentSettings.setState({
+      auth: { claude: { state: "in", account: null }, codex: { state: "unknown" }, opencode: { state: "unknown" }, copilot: { state: "unknown" }, antigravity: { state: "unknown" } },
+    });
+
+    render(<SignInBanner />);
+    // `unknown` is not a claim, so it is not a warning either.
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   test("a CLI with nothing to ask is not guessed at", async () => {

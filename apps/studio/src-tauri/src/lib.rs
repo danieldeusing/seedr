@@ -300,6 +300,14 @@ fn list_skills(repo: State<Repo>) -> Result<Vec<SkillEntry>, String> {
     let mut skills = Vec::new();
     skills_in(&root.join(".agents/skills"), "project", &mut skills);
     skills_in(&root.join(".claude/skills"), "project", &mut skills);
+    // A registry-only checkout carries no skills; it borrows them from the
+    // default one, exactly as it borrows the operations CLI. Offering none at
+    // all would suggest there is nothing to invoke.
+    if skills.is_empty() {
+        if let Some(home_repo) = default_repo_file().as_deref().and_then(default_repo_at) {
+            skills_in(&home_repo.join(".agents/skills"), "project", &mut skills);
+        }
+    }
     if let Some(home) = dirs::home_dir() {
         skills_in(&home.join(".claude/skills"), "user", &mut skills);
     }

@@ -170,6 +170,21 @@ describe("jobs — a repository or a prompt", () => {
     expect(jobPrompt({ ...emptyForm(), sourceKind: "agent", prompt: "renames files" })).toContain("/add-seedr");
   });
 
+  test("names borrowed skills by file, because a registry-only checkout has none to invoke", () => {
+    const tooling = { root: "/home/dev/seedr" };
+    // An agent that cannot resolve `/add-seedr` improvises rather than stopping,
+    // which is how one hand-wrote an item.json the validator rejects.
+    const authored = jobPrompt({ ...emptyForm(), sourceKind: "agent", prompt: "renames files" }, tooling);
+    expect(authored).toContain("/home/dev/seedr/.agents/skills/add-seedr/SKILL.md");
+    expect(authored).not.toContain("/add-seedr skill");
+    expect(authored).toContain("/home/dev/seedr/.agents/rules/registry-descriptions.md");
+    // Read from there, write here: the borrowed checkout is not the registry.
+    expect(authored).toMatch(/write only inside this checkout/);
+
+    const fromRepo = jobPrompt({ ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/o/r" }, tooling);
+    expect(fromRepo).toContain("/home/dev/seedr/.agents/skills/add-community/SKILL.md");
+  });
+
   test("parseAdded takes only a known type", () => {
     expect(parseAdded("blah\nADDED skill/pdf")).toEqual({ type: "skill", slug: "pdf" });
     expect(parseAdded("ADDED nonsense/pdf")).toBeNull();

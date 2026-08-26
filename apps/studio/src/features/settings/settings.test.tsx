@@ -6,6 +6,7 @@ import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "./AgentSelect";
 import { AGENT_PROGRAMS, useAgentSettings } from "./agentSettings";
 import { emptyPrePrompts, prePromptFor, usePrePrompts } from "./prePrompts";
+import { useStudio } from "@/features/explorer/store";
 import { SettingsPanel } from "./SettingsPanel";
 
 /** A host where every agent CLI answers `--version`, except the ones named. */
@@ -141,5 +142,55 @@ describe("AgentSelect", () => {
     await userEvent.keyboard("{ArrowDown}{ArrowDown}{Enter}");
 
     expect(onChange).toHaveBeenCalledWith("c");
+  });
+});
+
+describe("default checkout settings", () => {
+  const OPEN = { root: "/Users/me/Work/seedr", name: "seedr", isDefault: true, hasOps: true };
+
+  test("starts at what the host recorded and records a folder that is picked", async () => {
+    hostWithAgents();
+    let recorded: string | undefined;
+    onCommand("default_repo", () => "/Users/me/Work/seedr");
+    onCommand("pick_path", () => "/Users/me/Work/seedr-internal");
+    onCommand("set_default_repo", (args) => {
+      recorded = (args as { path: string }).path;
+      return { ...OPEN, isDefault: false };
+    });
+    useStudio.setState({ repo: OPEN });
+
+    render(<SettingsPanel />);
+    await userEvent.click(screen.getByRole("button", { name: /checkout/ }));
+
+    const field = await screen.findByLabelText("folder");
+    await waitFor(() => expect(field).toHaveValue("/Users/me/Work/seedr"));
+    expect(screen.getByRole("button", { name: "save the default checkout" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "choose the default checkout" }));
+    await waitFor(() => expect(field).toHaveValue("/Users/me/Work/seedr-internal"));
+
+    await userEvent.click(screen.getByRole("button", { name: "save the default checkout" }));
+    await waitFor(() => expect(recorded).toBe("/Users/me/Work/seedr-internal"));
+  });
+
+  test("falls back to the open checkout when nothing is recorded, and reports a refusal", async () => {
+    hostWithAgents();
+    onCommand("default_repo", () => null);
+    onCommand("set_default_repo", () => {
+      throw new Error("Not a seedr registry: no registry/ directory");
+    });
+    useStudio.setState({ repo: OPEN });
+
+    render(<SettingsPanel />);
+    await userEvent.click(screen.getByRole("button", { name: /checkout/ }));
+
+    const field = await screen.findByLabelText("folder");
+    await waitFor(() => expect(field).toHaveValue(OPEN.root));
+
+    await userEvent.clear(field);
+    await userEvent.type(field, "/tmp/not-a-registry");
+    await userEvent.click(screen.getByRole("button", { name: "save the default checkout" }));
+
+    expect(await screen.findByText(/no registry\/ directory/)).toBeInTheDocument();
   });
 });

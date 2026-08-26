@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { MessageSquareText, Tag, Terminal, UserRound, type LucideIcon } from "lucide-react";
+import { FolderGit2, MessageSquareText, Tag, Terminal, UserRound, type LucideIcon } from "lucide-react";
 import { AuthorPage } from "./AuthorPage";
+import { CheckoutPage } from "./CheckoutPage";
 import { LabelsPage } from "./LabelsPage";
 import { CodingAgentsPage } from "./CodingAgentsPage";
 import { PrePromptsPage } from "./PrePromptsPage";
 
-type Page = "agents" | "pre-prompts" | "author" | "labels";
+type Page = "agents" | "pre-prompts" | "author" | "labels" | "checkout";
 
 const PAGES: { id: Page; label: string; icon: LucideIcon; tip: string }[] = [
   { id: "agents", label: "coding agents", icon: Terminal, tip: "The agent CLIs Studio can run, and where they are" },
   { id: "pre-prompts", label: "pre-prompts", icon: MessageSquareText, tip: "Standing context per capability type, for adds and edits" },
   { id: "author", label: "author", icon: UserRound, tip: "Who the items you add are credited to" },
   { id: "labels", label: "labels", icon: Tag, tip: "What an item is for, when one registry serves several projects" },
+  { id: "checkout", label: "checkout", icon: FolderGit2, tip: "Which registry Studio treats as home" },
 ];
 
 /** Settings, configr's shape: a nav on the left, one page on the right. */
@@ -42,6 +44,7 @@ export function SettingsPanel() {
         {page === "pre-prompts" && <PrePromptsPage />}
         {page === "author" && <AuthorPage />}
         {page === "labels" && <LabelsPage />}
+        {page === "checkout" && <CheckoutPage />}
       </div>
     </section>
   );

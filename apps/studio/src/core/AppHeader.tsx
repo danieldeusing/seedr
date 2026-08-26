@@ -23,7 +23,7 @@ export function AppHeader() {
       data-tauri-drag-region
       // Pixel height on purpose: the fluid root font size scales rem chrome on
       // wide screens, and the title bar must stay level with the traffic lights.
-      className={`flex h-[36px] flex-shrink-0 items-center border-b border-neutral-700 bg-neutral-960 pr-3 ${hasOverlayTitleBar() ? TRAFFIC_LIGHT_GUTTER : "pl-3"}`}
+      className={`relative flex h-[36px] flex-shrink-0 items-center border-b border-neutral-700 bg-neutral-960 pr-3 ${hasOverlayTitleBar() ? TRAFFIC_LIGHT_GUTTER : "pl-3"}`}
     >
       <span className="estate-brand text-md pointer-events-none">
         <span className="estate-brand-name">seedr-studio</span>

@@ -267,10 +267,35 @@ describe("the pre-prompt in the dialog", () => {
     // field come up empty.
     usePrePrompts.setState({ prompts: { ...emptyPrePrompts(), skill: { add: "use skill-creator", update: "" } } });
     await useAuthor.getState().prepare();
-    expect(useAuthor.getState().form.prompt).toBe("use skill-creator");
+    expect(useAuthor.getState().form.prePrompt).toBe("use skill-creator");
+    // The run's own prompt is separate, and starts empty.
+    expect(useAuthor.getState().form.prompt).toBe("");
 
-    useAuthor.getState().setField("prompt", "just for this run");
+    useAuthor.getState().setField("prePrompt", "just for this run");
     await useAuthor.getState().prepare();
-    expect(useAuthor.getState().form.prompt).toBe("just for this run");
+    expect(useAuthor.getState().form.prePrompt).toBe("just for this run");
+  });
+});
+
+describe("what the agent is actually sent", () => {
+  test("carries the standing context and the run's own instruction, in that order", () => {
+    const prompt = jobPrompt({
+      ...emptyForm(),
+      sourceKind: "agent",
+      type: "skill",
+      prePrompt: "Use the /skill-creator skill, then verify with /skill-optimizer",
+      prompt: "This is a test skill, create an example skill",
+    });
+
+    const standing = prompt.indexOf("/skill-creator");
+    const run = prompt.indexOf("create an example skill");
+    expect(standing).toBeGreaterThan(-1);
+    expect(run).toBeGreaterThan(standing);
+  });
+
+  test("a run with no standing context sends only what was typed", () => {
+    const prompt = jobPrompt({ ...emptyForm(), sourceKind: "agent", prePrompt: "", prompt: "rename the files" });
+    expect(prompt).toContain("rename the files");
+    expect(prompt).not.toContain("\n\n\n");
   });
 });

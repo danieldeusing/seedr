@@ -17,10 +17,12 @@ import type { StudioItem } from "@/features/explorer/registry";
  */
 export interface UpdateForm {
   name: string;
+  /** The standing context for this type, from settings → pre-prompts. */
+  prePrompt: string;
   /**
-   * What the agent should change about the capability itself. Prefilled from
-   * settings → pre-prompts for this type. Empty means metadata only, applied as
-   * a plain transaction; anything here makes this an agent job.
+   * What the agent should change about the capability itself. Empty means
+   * metadata only, applied as a plain transaction; anything here makes this an
+   * agent job.
    */
   prompt: string;
   /** With a prompt: let the agent rewrite the descriptions from the new content. */
@@ -91,7 +93,8 @@ export const updateRefusal = (item: StudioItem): string | null =>
 
 const formFor = (item: StudioItem): UpdateForm => ({
   name: item.item.name ?? "",
-  prompt: prePromptFor(item.type, "update"),
+  prePrompt: prePromptFor(item.type, "update"),
+  prompt: "",
   refreshMeta: true,
   description: item.item.description ?? "",
   longDescription: item.item.longDescription ?? "",

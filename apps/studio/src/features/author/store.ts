@@ -63,6 +63,8 @@ interface AuthorState {
   draftErrors: string[];
   /** Capped live output of the running agent / operation. */
   log: string[];
+  /** The last run was stopped on purpose, which is not a failure. */
+  cancelled: boolean;
   result: AddResult | null;
   error: string | null;
   setField<K extends keyof AddLocalForm>(field: K, value: AddLocalForm[K]): void;
@@ -85,12 +87,14 @@ const DRAFT_TASK = "author-draft";
 const JOB_TASK = "author-job";
 
 /**
- * Least privilege for an add job: read and write the checkout, look the source
- * repository up (the add-community skill is built on `gh api`), and run the
- * operations CLI — which is what actually mutates the registry, as a
- * transaction. No `git`, so a job cannot commit, and no unscoped shell.
+ * What an add job may do: read and write the checkout, look the source
+ * repository up, and run commands. The shell is open because authoring runs the
+ * maintainer's own tooling — a skill's `init_skill.py`, `mkdir`, whatever
+ * skill-creator reaches for — and an allowlist of exact prefixes turned that
+ * into a wall of "permission denied" for work the person had just asked for.
+ * `git` stays denied, so a job still cannot commit, push or rewrite history.
  */
-export const ADD_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "skills", "web", "shell:gh api", "shell:npx tsx scripts/registry-op.ts"];
+export const ADD_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "skills", "web", "shell"];
 
 /** The last line an add job must print, so Studio can open what was added. */
 const ADDED_LINE = /^ADDED\s+([a-z]+)\/([A-Za-z0-9._-]+)$/m;
@@ -248,6 +252,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
   phase: "idle",
   draftErrors: [],
   log: [],
+  cancelled: false,
   result: null,
   error: null,
 
@@ -383,7 +388,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
       set({ error: probe?.diagnostic ?? "no coding agent available — see settings → coding agents" });
       return;
     }
-    set({ phase: "running", error: null, result: null, log: [] });
+    set({ phase: "running", error: null, result: null, log: [], cancelled: false });
     try {
       const outcome: AgentJobResult = await runAgentJob({
         taskId: JOB_TASK,
@@ -391,6 +396,10 @@ export const useAuthor = create<AuthorState>((set, get) => ({
         capabilities: ADD_JOB_CAPABILITIES,
         onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
       });
+      if (outcome.cancelled) {
+        set({ phase: "idle", cancelled: true });
+        return;
+      }
       if (!outcome.ok) {
         set({ phase: "idle", error: outcome.text, ...(outcome.denials.length > 0 ? { draftErrors: [`the job asked for ${outcome.denials.join(", ")}, which it is not allowed`] } : {}) });
         return;
@@ -411,6 +420,6 @@ export const useAuthor = create<AuthorState>((set, get) => ({
   },
 
   reset() {
-    set({ form: emptyForm(), phase: "idle", draftErrors: [], log: [], result: null, error: null });
+    set({ form: emptyForm(), phase: "idle", draftErrors: [], log: [], cancelled: false, result: null, error: null });
   },
 }));

@@ -25,6 +25,8 @@ export interface AgentJobResult {
   /** The agent's final message, or the failure. */
   text: string;
   denials: string[];
+  /** Stopped on purpose. Not a failure, and not something to colour red. */
+  cancelled?: boolean;
 }
 
 /**
@@ -133,6 +135,9 @@ export async function runAgentJob(
   const unlisten = onEvent ? await onProcessOutput(taskId, ({ line }) => adapter.readLine(line).forEach(onEvent)) : null;
   try {
     const outcome = await run({ taskId, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), cwd: "", timeoutMs });
+    // Stopping a run is a decision, so it is reported as one rather than as
+    // whatever exit code the killed process happened to leave behind.
+    if (outcome.status === "cancelled") return { ok: false, cancelled: true, text: "", denials: [] };
     const verdict = adapter.readOutcome(outcome);
     // A run is the only way some CLIs reveal they are signed out, so what it
     // learns is recorded — the workspace says so before the next attempt.

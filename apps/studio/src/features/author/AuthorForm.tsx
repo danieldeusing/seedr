@@ -52,6 +52,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const phase = useAuthor((s) => s.phase);
   const draftErrors = useAuthor((s) => s.draftErrors);
   const log = useAuthor((s) => s.log);
+  const cancelled = useAuthor((s) => s.cancelled);
   const result = useAuthor((s) => s.result);
   const error = useAuthor((s) => s.error);
   const { setField, setType, setSourceKind, toggleAgent, chooseSource, prepare, apply, cancel, reset } = useAuthor.getState();
@@ -100,7 +101,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
             <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap text-muted-foreground">{result.text}</pre>
           </>
         )}
-        <p className="mt-4 text-muted-foreground">Review with git status and commit when you are happy.</p>
+        <p className="mt-4 text-muted-foreground">Review with git status and commit when you are happy. It is selected in the explorer behind this dialog.</p>
+        <AgentLog lines={log} />
         <button type="button" onClick={reset} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
           add another
         </button>
@@ -302,11 +304,13 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
                 ? "the agent is working…"
                 : phase === "applying"
                   ? "applying…"
-                  : probe === null
-                    ? "probing…"
-                    : probe.available
-                      ? probe.version
-                      : probe.diagnostic}
+                  : cancelled
+                    ? "stopped — nothing was added"
+                    : probe === null
+                      ? "probing…"
+                      : probe.available
+                        ? probe.version
+                        : probe.diagnostic}
           </span>
         </div>
         <div className="flex items-center gap-2">

@@ -30,14 +30,23 @@ export interface AgentInvocation {
  * `bash(git:*)`, and codex and opencode have no allowlist at all — so a job
  * names capabilities and each adapter spells them.
  */
-export type JobCapability = "read" | "edit" | "search" | "skills" | "web" | `shell:${string}`;
+export type JobCapability = "read" | "edit" | "search" | "skills" | "web" | "shell" | `shell:${string}`;
+
+/**
+ * What no job may run, whatever else it is allowed. `git` is the line: a job
+ * that authors or edits a capability has every reason to run the maintainer's
+ * own tooling — a skill's `init_skill.py`, `mkdir`, a formatter — and no reason
+ * to commit, push or rewrite history. Publishing is the one job that gets git,
+ * and it gets it by naming it.
+ */
+export const DENIED_SHELL = "git";
 
 const shellPrefix = (capability: JobCapability): string | null => (capability.startsWith("shell:") ? capability.slice("shell:".length) : null);
 
 /** Whether a job intends to change anything, which is the only tool question codex and agy answer. */
-export const writesFiles = (capabilities: JobCapability[]): boolean => capabilities.some((capability) => capability === "edit" || capability.startsWith("shell:"));
+export const writesFiles = (capabilities: JobCapability[]): boolean => capabilities.some((capability) => capability === "edit" || capability.startsWith("shell"));
 
-const CLAUDE_TOOLS: Record<Exclude<JobCapability, `shell:${string}`>, string[]> = {
+const CLAUDE_TOOLS: Record<Exclude<JobCapability, "shell" | `shell:${string}`>, string[]> = {
   read: ["Read"],
   edit: ["Write", "Edit"],
   search: ["Glob", "Grep"],
@@ -47,7 +56,7 @@ const CLAUDE_TOOLS: Record<Exclude<JobCapability, `shell:${string}`>, string[]> 
 
 // Copilot's own names, from asking it: bash, view, create, edit, web_fetch,
 // skill, grep, glob. Its shell specifier is `bash(<prefix>:*)`, verified by run.
-const COPILOT_TOOLS: Record<Exclude<JobCapability, `shell:${string}`>, string[]> = {
+const COPILOT_TOOLS: Record<Exclude<JobCapability, "shell" | `shell:${string}`>, string[]> = {
   read: ["view"],
   edit: ["create", "edit"],
   search: ["grep", "glob"],
@@ -55,11 +64,15 @@ const COPILOT_TOOLS: Record<Exclude<JobCapability, `shell:${string}`>, string[]>
   web: ["web_fetch"],
 };
 
-const spell = (capabilities: JobCapability[], table: Record<string, string[]>, shell: (prefix: string) => string): string[] =>
+const spell = (capabilities: JobCapability[], table: Record<string, string[]>, shell: (prefix: string) => string, anyShell: string): string[] =>
   capabilities.flatMap((capability) => {
+    if (capability === "shell") return [anyShell];
     const prefix = shellPrefix(capability);
     return prefix ? [shell(prefix)] : (table[capability] ?? []);
   });
+
+/** True when a job may run commands at large, rather than named ones. */
+const hasOpenShell = (capabilities: JobCapability[]): boolean => capabilities.includes("shell");
 
 export interface AgentAdapter {
   /** The binary; the settings page can point this at another path. */
@@ -221,7 +234,15 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
     program: AGENT_PROGRAMS.claude,
     draft: (prompt) => ({ args: ["-p", "--output-format", "json", "--json-schema", JSON.stringify(DRAFT_SCHEMA), "--tools", "", "--max-turns", "1"], stdin: prompt }),
     job: (prompt, capabilities) => ({
-      args: ["-p", "--output-format", "stream-json", "--verbose", "--allowedTools", spell(capabilities, CLAUDE_TOOLS, (prefix) => `Bash(${prefix}:*)`).join(",")],
+      args: [
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--allowedTools",
+        spell(capabilities, CLAUDE_TOOLS, (prefix) => `Bash(${prefix}:*)`, "Bash").join(","),
+        ...(hasOpenShell(capabilities) ? ["--disallowedTools", `Bash(${DENIED_SHELL}:*)`] : []),
+      ],
       stdin: prompt,
     }),
     schemaEnforced: true,
@@ -249,7 +270,15 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
     program: AGENT_PROGRAMS.copilot,
     draft: (prompt) => ({ args: ["--no-color", "--log-level", "none", "-p", prompt] }),
     job: (prompt, capabilities) => ({
-      args: ["--no-color", "--log-level", "none", ...spell(capabilities, COPILOT_TOOLS, (prefix) => `bash(${prefix}:*)`).flatMap((tool) => ["--allow-tool", tool]), "-p", prompt],
+      args: [
+        "--no-color",
+        "--log-level",
+        "none",
+        ...spell(capabilities, COPILOT_TOOLS, (prefix) => `bash(${prefix}:*)`, "bash").flatMap((tool) => ["--allow-tool", tool]),
+        ...(hasOpenShell(capabilities) ? ["--deny-tool", `bash(${DENIED_SHELL}:*)`] : []),
+        "-p",
+        prompt,
+      ],
     }),
     schemaEnforced: false,
     readLine: (text) => line("text", text),

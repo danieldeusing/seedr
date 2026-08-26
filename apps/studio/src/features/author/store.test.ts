@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { emit, invoke, onCommand } from "@/test/mockIpc";
 import { emptyPrePrompts, usePrePrompts } from "@/features/settings/prePrompts";
+import { DENIED_SHELL } from "./adapters";
 import { ADD_JOB_CAPABILITIES, emptyForm, formProblems, githubProblem, jobPrompt, parseAdded, toOp, useAuthor } from "./store";
 
 const LONG = "Reads `item.json` files and " + "checks every description carefully ".repeat(10);
@@ -179,9 +180,10 @@ describe("jobs — a repository or a prompt", () => {
 
     expect(useAuthor.getState().phase).toBe("done");
     expect(useAuthor.getState().result).toMatchObject({ kind: "job", added: { type: "plugin", slug: "superpowers" } });
-    expect(requests[0]?.args).toContain("--allowedTools");
-    expect(requests[0]?.args.at(-1)).toBe("Read,Write,Edit,Glob,Grep,Skill,WebFetch,Bash(gh api:*),Bash(npx tsx scripts/registry-op.ts:*)");
-    expect(requests[0]?.args.at(-1)).not.toContain("Bash(git");
+    const allowed = requests[0]?.args[requests[0].args.indexOf("--allowedTools") + 1];
+    expect(allowed).toBe("Read,Write,Edit,Glob,Grep,Skill,WebFetch,Bash");
+    // An open shell, and git denied alongside it.
+    expect(requests[0]?.args).toEqual(expect.arrayContaining(["--disallowedTools", "Bash(git:*)"]));
   });
 
   test("a refused tool is named, and the run stays open for a retry", async () => {
@@ -213,9 +215,11 @@ describe("what an add job may run", () => {
   test("reads GitHub and runs the operations CLI, and nothing else", () => {
     // The add-community skill is written against `gh api`; without it every
     // repository job would fail on a denial.
-    expect(ADD_JOB_CAPABILITIES).toContain("shell:gh api");
-    expect(ADD_JOB_CAPABILITIES).toContain("shell:npx tsx scripts/registry-op.ts");
-    expect(ADD_JOB_CAPABILITIES.some((capability: string) => /^shell:(git|rm|sh|bash)\b/.test(capability))).toBe(false);
+    // Authoring runs the maintainer's own tooling, so the shell is open —
+    // bounded by the one thing a job must never do.
+    expect(ADD_JOB_CAPABILITIES).toContain("shell");
+    expect(ADD_JOB_CAPABILITIES.some((capability: string) => capability.startsWith("shell:"))).toBe(false);
+    expect(DENIED_SHELL).toBe("git");
     expect(jobPrompt({ ...emptyForm(), sourceKind: "repo", repoUrl: "https://github.com/o/r" })).toContain("never with -X");
   });
 });

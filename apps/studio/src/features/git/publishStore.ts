@@ -90,6 +90,10 @@ export const usePublish = create<PublishState>((set, get) => ({
         capabilities: PUBLISH_JOB_CAPABILITIES,
         onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
       });
+      if (outcome.cancelled) {
+        set({ phase: "idle", error: null });
+        return;
+      }
       if (!outcome.ok) {
         set({ phase: "idle", error: outcome.denials.length > 0 ? `${outcome.text} (it asked for ${outcome.denials.join(", ")}, which it is not allowed)` : outcome.text });
         return;

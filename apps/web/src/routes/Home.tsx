@@ -58,7 +58,6 @@ export function Home() {
   // Validated, not cast: an unknown `?source=Seedr` used to match nothing and
   // render "0 results" with the bogus value shown as the active filter, and
   // `?scope=` applied without `source=seedr` filtered with its control hidden.
-  // An old `?source=toolr` link still filters, as seedr.
   const sourceFilter = pickValid<SourceType>(canonicalSourceType(searchParams.get("source")), sourceOptions);
   const rawScope = pickValid<ScopeType>(searchParams.get("scope"), scopeOptions);
   const scopeFilter = sourceFilter === "seedr" ? rawScope : null;

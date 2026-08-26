@@ -35,8 +35,7 @@ Determine which items to review, in this order:
   `sourceType`, `compatibility` (non-empty), and `author`. `community` items also require
   `externalUrl`.
 - **Consistency** — `type` matches the parent folder (e.g. `skill` ↔ `registry/skills/`), `slug`
-  matches the directory name, `sourceType` is one of `seedr`/`community`/`official` (`toolr` is
-  accepted as a deprecated alias of `seedr`). For first-party items, `author` matches this
+  matches the directory name, `sourceType` is one of `seedr`/`community`/`official`. For first-party items, `author` matches this
   checkout's own identity — compare against `npx tsx
   scripts/registry-op.ts identity` (a fork attributes its items to its own owner, never to
   the upstream author).

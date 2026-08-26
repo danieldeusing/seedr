@@ -35,7 +35,7 @@ than one matches and the user gave no type, ask which one with AskUserQuestion.
 
 Verify `sourceType === "community"`:
 
-- `seedr` (or the deprecated `toolr`) → "Found `<slug>` (`<type>`) but it is a first-party item.
+- `seedr` → "Found `<slug>` (`<type>`) but it is a first-party item.
   Use `/remove-seedr` instead."
 - `official` → "`<slug>` (`<type>`) is an official item synced from Anthropic. It cannot be
   removed: the daily sync would restore it." Stop here.

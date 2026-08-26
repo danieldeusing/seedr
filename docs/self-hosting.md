@@ -100,14 +100,12 @@ Create `registry/skills/my-team-skill/item.json`:
   "type": "skill",
   "description": "Internal skill for our team workflows.",
   "longDescription": "Handles our specific deployment pipeline, including staging validation, canary checks, and rollback procedures. Covers both Kubernetes and ECS targets.",
-  "sourceType": "toolr",
+  "sourceType": "seedr",
   "compatibility": ["claude"],
   "scope": ["project"]
 }
 ```
 
-`"toolr"` is verbatim: it is the deprecated spelling of `seedr` that the data still carries
-until `scripts/migrate-source-types.ts` runs. Write it exactly as shown.
 
 Add the content file (e.g., `registry/skills/my-team-skill/SKILL.md`).
 

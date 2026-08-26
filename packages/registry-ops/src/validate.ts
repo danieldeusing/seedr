@@ -1,6 +1,6 @@
 import type { ComponentType, FileTreeNode, RegistryItem } from "@seedr/shared";
 import { KNOWN_AGENTS } from "./agents.js";
-import { KNOWN_SOURCE_TYPES, isFirstParty } from "./sourceTypes.js";
+import { CANONICAL_SOURCE_TYPES, isFirstParty } from "./sourceTypes.js";
 import { isLabelSlug } from "./labels.js";
 import { MAX_SLUG_LENGTH, SLUG_PATTERN, isComponentType, isValidSlug, typeDirName } from "./paths.js";
 
@@ -142,7 +142,7 @@ function checkIdentity(item: Item, options: ValidateOptions, push: Push): void {
   else if (options.expectedType !== undefined && item.type !== options.expectedType) {
     push("type", `is "${item.type}" but the directory is for "${typeDirName(options.expectedType)}/" (${options.expectedType})`);
   }
-  if (!oneOf(KNOWN_SOURCE_TYPES, item.sourceType)) push("sourceType", `unknown sourceType "${String(item.sourceType)}"`);
+  if (!oneOf(CANONICAL_SOURCE_TYPES, item.sourceType)) push("sourceType", `unknown sourceType "${String(item.sourceType)}"`);
 }
 
 function checkText(item: Item, push: Push): void {

@@ -95,11 +95,11 @@ describe("parseBrowseParams", () => {
     expect(dropped).toEqual([{ key: "label", value: "project-x", reason: '"project-x" is not a known label' }]);
   });
 
-  it("resolves a deprecated source value, so an old ?source=toolr link still filters", () => {
-    const { filters, dropped } = parseBrowseParams(params("source=toolr&scope=user"), skills);
-    expect(filters.source).toBe("seedr");
-    expect(filters.scope).toBe("user");
-    expect(dropped).toEqual([]);
+  it("drops a source value that is not one of the three, and the scope that depended on it", () => {
+    const { filters, dropped } = parseBrowseParams(params("source=vendor&scope=user"), skills);
+    expect(filters.source).toBeNull();
+    expect(filters.scope).toBeNull();
+    expect(dropped).toContainEqual(expect.objectContaining({ key: "source", value: "vendor" }));
   });
 
   it("drops plugin-only parameters on capability pages (cross-category navigation)", () => {

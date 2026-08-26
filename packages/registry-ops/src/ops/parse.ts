@@ -1,5 +1,5 @@
 import { isComponentType, isValidSlug } from "../paths.js";
-import { KNOWN_SOURCE_TYPES } from "../sourceTypes.js";
+import { CANONICAL_SOURCE_TYPES } from "../sourceTypes.js";
 import type { RegistryOp } from "./types.js";
 
 type Envelope = Record<string, unknown>;
@@ -60,7 +60,7 @@ const CHECKS: Record<string, (op: Envelope) => void> = {
   remove: (op) => {
     requireItemKey(op);
     requireString(op, "expectedHash");
-    if (!(KNOWN_SOURCE_TYPES as readonly string[]).includes(String(op.sourceType))) {
+    if (!(CANONICAL_SOURCE_TYPES as readonly string[]).includes(String(op.sourceType))) {
       fail(`unknown sourceType ${JSON.stringify(op.sourceType)}`);
     }
   },

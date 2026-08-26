@@ -3,7 +3,6 @@ import { copyFileSync, existsSync, mkdirSync, realpathSync, rmdirSync, rmSync, r
 import { basename, join } from "node:path";
 import type { FileTreeNode, RegistryItem } from "@seedr/shared";
 import { canonicalAgent, storageAgents } from "../agents.js";
-import { storageSourceType } from "../sourceTypes.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
 import { assertLabelDefined, fileTree, itemExists } from "../read.js";
 import { assertStructurallyValid, formatErrors, validateItem } from "../validate.js";
@@ -89,9 +88,7 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
     description: op.description,
     longDescription: op.longDescription,
     compatibility: storageAgents(op.compatibility),
-    // Stored in the B1 vocabulary (STORAGE_SOURCE_TYPES): still `toolr`, because
-    // the published CLI decides where content comes from by that exact string.
-    sourceType: storageSourceType("seedr"),
+    sourceType: "seedr",
     author: op.author,
     ...(op.externalUrl ? { externalUrl: op.externalUrl } : {}),
     ...(op.targetScope ? { targetScope: op.targetScope } : {}),

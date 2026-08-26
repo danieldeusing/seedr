@@ -32,8 +32,7 @@ npx tsx scripts/registry-op.ts list
 ```
 
 Find the `(type, slug)` entry (ask with AskUserQuestion if the slug exists under several types)
-and keep its `hash`. It must be first-party — `sourceType` reads `seedr`, or still `toolr`,
-the deprecated spelling the registry stores until the migration runs. Otherwise stop:
+and keep its `hash`. It must be first-party — `sourceType` reads `seedr`. Otherwise stop:
 > "`<slug>` (`<type>`) is a synced `<sourceType>` item — edits would be overwritten by the next
 > sync. Change it upstream instead."
 

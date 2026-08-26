@@ -116,15 +116,9 @@ export const sourceToBadgeColor: Record<SourceType, BadgeColor> = {
   official: "amber",
   seedr: "blue",
   community: "violet",
-  // deprecated value; items are canonicalised on load, so it never reaches the UI
-  toolr: "blue",
 };
 
-export const sourceLabels: Record<SourceType, string> = {
-  ...SOURCE_TYPE_LABELS,
-  // deprecated value; items are canonicalised on load, so it never reaches the UI
-  toolr: SOURCE_TYPE_LABELS.seedr,
-};
+export const sourceLabels: Record<SourceType, string> = SOURCE_TYPE_LABELS;
 
 export const agentLabels: Record<CodingAgent, string> = {
   ...AGENT_LABELS,

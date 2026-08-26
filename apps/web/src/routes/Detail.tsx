@@ -27,7 +27,6 @@ const sourceDescriptions: Record<SourceType, string> = {
   seedr: "Published by Seedr",
   community: "Community contribution",
   // deprecated value; items are canonicalised on load, so it never reaches the UI
-  toolr: "Published by Seedr",
 };
 
 const scopeIcons: Record<ScopeType, LucideIcon> = {

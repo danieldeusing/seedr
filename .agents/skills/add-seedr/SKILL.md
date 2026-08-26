@@ -268,7 +268,7 @@ npx tsx scripts/registry-op.ts run --op <path-to-that-file>
 
 The transaction copies the source into `registry/<type dir>/<slug>/` (a directory whole, a
 single file into the directory), derives the file tree, writes `item.json` with
-`sourceType: "toolr"` (the B1 storage value) and today's date, recompiles the manifests, and verifies that only the
+`sourceType: "seedr"` and today's date, recompiles the manifests, and verifies that only the
 item's paths and the manifests changed — rolling back on any failure. It validates the item in
 full before copying: a `longDescription` under 30 words or without backticks is refused here,
 not at commit time. Fix the draft and run again; never bypass it.
@@ -285,7 +285,7 @@ Print a summary from the result JSON:
 
 ## Important notes
 
-- `sourceType` always means first-party. It is still WRITTEN as `"toolr"`: see STORAGE_SOURCE_TYPES in `packages/registry-ops/src/sourceTypes.ts`
+- `sourceType` is always `"seedr"` for these items — the transaction writes it; never set it yourself
 - The sync script (`pnpm sync`) preserves first-party items and only replaces synced items
 - Never `cp`, `mkdir` or write `item.json` yourself, and never run `pnpm compile` separately:
   the transaction does all of it and undoes all of it on failure

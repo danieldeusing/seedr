@@ -59,7 +59,6 @@ export const officialSkill: RegistryItem = {
   contentDigest: FIXTURE_DIGEST,
 };
 
-/** Carries the deprecated `toolr` spelling on purpose: the real registry still stores it. */
 export const seedrMcp: RegistryItem = {
   slug: "delta",
   name: "Delta",
@@ -67,7 +66,7 @@ export const seedrMcp: RegistryItem = {
   description: "Serves delta.",
   longDescription: LONG,
   compatibility: ["claude"],
-  sourceType: "toolr",
+  sourceType: "seedr",
   author: { name: "Test Author" },
   contents: { files: [{ name: "mcp.md", type: "file" }] },
 };

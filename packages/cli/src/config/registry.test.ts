@@ -178,8 +178,7 @@ describe("fetchItemToDestination", () => {
   it("falls back to the legacy single-file list for a first-party item without a tree", async () => {
     responses.set(`${REGISTRY_RAW}/skills/old/SKILL.md`, "# old\n");
     const { fetchItemToDestination } = await loadRegistry();
-    // Spelled with the deprecated `toolr`, which is what the registry still stores.
-    const firstParty: RegistryItem = { slug: "old", name: "Old", type: "skill", description: "d", compatibility: ["claude"], sourceType: "toolr" };
+    const firstParty: RegistryItem = { slug: "old", name: "Old", type: "skill", description: "d", compatibility: ["claude"], sourceType: "seedr" };
     await expect(fetchItemToDestination(firstParty, "/dest/old")).resolves.toMatchObject({ files: ["SKILL.md"] });
     expect(vol.readFileSync("/dest/old/SKILL.md", "utf-8")).toBe("# old\n");
   });

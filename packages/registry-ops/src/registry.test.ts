@@ -64,8 +64,7 @@ describe("hash", () => {
 describe("compile", () => {
   test("orders by source then slug and fills contentHash for first-party items with content", () => {
     const items = collectItems(makeRegistry());
-    // `toolr/delta` sorts with the first-party items: the alias resolves before ordering.
-    expect(items.map((i) => `${i.sourceType}/${i.slug}`)).toEqual(["seedr/alpha", "toolr/delta", "community/beta", "official/gamma"]);
+    expect(items.map((i) => `${i.sourceType}/${i.slug}`)).toEqual(["seedr/alpha", "seedr/delta", "community/beta", "official/gamma"]);
     expect(items.find((i) => i.slug === "alpha")?.contentHash).toMatch(/^[0-9a-f]{16}$/);
     expect(items.find((i) => i.slug === "delta")?.contentHash).toMatch(/^[0-9a-f]{16}$/);
     expect(items.find((i) => i.slug === "beta")?.contentHash).toBeUndefined();

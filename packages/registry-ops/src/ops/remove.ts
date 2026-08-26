@@ -13,8 +13,6 @@ import type { OpResult, RemoveOp } from "./types.js";
  */
 export function remove(registryDir: string, op: RemoveOp): OpResult {
   const current = readItem(registryDir, op.type, op.slug);
-  // Compared canonically: a caller that says `seedr` still matches an item the
-  // registry still stores as `toolr` (STORAGE_SOURCE_TYPES).
   if (canonicalSourceType(current.sourceType) !== canonicalSourceType(op.sourceType)) {
     throw new Error(`${op.type} "${op.slug}" is ${current.sourceType}, not ${op.sourceType} — refusing to remove`);
   }

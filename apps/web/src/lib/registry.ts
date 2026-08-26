@@ -39,7 +39,7 @@ const devTestItem: RegistryItem = {
 };
 
 // Assemble all type manifests into a single RegistryManifest. Compatibility and
-// source type are canonicalised here, so a not-yet-migrated `gemini` or `toolr`
+// source type are canonicalised here, so a not-yet-migrated `gemini`
 // entry filters and renders as `antigravity` / `seedr` everywhere downstream.
 const allItems: RegistryItem[] = (
   [

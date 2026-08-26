@@ -34,8 +34,7 @@ Prints every item as JSON: `type`, `slug`, `sourceType`, `name`, `hash`. Find th
 skill and a plugin). If more than one matches and the user gave no type, ask which one with
 AskUserQuestion.
 
-Verify the item is first-party. Its `sourceType` reads `seedr` — or still `toolr`, the
-deprecated spelling the registry stores until the migration runs. If it is `community` or
+Verify the item is first-party: its `sourceType` reads `seedr`. If it is `community` or
 `official`, tell the user:
 > "Found `<slug>` (`<type>`) but it has sourceType `<actual>`, not `seedr`. Use `/remove-community` instead."
 

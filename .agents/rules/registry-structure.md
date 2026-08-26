@@ -86,14 +86,13 @@ consumer both the type descriptors and the catalogue every item's `label` resolv
 ```json
 {
   "type": "skill",
-  "items": [{ "slug": "pdf", "name": "PDF", "type": "skill", "sourceType": "toolr", ... }]
+  "items": [{ "slug": "pdf", "name": "PDF", "type": "skill", "sourceType": "seedr", ... }]
 }
 ```
 
 Per-type manifests strip `longDescription` (loaded on demand from `item.json`), and plugin
 manifests also strip `contents`. An item's `label` is kept — it is card-level data, needed to
-render and filter a list. `"toolr"` above is verbatim: it is the deprecated spelling of
-`seedr` that the data still carries (see `sourceType` below).
+render and filter a list.
 
 ## `item.json` Fields
 
@@ -104,7 +103,7 @@ render and filter a list. `"toolr"` above is verbatim: it is the deprecated spel
 | `type` | Yes | `skill`, `plugin`, `hook`, `agent`, `mcp`, `settings`, `command` |
 | `description` | Yes | One-sentence summary |
 | `longDescription` | Yes | TL;DR for the detail page (see registry-descriptions.md) |
-| `sourceType` | Yes | `seedr`, `community`, or `official`. `toolr` is a deprecated alias of `seedr`, accepted on input and still what writers store — the vocabulary lives in `packages/registry-ops/src/sourceTypes.ts` |
+| `sourceType` | Yes | `seedr`, `community`, or `official` — the vocabulary lives in `packages/registry-ops/src/sourceTypes.ts` |
 | `compatibility` | Yes | Non-empty subset of `claude`, `copilot`, `antigravity`, `codex`, `opencode` (`gemini` is accepted only as a deprecated alias of `antigravity`; never write it) — the vocabulary lives in `packages/registry-ops/src/agents.ts` |
 | `author` | Yes | `{ name, url? }` |
 | `externalUrl` | Community | GitHub URL the CLI fetches content from at install time |

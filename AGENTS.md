@@ -182,23 +182,23 @@ offers the picker in add and edit.
 
 ### Deprecated spellings in registry data
 
-Two values in `item.json` were renamed, in code first and then in the data, because the
-published CLI reads `main` live and would have broken on the new spelling before it shipped:
+One value in `item.json` still carries a deprecated alias:
 
 | Field | Canonical | Deprecated alias | Vocabulary | Data migrated |
 |---|---|---|---|---|
-| `sourceType` | `seedr` | `toolr` | `packages/registry-ops/src/sourceTypes.ts` | 2026-08-25, CLI 0.1.89 |
 | `compatibility` | `antigravity` | `gemini` | `packages/registry-ops/src/agents.ts` | 2026-08-25, CLI 0.1.88 |
 
-Both are done. The aliases are still accepted on input and resolved on read, so an old
-`item.json`, an old `--agents` flag and a fork that never migrated all still work; nothing
-writes them any more, and the `STORAGE_*` table in each vocabulary file is empty.
+`gemini` is accepted on input and resolved on read, so an old `item.json`, an old `--agents`
+flag and a fork that never migrated all still work; nothing writes it any more.
+`scripts/migrate-agent-ids.ts` is the migration, idempotent and now a no-op.
 
-The pattern is worth keeping for the next rename: canonical in code, alias accepted, one
-`STORAGE_*` table holding writers to the old spelling, and a migration script whose header
-carries the precondition — check `npm view @danieldeusing/seedr version` first, because
-migrating the data ahead of the CLI breaks installs for every client. `scripts/migrate-source-types.ts`
-and `scripts/migrate-agent-ids.ts` are the worked examples; both are idempotent and now no-ops.
+`sourceType` went the same way and finished the journey: its pre-`seedr` alias was **deleted
+outright on 2026-08-26**, once the data, the CLI (0.1.89) and every surface had moved. The old
+spelling appears nowhere in this repository — deliberately, down to the tests, so a grep for
+it returns nothing. A fork that still carries it is told `unknown sourceType`
+instead of being silently accepted, which is the point: one spelling, and a clear error for
+anything else. That is the end state a staged rename is aiming for — canonical in code, alias
+accepted while the published CLI catches up, then the alias deleted.
 
 ## Managing Registry Items
 

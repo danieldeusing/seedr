@@ -8,7 +8,6 @@ const sourceDescriptions: Record<SourceType, string> = {
   seedr: "Published by Daniel Deusing",
   community: "Community contribution",
   // deprecated value; items are canonicalised on load, so it never reaches the UI
-  toolr: "Published by Daniel Deusing",
 };
 
 interface SourceBadgeProps {

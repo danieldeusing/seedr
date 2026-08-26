@@ -553,17 +553,11 @@ pub fn run() {
             read_source_files,
             test_install
         ])
-        // The overlay title bar leaves the webview behind when the window is
-        // dragged taller on macOS: the window grows, the content keeps the height
-        // it had, and the difference shows as dead space along the bottom. Every
-        // resize therefore restates the webview's size as the window's own.
-        .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Resized(size) = event {
-                if let Some(webview) = window.get_webview_window("main") {
-                    let _ = webview.set_size(tauri::Size::Physical(tauri::PhysicalSize { width: size.width, height: size.height }));
-                }
-            }
-        })
+        // No resize handler: on macOS the webview is the window's whole content,
+        // not a child webview, and wry's `set_bounds` — all `Webview::set_size`
+        // reaches — moves nothing unless it is one; AppKit's autoresizing mask owns
+        // that frame. `WebviewWindow::set_size` is no way round it either, since it
+        // resizes the *window*, restating a size the window already has.
         .run(tauri::generate_context!())
         .expect("error while running Seedr Studio");
 }

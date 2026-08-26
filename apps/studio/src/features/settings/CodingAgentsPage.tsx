@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { FolderOpen, RotateCw, X } from "lucide-react";
+import { FolderOpen, LogIn, RotateCw, X } from "lucide-react";
 import type { CanonicalCodingAgent } from "@seedr/shared";
 import { AGENT_LABELS, CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { pickPath } from "@/api/agent";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
 import { IconButton } from "@/core/ui/IconButton";
 import { AGENT_PROGRAMS, DRAFT_CERTIFIED, useAgentSettings, type AgentProbe } from "./agentSettings";
+import { SignInDialog } from "./SignInDialog";
 
 /** The probe result as one line of ink: found, missing, or the failure itself. */
 function ProbeState({ probe }: { probe: AgentProbe }) {
@@ -16,7 +17,7 @@ function ProbeState({ probe }: { probe: AgentProbe }) {
   return <span className="text-muted-foreground">—</span>;
 }
 
-function AgentCard({ agent }: { agent: CanonicalCodingAgent }) {
+function AgentCard({ agent, onSignIn }: { agent: CanonicalCodingAgent; onSignIn(): void }) {
   const override = useAgentSettings((s) => s.overrides[agent]);
   const probe = useAgentSettings((s) => s.probes[agent]);
   const setOverride = useAgentSettings((s) => s.setOverride);
@@ -41,6 +42,7 @@ function AgentCard({ agent }: { agent: CanonicalCodingAgent }) {
           </span>
         )}
         <span className="flex-1" />
+        <IconButton icon={LogIn} ariaLabel={`sign in to ${AGENT_LABELS[agent]}`} tip="Sign this CLI in — it runs the sign-in and keeps the credentials" onClick={onSignIn} disabled={probe.state === "missing"} />
         <IconButton icon={RotateCw} ariaLabel={`probe ${AGENT_LABELS[agent]}`} tip="Run --version again" onClick={() => void reprobe(agent)} spin={probe.state === "probing"} />
       </div>
       <div className="flex items-center gap-2">
@@ -67,6 +69,7 @@ function AgentCard({ agent }: { agent: CanonicalCodingAgent }) {
  * rather than a reason to give up on the agent.
  */
 export function CodingAgentsPage() {
+  const [signingIn, setSigningIn] = useState<CanonicalCodingAgent | null>(null);
   const probeAll = useAgentSettings((s) => s.probeAll);
   const probes = useAgentSettings((s) => s.probes);
   const busy = CANONICAL_AGENTS.some((agent) => probes[agent].state === "probing");
@@ -87,9 +90,10 @@ export function CodingAgentsPage() {
       </header>
       <ul className="space-y-3">
         {CANONICAL_AGENTS.map((agent) => (
-          <AgentCard key={agent} agent={agent} />
+          <AgentCard key={agent} agent={agent} onSignIn={() => setSigningIn(agent)} />
         ))}
       </ul>
+      {signingIn && <SignInDialog agent={signingIn} onClose={() => setSigningIn(null)} />}
     </div>
   );
 }

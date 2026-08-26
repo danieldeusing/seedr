@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -159,5 +160,26 @@ describe("RepoBadge", () => {
     render(<AppHeader />);
     expect(screen.getByText("seedr-studio")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("Modal focus", () => {
+  test("keeps focus inside once open, even as the caller re-renders", async () => {
+    function Host() {
+      const [text, setText] = useState("");
+      // A fresh arrow every render, which is what most callers pass.
+      return (
+        <Modal title="typing" onClose={() => {}}>
+          <input aria-label="field" value={text} onChange={(event) => setText(event.target.value)} />
+        </Modal>
+      );
+    }
+    render(<Host />);
+
+    const field = screen.getByLabelText("field");
+    await userEvent.type(field, "the-code");
+
+    // Re-focusing on every render truncated this to its first character.
+    expect(field).toHaveValue("the-code");
   });
 });

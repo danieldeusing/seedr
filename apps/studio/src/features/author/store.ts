@@ -103,7 +103,29 @@ const ADDED_LINE = /^ADDED\s+([a-z]+)\/([A-Za-z0-9._-]+)$/m;
 /** Where an item's own file must be, for a claim of having added it to mean anything. */
 const itemJsonPath = (type: ComponentType, slug: string): string => `registry/${typeDirName(type)}/${slug}/item.json`;
 
-const itemExists = (type: ComponentType, slug: string): Promise<boolean> => fs.pathExists(itemJsonPath(type, slug)).catch(() => false);
+/**
+ * What is wrong with what the agent claims to have added, or null when nothing
+ * is. An agent that writes `item.json` by hand instead of running the operation
+ * skips the validation the operation does, and the result only shows up later
+ * as a red line on the item's own page — after the dialog said it worked. One
+ * did exactly that, following a stale skill, and wrote a `sourceType` this
+ * registry does not accept.
+ */
+async function faultInAdded(type: ComponentType, slug: string): Promise<string | null> {
+  const path = itemJsonPath(type, slug);
+  if (!(await fs.pathExists(path).catch(() => false))) {
+    return `The agent reported adding ${type}/${slug}, but there is no item at ${path}. Nothing was written — read the log and try again.`;
+  }
+  let item: unknown;
+  try {
+    item = JSON.parse(await fs.readText(path));
+  } catch (error) {
+    return `${path} is not readable JSON: ${(error as Error).message}`;
+  }
+  const errors = validateItem(item);
+  if (errors.length === 0) return null;
+  return `The agent wrote ${path}, but it is not a valid item: ${errors.map((e) => `${e.field}: ${e.message}`).join("; ")}. Fix it, or remove it and run the job again.`;
+}
 
 export function parseAdded(text: string): { type: ComponentType; slug: string } | null {
   const match = ADDED_LINE.exec(text);
@@ -414,14 +436,12 @@ export const useAuthor = create<AuthorState>((set, get) => ({
       // An agent's report is a claim, not evidence. opencode returned a tidy
       // summary with changed paths and the required ADDED line having written
       // every one of them into a different checkout — a truthful report of work
-      // done somewhere else. So the claim is checked against this checkout
-      // before the explorer is told to open anything.
+      // done somewhere else. So the claim is checked against this checkout, and
+      // against the validator, before the explorer is told to open anything.
       const added = parseAdded(outcome.text);
-      if (added && !(await itemExists(added.type, added.slug))) {
-        set({
-          phase: "idle",
-          error: `The agent reported adding ${added.type}/${added.slug}, but there is no item at ${itemJsonPath(added.type, added.slug)}. Nothing was written — read the log and try again.`,
-        });
+      const fault = added ? await faultInAdded(added.type, added.slug) : null;
+      if (fault) {
+        set({ phase: "idle", error: fault });
         return;
       }
       set({ phase: "done", result: { kind: "job", added, text: outcome.text, denials: outcome.denials } });

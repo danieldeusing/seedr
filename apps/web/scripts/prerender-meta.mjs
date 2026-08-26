@@ -11,10 +11,14 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveRegistryDir } from "@seedr/registry-ops";
 import { SITE_NAME, SITE_ORIGIN, TYPE_PATHS, canonicalUrl, categoryMeta, homeMeta, impressumMeta, itemMeta, itemsInCategory, notFoundMeta, privacyMeta } from "./site-meta.mjs";
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const registryDir = join(webRoot, "..", "..", "registry");
+// The prerendered <head> and the sitemap must describe the registry the bundle was
+// built from; a fork moves it out of upstream's registry/ via seedr.config.json,
+// and would otherwise sitemap 100+ routes its own app does not serve.
+const registryDir = resolveRegistryDir(join(webRoot, "..", ".."));
 
 function escapeHtml(text) {
   return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

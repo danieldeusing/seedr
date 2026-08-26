@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isFirstParty, typeDirName } from "@seedr/registry-ops/pure";
+import { isFirstParty, resolveRegistryDir, typeDirName } from "@seedr/registry-ops";
 export { typeDirName };
 import type {
   RegistryManifest,
@@ -40,16 +40,21 @@ function findPackageRoot(startDir: string): string | null {
 
 /**
  * Resolve the local registry directory relative to THIS package's root, not the
- * consumer's project root. The monorepo registry is a sibling of `packages/`, so
- * from `<repo>/packages/cli` it lives at `../../registry`. When the CLI is
- * installed from npm (only `dist/` is shipped), this path won't exist and lookups
- * fall back to the remote registry. The manifest-shape check in `loadIndex`
- * guards against trusting any unrelated `registry/manifest.json`.
+ * consumer's project root: the checkout is two levels up from
+ * `<repo>/packages/cli`. Which directory inside it holds the registry is
+ * `seedr.config.json`'s answer, because a fork keeps its own items where
+ * upstream has none — reading `registry/` unconditionally would hand a fork
+ * upstream's items instead of its own.
+ *
+ * When the CLI is installed from npm (only `dist/` is shipped) neither the
+ * config nor the directory is there, and lookups fall back to the remote
+ * registry. The manifest-shape check in `loadIndex` guards against trusting any
+ * unrelated `registry/manifest.json`.
  */
 function resolveLocalRegistryPath(): string | null {
   const packageRoot = findPackageRoot(__dirname);
   if (!packageRoot) return null;
-  return join(packageRoot, "..", "..", "registry");
+  return resolveRegistryDir(join(packageRoot, "..", ".."));
 }
 
 // Local registry path (for development); null when running outside the monorepo.

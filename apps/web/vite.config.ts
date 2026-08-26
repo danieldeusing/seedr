@@ -5,6 +5,16 @@ import { resolve } from "path";
 import { readFileSync, existsSync, statSync } from "fs";
 import type { IncomingMessage, ServerResponse } from "http";
 import { parseHeadersFile, headersFor } from "./scripts/headers-file.mjs";
+// Deep-relative on purpose: Vite externalizes every bare specifier in a config
+// file, so `@seedr/registry-ops` would be handed to Node, which cannot resolve the
+// package's TS source (its `./paths.js` imports have no built .js on disk). A
+// relative path is bundled into the config instead, and esbuild maps .js to .ts.
+import { resolveRegistryDir } from "../../packages/registry-ops/src/fsPaths.js";
+
+// A fork keeps its items in a directory upstream does not have (named by
+// seedr.config.json at the repo root, two levels up), so `git merge upstream/main`
+// never sees them. The alias and the chunk split must name the same directory.
+const registryDir = resolveRegistryDir(resolve(__dirname, "../.."));
 
 type DevReq = IncomingMessage;
 type DevRes = ServerResponse;
@@ -38,6 +48,10 @@ function serveDir(
 // Dev-only middleware: serve the registry and the dev-sample media (both live
 // outside public/ so they aren't shipped to production).
 function serveLocalFilesPlugin(): Plugin {
+  // The URL prefix mirrors an item's externalUrl path (fileSource.ts rewrites
+  // github.com/danieldeusing/seedr/tree/main/registry/... to a same-origin URL in
+  // dev), so this stays upstream's registry/ even when seedr.config.json moves
+  // the registry the app is built from.
   const registry = serveDir("/registry/", resolve(__dirname, "../../registry"), {
     mimeTypes: { md: "text/markdown", json: "application/json", txt: "text/plain" },
   });
@@ -125,7 +139,7 @@ export default defineConfig(({ isPreview }) => ({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
-      "@registry": resolve(__dirname, "../../registry"),
+      "@registry": registryDir,
     },
   },
   build: {
@@ -141,7 +155,7 @@ export default defineConfig(({ isPreview }) => ({
         manualChunks(id) {
           // registry data changes on every sync; keep it apart from the code so one
           // doesn't bust the other's cache
-          if (id.includes("/registry/") && id.endsWith("manifest.json")) return "registry";
+          if (id.startsWith(`${registryDir}/`) && id.endsWith("manifest.json")) return "registry";
           if (/node_modules\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)) return "vendor-react";
           if (/node_modules\/(react-markdown|remark-[\w-]+|micromark[\w-]*|mdast-[\w-]+|unist-[\w-]+|unified|vfile[\w-]*|hast-[\w-]+|bail|trough|devlop|property-information|space-separated-tokens|comma-separated-tokens|html-url-attributes|estree-util-[\w-]+|zwitch|longest-streak|ccount|character-[\w-]+|decode-named-character-reference|markdown-table|trim-lines|style-to-[\w-]+|inline-style-parser|extend|is-plain-obj)\//.test(id)) return "vendor-markdown";
           return undefined;

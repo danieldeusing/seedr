@@ -8,10 +8,13 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isValidSlug, itemKey } from "@seedr/registry-ops/pure";
+import { isValidSlug, itemKey, resolveRegistryDir } from "@seedr/registry-ops";
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const registryDir = join(webRoot, "..", "..", "registry");
+// A fork keeps its items outside upstream's registry/ (seedr.config.json names the
+// directory), and the allowlist has to cover the registry the app is built from —
+// otherwise every install event for a fork's own items is recorded as unknown_item.
+const registryDir = resolveRegistryDir(join(webRoot, "..", ".."));
 const index = JSON.parse(readFileSync(join(registryDir, "manifest.json"), "utf8"));
 
 const keys = [];

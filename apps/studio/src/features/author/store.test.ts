@@ -132,6 +132,12 @@ describe("useAuthor", () => {
   });
 });
 
+/** Items the validator accepts — the guard reads and validates what an agent wrote. */
+const LONG_ENOUGH =
+  "Ships a small `example` command plus a handful of helpers, and documents every flag it accepts so a reader can decide whether to install it without opening the repository or reading any of the source code first.";
+const VALID_FIRST_PARTY = { slug: "real", name: "Real", type: "skill", description: "Does a thing.", longDescription: LONG_ENOUGH, compatibility: ["claude"], sourceType: "seedr", author: { name: "A" } };
+const VALID_COMMUNITY = { ...VALID_FIRST_PARTY, slug: "superpowers", name: "Superpowers", sourceType: "community", externalUrl: "https://github.com/obra/superpowers", sourceRevision: "a".repeat(40), contentDigest: "b".repeat(64) };
+
 describe("jobs — a repository or a prompt", () => {
   test("only github repositories are accepted, with an owner and a name", () => {
     expect(githubProblem("")).toBe("paste the repository's URL");
@@ -175,8 +181,10 @@ describe("jobs — a repository or a prompt", () => {
     const requests = scriptHost({
       claude: () => ({ stdout: JSON.stringify({ type: "result", is_error: false, result: "Added it.\nADDED plugin/superpowers" }) }),
     });
-    // The claim is checked against disk before it is believed.
+    // The claim is checked against disk, and against the validator, before it
+    // is believed.
     onCommand("path_exists", () => true);
+    onCommand("read_text", () => JSON.stringify(VALID_COMMUNITY));
 
     await useAuthor.getState().apply();
 
@@ -334,10 +342,28 @@ describe("what an agent says it did", () => {
     expect(useAuthor.getState().result).toBeNull();
   });
 
+  test("is refused when the agent hand-wrote an item the validator rejects", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), sourceKind: "agent", prompt: "a skill" }, probe: PROBE_OK });
+    jobHost("All done.\nADDED skill/handwritten");
+    onCommand("path_exists", () => true);
+    // Written directly instead of through the operation, so it never met the
+    // validator the operation runs. This is what a stale add skill produces.
+    onCommand("read_text", () =>
+      JSON.stringify({ slug: "handwritten", name: "Handwritten", type: "skill", description: "d", longDescription: "l", compatibility: ["claude"], sourceType: "toolr", author: { name: "A" } })
+    );
+
+    await useAuthor.getState().apply();
+
+    expect(useAuthor.getState().phase).toBe("idle");
+    expect(useAuthor.getState().error).toMatch(/not a valid item.*sourceType/s);
+    expect(useAuthor.getState().result).toBeNull();
+  });
+
   test("and is taken at its word once the file is there", async () => {
     useAuthor.setState({ form: { ...emptyForm(), sourceKind: "agent", prompt: "a skill" }, probe: PROBE_OK });
     jobHost("All done.\nADDED skill/real");
     onCommand("path_exists", (args) => String(args?.rel) === "registry/skills/real/item.json");
+    onCommand("read_text", () => JSON.stringify(VALID_FIRST_PARTY));
 
     await useAuthor.getState().apply();
 

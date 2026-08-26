@@ -10,6 +10,7 @@ import { prePromptFor } from "@/features/settings/prePrompts";
 import { repoIdentity, runRegistryOp } from "@/api/registryCli";
 import { fs } from "@/api/fs";
 import { readSourceFiles } from "@/api/source";
+import { useStudio } from "@/features/explorer/store";
 import { draftWith, probeAgent, type AdapterProbe } from "./claudeAdapter";
 
 /**
@@ -151,26 +152,60 @@ function hints(form: AddLocalForm): string {
 }
 
 /**
+ * How to name a piece of this repo's tooling to an agent working in `cwd`.
+ *
+ * A skill is normally invoked as `/add-seedr`, which the agent resolves from
+ * the directory it is running in. A registry-only checkout has no skills of its
+ * own — it borrows them, exactly as it borrows the operations CLI — and an
+ * agent that cannot find the skill improvises instead of saying so: that is how
+ * one came to hand-write an `item.json` with a `sourceType` this registry does
+ * not accept. So when the tooling is borrowed, the prompt names the file.
+ */
+function toolingReference(tooling: BorrowedTooling, relative: string, invocation: string): string {
+  return tooling ? `the instructions in ${tooling.root}/${relative}` : invocation;
+}
+
+/** The checkout whose skills and rules this run borrows, or null when it has its own. */
+export type BorrowedTooling = { root: string } | null;
+
+/**
+ * Studio already picks a checkout to borrow the operations CLI from when the
+ * open one has none. Skills travel with it: a registry that cannot run the CLI
+ * does not carry the skills that drive it either.
+ */
+const borrowedTooling = (): BorrowedTooling => {
+  const tooling = useStudio.getState().toolingRepo;
+  return tooling ? { root: tooling.root } : null;
+};
+
+/**
  * The whole instruction the agent receives. It names the repo's own skill for
  * the job, passes the user's pre-prompt through, and asks for one machine-
  * readable line back so Studio can select what was added.
  */
-export function jobPrompt(form: AddLocalForm): string {
+export function jobPrompt(form: AddLocalForm, tooling: BorrowedTooling = null): string {
+  const addSkill = toolingReference(tooling, ".agents/skills/add-seedr/SKILL.md", "the /add-seedr skill");
+  // `/add-community <url>` is the skill's own trigger form, so it stays exactly
+  // that when the skill is local; only a borrowed one has to be named by file.
+  const repoTask = tooling
+    ? `Add ${form.repoUrl.trim()} to this registry, following the instructions in ${tooling.root}/.agents/skills/add-community/SKILL.md.`
+    : `/add-community ${form.repoUrl.trim()}`;
   const task =
-    form.sourceKind === "repo"
-      ? `/add-community ${form.repoUrl.trim()}`
-      : `Author a new first-party ${form.type} capability for this registry, then add it with the /add-seedr skill.`;
+    form.sourceKind === "repo" ? repoTask : `Author a new first-party ${form.type} capability for this registry, then add it with ${addSkill}.`;
+  const rules = tooling ? `${tooling.root}/.agents/rules/registry-descriptions.md` : ".agents/rules/registry-descriptions.md";
   const descriptions =
     form.description.trim() && form.longDescription.trim()
       ? "Use the descriptions given above verbatim."
-      : "Write the missing descriptions yourself, following .agents/rules/registry-descriptions.md.";
+      : `Write the missing descriptions yourself, following ${rules}.`;
   return [
     task,
     form.prePrompt.trim(),
     form.prompt.trim(),
     `Honour these where they are given, derive the rest:\n${hints(form)}`,
     descriptions,
-    "Work inside this checkout only. A CLI refuses to write outside it, so a scaffolding script that wants a scratch directory should be given one *inside* the checkout — remove it when you are done.",
+    tooling
+      ? `Read that tooling from ${tooling.root}, but write only inside this checkout: it is the registry, and the other checkout is not yours to change.`
+      : "Work inside this checkout only. A CLI refuses to write outside it, so a scaffolding script that wants a scratch directory should be given one *inside* the checkout — remove it when you are done.",
     "Read GitHub, never write to it: `gh api` for lookups only, never with -X, --method or -f. Do not commit or push. Finish with a final line of exactly `ADDED <type>/<slug>`.",
   ]
     .filter(Boolean)
@@ -421,7 +456,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     try {
       const outcome: AgentJobResult = await runAgentJob({
         taskId: JOB_TASK,
-        prompt: jobPrompt(form),
+        prompt: jobPrompt(form, borrowedTooling()),
         capabilities: ADD_JOB_CAPABILITIES,
         onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
       });

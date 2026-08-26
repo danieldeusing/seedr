@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { onCommand } from "@/test/mockIpc";
+import { emit, onCommand } from "@/test/mockIpc";
+import type { RunRequest } from "@/api/agent";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "./AgentSelect";
 import { AGENT_PROGRAMS, useAgentSettings } from "./agentSettings";
@@ -192,5 +193,46 @@ describe("default checkout settings", () => {
     await userEvent.click(screen.getByRole("button", { name: "save the default checkout" }));
 
     expect(await screen.findByText(/no registry\/ directory/)).toBeInTheDocument();
+  });
+});
+
+describe("signing an agent in", () => {
+  test("runs the CLI's own login, keeps stdin open, and passes an answer back without echoing it", async () => {
+    hostWithAgents();
+    let request: RunRequest | undefined;
+    // The sign-in stays running until it is answered, which is the whole reason
+    // stdin is held open — a mock that returns at once tests nothing.
+    let finish: (() => void) | undefined;
+    onCommand("run_process", (args) => {
+      const sent = (args as { request: RunRequest }).request;
+      if (sent.args[0] !== "auth") return { taskId: sent.taskId, status: "ok", exitCode: 0, stdout: "claude 1.2.3\n", stderr: "", durationMs: 1 };
+      request = sent;
+      emit("process-output", { taskId: sent.taskId, stream: "stdout", line: "Open this URL to sign in: https://claude.ai/oauth/…" });
+      return new Promise((resolve) => {
+        finish = () => resolve({ taskId: sent.taskId, status: "ok", exitCode: 0, stdout: "", stderr: "", durationMs: 1 });
+      });
+    });
+    let answered: { taskId: string; text: string } | undefined;
+    onCommand("send_process_input", (args) => {
+      answered = args as { taskId: string; text: string };
+      finish?.();
+      return true;
+    });
+
+    render(<SettingsPanel />);
+    await userEvent.click(await screen.findByRole("button", { name: "sign in to Claude Code" }));
+
+    expect(await screen.findByLabelText("sign-in output")).toHaveTextContent("Open this URL to sign in");
+    expect(request?.args).toEqual(["auth", "login"]);
+    expect(request?.keepStdin).toBe(true);
+
+    await userEvent.type(screen.getByLabelText("answer the sign-in"), "the-code{Enter}");
+
+    await waitFor(() => expect(answered?.text).toBe("the-code"));
+    // The code is a credential: that one was sent is worth showing, what it was is not.
+    const shown = screen.getByLabelText("sign-in output");
+    expect(shown).not.toHaveTextContent("the-code");
+    expect(shown).toHaveTextContent("· answered");
+    expect(await screen.findByText(/Signed in\./)).toBeInTheDocument();
   });
 });

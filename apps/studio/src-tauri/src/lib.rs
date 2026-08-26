@@ -444,6 +444,13 @@ async fn run_process(app: AppHandle, mut request: RunRequest, repo: State<'_, Re
     tauri::async_runtime::spawn_blocking(move || executor::run(&registry, request, sink)).await.map_err(|e| e.to_string())
 }
 
+/// Answer a task that is waiting on input — a sign-in asking for a code. The
+/// task id is the only handle, exactly as it is for cancelling.
+#[tauri::command]
+fn send_process_input(task_id: String, text: String, registry: State<Registry>) -> bool {
+    registry.send_input(&task_id, &text)
+}
+
 #[tauri::command]
 fn cancel_process(task_id: String, registry: State<Registry>) -> bool {
     // Marked before the kill so the dying run reads its flag, unmarked again when
@@ -539,6 +546,7 @@ pub fn run() {
             watch_registry,
             run_process,
             cancel_process,
+            send_process_input,
             set_program_override,
             list_skills,
             pick_path,

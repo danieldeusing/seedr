@@ -29,8 +29,14 @@ const SIZE_CLASSES: Record<NonNullable<ModalProps["size"]>, string> = {
 export function Modal({ title, onClose, size = "lg", children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
+  // Focus once, on open. Tied to `onClose` it re-ran whenever a caller passed a
+  // fresh arrow — which is every render — and pulled focus out of whatever the
+  // dialog contains after each keystroke.
   useEffect(() => {
     dialogRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };

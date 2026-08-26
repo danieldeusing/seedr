@@ -17,6 +17,8 @@ export interface RunRequest {
   cwd?: string;
   /** Run in the recorded default checkout — how a registry without its own operations CLI is changed. */
   inDefaultRepo?: boolean;
+  /** Keep stdin open so the run can be answered while it happens — a sign-in waiting for a code. */
+  keepStdin?: boolean;
   timeoutMs: number;
 }
 
@@ -41,6 +43,9 @@ export interface OutputEvent {
 export const runProcess = (request: RunRequest): Promise<RunOutcome> => invoke<RunOutcome>("run_process", { request });
 
 export const cancelProcess = (taskId: string): Promise<boolean> => invoke<boolean>("cancel_process", { taskId });
+
+/** Answer a run that is waiting on input, as one line. False when it is not waiting. */
+export const sendProcessInput = (taskId: string, text: string): Promise<boolean> => invoke<boolean>("send_process_input", { taskId, text });
 
 /** Streamed output lines for a task, for the live log. */
 export const onProcessOutput = (taskId: string, callback: (event: OutputEvent) => void): Promise<UnlistenFn> =>

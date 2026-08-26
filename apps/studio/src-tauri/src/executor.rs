@@ -40,6 +40,10 @@ pub struct RunRequest {
     /// registry without its own operations CLI is still changed.
     #[serde(default)]
     pub in_default_repo: bool,
+    /// Keep stdin open so the task can be answered while it runs, which a sign-in
+    /// waiting for a code needs.
+    #[serde(default)]
+    pub keep_stdin: bool,
     pub timeout_ms: u64,
 }
 
@@ -106,6 +110,10 @@ impl Capped {
 /// What a running task needs for cancellation: the child, and on Windows the job that owns its tree.
 struct Running {
     child: Child,
+    /// Held open only for a task that expects to be answered while it runs — a
+    /// sign-in waiting for a code. Every other task's stdin is closed at once,
+    /// so nothing can block on input nobody will send.
+    stdin: Option<std::process::ChildStdin>,
     /// Taken (dropped) to kill: the job holds kill-on-close, and closing its last
     /// handle is how a Job Object terminates every process in it.
     #[cfg(windows)]
@@ -117,6 +125,17 @@ struct Running {
 pub struct Registry(Arc<Mutex<HashMap<String, Arc<Mutex<Option<Running>>>>>>);
 
 impl Registry {
+    /// Answer a running task, as a line on its stdin. False when no such task is
+    /// running, or when it did not ask to be answerable.
+    pub fn send_input(&self, task_id: &str, text: &str) -> bool {
+        let slot = self.0.lock().ok().and_then(|map| map.get(task_id).cloned());
+        let Some(slot) = slot else { return false };
+        let Ok(mut guard) = slot.lock() else { return false };
+        let Some(running) = guard.as_mut() else { return false };
+        let Some(stdin) = running.stdin.as_mut() else { return false };
+        stdin.write_all(text.as_bytes()).and_then(|()| stdin.write_all(b"\n")).and_then(|()| stdin.flush()).is_ok()
+    }
+
     /// Kill the whole tree of a task. Returns false when no such task is running.
     pub fn cancel(&self, task_id: &str) -> bool {
         let slot = self.0.lock().ok().and_then(|map| map.get(task_id).cloned());
@@ -243,12 +262,17 @@ pub fn run(registry: &Registry, request: RunRequest, sink: Arc<dyn Fn(OutputEven
         }
     };
 
-    // The prompt goes in before anything can block on output, then stdin closes.
+    // The prompt goes in before anything can block on output. Then stdin closes,
+    // unless this task is one that will be answered as it runs.
+    let mut held_stdin = None;
     if let Some(mut stdin) = child.stdin.take() {
         if let Some(text) = &request.stdin {
             let _ = stdin.write_all(text.as_bytes());
+            let _ = stdin.flush();
         }
-        drop(stdin);
+        if request.keep_stdin {
+            held_stdin = Some(stdin);
+        }
     }
 
     let stdout = child.stdout.take().map(|r| spawn_drain(r, request.task_id.clone(), "stdout", sink.clone()));
@@ -256,6 +280,7 @@ pub fn run(registry: &Registry, request: RunRequest, sink: Arc<dyn Fn(OutputEven
 
     let slot = Arc::new(Mutex::new(Some(Running {
         child,
+        stdin: held_stdin,
         #[cfg(windows)]
         job: Some(job),
     })));
@@ -372,7 +397,46 @@ mod tests {
     }
 
     fn node(task: &str, script: &str, timeout_ms: u64) -> RunRequest {
-        RunRequest { task_id: task.into(), program: "node".into(), args: vec!["-e".into(), script.into()], stdin: None, cwd: None, in_default_repo: false, timeout_ms }
+        RunRequest { task_id: task.into(), program: "node".into(), args: vec!["-e".into(), script.into()], stdin: None, cwd: None, in_default_repo: false, keep_stdin: false, timeout_ms }
+    }
+
+    #[test]
+    fn a_task_that_keeps_stdin_can_be_answered_while_it_runs() {
+        let registry = Registry::default();
+        let mut request = node(
+            "answerable",
+            "let seen=''; process.stdin.on('data', c => { seen += c; if (seen.includes('\\n')) { console.log('got ' + seen.trim()); process.exit(0); } });",
+            10_000,
+        );
+        request.keep_stdin = true;
+
+        let handle = registry.clone();
+        let sender = std::thread::spawn(move || {
+            // The task is registered once it is running; a moment's wait is the
+            // difference between answering it and answering nothing.
+            for _ in 0..100 {
+                if handle.send_input("answerable", "the-code") {
+                    return true;
+                }
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            false
+        });
+
+        let outcome = run(&registry, request, quiet());
+        assert!(sender.join().expect("sender"), "the running task was never answerable");
+        assert_eq!(outcome.status, RunStatus::Ok);
+        assert!(outcome.stdout.contains("got the-code"), "stdout was {:?}", outcome.stdout);
+    }
+
+    #[test]
+    fn answering_an_unknown_or_closed_task_is_refused() {
+        let registry = Registry::default();
+        assert!(!registry.send_input("nobody", "x"));
+        // A task that did not ask to be answerable has no stdin to write to.
+        let outcome = run(&registry, node("quiet", "console.log('done')", 10_000), quiet());
+        assert_eq!(outcome.status, RunStatus::Ok);
+        assert!(!registry.send_input("quiet", "x"));
     }
 
     #[test]
@@ -402,7 +466,7 @@ mod tests {
     #[test]
     fn a_missing_program_is_not_found() {
         let registry = Registry::default();
-        let outcome = run(&registry, RunRequest { task_id: "nf".into(), program: "definitely-not-a-program-xyz".into(), args: vec![], stdin: None, cwd: None, in_default_repo: false, timeout_ms: 1000 }, quiet());
+        let outcome = run(&registry, RunRequest { task_id: "nf".into(), program: "definitely-not-a-program-xyz".into(), args: vec![], stdin: None, cwd: None, in_default_repo: false, keep_stdin: false, timeout_ms: 1000 }, quiet());
         assert_eq!(outcome.status, RunStatus::NotFound);
     }
 
@@ -458,7 +522,7 @@ mod tests {
         assert!(!registry.cancel("reused-id"));
         clear_cancel_flag("reused-id");
 
-        let outcome = run(&registry, RunRequest { task_id: "reused-id".into(), program: "node".into(), args: vec!["-e".into(), "console.log('fine')".into()], stdin: None, cwd: None, in_default_repo: false, timeout_ms: 30_000 }, quiet());
+        let outcome = run(&registry, RunRequest { task_id: "reused-id".into(), program: "node".into(), args: vec!["-e".into(), "console.log('fine')".into()], stdin: None, cwd: None, in_default_repo: false, keep_stdin: false, timeout_ms: 30_000 }, quiet());
         assert_eq!(outcome.status, RunStatus::Ok, "stderr: {}", outcome.stderr);
     }
 

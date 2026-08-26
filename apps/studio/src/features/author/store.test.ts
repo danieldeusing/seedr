@@ -303,3 +303,13 @@ describe("what the agent is actually sent", () => {
     expect(prompt).not.toContain("\n\n\n");
   });
 });
+
+describe("where a job may work", () => {
+  test("is told to stay in the checkout, since a CLI refuses to write outside it", () => {
+    const prompt = jobPrompt({ ...emptyForm(), sourceKind: "agent", prompt: "a skill that renames files" });
+    expect(prompt).toContain("Work inside this checkout only");
+    // The scaffolding scripts skills use want a scratch directory; the answer is
+    // one inside the checkout, not a denial the person has to decode.
+    expect(prompt).toMatch(/scratch directory/i);
+  });
+});

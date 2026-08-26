@@ -27,7 +27,7 @@ describe("adapters", () => {
     // The same capabilities, spelled in Copilot's own tool names — asking it for
     // `Read` or `Bash(git:*)` would allow nothing at all.
     expect(adapterFor("copilot").job("p", ["read", "edit", "shell:git"]).args).toEqual(
-      expect.arrayContaining(["--allow-tool", "view", "--allow-tool", "create", "--allow-tool", "edit", "--allow-tool", "bash(git:*)"])
+      expect.arrayContaining(["--allow-tool", "view", "--allow-tool", "create", "--allow-tool", "edit", "--allow-tool", "shell(git:*)"])
     );
     expect(adapterFor("copilot").job("p", []).stdin).toBeUndefined();
     // Codex has no allowlist: its sandbox is the boundary, and it widens only
@@ -143,8 +143,10 @@ describe("an open shell", () => {
     expect(claude[claude.indexOf("--allowedTools") + 1]).toBe("Read,Bash");
     expect(claude).toEqual(expect.arrayContaining(["--disallowedTools", "Bash(git:*)"]));
 
+    // Copilot lists the tool as `bash` and permits it as `shell`; only the second
+    // name is the one its allowlist answers to.
     const copilot = adapterFor("copilot").job("p", ["edit", "shell"]).args;
-    expect(copilot).toEqual(expect.arrayContaining(["--allow-tool", "bash", "--deny-tool", "bash(git:*)"]));
+    expect(copilot).toEqual(expect.arrayContaining(["--allow-tool", "shell", "--deny-tool", "shell(git:*)"]));
   });
 
   test("a job that names only specific commands gets no blanket denial", () => {

@@ -142,6 +142,7 @@ export function jobPrompt(form: AddLocalForm): string {
     form.prompt.trim(),
     `Honour these where they are given, derive the rest:\n${hints(form)}`,
     descriptions,
+    "Work inside this checkout only. A CLI refuses to write outside it, so a scaffolding script that wants a scratch directory should be given one *inside* the checkout — remove it when you are done.",
     "Read GitHub, never write to it: `gh api` for lookups only, never with -X, --method or -f. Do not commit or push. Finish with a final line of exactly `ADDED <type>/<slug>`.",
   ]
     .filter(Boolean)

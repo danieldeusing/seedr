@@ -96,20 +96,28 @@ describe("AuthorForm — where the capability comes from", () => {
     expect(screen.getByRole("button", { name: "hand it to the agent" })).toBeEnabled();
   });
 
-  test("the prompt is the type's pre-prompt until it is edited by hand", async () => {
+  test("the pre-prompt is its own field, follows the type, and never eats the run's prompt", async () => {
     usePrePrompts.setState({ prompts: { ...emptyPrePrompts(), skill: { add: "use skill-creator", update: "" }, hook: { add: "hooks are scripts", update: "" } } });
     useAuthor.getState().reset();
     render(<AuthorForm onAdded={() => {}} />);
 
+    const prePrompt = screen.getByLabelText("pre-prompt");
     const prompt = screen.getByLabelText("prompt");
-    expect(prompt).toHaveValue("use skill-creator");
+    expect(prePrompt).toHaveValue("use skill-creator");
+    expect(prompt).toHaveValue("");
 
     await choose("type", "hook");
-    expect(prompt).toHaveValue("hooks are scripts");
+    expect(prePrompt).toHaveValue("hooks are scripts");
 
-    await userEvent.type(prompt, " and mine");
+    // What the run is for goes in its own field and survives everything.
+    await userEvent.type(prompt, "make an example skill");
     await choose("type", "skill");
-    expect(prompt).toHaveValue("hooks are scripts and mine");
+    expect(prePrompt).toHaveValue("use skill-creator");
+    expect(prompt).toHaveValue("make an example skill");
+
+    await userEvent.type(prePrompt, " and mine");
+    await choose("type", "hook");
+    expect(prePrompt).toHaveValue("use skill-creator and mine");
   });
 
   test("the descriptions are the agent's, and their absence never blocks the submit", async () => {

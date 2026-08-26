@@ -26,7 +26,8 @@ const TIPS = {
   from: "Where the content comes from: a folder copied into this registry as our own item, a repository recorded as a community item the CLI fetches at install time, or a capability the agent writes from your prompt.",
   source: "The folder holding the capability — the skill directory, the hook script. Its contents are copied in whole.",
   repository: "The GitHub repository holding the capability. Nothing is copied: the item records the URL and the CLI fetches from it at install time.",
-  prompt: "Sent to the coding agent ahead of the job. Prefilled from settings → pre-prompts for this type; edit it freely — it is exactly what the agent is told.",
+  prePrompt: "The standing context for this type, from settings → pre-prompts. It is sent ahead of the prompt below; edit it here to change it for this run only.",
+  prompt: "What this run should do. Type / for a skill.",
   type: "Which kind of capability this is. It decides the registry folder and the install handler.",
   slug: "The item's id: lowercase, no spaces. It is the directory name, and what `seedr add` takes.",
   name: "The display name, shown in the explorer and on the web.",
@@ -154,6 +155,22 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           <Problems errors={problemFor("repoUrl")} />
         </>
       )}
+
+      <div className="field-row">
+        <label className="lbl" htmlFor="author-pre-prompt" data-tip={TIPS.prePrompt}>
+          pre-prompt
+        </label>
+        <div className="field-val">
+          <PromptField
+            id="author-pre-prompt"
+            className={`${input} min-h-16`}
+            value={form.prePrompt}
+            onChange={(value) => setField("prePrompt", value)}
+            placeholder={`nothing standing for ${form.type} — set one in settings → pre-prompts`}
+            disabled={busy}
+          />
+        </div>
+      </div>
 
       <div className="field-row">
         <label className="lbl" htmlFor="author-prompt" data-tip={TIPS.prompt}>

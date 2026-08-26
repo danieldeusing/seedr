@@ -23,10 +23,16 @@ export interface AddLocalForm {
   sourceKind: SourceKind;
   sourcePath: string;
   repoUrl: string;
-  /** Extra context for the agent; prefilled from settings → pre-prompts. */
+  /**
+   * The standing context for this capability type, from settings → pre-prompts.
+   * Kept apart from the run's own instruction so that writing one does not
+   * overwrite the other — which is what happened when they shared a field.
+   */
+  prePrompt: string;
+  /** Once the pre-prompt is edited by hand, changing the type stops rewriting it. */
+  prePromptTouched: boolean;
+  /** What this particular run should do. */
   prompt: string;
-  /** Once the prompt is edited by hand, changing the type stops rewriting it. */
-  promptTouched: boolean;
   type: ComponentType;
   slug: string;
   name: string;
@@ -128,6 +134,7 @@ export function jobPrompt(form: AddLocalForm): string {
       : "Write the missing descriptions yourself, following .agents/rules/registry-descriptions.md.";
   return [
     task,
+    form.prePrompt.trim(),
     form.prompt.trim(),
     `Honour these where they are given, derive the rest:\n${hints(form)}`,
     descriptions,
@@ -152,8 +159,9 @@ export const emptyForm = (): AddLocalForm => ({
   sourceKind: "folder",
   sourcePath: "",
   repoUrl: "",
-  prompt: prePromptFor("skill", "add"),
-  promptTouched: false,
+  prePrompt: prePromptFor("skill", "add"),
+  prePromptTouched: false,
+  prompt: "",
   type: "skill",
   slug: "",
   name: "",
@@ -245,15 +253,16 @@ export const useAuthor = create<AuthorState>((set, get) => ({
 
   setField(field, value) {
     const form = { ...get().form, [field]: value };
-    if (field === "prompt") form.promptTouched = true;
+    if (field === "prePrompt") form.prePromptTouched = true;
     set({ form });
   },
 
   setType(type) {
     const { form } = get();
-    // An untouched prompt follows the type, so the pre-prompt configured for a
-    // hook is not the one a skill is added with.
-    set({ form: { ...form, type, prompt: form.promptTouched ? form.prompt : prePromptFor(type, "add") } });
+    // An untouched pre-prompt follows the type, so the standing context for a
+    // hook is not the one a skill is added with. The run's own prompt is never
+    // touched: it is what the person typed.
+    set({ form: { ...form, type, prePrompt: form.prePromptTouched ? form.prePrompt : prePromptFor(type, "add") } });
   },
 
   setSourceKind(kind) {
@@ -300,7 +309,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
           // written in settings after the app started would otherwise never
           // reach the field it was written for. An edited prompt is left alone,
           // since it was adjusted for this run.
-          prompt: form.promptTouched ? form.prompt : prePromptFor(form.type, "add"),
+          prePrompt: form.prePromptTouched ? form.prePrompt : prePromptFor(form.type, "add"),
           authorName: derived ? form.authorName : form.authorName || defaultAuthor.name,
           authorUrl: derived ? form.authorUrl : form.authorUrl || defaultAuthor.url,
         },
@@ -324,7 +333,8 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     const unlisten = await onProcessOutput(`${DRAFT_TASK}-0`, (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.line] }));
     try {
       const { files } = await readSourceFiles(form.sourcePath);
-      const result = await draftWith(useAgentSettings.getState().preferred, { type: form.type, slug: form.slug, name: form.name, compatibility: form.compatibility, files, notes: form.prompt }, undefined, DRAFT_TASK);
+      const notes = [form.prePrompt.trim(), form.prompt.trim()].filter(Boolean).join("\n\n");
+      const result = await draftWith(useAgentSettings.getState().preferred, { type: form.type, slug: form.slug, name: form.name, compatibility: form.compatibility, files, notes }, undefined, DRAFT_TASK);
       if (result.ok) {
         set({ form: { ...get().form, description: result.draft.description, longDescription: result.draft.longDescription }, phase: "idle" });
       } else {

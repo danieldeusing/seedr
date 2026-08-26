@@ -104,7 +104,23 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       )}
 
       <div className="field-row mt-4">
-        <label className="lbl" htmlFor="update-prompt" data-tip="Context for the redraft. Prefilled from settings → pre-prompts for this type; it is sent with the item's own files.">
+        <label className="lbl" htmlFor="update-pre-prompt" data-tip="The standing context for this type, from settings → pre-prompts. Sent ahead of the prompt below; edit it here to change it for this run only.">
+          pre-prompt
+        </label>
+        <div className="field-val">
+          <PromptField
+            id="update-pre-prompt"
+            className={`${input} min-h-16`}
+            value={form.prePrompt}
+            onChange={(value) => setField("prePrompt", value)}
+            placeholder={`nothing standing for ${item.type} — set one in settings → pre-prompts`}
+            disabled={busy || !!refusal}
+          />
+        </div>
+      </div>
+
+      <div className="field-row">
+        <label className="lbl" htmlFor="update-prompt" data-tip="What this run should change about the capability. Leave it empty to apply only the metadata below.">
           prompt
         </label>
         <div className="field-val">
@@ -113,7 +129,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
             className={`${input} min-h-16`}
             value={form.prompt}
             onChange={(value) => setField("prompt", value)}
-            placeholder="what the agent should know when redrafting — type / for a skill"
+            placeholder="what to change — leave empty for metadata only, type / for a skill"
             disabled={busy || !!refusal}
           />
         </div>

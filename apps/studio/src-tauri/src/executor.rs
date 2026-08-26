@@ -209,6 +209,49 @@ fn own_tree(child: &Child) -> Result<win32job::Job, String> {
     Ok(job)
 }
 
+/// Strip ANSI escape sequences from a line of child output.
+///
+/// The host already asks for plain output with `NO_COLOR=1` and most CLIs
+/// honour it; opencode does not, and its colour codes reached the log as
+/// literal glyphs. They also sit between an agent's closing line and the
+/// pattern that reads it, so they come off here — where both the live log and
+/// the captured output pass — rather than at one of the places that render.
+fn strip_ansi(line: &str) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut chars = line.chars();
+    while let Some(character) = chars.next() {
+        if character != '\u{1b}' {
+            out.push(character);
+            continue;
+        }
+        match chars.next() {
+            // CSI: parameter and intermediate bytes, then a final byte in @-~.
+            Some('[') => {
+                for c in chars.by_ref() {
+                    if ('@'..='~').contains(&c) {
+                        break;
+                    }
+                }
+            }
+            // OSC and friends run to BEL, or to ESC \\.
+            Some(']') => {
+                while let Some(c) = chars.next() {
+                    if c == '\u{7}' {
+                        break;
+                    }
+                    if c == '\u{1b}' {
+                        chars.next();
+                        break;
+                    }
+                }
+            }
+            // Anything else is a two-character sequence; both go.
+            _ => {}
+        }
+    }
+    out
+}
+
 fn spawn_drain<R: std::io::Read + Send + 'static>(
     reader: R,
     task_id: String,
@@ -217,7 +260,8 @@ fn spawn_drain<R: std::io::Read + Send + 'static>(
 ) -> thread::JoinHandle<Capped> {
     thread::spawn(move || {
         let mut capped = Capped::default();
-        for line in BufReader::new(reader).lines().map_while(Result::ok) {
+        for raw in BufReader::new(reader).lines().map_while(Result::ok) {
+            let line = strip_ansi(&raw);
             capped.push(&line);
             sink(OutputEvent { task_id: task_id.clone(), stream, line });
         }
@@ -447,6 +491,19 @@ mod tests {
         assert_eq!(outcome.exit_code, Some(3));
         assert_eq!(outcome.stdout, "hi\n");
         assert_eq!(outcome.stderr, "warn\n");
+    }
+
+    #[test]
+    fn strips_colour_the_child_emitted_despite_no_color() {
+        // Real opencode output: a reset before the banner, a dim path mid-line.
+        assert_eq!(strip_ansi("\u{1b}[0m> build \u{1b}[90m~/x\u{1b}[0m"), "> build ~/x");
+        // The line a job's verdict is read from must survive intact.
+        assert_eq!(strip_ansi("\u{1b}[32mADDED skill/pdf\u{1b}[0m"), "ADDED skill/pdf");
+        // OSC (window titles) runs to BEL or ESC-backslash.
+        assert_eq!(strip_ansi("\u{1b}]0;title\u{7}kept"), "kept");
+        assert_eq!(strip_ansi("\u{1b}]0;title\u{1b}\\kept"), "kept");
+        // Text with no escapes is returned unchanged, including brackets.
+        assert_eq!(strip_ansi("[ ] Read .agents/rules"), "[ ] Read .agents/rules");
     }
 
     #[test]

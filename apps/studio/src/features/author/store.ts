@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
-import { ALL_TYPES, CANONICAL_AGENTS, parseOp, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
+import { ALL_TYPES, CANONICAL_AGENTS, parseOp, typeDirName, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess, onProcessOutput, pickPath } from "@/api/agent";
 import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
 import type { JobCapability } from "./adapters";
@@ -8,6 +8,7 @@ import { configuredAuthor } from "@/features/settings/authorSettings";
 import { useAgentSettings } from "@/features/settings/agentSettings";
 import { prePromptFor } from "@/features/settings/prePrompts";
 import { repoIdentity, runRegistryOp } from "@/api/registryCli";
+import { fs } from "@/api/fs";
 import { readSourceFiles } from "@/api/source";
 import { draftWith, probeAgent, type AdapterProbe } from "./claudeAdapter";
 
@@ -98,6 +99,11 @@ export const ADD_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", 
 
 /** The last line an add job must print, so Studio can open what was added. */
 const ADDED_LINE = /^ADDED\s+([a-z]+)\/([A-Za-z0-9._-]+)$/m;
+
+/** Where an item's own file must be, for a claim of having added it to mean anything. */
+const itemJsonPath = (type: ComponentType, slug: string): string => `registry/${typeDirName(type)}/${slug}/item.json`;
+
+const itemExists = (type: ComponentType, slug: string): Promise<boolean> => fs.pathExists(itemJsonPath(type, slug)).catch(() => false);
 
 export function parseAdded(text: string): { type: ComponentType; slug: string } | null {
   const match = ADDED_LINE.exec(text);
@@ -405,7 +411,20 @@ export const useAuthor = create<AuthorState>((set, get) => ({
         set({ phase: "idle", error: outcome.text, ...(outcome.denials.length > 0 ? { draftErrors: [`the job asked for ${outcome.denials.join(", ")}, which it is not allowed`] } : {}) });
         return;
       }
-      set({ phase: "done", result: { kind: "job", added: parseAdded(outcome.text), text: outcome.text, denials: outcome.denials } });
+      // An agent's report is a claim, not evidence. opencode returned a tidy
+      // summary with changed paths and the required ADDED line having written
+      // every one of them into a different checkout — a truthful report of work
+      // done somewhere else. So the claim is checked against this checkout
+      // before the explorer is told to open anything.
+      const added = parseAdded(outcome.text);
+      if (added && !(await itemExists(added.type, added.slug))) {
+        set({
+          phase: "idle",
+          error: `The agent reported adding ${added.type}/${added.slug}, but there is no item at ${itemJsonPath(added.type, added.slug)}. Nothing was written — read the log and try again.`,
+        });
+        return;
+      }
+      set({ phase: "done", result: { kind: "job", added, text: outcome.text, denials: outcome.denials } });
     } catch (error) {
       set({ phase: "idle", error: (error as Error).message });
     }

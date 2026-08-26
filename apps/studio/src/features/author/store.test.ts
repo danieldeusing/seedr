@@ -175,6 +175,8 @@ describe("jobs — a repository or a prompt", () => {
     const requests = scriptHost({
       claude: () => ({ stdout: JSON.stringify({ type: "result", is_error: false, result: "Added it.\nADDED plugin/superpowers" }) }),
     });
+    // The claim is checked against disk before it is believed.
+    onCommand("path_exists", () => true);
 
     await useAuthor.getState().apply();
 
@@ -311,5 +313,35 @@ describe("where a job may work", () => {
     // The scaffolding scripts skills use want a scratch directory; the answer is
     // one inside the checkout, not a denial the person has to decode.
     expect(prompt).toMatch(/scratch directory/i);
+  });
+});
+
+describe("what an agent says it did", () => {
+  const jobHost = (report: string) =>
+    scriptHost({ claude: () => ({ stdout: JSON.stringify({ type: "result", is_error: false, result: report }) }) });
+
+  test("is believed only when the item is actually on disk", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), sourceKind: "agent", prompt: "a skill" }, probe: PROBE_OK });
+    jobHost("All done.\nADDED skill/ghost");
+    // Nothing was written — the case opencode produced, complete with a
+    // plausible changed-paths list.
+    onCommand("path_exists", () => false);
+
+    await useAuthor.getState().apply();
+
+    expect(useAuthor.getState().phase).toBe("idle");
+    expect(useAuthor.getState().error).toMatch(/reported adding skill\/ghost, but there is no item at registry\/skills\/ghost\/item\.json/);
+    expect(useAuthor.getState().result).toBeNull();
+  });
+
+  test("and is taken at its word once the file is there", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), sourceKind: "agent", prompt: "a skill" }, probe: PROBE_OK });
+    jobHost("All done.\nADDED skill/real");
+    onCommand("path_exists", (args) => String(args?.rel) === "registry/skills/real/item.json");
+
+    await useAuthor.getState().apply();
+
+    expect(useAuthor.getState().phase).toBe("done");
+    expect(useAuthor.getState().result).toMatchObject({ kind: "job", added: { type: "skill", slug: "real" } });
   });
 });

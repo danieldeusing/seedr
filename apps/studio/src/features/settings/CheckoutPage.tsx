@@ -27,7 +27,7 @@ export function CheckoutPage() {
     void defaultRepo()
       .then((recorded) => {
         // Nothing recorded yet means the checkout that is open is the answer.
-        const current = recorded ?? repo?.root ?? "";
+        const current = recorded?.root ?? repo?.root ?? "";
         setStored(current);
         setPath(current);
       })

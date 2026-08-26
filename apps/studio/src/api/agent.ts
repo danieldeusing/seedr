@@ -15,6 +15,8 @@ export interface RunRequest {
   stdin?: string;
   /** Repo-relative working directory; the host resolves it inside the repo. */
   cwd?: string;
+  /** Run in the recorded default checkout — how a registry without its own operations CLI is changed. */
+  inDefaultRepo?: boolean;
   timeoutMs: number;
 }
 

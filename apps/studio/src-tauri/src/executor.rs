@@ -36,6 +36,10 @@ pub struct RunRequest {
     /// Absolute working directory, already validated by the caller.
     #[serde(default)]
     pub cwd: Option<PathBuf>,
+    /// Run in the recorded default checkout instead of the open one — the way a
+    /// registry without its own operations CLI is still changed.
+    #[serde(default)]
+    pub in_default_repo: bool,
     pub timeout_ms: u64,
 }
 
@@ -368,7 +372,7 @@ mod tests {
     }
 
     fn node(task: &str, script: &str, timeout_ms: u64) -> RunRequest {
-        RunRequest { task_id: task.into(), program: "node".into(), args: vec!["-e".into(), script.into()], stdin: None, cwd: None, timeout_ms }
+        RunRequest { task_id: task.into(), program: "node".into(), args: vec!["-e".into(), script.into()], stdin: None, cwd: None, in_default_repo: false, timeout_ms }
     }
 
     #[test]
@@ -398,7 +402,7 @@ mod tests {
     #[test]
     fn a_missing_program_is_not_found() {
         let registry = Registry::default();
-        let outcome = run(&registry, RunRequest { task_id: "nf".into(), program: "definitely-not-a-program-xyz".into(), args: vec![], stdin: None, cwd: None, timeout_ms: 1000 }, quiet());
+        let outcome = run(&registry, RunRequest { task_id: "nf".into(), program: "definitely-not-a-program-xyz".into(), args: vec![], stdin: None, cwd: None, in_default_repo: false, timeout_ms: 1000 }, quiet());
         assert_eq!(outcome.status, RunStatus::NotFound);
     }
 
@@ -454,7 +458,7 @@ mod tests {
         assert!(!registry.cancel("reused-id"));
         clear_cancel_flag("reused-id");
 
-        let outcome = run(&registry, RunRequest { task_id: "reused-id".into(), program: "node".into(), args: vec!["-e".into(), "console.log('fine')".into()], stdin: None, cwd: None, timeout_ms: 30_000 }, quiet());
+        let outcome = run(&registry, RunRequest { task_id: "reused-id".into(), program: "node".into(), args: vec!["-e".into(), "console.log('fine')".into()], stdin: None, cwd: None, in_default_repo: false, timeout_ms: 30_000 }, quiet());
         assert_eq!(outcome.status, RunStatus::Ok, "stderr: {}", outcome.stderr);
     }
 

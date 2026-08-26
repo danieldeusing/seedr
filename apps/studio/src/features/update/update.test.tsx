@@ -105,8 +105,8 @@ describe("updateStore", () => {
     await useUpdate.getState().apply();
 
     const job = requests.find((request) => request.args.includes("--allowedTools"));
-    expect(job?.args.at(-1)).toBe("Read,Write,Edit,Glob,Grep,Skill,Bash(npx tsx scripts/registry-op.ts:*)");
-    expect(job?.args.at(-1)).not.toContain("Bash(git");
+    expect(job?.args[job.args.indexOf("--allowedTools") + 1]).toBe("Read,Write,Edit,Glob,Grep,Skill,Bash");
+    expect(job?.args).toEqual(expect.arrayContaining(["--disallowedTools", "Bash(git:*)"]));
     expect(job?.stdin).toContain("make it handle timeouts");
     expect(job?.stdin).toContain("- name: Playwright MCP");
     expect(job?.stdin).toContain("rewrite `description`");

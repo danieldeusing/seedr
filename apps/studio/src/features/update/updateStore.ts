@@ -63,7 +63,7 @@ interface UpdateState {
  * through the operations CLI, which is the only thing allowed to write
  * `item.json`. No network, no `git`: this is an edit, not a publish.
  */
-export const UPDATE_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "skills", "shell:npx tsx scripts/registry-op.ts"];
+export const UPDATE_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "skills", "shell"];
 
 const UPDATE_TASK = "update-job";
 const LOG_CAP = 200;
@@ -190,6 +190,10 @@ export const useUpdate = create<UpdateState>((set, get) => ({
           capabilities: UPDATE_JOB_CAPABILITIES,
           onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
         });
+        if (outcome.cancelled) {
+          set({ phase: "idle", error: null });
+          return;
+        }
         if (!outcome.ok) {
           set({ phase: "idle", error: outcome.denials.length > 0 ? `${outcome.text} (it asked for ${outcome.denials.join(", ")}, which it is not allowed)` : outcome.text });
           return;

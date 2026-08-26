@@ -44,13 +44,10 @@ export function App() {
   }, [init, initAgents]);
 
   // After a successful add the watcher refreshes the list; show the new item.
-  const onAdded = useCallback(
-    (type: ComponentType, slug: string) => {
-      select({ type, slug });
-      setDialog(null);
-    },
-    [select]
-  );
+  // Select what was added, but leave the dialog open: a finished job has a
+  // report and a log worth reading, and closing the window over them makes the
+  // work look like it vanished. Closing is the reader's call.
+  const onAdded = useCallback((type: ComponentType, slug: string) => select({ type, slug }), [select]);
 
   const close = useCallback(() => setDialog(null), []);
 

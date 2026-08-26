@@ -136,3 +136,26 @@ describe("jsonCandidates", () => {
     expect(jsonCandidates("{ not json at all ")).toEqual([]);
   });
 });
+
+describe("an open shell", () => {
+  test("is spelled per CLI, and git is denied alongside it", () => {
+    const claude = adapterFor("claude").job("p", ["read", "shell"]).args;
+    expect(claude[claude.indexOf("--allowedTools") + 1]).toBe("Read,Bash");
+    expect(claude).toEqual(expect.arrayContaining(["--disallowedTools", "Bash(git:*)"]));
+
+    const copilot = adapterFor("copilot").job("p", ["edit", "shell"]).args;
+    expect(copilot).toEqual(expect.arrayContaining(["--allow-tool", "bash", "--deny-tool", "bash(git:*)"]));
+  });
+
+  test("a job that names only specific commands gets no blanket denial", () => {
+    const publish = adapterFor("claude").job("p", ["read", "shell:git"]).args;
+    expect(publish[publish.indexOf("--allowedTools") + 1]).toBe("Read,Bash(git:*)");
+    // Denying git here would contradict the one job that exists to run it.
+    expect(publish).not.toContain("--disallowedTools");
+  });
+
+  test("an open shell counts as changing things, for the CLIs that only answer that", () => {
+    expect(adapterFor("codex").job("p", ["shell"]).args).toEqual(expect.arrayContaining(["-s", "workspace-write"]));
+    expect(adapterFor("antigravity").job("p", ["shell"]).args).toEqual(expect.arrayContaining(["--mode", "accept-edits"]));
+  });
+});

@@ -282,9 +282,11 @@ hand-repaired JSON — and "add to registry" runs the `add-local` operation thro
 *A git repository* and *the agent writes it* are agent jobs instead: Studio composes the
 prompt (this repo's own `/add-community` or `/add-seedr` skill, the type's pre-prompt, every
 filled field as a hint the agent honours and every empty one for it to derive) and streams
-`claude -p --output-format stream-json --verbose --allowedTools …` line by line. A job's tools
-are named, never assumed — read/write the checkout, `WebFetch`, `Bash(npx tsx
-scripts/registry-op.ts:*)`; no `git`, so a job cannot commit — and it must end with `ADDED
+`claude -p --output-format stream-json --verbose --allowedTools …` line by line. A job names what it may do — read, edit, search, skills, web, shell — and each
+adapter spells that in its own CLI's tool names, because they do not agree
+(Claude's `Read` is Copilot's `view`). Authoring runs the maintainer's own
+tooling, so its shell is open; `git` is denied alongside it, so a job still
+cannot commit, push or rewrite history — and it must end with `ADDED
 <type>/<slug>`, which is how the explorer knows what to open. Each description says who
 writes it, you or the agent. Claude Code is probed at startup (`--version`, `--help` flags)
 and disabled with a diagnostic rather than degraded.

@@ -54,8 +54,9 @@ const CLAUDE_TOOLS: Record<Exclude<JobCapability, "shell" | `shell:${string}`>, 
   web: ["WebFetch"],
 };
 
-// Copilot's own names, from asking it: bash, view, create, edit, web_fetch,
-// skill, grep, glob. Its shell specifier is `bash(<prefix>:*)`, verified by run.
+// Copilot answers two different names for the same tool: it *lists* `bash`, and
+// its permission system calls it `shell`. Verified by running the same command
+// twice — `--allow-tool bash` was denied, `--allow-tool shell` ran it.
 const COPILOT_TOOLS: Record<Exclude<JobCapability, "shell" | `shell:${string}`>, string[]> = {
   read: ["view"],
   edit: ["create", "edit"],
@@ -274,8 +275,8 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
         "--no-color",
         "--log-level",
         "none",
-        ...spell(capabilities, COPILOT_TOOLS, (prefix) => `bash(${prefix}:*)`, "bash").flatMap((tool) => ["--allow-tool", tool]),
-        ...(hasOpenShell(capabilities) ? ["--deny-tool", `bash(${DENIED_SHELL}:*)`] : []),
+        ...spell(capabilities, COPILOT_TOOLS, (prefix) => `shell(${prefix}:*)`, "shell").flatMap((tool) => ["--allow-tool", tool]),
+        ...(hasOpenShell(capabilities) ? ["--deny-tool", `shell(${DENIED_SHELL}:*)`] : []),
         "-p",
         prompt,
       ],

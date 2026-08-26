@@ -82,6 +82,7 @@ export function updateJobPrompt(item: StudioItem, form: UpdateForm, patch: Updat
       : "Leave `description` and `longDescription` exactly as they are — they were written by hand.",
     "Edit content files directly, but change `item.json` only through `npx tsx scripts/registry-op.ts run --op -` as an `update` operation, whose `expectedHash` comes from `npx tsx scripts/registry-op.ts hash " +
       `${item.type} ${item.slug}\`.`,
+    "Work inside this checkout only — a CLI refuses to write outside it, so a scratch directory belongs in here and should be removed afterwards.",
     "Do not commit or push. Finish with a final line of exactly `UPDATED <type>/<slug>`.",
   ]
     .filter(Boolean)

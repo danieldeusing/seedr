@@ -56,11 +56,16 @@ export function App() {
   if (!repo) return <Onboarding error={repoError ?? error} onChoose={() => void chooseRepo()} />;
 
   const itemKey = current ? `${current.type}/${current.slug}` : "";
+  // A column, not a three-row grid: the banner renders only when an agent is
+  // signed out, and with it gone the fixed template left the workspace in an
+  // `auto` row with the `1fr` row below it empty — so the empty row took the
+  // free height and showed as dead space under a short registry. A column gives
+  // the workspace what is left however many siblings it has.
   return (
-    <div className="grid h-screen grid-rows-[auto_auto_minmax(0,1fr)]">
+    <div data-testid="app-shell" className="flex h-screen flex-col">
       <AppHeader />
       <SignInBanner />
-      <div className="grid min-h-0" style={{ gridTemplateColumns: `${sidebarWidth}px auto minmax(0,1fr)` }} data-testid="workspace">
+      <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: `${sidebarWidth}px auto minmax(0,1fr)` }} data-testid="workspace">
         <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
           {error && (
             <p className="m-4 text-xs text-destructive" role="alert">

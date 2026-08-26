@@ -296,6 +296,11 @@ export const useAuthor = create<AuthorState>((set, get) => ({
         phase: "idle",
         form: {
           ...form,
+          // Re-read on open, not just when the store was created: a pre-prompt
+          // written in settings after the app started would otherwise never
+          // reach the field it was written for. An edited prompt is left alone,
+          // since it was adjusted for this run.
+          prompt: form.promptTouched ? form.prompt : prePromptFor(form.type, "add"),
           authorName: derived ? form.authorName : form.authorName || defaultAuthor.name,
           authorUrl: derived ? form.authorUrl : form.authorUrl || defaultAuthor.url,
         },

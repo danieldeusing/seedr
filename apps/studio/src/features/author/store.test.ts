@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { emit, invoke, onCommand } from "@/test/mockIpc";
+import { emptyPrePrompts, usePrePrompts } from "@/features/settings/prePrompts";
 import { ADD_JOB_CAPABILITIES, emptyForm, formProblems, githubProblem, jobPrompt, parseAdded, toOp, useAuthor } from "./store";
 
 const LONG = "Reads `item.json` files and " + "checks every description carefully ".repeat(10);
@@ -251,5 +252,25 @@ describe("descriptions left empty", () => {
   test("a description that is filled in but too short is still refused", () => {
     const form = { ...emptyForm(), sourcePath: "/src/pdf", slug: "pdf", name: "PDF", authorName: "Me", description: "Fills forms.", longDescription: "too short" };
     expect(formProblems(form).map((p) => p.field)).toEqual(["longDescription"]);
+  });
+});
+
+describe("the pre-prompt in the dialog", () => {
+  test("is re-read when the dialog opens, and an edited one is left alone", async () => {
+    scriptHost({
+      "claude --version": () => ({ stdout: "2.1.226" }),
+      "claude --help": () => ({ stdout: HELP }),
+      "npx tsx scripts/registry-op.ts": () => ({ stdout: JSON.stringify(identity) }),
+    });
+
+    // Written in settings after the store was created — the case that made the
+    // field come up empty.
+    usePrePrompts.setState({ prompts: { ...emptyPrePrompts(), skill: { add: "use skill-creator", update: "" } } });
+    await useAuthor.getState().prepare();
+    expect(useAuthor.getState().form.prompt).toBe("use skill-creator");
+
+    useAuthor.getState().setField("prompt", "just for this run");
+    await useAuthor.getState().prepare();
+    expect(useAuthor.getState().form.prompt).toBe("just for this run");
   });
 });

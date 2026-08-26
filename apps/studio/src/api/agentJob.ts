@@ -27,6 +27,15 @@ export interface AgentJobResult {
   denials: string[];
 }
 
+/**
+ * A failure the agent reports as its own, which no amount of retrying here will
+ * fix: its CLI is signed out. Worth naming, because "OAuth session expired"
+ * reads like a Studio problem and is not one.
+ */
+export function signedOutHint(text: string, program: string): string | null {
+  return /authenticat|oauth|logged? ?in|sign(ed)? ?in/i.test(text) ? `${program} is not signed in on this machine — run \`${program} auth login\` in a terminal, then try again.` : null;
+}
+
 interface StreamContent {
   type?: string;
   text?: string;
@@ -124,7 +133,11 @@ export async function runAgentJob(
   const unlisten = onEvent ? await onProcessOutput(taskId, ({ line }) => adapter.readLine(line).forEach(onEvent)) : null;
   try {
     const outcome = await run({ taskId, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), cwd: "", timeoutMs });
-    return adapter.readOutcome(outcome);
+    const verdict = adapter.readOutcome(outcome);
+    if (verdict.ok) return verdict;
+    // The agent's own words plus what to do about them, when it is signed out.
+    const hint = signedOutHint(verdict.text, adapter.program);
+    return hint ? { ...verdict, text: `${verdict.text}\n\n${hint}` } : verdict;
   } finally {
     unlisten?.();
   }

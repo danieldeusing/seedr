@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Ban, Check, TriangleAlert } from "lucide-react";
 import { gitBranches, type BranchInfo, type GitSummary } from "@/api/git";
+import { AgentLog } from "@/core/ui/AgentLog";
 import { IconButton } from "@/core/ui/IconButton";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { GIT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
@@ -161,11 +162,7 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
         </p>
       )}
       {jobError && <SignedOutNotice error={jobError} />}
-      {log.length > 0 && (
-        <pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap border border-border bg-muted p-2" aria-live="polite" aria-label="agent output">
-          {log.join("\n")}
-        </pre>
-      )}
+      <AgentLog lines={log} />
     </section>
   );
 }

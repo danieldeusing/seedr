@@ -117,6 +117,7 @@ pub fn run(registry: &Registry, root: &Path, request: TestInstallRequest, sink: 
             args: command[1..].to_vec(),
             stdin: None,
             cwd: Some(dir.clone()),
+            in_default_repo: false,
             timeout_ms: request.timeout_ms,
         },
         sink,

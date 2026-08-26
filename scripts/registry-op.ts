@@ -11,6 +11,9 @@
  *   tsx scripts/registry-op.ts validate <type> <slug>    validation errors for one item
  *   tsx scripts/registry-op.ts identity                  owner/repo/branch/author derived from git
  *
+ * `--repo <path>` acts on another checkout instead of this one, which is how a
+ * registry whose own tooling predates this CLI can still be changed safely.
+ *
  * Results go to stdout as JSON; failures to stderr with exit code 1. Operations
  * are read from a file (or stdin with `-`) rather than argv — Windows caps a
  * command line near 32 K and a longDescription alone can be a few KB.
@@ -23,7 +26,7 @@ import {
   isComponentType,
   itemExternalUrl,
   itemStateHash,
-  listItems,
+  listItemsChecked,
   readItem,
   runRegistryTransaction,
   typeDirName,
@@ -31,8 +34,18 @@ import {
 } from "@seedr/registry-ops";
 import type { ComponentType } from "@seedr/shared";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const registryDir = join(repoRoot, "registry");
+/**
+ * Which checkout to act on. It defaults to the one this script lives in, and
+ * `--repo <path>` points it at another — a fork that predates this CLI, or any
+ * registry whose own tooling is older. The transaction already takes a repoRoot
+ * and runs git inside it, so the only thing that was ever fixed here was this
+ * constant.
+ */
+export function repoRootFrom(argv: string[]): string {
+  const flag = argv.indexOf("--repo");
+  const named = flag >= 0 ? argv[flag + 1] : undefined;
+  return named ? resolve(named) : resolve(dirname(fileURLToPath(import.meta.url)), "..");
+}
 
 const out = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 const fail = (message: string): never => {
@@ -46,11 +59,15 @@ function requireType(value: string | undefined): ComponentType {
 }
 
 async function main(argv: string[]): Promise<void> {
-  const [command, ...rest] = argv;
+  const repoRoot = repoRootFrom(argv);
+  const registryDir = join(repoRoot, "registry");
+  // `--repo <path>` is global, so it must not be read as a command's own argument.
+  const flag = argv.indexOf("--repo");
+  const [command, ...rest] = flag >= 0 ? [...argv.slice(0, flag), ...argv.slice(flag + 2)] : argv;
   switch (command) {
     case "run": {
-      const flag = rest.indexOf("--op");
-      const source = flag >= 0 ? rest[flag + 1] : undefined;
+      const opFlag = rest.indexOf("--op");
+      const source = opFlag >= 0 ? rest[opFlag + 1] : undefined;
       if (!source) fail("run needs --op <file> (or - for stdin)");
       const raw = source === "-" ? readFileSync(0, "utf8") : readFileSync(resolve(source), "utf8");
       const { result, changedPaths, headBefore } = await runRegistryTransaction(JSON.parse(raw), { repoRoot });
@@ -59,11 +76,14 @@ async function main(argv: string[]): Promise<void> {
     }
     case "list": {
       const only = rest[0] ? requireType(rest[0]) : undefined;
-      out(
-        listItems(registryDir)
-          .filter(({ type }) => !only || type === only)
-          .map(({ type, slug, item }) => ({ type, slug, sourceType: item.sourceType, name: item.name, hash: itemStateHash(registryDir, type, slug) }))
-      );
+      // One item a newer validator refuses — a fork's legacy `externalUrl`, say —
+      // must not hide every other item. The violations are reported beside the
+      // list; the transaction is still strict about the item it touches.
+      const { items, violations } = listItemsChecked(registryDir);
+      const listed = items
+        .filter(({ type }) => !only || type === only)
+        .map(({ type, slug, item }) => ({ type, slug, sourceType: item.sourceType, name: item.name, hash: itemStateHash(registryDir, type, slug) }));
+      out(violations.length > 0 ? { items: listed, violations } : listed);
       return;
     }
     case "hash": {

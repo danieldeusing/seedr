@@ -7,7 +7,7 @@ import { PaneResizeHandle } from "@/core/PaneResizeHandle";
 import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
-import { NO_OPS, useHasOps } from "./repoCapability";
+import { NO_OPS, useCanMutate } from "./repoCapability";
 import { testRefusal } from "@/features/test/testStore";
 import { FlaskConical, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Pencil } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
@@ -73,7 +73,7 @@ function MetaFields({ item }: { item: StudioItem["item"] }) {
 const STACK_BELOW_PX = 860;
 
 export function Detail({ item, onEdit, onTest }: DetailProps) {
-  const hasOps = useHasOps();
+  const hasOps = useCanMutate();
   const [tree, setTree] = useState<FileTreeNode[] | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
   const [metaWidth, setMetaWidth] = useState(340);

@@ -202,10 +202,12 @@ fn set_default_repo(path: String, repo: State<Repo>) -> Result<RepoInfo, String>
     repo_info(&current_root(&repo)?)
 }
 
-/// The checkout Studio treats as home, if one has been recorded.
+/// The checkout Studio treats as home, if one has been recorded and is still a
+/// registry. Its `has_ops` is what lets a checkout without the operations CLI
+/// still be changed: the CLI runs from here, pointed at the other one.
 #[tauri::command]
-fn default_repo() -> Option<String> {
-    default_repo_file().as_deref().and_then(default_repo_at).map(|path| path.display().to_string())
+fn default_repo() -> Option<RepoInfo> {
+    default_repo_file().as_deref().and_then(default_repo_at).and_then(|path| repo_info(&path).ok())
 }
 
 #[tauri::command]
@@ -414,7 +416,17 @@ fn set_program_override(program: String, path: Option<String>, overrides: State<
 /// Output lines stream to the webview as `process-output` events.
 #[tauri::command]
 async fn run_process(app: AppHandle, mut request: RunRequest, repo: State<'_, Repo>, registry: State<'_, Registry>, overrides: State<'_, ProgramOverrides>) -> Result<RunOutcome, String> {
-    let root = current_root(&repo)?;
+    // A registry whose own tooling predates the operations CLI is changed by
+    // running that CLI from the default checkout, pointed at this one. The only
+    // other place a run may happen is a folder this host recorded itself.
+    let root = if request.in_default_repo {
+        default_repo_file()
+            .as_deref()
+            .and_then(default_repo_at)
+            .ok_or_else(|| "No default checkout is recorded, so there is no operations CLI to run".to_string())?
+    } else {
+        current_root(&repo)?
+    };
     if !RUNNABLE_PROGRAMS.contains(&request.program.as_str()) {
         return Err(format!("{}: not a program Studio runs", request.program));
     }

@@ -1,7 +1,25 @@
 import { create } from "zustand";
 import type { ComponentType } from "@seedr/shared";
 import { fs } from "@/api/fs";
-import { getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
+import { defaultRepo, getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
+import { setOpsCheckout } from "@/api/registryCli";
+
+/**
+ * Tell the api layer which checkout operations act on, and whether it can run
+ * its own CLI. A checkout without one borrows the default checkout's.
+ */
+const openCheckout = (repo: RepoInfo): void => setOpsCheckout({ root: repo.root, hasOps: repo.hasOps });
+
+/**
+ * The checkout whose operations CLI this one borrows, when it has none of its
+ * own. Null when it does not need to borrow, or when there is nothing to borrow
+ * from — in which case the registry can be read but not changed.
+ */
+async function borrowedTooling(repo: RepoInfo): Promise<RepoInfo | null> {
+  if (repo.hasOps) return null;
+  const home = await defaultRepo().catch(() => null);
+  return home?.hasOps ? home : null;
+}
 import { onRegistryChanged, watchRegistry } from "@/api/watch";
 import { loadRegistry, type StudioItem } from "./registry";
 
@@ -18,12 +36,13 @@ interface StudioState {
   error: string | null;
   /** Why the last repository pick failed — the watcher never clears this. */
   repoError: string | null;
+  /** The checkout whose operations CLI the open one borrows, when it has none. */
+  toolingRepo: RepoInfo | null;
   selected: Selection | null;
   /** Restore the host's selected repo on start, then load and watch it. */
   init(): Promise<void>;
   chooseRepo(): Promise<void>;
   clearRepoError(): void;
-  /** Make the open checkout the one Studio calls home. */
   /** Record a checkout as the default. Resolves to an error, or null. */
   makeRepoDefault(path: string): Promise<string | null>;
   refresh(): Promise<void>;
@@ -47,13 +66,15 @@ export const useStudio = create<StudioState>((set, get) => ({
   loading: false,
   error: null,
   repoError: null,
+  toolingRepo: null,
   selected: null,
 
   async init() {
     try {
       const repo = await getRepo();
       if (!repo) return;
-      set({ repo });
+      openCheckout(repo);
+      set({ repo, toolingRepo: await borrowedTooling(repo) });
       await get().refresh();
       await watch(get().refresh);
     } catch (error) {
@@ -69,7 +90,8 @@ export const useStudio = create<StudioState>((set, get) => ({
     try {
       const repo = await pickRepo();
       if (!repo) return;
-      set({ repo, selected: null, repoError: null });
+      openCheckout(repo);
+      set({ repo, selected: null, repoError: null, toolingRepo: await borrowedTooling(repo) });
       await get().refresh();
       await watch(get().refresh);
     } catch (error) {
@@ -84,7 +106,9 @@ export const useStudio = create<StudioState>((set, get) => ({
     try {
       // The host answers with the *open* checkout, whose isDefault may have
       // changed in either direction by naming another folder as home.
-      set({ repo: await setDefaultRepo(path) });
+      const repo = await setDefaultRepo(path);
+      openCheckout(repo);
+      set({ repo });
       return null;
     } catch (error) {
       return (error as Error).message;

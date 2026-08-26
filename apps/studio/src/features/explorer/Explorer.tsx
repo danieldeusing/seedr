@@ -8,7 +8,7 @@ import { CodingAgentIcon } from "@/core/CodingAgentIcon";
 import { useRowStyle, type RowStyle } from "@/core/rowStyle";
 import { ThemeMenu } from "@/core/ThemeMenu";
 import { countByType, type StudioItem } from "./registry";
-import { NO_OPS, useHasOps } from "./repoCapability";
+import { NO_OPS, useCanMutate } from "./repoCapability";
 import type { Selection } from "./store";
 
 interface ExplorerProps {
@@ -92,7 +92,7 @@ const matches = (item: StudioItem, query: string): boolean => {
  */
 export function Explorer({ items, problems, selected, onSelect, onAddCapability, onGitStatus, onSettings, onSwitchRepo }: ExplorerProps) {
   const counts = countByType(items);
-  const hasOps = useHasOps();
+  const hasOps = useCanMutate();
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<ComponentType>>(new Set());
   const rowStyle = useRowStyle((s) => s.style);

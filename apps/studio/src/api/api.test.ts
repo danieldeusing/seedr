@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { fs, openPath } from "./fs";
 import { getRepo, pickRepo } from "./repo";
+import { opsInvocation } from "./registryCli";
 import { onRegistryChanged, REGISTRY_CHANGED, watchRegistry } from "./watch";
 import { emit, invoke, listen, onCommand } from "@/test/mockIpc";
 
@@ -57,5 +58,25 @@ describe("watch", () => {
     emit(REGISTRY_CHANGED);
     await new Promise((r) => setTimeout(r, 50));
     expect(calls).toBe(1);
+  });
+});
+
+describe("opsInvocation", () => {
+  test("runs in the open checkout when it has its own operations CLI", () => {
+    expect(opsInvocation({ root: "/work/seedr", hasOps: true }, ["hash", "skill", "pdf"])).toEqual({
+      args: ["tsx", "scripts/registry-op.ts", "hash", "skill", "pdf"],
+      inDefaultRepo: false,
+    });
+  });
+
+  test("borrows the default checkout's CLI and points it back, for a fork that predates it", () => {
+    expect(opsInvocation({ root: "/work/seedr-internal", hasOps: false }, ["run", "--op", "-"])).toEqual({
+      args: ["tsx", "scripts/registry-op.ts", "--repo", "/work/seedr-internal", "run", "--op", "-"],
+      inDefaultRepo: true,
+    });
+  });
+
+  test("with no checkout open there is nothing to point at", () => {
+    expect(opsInvocation(null, ["identity"])).toEqual({ args: ["tsx", "scripts/registry-op.ts", "identity"], inDefaultRepo: false });
   });
 });

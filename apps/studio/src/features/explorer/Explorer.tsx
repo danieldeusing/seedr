@@ -188,7 +188,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
                           type="button"
                           aria-current={active ? "true" : undefined}
                           onClick={() => onSelect({ type, slug })}
-                          className={`flex w-full cursor-pointer items-center gap-2 px-2 py-0.5 text-left text-sm transition-colors ${active ? "bg-violet-500/20 text-neutral-200" : "text-neutral-300 hover:bg-neutral-960/50 hover:text-neutral-200"}`}
+                          className={`flex w-full cursor-pointer items-center gap-3 px-2 py-0.5 text-left text-sm transition-colors ${active ? "bg-violet-500/20 text-neutral-200" : "text-neutral-300 hover:bg-neutral-960/50 hover:text-neutral-200"}`}
                         >
                           <RowIndicators item={item} style={rowStyle} />
                           <span className="truncate">{item.name ?? slug}</span>

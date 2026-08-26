@@ -50,6 +50,20 @@ describe("App", () => {
     expect(await screen.findByRole("heading", { name: "PDF" })).toBeInTheDocument();
   });
 
+  test("gives the workspace the height its siblings leave, however many there are", async () => {
+    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
+    mockFs(registryFiles());
+    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
+
+    render(<App />);
+    // The sign-in banner renders only when an agent is signed out. Under a
+    // three-row grid template its absence moved the workspace into an `auto`
+    // row and left the `1fr` row below it empty — 433px of dead space, measured
+    // on a fork with four items. A column cannot count its children wrong.
+    expect(await screen.findByTestId("app-shell")).toHaveClass("flex", "h-screen", "flex-col");
+    expect(await screen.findByTestId("workspace")).toHaveClass("flex-1", "min-h-0");
+  });
+
   test("widens the sidebar when its right edge is dragged", async () => {
     onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
     mockFs(registryFiles());

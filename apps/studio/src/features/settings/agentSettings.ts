@@ -52,16 +52,19 @@ export type AgentProbe =
 
 /**
  * How each CLI is asked whether it is signed in, and how it is told to sign in.
- * Verified against the installed CLIs: only Claude Code answers in JSON, codex
- * answers in a sentence, opencode counts stored credentials, and the other two
- * cannot be asked at all — so their state stays unknown until a run says
- * otherwise, which is more honest than a green tick nobody checked.
+ * Verified by running them: only Claude Code answers in JSON, codex answers in
+ * a sentence **on stderr**, opencode counts the credentials in its own file,
+ * and the other two cannot be asked at all.
+ *
+ * `read` returns the state rather than a boolean, because "no credential
+ * stored" and "cannot run" are not the same claim and one CLI here proves it.
+ * Both streams are handed over: they disagree about which one status goes on.
  */
 export interface AuthCommands {
   status?: string[];
   login?: string[];
   /** What the status output means, when there is one. */
-  read?(stdout: string): { signedIn: boolean; account: string | null };
+  read?(stdout: string, stderr: string): AuthState;
 }
 
 export const AGENT_AUTH: Record<CanonicalCodingAgent, AuthCommands> = {
@@ -71,24 +74,35 @@ export const AGENT_AUTH: Record<CanonicalCodingAgent, AuthCommands> = {
     read: (stdout) => {
       try {
         const parsed = JSON.parse(stdout) as { loggedIn?: boolean; authMethod?: string; email?: string; account?: string };
-        return { signedIn: parsed.loggedIn === true, account: parsed.email ?? parsed.account ?? (parsed.authMethod && parsed.authMethod !== "none" ? parsed.authMethod : null) };
+        if (parsed.loggedIn !== true) return { state: "out" };
+        return { state: "in", account: parsed.email ?? parsed.account ?? (parsed.authMethod && parsed.authMethod !== "none" ? parsed.authMethod : null) };
       } catch {
-        return { signedIn: false, account: null };
+        // Output this command was not supposed to produce says nothing either way.
+        return { state: "unknown" };
       }
     },
   },
   codex: {
     status: ["login", "status"],
     login: ["login"],
-    // "Logged in using ChatGPT" — the method is the closest thing to an account.
-    read: (stdout) => ({ signedIn: /logged in/i.test(stdout), account: /logged in using (.+)/i.exec(stdout)?.[1]?.trim() ?? null }),
+    // It prints "Not logged in" or "Logged in using ChatGPT" on stderr, and
+    // nothing at all on stdout. The negative is conclusive here: asked to run
+    // while it says that, codex answers 401 Unauthorized.
+    read: (_stdout, stderr) => {
+      if (/not logged in/i.test(stderr)) return { state: "out" };
+      const method = /logged in using (.+)/i.exec(stderr)?.[1]?.trim();
+      return method ? { state: "in", account: method } : { state: "unknown" };
+    },
   },
   opencode: {
     status: ["auth", "list"],
     login: ["auth", "login"],
+    // A stored credential proves it is signed in. Zero proves nothing: opencode
+    // also runs on a provider it did not store, and was observed finishing jobs
+    // while its own `auth list` reported "0 credentials".
     read: (stdout) => {
       const count = /(\d+) credentials?/i.exec(stdout)?.[1];
-      return { signedIn: count !== undefined && count !== "0", account: count ? `${count} provider(s)` : null };
+      return count !== undefined && count !== "0" ? { state: "in", account: `${count} provider(s)` } : { state: "unknown" };
     },
   },
   copilot: { login: ["login"] },
@@ -156,8 +170,7 @@ export const useAgentSettings = create<AgentSettingsState>((set, get) => ({
     try {
       const outcome = await runProcess({ taskId: `auth-status-${agent}`, program: AGENT_PROGRAMS[agent], args: commands.status, timeoutMs: 20_000 });
       if (outcome.status === "not-found") return put({ state: "unknown" });
-      const read = commands.read(outcome.stdout);
-      put(read.signedIn ? { state: "in", account: read.account } : { state: "out" });
+      put(commands.read(outcome.stdout, outcome.stderr));
     } catch {
       put({ state: "unknown" });
     }

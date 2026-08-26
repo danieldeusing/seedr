@@ -338,6 +338,52 @@ describe("sign-in state", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
+  test("reads codex's answer off the stream it actually uses", async () => {
+    // codex prints its status on stderr and nothing on stdout. Reading stdout
+    // alone made every answer look the same as "not logged in".
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      const done = (stdout: string, stderr: string) => ({ taskId: request.taskId, status: "ok", exitCode: 0, stdout, stderr, durationMs: 1 });
+      if (request.args[0] === "--version") return done(`${request.program} 1.2.3\n`, "");
+      if (request.program === "codex") return done("", "Logged in using ChatGPT\n");
+      return done("", "");
+    });
+
+    render(<SettingsPanel />);
+    expect(await screen.findByText("signed in · ChatGPT")).toBeInTheDocument();
+  });
+
+  test("codex saying it is not logged in is conclusive, and it is on stderr too", async () => {
+    // Verified against the CLI: asked to run while it says this, codex answers
+    // 401 Unauthorized. So this negative is a real "out", not an unknown.
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      const done = (stdout: string, stderr: string) => ({ taskId: request.taskId, status: "ok", exitCode: 0, stdout, stderr, durationMs: 1 });
+      if (request.args[0] === "--version") return done(`${request.program} 1.2.3\n`, "");
+      if (request.program === "codex") return done("", "Not logged in\n");
+      return done("", "");
+    });
+
+    render(<SettingsPanel />);
+    expect(await screen.findAllByText("signed out")).toHaveLength(1);
+  });
+
+  test("no stored credential is not a claim that the CLI cannot run", async () => {
+    // opencode finishes jobs while its own `auth list` reports none stored, so
+    // zero is unknown, not signed out. A stored one is still proof.
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      const ok = (stdout: string) => ({ taskId: request.taskId, status: "ok", exitCode: 0, stdout, stderr: "", durationMs: 1 });
+      if (request.args[0] === "--version") return ok(`${request.program} 1.2.3\n`);
+      if (request.program === "opencode") return ok("Credentials\n0 credentials\n");
+      return ok("");
+    });
+
+    render(<SettingsPanel />);
+    await waitFor(() => expect(screen.getAllByText("sign-in unknown").length).toBeGreaterThan(0));
+    expect(screen.queryByText("signed out")).toBeNull();
+  });
+
   test("a CLI with nothing to ask is not guessed at", async () => {
     hostWithAuth(CLAUDE_OUT);
     render(<SettingsPanel />);

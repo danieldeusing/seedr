@@ -3,6 +3,7 @@ import type { ComponentType } from "@seedr/shared";
 import { AppHeader } from "./core/AppHeader";
 import { ExternalLinkDialog } from "./core/ExternalLinkDialog";
 import { Modal } from "./core/Modal";
+import { PaneResizeHandle } from "./core/PaneResizeHandle";
 import { AuthorForm } from "./features/author/AuthorForm";
 import { Detail } from "./features/explorer/Detail";
 import { Explorer } from "./features/explorer/Explorer";
@@ -24,6 +25,7 @@ type DialogKind = null | "author" | "git" | "update" | "test" | "settings";
 
 export function App() {
   const [dialog, setDialog] = useState<DialogKind>(null);
+  const [sidebarWidth, setSidebarWidth] = useState(288);
   const repo = useStudio((s) => s.repo);
   const items = useStudio((s) => s.items);
   const problems = useStudio((s) => s.problems);
@@ -58,7 +60,7 @@ export function App() {
     <div className="grid h-screen grid-rows-[auto_auto_minmax(0,1fr)]">
       <AppHeader />
       <SignInBanner />
-      <div className="grid min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
+      <div className="grid min-h-0" style={{ gridTemplateColumns: `${sidebarWidth}px auto minmax(0,1fr)` }} data-testid="workspace">
         <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
           {error && (
             <p className="m-4 text-xs text-destructive" role="alert">
@@ -76,6 +78,7 @@ export function App() {
             onSwitchRepo={() => void chooseRepo()}
           />
         </aside>
+        <PaneResizeHandle label="resize sidebar" onResize={(delta) => setSidebarWidth((width) => Math.max(200, Math.min(600, width + delta)))} />
         <section className="min-h-0 overflow-hidden">
           {current ? (
             <Detail key={itemKey} item={current} onEdit={() => setDialog("update")} onTest={() => setDialog("test")} />

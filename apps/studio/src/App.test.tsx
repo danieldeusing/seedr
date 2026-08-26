@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test } from "vitest";
 import { mockFs, onCommand } from "@/test/mockIpc";
@@ -48,6 +48,39 @@ describe("App", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /PDF$/ }));
     expect(await screen.findByRole("heading", { name: "PDF" })).toBeInTheDocument();
+  });
+
+  test("widens the sidebar when its right edge is dragged", async () => {
+    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
+    mockFs(registryFiles());
+    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
+
+    render(<App />);
+    const workspace = await screen.findByTestId("workspace");
+    expect(workspace).toHaveStyle({ gridTemplateColumns: "288px auto minmax(0,1fr)" });
+
+    fireEvent.mouseDown(screen.getByLabelText("resize sidebar"), { clientX: 288 });
+    fireEvent.mouseMove(document, { clientX: 388 });
+    fireEvent.mouseUp(document);
+
+    expect(workspace).toHaveStyle({ gridTemplateColumns: "388px auto minmax(0,1fr)" });
+  });
+
+  test("holds the sidebar between its minimum and maximum width", async () => {
+    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
+    mockFs(registryFiles());
+    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
+
+    render(<App />);
+    const workspace = await screen.findByTestId("workspace");
+
+    fireEvent.mouseDown(screen.getByLabelText("resize sidebar"), { clientX: 288 });
+    fireEvent.mouseMove(document, { clientX: 4000 });
+    expect(workspace).toHaveStyle({ gridTemplateColumns: "600px auto minmax(0,1fr)" });
+
+    fireEvent.mouseMove(document, { clientX: 0 });
+    expect(workspace).toHaveStyle({ gridTemplateColumns: "200px auto minmax(0,1fr)" });
+    fireEvent.mouseUp(document);
   });
 
   test("shows the host's refusal on onboarding", async () => {

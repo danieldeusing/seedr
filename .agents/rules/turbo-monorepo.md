@@ -60,6 +60,6 @@ cd packages/cli && pnpm build
 | Anti-Pattern | Fix |
 |--------------|-----|
 | `npm install` | Use `pnpm install` |
-| Relative imports across packages | Use workspace dependencies |
+| Relative imports across packages | Use workspace dependencies — except in `apps/web/vite.config.ts` and `vitest.config.ts`, where Vite externalizes every bare specifier in a config file and `@seedr/registry-ops` ships TypeScript source with no built `.js` for Node to resolve |
 | Manually running builds in order | Let turbo handle task ordering |
 | Duplicating dependencies | Add to root for shared deps |

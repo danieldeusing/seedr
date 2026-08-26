@@ -75,23 +75,47 @@ registry/
 
 The `item.json` files are the source of truth. The `manifest.json` files are generated from them.
 
-### Remove items you don't want
+### Give your fork its own registry directory
 
-Delete the item's directory:
+Do this before you add anything.
 
-```bash
-rm -rf registry/skills/some-skill-you-dont-need
+`registry/` belongs to upstream. Every item in it arrives by `git merge upstream/main`, and
+anything you delete out of it turns every later merge into a conflict — see
+[Step 8](#step-8-keeping-in-sync-with-upstream) for what that costs.
+
+So leave `registry/` alone and name a directory of your own. Create `seedr.config.json` at the
+repo root:
+
+```json
+{
+  "registryDir": "registry-internal"
+}
 ```
+
+Upstream ships no `seedr.config.json`, so the file exists only in your fork and no merge can
+touch it. `resolveRegistryDir()` in `packages/registry-ops/src/fsPaths.ts` is the single place
+that answers "where is the registry", and it answers with exactly one directory: the one you
+name *replaces* `registry/` rather than adding to it. With no config file it returns `registry/`
+— `DEFAULT_REGISTRY_DIR` in `packages/registry-ops/src/paths.ts` — which is what upstream itself
+resolves.
+
+`registryDir` is one plain directory name and **must start with `registry`** — `registry-internal`,
+`registry-acme`. It is joined onto the repo root, so slashes and `..` are rejected outright
+(`registryDirName()`, same file). The prefix is required because `turbo.json` invalidates the build
+cache from `registry*/**` and cannot read this file: a name outside that glob would leave Turbo
+serving a stale build after you edit an item.
 
 ### Add your own items
 
-Place your content in the appropriate directory and create an `item.json`:
+Your items go under the directory you just named, in the same layout `registry/` uses: the type
+name pluralized, then the slug — except `mcp` and `settings`, which are used as-is
+(`typeDirName()` in `packages/registry-ops/src/paths.ts`).
 
 ```bash
-mkdir -p registry/skills/my-team-skill
+mkdir -p registry-internal/skills/my-team-skill
 ```
 
-Create `registry/skills/my-team-skill/item.json`:
+Create `registry-internal/skills/my-team-skill/item.json`:
 
 ```json
 {
@@ -106,8 +130,34 @@ Create `registry/skills/my-team-skill/item.json`:
 }
 ```
 
+Add the content file (e.g., `registry-internal/skills/my-team-skill/SKILL.md`). You don't have
+to pre-create the type folders or a `labels.json`: `pnpm compile` creates every type directory,
+and an absent label catalogue reads as an empty one.
 
-Add the content file (e.g., `registry/skills/my-team-skill/SKILL.md`).
+### Don't delete upstream's items
+
+There is no supported way to delete them, and you don't need one. Once `registryDir` names your
+directory, that directory *is* the registry — `registry/` becomes files in the tree that nothing
+resolves to. Your instance lists your items and nothing else, and because you never modified
+`registry/`, upstream can keep changing it forever without ever meeting your branch.
+
+Two things happen if you try anyway:
+
+- **`official` items refuse to go.** `packages/registry-ops/src/ops/remove.ts` throws
+  `Official items cannot be removed: the next sync would restore <type> "<slug>"`. The nightly
+  `sync.yml` rebuilds those items from `anthropics/skills` and
+  `anthropics/claude-plugins-official`, so the deletion would return on the next run regardless.
+- **Everything else you delete becomes a permanent merge conflict.** Deleting an item doesn't
+  remove it upstream, only from your branch. Upstream then keeps editing a file you deleted, and
+  git reports that disagreement on every pull from then on — one
+  `CONFLICT (modify/delete)` per item, forever.
+
+If you want a few of upstream's items in your own instance, **copy** the item's directory across.
+Reading `registry/` is fine; writing to it is not:
+
+```bash
+cp -R registry/skills/pdf registry-internal/skills/pdf
+```
 
 ### Rebuild manifests
 
@@ -129,15 +179,21 @@ The CLI resolves registry content by trying a local path first, then falling bac
 
 ```bash
 SEEDR_REGISTRY_URL=https://seedr.your-company.example/registry npx @your-scope/seedr list
-SEEDR_REGISTRY_DIR=/path/to/your/seedr/registry npx @your-scope/seedr add my-skill
+SEEDR_REGISTRY_DIR=/path/to/your/seedr/registry-internal npx @your-scope/seedr add my-skill
 ```
+
+Point `SEEDR_REGISTRY_DIR` at the directory you named in `seedr.config.json` (Step 3). It is
+read straight from the environment and wins over whatever local directory the CLI would
+otherwise resolve — see `REGISTRY_PATH` in `packages/cli/src/config/registry.ts`. The published
+CLI ships only its `dist/`, so it has no checkout to read `seedr.config.json` from; the variable
+is how you tell it.
 
 To change the fork's *default* (so your users need no variable), edit `DEFAULT_REGISTRY_URL` in `packages/cli/src/config/registry.ts`.
 
 If you're serving the registry from your own domain (e.g., via Nginx), you can point it there instead:
 
 ```typescript
-const GITHUB_RAW_URL = "https://seedr.internal.yourcompany.com/registry";
+const DEFAULT_REGISTRY_URL = "https://seedr.internal.yourcompany.com/registry";
 ```
 
 ### Rename the package (optional)
@@ -418,7 +474,11 @@ Build the web app and serve it as a static site.
 pnpm install && pnpm build
 ```
 
-The built files are in `apps/web/dist/`. The registry JSON files are in `registry/`.
+The built files are in `apps/web/dist/`. The registry JSON files are in your registry directory
+— `registry/`, or whatever `seedr.config.json` names (Step 3). The server blocks below say
+`registry/`; point them at your own directory instead. Keep the public URL path as `/registry/`:
+the CLI derives the repository root from its registry URL by stripping that trailing segment
+(`REGISTRY_ROOT_URL` in `packages/cli/src/config/registry.ts`).
 
 ### Nginx
 
@@ -533,10 +593,28 @@ git merge upstream/main
 
 **What to expect:**
 
-- Conflicts are rare. Your custom `item.json` files live in separate directories from upstream items.
-- If upstream adds new items, they appear as new directories — no conflict.
+- Your own registry directory never conflicts. Upstream has no directory by that name, so the merge has nothing to reconcile it against.
+- If upstream adds new items, they appear as new directories under `registry/` — no conflict.
 - If you've modified `registry.ts` (Step 4), you'll get a conflict there. Resolve by keeping your URL.
 - Manifest files (`manifest.json`) are auto-generated, so run `pnpm compile` after merging to regenerate them.
+
+That first point holds only because you kept your items out of `registry/`. Skip Step 3 and this
+step stops working — permanently.
+
+> **Why Step 3 is not optional.** A private fork once deleted upstream's public items to keep a
+> registry of only its own. Every merge after that produced one
+> `CONFLICT (modify/delete): ... deleted in HEAD and modified in upstream/main` per item:
+> **110 conflicts, 108 of them in `registry/`**, with only `CLAUDE.md` and `pnpm-lock.yaml`
+> worth a human's attention. Merging cost more than it was worth, so it stopped happening, and
+> the fork drifted **89 commits behind**.
+>
+> The stale code was not the damage. Stale code just sits there. The damage was the stale
+> *instructions*: the fork's frozen copy of `.claude/skills/` still held an `add-toolr` skill
+> telling a coding agent to write `sourceType: "toolr"` — a value this repo had since replaced
+> with `seedr`. An agent read it and did as it was told, and the item it produced failed
+> validation, because `packages/registry-ops/src/validate.ts` accepts only the three values in
+> `CANONICAL_SOURCE_TYPES` (`official`, `seedr`, `community`). A stale copy of code is dead
+> weight. A stale copy of an instruction gets followed.
 
 ## Step 9: Private Network Considerations
 
@@ -556,7 +634,9 @@ The web app is fully static — any standard web auth approach works.
 
 | Variable | Where | Purpose |
 |----------|-------|---------|
-| `GITHUB_RAW_URL` | `packages/cli/src/config/registry.ts` | Remote registry URL (hardcoded constant, not env var) |
+| `SEEDR_REGISTRY_DIR` | CLI environment | Local registry directory to read first; wins over the directory the CLI resolves on its own |
+| `SEEDR_REGISTRY_URL` | CLI environment | Remote registry URL; the fallback when the local directory has no answer |
+| `DEFAULT_REGISTRY_URL` | `packages/cli/src/config/registry.ts` | The fork's built-in remote registry URL (a constant, not an env var) |
 | `CLOUDFLARE_API_TOKEN` | CI secrets | Cloudflare Pages deployment |
 | `CLOUDFLARE_ACCOUNT_ID` | CI secrets | Cloudflare Pages deployment |
 | `GITHUB_TOKEN` | CI secrets | Build and sync workflows |
@@ -568,7 +648,8 @@ The web app is fully static — any standard web auth approach works.
 |---------|----------|
 | `pnpm build` fails | Run `pnpm clean` then `pnpm install && pnpm build` |
 | Build seems stale after registry changes | `pnpm clean` does NOT clear Turbo's cache. Use `npx turbo run build --force` to bypass it. |
-| CLI can't find items | Check `GITHUB_RAW_URL` points to your registry. Verify `manifest.json` exists at that URL. |
+| CLI can't find items | Check `SEEDR_REGISTRY_URL` (or `DEFAULT_REGISTRY_URL`) points to your registry. Verify `manifest.json` exists at that URL. |
+| CLI or web app lists upstream's items, not yours | `seedr.config.json` is missing, or `registryDir` names a directory that doesn't exist. Without it the registry is `registry/` (see [Step 3](#give-your-fork-its-own-registry-directory)). |
 | Web app shows empty list | Run `pnpm compile` to regenerate manifests, then `pnpm build` |
 | Nginx returns 404 for routes | Add `try_files $uri $uri/ /index.html;` for SPA fallback |
 | CORS errors loading registry | Add `Access-Control-Allow-Origin *` header to the `/registry/` location |
@@ -584,12 +665,14 @@ seedr/
 │   ├── wrangler.toml            # Cloudflare Pages config
 │   └── schema.sql               # D1 analytics schema
 ├── packages/cli/                # CLI package
-│   └── src/config/registry.ts   # ← Change GITHUB_RAW_URL here
-├── registry/                    # Registry data (serve at /registry/)
+│   └── src/config/registry.ts   # ← Change DEFAULT_REGISTRY_URL here
+├── seedr.config.json            # ← Your fork adds this; upstream has no such file
+├── registry/                    # Upstream's registry — never edit it in a fork
 │   ├── manifest.json            # Top-level index
 │   ├── skills/                  # Skill items + manifest
 │   ├── plugins/                 # Plugin items + manifest
 │   ├── hooks/                   # Hook items + manifest
 │   └── ...
+├── registry-internal/           # Your registry, named by seedr.config.json (serve at /registry/)
 └── turbo.json                   # Build orchestration
 ```

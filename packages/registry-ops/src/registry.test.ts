@@ -1,10 +1,10 @@
 import { cpSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { makeTempDir } from "./test/tempDir.js";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { describe, expect, test } from "vitest";
 import { collectItems, compileRegistry } from "./compile.js";
 import { contentHash, itemStateHash } from "./hash.js";
-import { indexManifestPath, typeManifestPath } from "./fsPaths.js";
+import { indexManifestPath, resolveRegistryDir, typeManifestPath } from "./fsPaths.js";
 import { fileTree, listItems, readIndex, readItem, readTypeManifest } from "./read.js";
 import { makeRegistry, writeItem, seedrSkill } from "./test/fixtures.js";
 
@@ -58,6 +58,38 @@ describe("hash", () => {
     writeFileSync(join(registry, "skills", "alpha", "references", "notes.md"), "more\n");
     expect(itemStateHash(registry, "skill", "alpha")).not.toBe(afterMeta);
     expect(itemStateHash(registry, "skill", "missing")).toBeNull();
+  });
+});
+
+describe("where the registry lives", () => {
+  // makeRegistry() builds `<temp>/registry`, so its parent is the checkout.
+  const makeCheckout = (): string => dirname(makeRegistry());
+
+  test("is registry/ by default, and what seedr.config.json names when a fork moves it", () => {
+    const repoRoot = makeCheckout();
+    // A checkout with no config is upstream's case and must not change.
+    expect(resolveRegistryDir(repoRoot)).toBe(join(repoRoot, "registry"));
+
+    // A fork points at a directory upstream does not have, so that upstream's
+    // registry/ is never modified locally and its merges stay clean.
+    writeFileSync(join(repoRoot, "seedr.config.json"), JSON.stringify({ registryDir: "registry-internal" }));
+    expect(resolveRegistryDir(repoRoot)).toBe(join(repoRoot, "registry-internal"));
+  });
+
+  test("refuses a value that would climb out of the checkout", () => {
+    const repoRoot = makeCheckout();
+    // `internal` is rejected for a reason of its own: turbo.json invalidates the
+    // build cache from `registry*/**`, and it cannot read seedr.config.json.
+    for (const bad of ["../elsewhere", "/etc", "a/b", "", 3, "internal"]) {
+      writeFileSync(join(repoRoot, "seedr.config.json"), JSON.stringify({ registryDir: bad }));
+      expect(() => resolveRegistryDir(repoRoot)).toThrow(/must be a single directory name starting with "registry"/);
+    }
+  });
+
+  test("says so when the config file cannot be read as JSON", () => {
+    const repoRoot = makeCheckout();
+    writeFileSync(join(repoRoot, "seedr.config.json"), "{ not json");
+    expect(() => resolveRegistryDir(repoRoot)).toThrow(/not readable JSON/);
   });
 });
 

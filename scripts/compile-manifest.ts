@@ -11,10 +11,13 @@
  */
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ALL_TYPES, collectItems, compileRegistry, listItemsRaw, typeDirName } from "@seedr/registry-ops";
+import { ALL_TYPES, collectItems, compileRegistry, listItemsRaw, resolveRegistryDir, typeDirName } from "@seedr/registry-ops";
 import type { Manifest, ManifestItem } from "./sync/types.js";
 
-export const DEFAULT_REGISTRY_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "registry");
+// Not `<repo>/registry` unconditionally: a fork keeps its own items in the
+// directory `seedr.config.json` names, so that upstream's `registry/` is never
+// modified locally and every merge from it stays clean.
+export const DEFAULT_REGISTRY_DIR = resolveRegistryDir(join(dirname(fileURLToPath(import.meta.url)), ".."));
 
 export interface CompileOptions {
   registryDir?: string;

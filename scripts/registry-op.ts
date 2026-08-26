@@ -21,17 +21,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  deriveRepoIdentity,
-  isComponentType,
-  itemExternalUrl,
-  itemStateHash,
-  listItemsChecked,
-  readItem,
-  runRegistryTransaction,
-  typeDirName,
-  validateItem,
-} from "@seedr/registry-ops";
+import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, resolveRegistryDir, runRegistryTransaction, typeDirName, validateItem } from "@seedr/registry-ops";
 import type { ComponentType } from "@seedr/shared";
 
 /**
@@ -60,7 +50,7 @@ function requireType(value: string | undefined): ComponentType {
 
 async function main(argv: string[]): Promise<void> {
   const repoRoot = repoRootFrom(argv);
-  const registryDir = join(repoRoot, "registry");
+  const registryDir = resolveRegistryDir(repoRoot);
   // `--repo <path>` is global, so it must not be read as a command's own argument.
   const flag = argv.indexOf("--repo");
   const [command, ...rest] = flag >= 0 ? [...argv.slice(0, flag), ...argv.slice(flag + 2)] : argv;

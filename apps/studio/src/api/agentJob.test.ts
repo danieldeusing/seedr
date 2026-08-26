@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { emit, onCommand } from "@/test/mockIpc";
 import type { RunRequest } from "./agent";
-import { agentJobArgs, jobResult, parseStreamLine, runAgentJob, signedOutHint, type AgentJobEvent } from "./agentJob";
+import { agentJobArgs, isSignedOut, jobResult, parseStreamLine, runAgentJob, type AgentJobEvent } from "./agentJob";
 
 const outcome = (over: Partial<Awaited<ReturnType<typeof runAgentJob>>> & Record<string, unknown> = {}) => ({
   taskId: "t",
@@ -80,20 +80,18 @@ describe("runAgentJob", () => {
   });
 });
 
-describe("signedOutHint", () => {
-  test("names what to do when the agent reports its own auth failure", () => {
-    expect(signedOutHint("Failed to authenticate: OAuth session expired and could not be refreshed", "claude")).toBe(
-      "claude is not signed in on this machine — run `claude auth login` in a terminal, then try again."
-    );
-    expect(signedOutHint("You are not logged in", "copilot")).toContain("copilot auth login");
+describe("isSignedOut", () => {
+  test("recognises the agent reporting its own auth failure", () => {
+    expect(isSignedOut("Failed to authenticate: OAuth session expired and could not be refreshed")).toBe(true);
+    expect(isSignedOut("You are not logged in")).toBe(true);
   });
 
-  test("leaves an ordinary failure to speak for itself", () => {
-    expect(signedOutHint("the worktree has uncommitted changes", "claude")).toBeNull();
-    expect(signedOutHint("", "claude")).toBeNull();
+  test("leaves an ordinary failure alone", () => {
+    expect(isSignedOut("the worktree has uncommitted changes")).toBe(false);
+    expect(isSignedOut("")).toBe(false);
   });
 
-  test("a failed run carries the hint with the agent's own words", async () => {
+  test("a failed run reports what the agent said, unchanged", async () => {
     onCommand("run_process", (args) => {
       const request = (args as { request: RunRequest }).request;
       return outcome({ taskId: request.taskId, stdout: JSON.stringify({ type: "result", is_error: true, result: "Failed to authenticate: OAuth session expired" }) });
@@ -102,7 +100,6 @@ describe("signedOutHint", () => {
     const result = await runAgentJob({ taskId: "auth", prompt: "x", capabilities: ["read"], agent: "claude" });
 
     expect(result.ok).toBe(false);
-    expect(result.text).toContain("Failed to authenticate");
-    expect(result.text).toContain("claude auth login");
+    expect(result.text).toBe("Failed to authenticate: OAuth session expired");
   });
-})
+});

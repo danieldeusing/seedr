@@ -9,6 +9,7 @@ import { AGENT_PROGRAMS, useAgentSettings } from "./agentSettings";
 import { emptyPrePrompts, prePromptFor, usePrePrompts } from "./prePrompts";
 import { useStudio } from "@/features/explorer/store";
 import { SettingsPanel } from "./SettingsPanel";
+import { SignInBanner } from "./SignInBanner";
 
 /** A host where every agent CLI answers `--version`, except the ones named. */
 function hostWithAgents(missing: string[] = []) {
@@ -234,5 +235,44 @@ describe("signing an agent in", () => {
     expect(shown).not.toHaveTextContent("the-code");
     expect(shown).toHaveTextContent("· answered");
     expect(await screen.findByText(/Signed in\./)).toBeInTheDocument();
+  });
+});
+
+describe("sign-in state", () => {
+  const CLAUDE_OUT = JSON.stringify({ loggedIn: false, authMethod: "none", apiProvider: "firstParty" });
+  const CLAUDE_IN = JSON.stringify({ loggedIn: true, authMethod: "claudeai", email: "someone@example.com" });
+
+  /** A host answering --version for everyone and the given auth status for claude. */
+  function hostWithAuth(status: string) {
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      const ok = (stdout: string) => ({ taskId: request.taskId, status: "ok", exitCode: 0, stdout, stderr: "", durationMs: 1 });
+      if (request.args[0] === "--version") return ok(`${request.program} 1.2.3\n`);
+      if (request.program === "claude" && request.args.join(" ") === "auth status") return ok(status);
+      return ok("");
+    });
+  }
+
+  test("reads the account out of what the CLI reports", async () => {
+    hostWithAuth(CLAUDE_IN);
+    render(<SettingsPanel />);
+    expect(await screen.findByText("signed in · someone@example.com")).toBeInTheDocument();
+  });
+
+  test("says signed out, and the workspace says so too", async () => {
+    hostWithAuth(CLAUDE_OUT);
+    render(<SettingsPanel />);
+    expect(await screen.findAllByText("signed out")).not.toHaveLength(0);
+
+    // The same state, in front of someone about to fill in a form.
+    render(<SignInBanner />);
+    expect(await screen.findByRole("status")).toHaveTextContent("Claude Code is signed out");
+  });
+
+  test("a CLI with nothing to ask is not guessed at", async () => {
+    hostWithAuth(CLAUDE_OUT);
+    render(<SettingsPanel />);
+    // Antigravity has no status command; claiming either state would be a lie.
+    await waitFor(() => expect(screen.getAllByText("sign-in unknown").length).toBeGreaterThan(0));
   });
 });

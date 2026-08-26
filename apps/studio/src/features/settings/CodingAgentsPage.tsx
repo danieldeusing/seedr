@@ -5,7 +5,7 @@ import { AGENT_LABELS, CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { pickPath } from "@/api/agent";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
 import { IconButton } from "@/core/ui/IconButton";
-import { AGENT_PROGRAMS, DRAFT_CERTIFIED, useAgentSettings, type AgentProbe } from "./agentSettings";
+import { AGENT_AUTH, AGENT_PROGRAMS, DRAFT_CERTIFIED, useAgentSettings, type AgentProbe, type AuthState } from "./agentSettings";
 import { SignInDialog } from "./SignInDialog";
 
 /** The probe result as one line of ink: found, missing, or the failure itself. */
@@ -17,10 +17,23 @@ function ProbeState({ probe }: { probe: AgentProbe }) {
   return <span className="text-muted-foreground">—</span>;
 }
 
+/** Signed in, signed out, or a CLI that cannot be asked — never guessed. */
+function SignInState({ auth }: { auth: AuthState }) {
+  if (auth.state === "in") return <span className="text-success">signed in{auth.account ? ` · ${auth.account}` : ""}</span>;
+  if (auth.state === "out") return <span className="text-destructive">signed out</span>;
+  if (auth.state === "checking") return <span className="text-muted-foreground">checking…</span>;
+  return (
+    <span className="text-muted-foreground" data-tip="This CLI has no command to ask, so Studio finds out when a run needs it">
+      sign-in unknown
+    </span>
+  );
+}
+
 function AgentCard({ agent, onSignIn }: { agent: CanonicalCodingAgent; onSignIn(): void }) {
   const override = useAgentSettings((s) => s.overrides[agent]);
   const probe = useAgentSettings((s) => s.probes[agent]);
   const setOverride = useAgentSettings((s) => s.setOverride);
+  const auth = useAgentSettings((s) => s.auth[agent]);
   const reprobe = useAgentSettings((s) => s.probe);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +55,14 @@ function AgentCard({ agent, onSignIn }: { agent: CanonicalCodingAgent; onSignIn(
           </span>
         )}
         <span className="flex-1" />
-        <IconButton icon={LogIn} ariaLabel={`sign in to ${AGENT_LABELS[agent]}`} tip="Sign this CLI in — it runs the sign-in and keeps the credentials" onClick={onSignIn} disabled={probe.state === "missing"} />
+        <IconButton
+          icon={LogIn}
+          ariaLabel={`sign in to ${AGENT_LABELS[agent]}`}
+          tip={AGENT_AUTH[agent].login ? "Sign this CLI in — it runs the sign-in and keeps the credentials" : "This CLI has no sign-in command Studio knows"}
+          accentColor={auth.state === "out" ? "violet" : "neutral"}
+          onClick={onSignIn}
+          disabled={probe.state === "missing" || !AGENT_AUTH[agent].login}
+        />
         <IconButton icon={RotateCw} ariaLabel={`probe ${AGENT_LABELS[agent]}`} tip="Run --version again" onClick={() => void reprobe(agent)} spin={probe.state === "probing"} />
       </div>
       <div className="flex items-center gap-2">
@@ -52,7 +72,11 @@ function AgentCard({ agent, onSignIn }: { agent: CanonicalCodingAgent; onSignIn(
         <IconButton icon={FolderOpen} ariaLabel={`choose ${AGENT_LABELS[agent]} binary`} tip="Point Studio at a specific binary" onClick={() => void choose()} />
         <IconButton icon={X} ariaLabel={`clear ${AGENT_LABELS[agent]} path`} tip="Back to the one on PATH" onClick={() => void apply(null)} disabled={!override} />
       </div>
-      <ProbeState probe={probe} />
+      <span className="flex items-center gap-2">
+        <ProbeState probe={probe} />
+        <span className="text-neutral-600">·</span>
+        <SignInState auth={auth} />
+      </span>
       {error && (
         <p className="text-destructive" role="alert">
           {error}

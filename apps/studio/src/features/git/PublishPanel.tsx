@@ -4,6 +4,7 @@ import { gitBranches, type BranchInfo, type GitSummary } from "@/api/git";
 import { IconButton } from "@/core/ui/IconButton";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { GIT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
+import { SignedOutNotice } from "@/features/settings/SignedOutNotice";
 import { usePublish } from "./publishStore";
 import { pushTriggers } from "./workflows";
 
@@ -159,11 +160,7 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
           Commit on {summary.branch} and push to {targets.join(", ")}. Confirm to run.
         </p>
       )}
-      {jobError && (
-        <p className="mt-3 text-destructive" role="alert">
-          {jobError}
-        </p>
-      )}
+      {jobError && <SignedOutNotice error={jobError} />}
       {log.length > 0 && (
         <pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap border border-border bg-muted p-2" aria-live="polite" aria-label="agent output">
           {log.join("\n")}

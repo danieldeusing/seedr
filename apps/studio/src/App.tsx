@@ -10,6 +10,7 @@ import { selectedItem, useStudio } from "./features/explorer/store";
 import { GitPanel } from "./features/git/GitPanel";
 import { Onboarding } from "./features/onboarding/Onboarding";
 import { useAgentSettings } from "./features/settings/agentSettings";
+import { SignInBanner } from "./features/settings/SignInBanner";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { TestPanel } from "./features/test/TestPanel";
 import { UpdateForm } from "./features/update/UpdateForm";
@@ -57,8 +58,9 @@ export function App() {
 
   const itemKey = current ? `${current.type}/${current.slug}` : "";
   return (
-    <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)]">
+    <div className="grid h-screen grid-rows-[auto_auto_minmax(0,1fr)]">
       <AppHeader />
+      <SignInBanner />
       <div className="grid min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-card">
           {error && (

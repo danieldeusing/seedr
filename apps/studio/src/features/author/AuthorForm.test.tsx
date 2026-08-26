@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RunRequest } from "@/api/agent";
@@ -141,5 +141,27 @@ describe("AuthorForm — where the capability comes from", () => {
     for (const label of ["from", "slug", "type", "name", "agents", "scope", "author", "prompt"]) {
       expect(screen.getByText(label, { selector: ".lbl" })).toHaveAttribute("data-tip");
     }
+  });
+});
+
+describe("a signed-out agent", () => {
+  test("offers the sign-in where the failure is, not somewhere else", async () => {
+    render(<AuthorForm onAdded={() => {}} />);
+    // prepare() clears the error as it probes, so the failure arrives after it.
+    await screen.findByText("2.1.226");
+    act(() => useAuthor.setState({ error: "Failed to authenticate: OAuth session expired and could not be refreshed" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("OAuth session expired");
+    expect(screen.getByText(/Claude Code is not signed in on this machine/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sign in to Claude Code" })).toBeEnabled();
+  });
+
+  test("an ordinary failure stays an ordinary failure", async () => {
+    render(<AuthorForm onAdded={() => {}} />);
+    await screen.findByText("2.1.226");
+    act(() => useAuthor.setState({ error: "registry-op: The worktree has uncommitted changes" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("uncommitted changes");
+    expect(screen.queryByRole("button", { name: /sign in to/ })).not.toBeInTheDocument();
   });
 });

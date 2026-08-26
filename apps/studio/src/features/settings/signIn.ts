@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { CanonicalCodingAgent } from "@seedr/shared";
 import { cancelProcess, onProcessOutput, runProcess, sendProcessInput } from "@/api/agent";
-import { AGENT_PROGRAMS } from "./agentSettings";
+import { AGENT_AUTH, AGENT_PROGRAMS, useAgentSettings } from "./agentSettings";
 
 /**
  * Signing an agent's CLI in, from inside Studio. `claude auth login` opens a
@@ -36,6 +36,11 @@ export const useSignIn = create<SignInState>((set, get) => ({
   signedIn: false,
 
   async start(agent) {
+    const login = AGENT_AUTH[agent].login;
+    if (!login) {
+      set({ agent, phase: "idle", error: `${AGENT_PROGRAMS[agent]} has no sign-in command Studio knows — sign in the way that CLI documents.` });
+      return;
+    }
     const taskId = taskFor(agent);
     set({ agent, phase: "running", log: [], error: null, signedIn: false });
     const unlisten = await onProcessOutput(taskId, ({ line }) => set({ log: [...get().log.slice(-LOG_CAP + 1), line] }));
@@ -43,7 +48,7 @@ export const useSignIn = create<SignInState>((set, get) => ({
       const outcome = await runProcess({
         taskId,
         program: AGENT_PROGRAMS[agent],
-        args: ["auth", "login"],
+        args: login,
         keepStdin: true,
         timeoutMs: SIGN_IN_TIMEOUT_MS,
       });
@@ -52,6 +57,8 @@ export const useSignIn = create<SignInState>((set, get) => ({
         signedIn: outcome.status === "ok",
         error: outcome.status === "ok" ? null : outcome.stderr.trim() || outcome.stdout.trim() || `sign-in ${outcome.status}`,
       });
+      // Ask the CLI itself rather than believing the exit code.
+      if (outcome.status === "ok") void useAgentSettings.getState().checkAuth(agent);
     } catch (error) {
       set({ phase: "idle", error: (error as Error).message });
     } finally {

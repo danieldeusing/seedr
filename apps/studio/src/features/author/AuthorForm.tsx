@@ -8,6 +8,7 @@ import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { LabelRow } from "@/features/settings/LabelRow";
 import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
+import { SignedOutNotice } from "@/features/settings/SignedOutNotice";
 import { formProblems, useAuthor, type SourceKind } from "./store";
 
 // The CLI has no install handler for `command` items yet (plan trap 12); until
@@ -309,11 +310,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           Draft rejected: {draftErrors.join("; ")}
         </p>
       )}
-      {error && (
-        <p className="mt-3 text-destructive" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <SignedOutNotice error={error} />}
       {log.length > 0 && (
         <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap border border-border bg-muted p-2" aria-live="polite" aria-label="agent output">
           {log.join("\n")}

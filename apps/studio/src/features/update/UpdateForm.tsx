@@ -9,6 +9,7 @@ import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { LabelRow } from "@/features/settings/LabelRow";
 import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
+import { SignedOutNotice } from "@/features/settings/SignedOutNotice";
 import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
 interface UpdateFormProps {
@@ -234,11 +235,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           {log.join("\n")}
         </pre>
       )}
-      {error && !refusal && (
-        <p className="mt-3 text-destructive" role="alert">
-          {error}
-        </p>
-      )}
+      {error && !refusal && <SignedOutNotice error={error} />}
     </form>
   );
 }

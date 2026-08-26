@@ -82,7 +82,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
 
   if (phase === "done" && result) {
     return (
-      <section className="p-6 text-xs" aria-live="polite">
+      <section className="flex min-h-0 flex-1 flex-col p-6 text-xs" aria-live="polite">
         <p className="prompt">{result.kind === "op" ? "registry-op run --op add-local" : "agent job"}</p>
         {result.kind === "op" ? (
           <>
@@ -96,16 +96,22 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
             </ul>
           </>
         ) : (
-          <>
-            <p className="mt-4 text-primary">{result.added ? `Added ${result.added.type}/${result.added.slug}.` : "The job finished without naming what it added."}</p>
-            <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap text-muted-foreground">{result.text}</pre>
-          </>
+          // The agent's closing message is not shown a second time here: every
+          // line it printed, that one included, is already in the log below.
+          // Printing both put the same transcript on the screen twice.
+          <p className="mt-4 text-primary">{result.added ? `Added ${result.added.type}/${result.added.slug}.` : "The job finished without naming what it added."}</p>
         )}
         <p className="mt-4 text-muted-foreground">Review with git status and commit when you are happy. It is selected in the explorer behind this dialog.</p>
-        <AgentLog lines={log} />
-        <button type="button" onClick={reset} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
-          add another
-        </button>
+        <AgentLog lines={log} fill />
+        <div className="mt-4 flex">
+          <button
+            type="button"
+            onClick={reset}
+            className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300"
+          >
+            add another
+          </button>
+        </div>
       </section>
     );
   }

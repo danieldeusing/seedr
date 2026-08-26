@@ -5,14 +5,22 @@ import { emit, onCommand } from "@/test/mockIpc";
 import type { RunRequest } from "@/api/agent";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "./AgentSelect";
-import { AGENT_PROGRAMS, useAgentSettings } from "./agentSettings";
+import { AGENT_LABELS } from "@seedr/registry-ops/pure";
+import { AGENT_PROGRAMS, NO_TOOL_DENIAL, useAgentSettings } from "./agentSettings";
 import { emptyPrePrompts, prePromptFor, usePrePrompts } from "./prePrompts";
 import { useStudio } from "@/features/explorer/store";
 import { SettingsPanel } from "./SettingsPanel";
 import { SignInBanner } from "./SignInBanner";
 
+/** The badge on an agent whose CLI takes no deny-rule. */
+const UNDENIABLE = "git not denied";
+
 /** A host where every agent CLI answers `--version`, except the ones named. */
 function hostWithAgents(missing: string[] = []) {
+  // The sign-in dialog cancels its run as it unmounts, which the real host
+  // answers with a plain bool. Unregistered, the mock rejects — correctly — and
+  // the rejection lands in React's unmount, outside any test's reach.
+  onCommand("cancel_process", () => false);
   onCommand("run_process", (args) => {
     const request = (args as { request: { taskId: string; program: string } }).request;
     const program = request.program;
@@ -34,6 +42,20 @@ describe("coding agents settings", () => {
 
     expect(await screen.findAllByText(/detected · 1\.2\.3/)).toHaveLength(4);
     expect(screen.getByText(/not found/)).toBeInTheDocument();
+  });
+
+  test("names the agents whose CLI cannot be told to refuse git", async () => {
+    hostWithAgents();
+    render(<SettingsPanel />);
+
+    // Every other agent is stopped by its own tool layer; these two are stopped
+    // only by the prompt, and the card has to say so rather than look the same.
+    const marked = await screen.findAllByText(UNDENIABLE);
+    expect(marked).toHaveLength(NO_TOOL_DENIAL.length);
+    for (const agent of NO_TOOL_DENIAL) {
+      expect(screen.getByText(AGENT_LABELS[agent]).closest("li")).toHaveTextContent(UNDENIABLE);
+    }
+    expect(screen.getByText(AGENT_LABELS.claude).closest("li")).not.toHaveTextContent(UNDENIABLE);
   });
 
   test("a chosen binary is stored, pushed to the host, and cleared again", async () => {

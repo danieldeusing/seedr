@@ -5,7 +5,7 @@ import { AGENT_LABELS, CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { pickPath } from "@/api/agent";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
 import { IconButton } from "@/core/ui/IconButton";
-import { AGENT_AUTH, AGENT_PROGRAMS, DRAFT_CERTIFIED, useAgentSettings, type AgentProbe, type AuthState } from "./agentSettings";
+import { AGENT_AUTH, AGENT_PROGRAMS, DRAFT_CERTIFIED, NO_TOOL_DENIAL, useAgentSettings, type AgentProbe, type AuthState } from "./agentSettings";
 import { SignInDialog } from "./SignInDialog";
 
 /** The probe result as one line of ink: found, missing, or the failure itself. */
@@ -52,6 +52,14 @@ function AgentCard({ agent, onSignIn }: { agent: CanonicalCodingAgent; onSignIn(
         {DRAFT_CERTIFIED.includes(agent) && (
           <span className="border border-violet-500/30 px-1 text-[11px] text-violet-300" data-tip="Studio has a certified adapter for this agent — it can draft and run jobs">
             adapter
+          </span>
+        )}
+        {NO_TOOL_DENIAL.includes(agent) && (
+          <span
+            className="border border-amber-500/30 px-1 text-[11px] text-amber-300"
+            data-tip="This CLI takes no deny-rule, so git is held off by the prompt alone. Every other agent is stopped by the tool itself."
+          >
+            git not denied
           </span>
         )}
         <span className="flex-1" />

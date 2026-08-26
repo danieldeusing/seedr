@@ -54,6 +54,13 @@ export const setOpsCheckout = (checkout: { root: string; hasOps: boolean } | nul
   openCheckout = checkout;
 };
 
+/**
+ * The open checkout's absolute path, empty before one is chosen. An agent run
+ * needs it because not every CLI takes the working directory it is spawned in
+ * (see the opencode adapter).
+ */
+export const openRepoRoot = (): string => openCheckout?.root ?? "";
+
 /** `npx tsx scripts/registry-op.ts …`; npx resolves the `.cmd` shim on Windows. */
 const cli = (...args: string[]): OpsInvocation => opsInvocation(openCheckout, args);
 

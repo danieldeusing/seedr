@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import { Ban, Check, FolderOpen } from "lucide-react";
+import { AgentLog } from "@/core/ui/AgentLog";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
@@ -328,11 +329,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         </p>
       )}
       {error && <SignedOutNotice error={error} />}
-      {log.length > 0 && (
-        <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap border border-border bg-muted p-2" aria-live="polite" aria-label="agent output">
-          {log.join("\n")}
-        </pre>
-      )}
+      <AgentLog lines={log} />
     </form>
   );
 }

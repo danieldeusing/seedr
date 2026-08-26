@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
+import { AgentLog } from "./ui/AgentLog";
 import { AppHeader } from "./AppHeader";
 import { Modal } from "./Modal";
 import { originSlug } from "./RepoBadge";
@@ -181,5 +182,25 @@ describe("Modal focus", () => {
 
     // Re-focusing on every render truncated this to its first character.
     expect(field).toHaveValue("the-code");
+  });
+});
+
+describe("AgentLog", () => {
+  test("holds ten lines whether or not there are ten, and follows the newest", () => {
+    const { rerender } = render(<AgentLog lines={["● Todo added 5 items"]} />);
+
+    const view = screen.getByLabelText("agent output");
+    // A box that grows from one line makes the first message look like the
+    // whole story; the floor is stated in lines, not pixels.
+    expect(view.className).toContain("min-h-[calc(10*1.45em+1rem)]");
+    expect(view).toHaveTextContent("Todo added 5 items");
+
+    rerender(<AgentLog lines={["one", "two", "three"]} />);
+    expect(screen.getByLabelText("agent output")).toHaveTextContent("one two three");
+  });
+
+  test("shows nothing at all before there is output", () => {
+    render(<AgentLog lines={[]} />);
+    expect(screen.queryByLabelText("agent output")).not.toBeInTheDocument();
   });
 });

@@ -186,8 +186,11 @@ describe("Modal focus", () => {
 });
 
 describe("AgentLog", () => {
+  const said = (text: string) => ({ kind: "markdown" as const, text });
+  const printed = (text: string) => ({ kind: "text" as const, text });
+
   test("holds ten lines whether or not there are ten, and follows the newest", () => {
-    const { rerender } = render(<AgentLog lines={["● Todo added 5 items"]} />);
+    const { rerender } = render(<AgentLog lines={[printed("● Todo added 5 items")]} />);
 
     const view = screen.getByLabelText("agent output");
     // A box that grows from one line makes the first message look like the
@@ -195,40 +198,38 @@ describe("AgentLog", () => {
     expect(view.className).toContain("min-h-[calc(10*1.45em+1rem)]");
     expect(view).toHaveTextContent("Todo added 5 items");
 
-    rerender(<AgentLog lines={["one", "two", "three"]} />);
+    rerender(<AgentLog lines={["one", "two", "three"].map(printed)} />);
     expect(screen.getByLabelText("agent output")).toHaveTextContent("one two three");
   });
 
-  test("renders what the agent said as the markdown it wrote, and a tool call as one line", () => {
+  test("renders what the agent said as markdown, and what a tool printed as lines", () => {
     render(
       <AgentLog
         lines={[
-          "· Read AGENTS.md",
-          "## Gotchas",
-          "",
-          "- **pnpm only** — use `pnpm`",
-          "",
-          "```json",
-          '{ "slug": "pdf" }',
-          "```",
+          said("## Gotchas\n\n- **pnpm only** — use `pnpm`"),
+          // codex and opencode report every line this way. As markdown these
+          // collapsed into one paragraph and the indented JSON became a wall of
+          // separate code blocks — the output stopped being readable.
+          printed("ROOT_RULE_FILES ./.claude/rules/turbo-monorepo.md"),
+          printed('  { "name": "SKILL.md" }'),
         ]}
       />
     );
 
-    // A heading was arriving as the characters `## Gotchas`.
     expect(screen.getByRole("heading", { name: "Gotchas" })).toBeInTheDocument();
     expect(screen.getByRole("listitem")).toHaveTextContent("pnpm only");
-    // A fenced block only means anything whole, so the lines must not be split.
-    expect(screen.getByText('{ "slug": "pdf" }')).toBeInTheDocument();
-    // The trace stays a trace: no markdown, no reflow.
-    expect(screen.getByText("· Read AGENTS.md").tagName).toBe("PRE");
+
+    const plain = screen.getByText(/ROOT_RULE_FILES/);
+    expect(plain.tagName).toBe("PRE");
+    // Both plain lines are one block, so their line breaks survive.
+    expect(plain).toHaveTextContent('{ "name": "SKILL.md" }');
   });
 
-  test("groups consecutive lines of the same kind, and only those", () => {
-    expect(blocksOf(["· one", "· two", "said", "more", "· three"])).toEqual([
-      { tool: true, lines: ["· one", "· two"] },
-      { tool: false, text: "said\nmore" },
-      { tool: true, lines: ["· three"] },
+  test("joins consecutive lines of a kind, and splits where the kind changes", () => {
+    expect(blocksOf([printed("a"), printed("b"), said("# c"), printed("d")])).toEqual([
+      { markdown: false, text: "a\nb" },
+      { markdown: true, text: "# c" },
+      { markdown: false, text: "d" },
     ]);
   });
 

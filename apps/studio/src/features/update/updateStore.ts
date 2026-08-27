@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { CANONICAL_AGENTS, canonicalAgents, isFirstParty, parseOp, validateItem, type UpdateOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess } from "@/api/agent";
+import type { LogLine } from "@/core/ui/AgentLog";
 import { runAgentJob } from "@/api/agentJob";
 import type { JobCapability } from "@/features/author/adapters";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
@@ -49,7 +50,7 @@ interface UpdateState {
   /** The agent's report, when the change went through a job. */
   jobReport: string | null;
   /** Capped live output of the running job. */
-  log: string[];
+  log: LogLine[];
   start(item: StudioItem): Promise<void>;
   setField<K extends keyof UpdateForm>(field: K, value: UpdateForm[K]): void;
   toggleAgent(agent: CodingAgent): void;
@@ -66,7 +67,8 @@ interface UpdateState {
 export const UPDATE_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", "skills", "shell"];
 
 const UPDATE_TASK = "update-job";
-const LOG_CAP = 200;
+// A long job scrolled its own beginning away at 200.
+const LOG_CAP = 1000;
 
 /** The whole instruction for a prompt-driven update — the capability, then its metadata. */
 export function updateJobPrompt(item: StudioItem, form: UpdateForm, patch: UpdateOp["patch"]): string {
@@ -189,7 +191,7 @@ export const useUpdate = create<UpdateState>((set, get) => ({
           taskId: UPDATE_TASK,
           prompt: updateJobPrompt(target, form, patch),
           capabilities: UPDATE_JOB_CAPABILITIES,
-          onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
+          onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), { kind: event.kind, text: event.kind === "tool" ? `· ${event.text}` : event.text }] }),
         });
         if (outcome.cancelled) {
           set({ phase: "idle", error: null });

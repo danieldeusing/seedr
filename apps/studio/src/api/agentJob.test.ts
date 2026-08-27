@@ -76,7 +76,7 @@ describe("runAgentJob", () => {
     expect(request?.args).toContain("Read,Bash(git status:*)");
     expect(request?.stdin).toBe("do it");
     expect(request?.cwd).toBe("");
-    expect(events).toEqual([{ kind: "text", text: "working" }]);
+    expect(events).toEqual([{ kind: "markdown", text: "working" }]);
   });
 });
 

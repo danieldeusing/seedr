@@ -189,7 +189,7 @@ export type BorrowedTooling = { toolingRoot: string; registryRoot: string } | nu
  * open one has none. Skills travel with it: a registry that cannot run the CLI
  * does not carry the skills that drive it either.
  */
-const borrowedTooling = (): BorrowedTooling => {
+export const borrowedTooling = (): BorrowedTooling => {
   const { toolingRepo, repo } = useStudio.getState();
   return toolingRepo && repo ? { toolingRoot: toolingRepo.root, registryRoot: repo.root } : null;
 };

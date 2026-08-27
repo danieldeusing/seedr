@@ -32,7 +32,6 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const draftErrors = useUpdate((s) => s.draftErrors);
   const error = useUpdate((s) => s.error);
   const outcome = useUpdate((s) => s.outcome);
-  const jobReport = useUpdate((s) => s.jobReport);
   const target = useUpdate((s) => s.target);
   const { start, setField, toggleAgent, apply, cancel, reset } = useUpdate.getState();
 
@@ -59,37 +58,6 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const agent = useAgentSettings((state) => state.preferred);
   const setAgent = useAgentSettings((state) => state.setPreferred);
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
-
-  if (phase === "done" && (outcome || jobReport !== null)) {
-    return (
-      <section className="p-6 text-xs" aria-live="polite">
-        <p className="prompt">{outcome ? "registry-op run --op update" : "agent job"}</p>
-        {outcome ? (
-          <>
-            <p className="mt-4 text-primary">
-              Updated {outcome.type}/{outcome.slug} at {outcome.headBefore.slice(0, 7)}.
-            </p>
-            <ul className="mt-2 text-muted-foreground">
-              {outcome.changedPaths.map((path) => (
-                <li key={path}>{path}</li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <>
-            <p className="mt-4 text-primary">
-              The agent finished with {item.type}/{item.slug}.
-            </p>
-            <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap text-muted-foreground">{jobReport}</pre>
-            <p className="mt-4 text-muted-foreground">Review it with git status before committing.</p>
-          </>
-        )}
-        <button type="button" onClick={close} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
-          back to the item
-        </button>
-      </section>
-    );
-  }
 
   return (
     <form
@@ -221,19 +189,38 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
           <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="update" ariaLabel="coding agent" disabled={busy || !!refusal} />
-          <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
-            {phase === "running"
-              ? "the agent is working…"
-              : phase === "applying"
+          <span
+            className={`min-w-0 truncate text-sm ${phase === "done" ? "text-success" : error && !refusal ? "text-destructive" : "text-neutral-500"}`}
+            role="status"
+          >
+            {phase === "done"
+              ? outcome
+                ? `updated — ${outcome.changedPaths.length} file${outcome.changedPaths.length === 1 ? "" : "s"} changed at ${outcome.headBefore.slice(0, 7)}`
+                : "the agent is done — review it with git status before committing"
+              : error && !refusal
+                ? error
+                : phase === "running"
+                  ? "the agent is working…"
+                  : phase === "applying"
                 ? "applying…"
                 : asked
-                  ? `the agent changes the ${item.type}${changed.length > 0 ? `, and ${changed.length} field${changed.length === 1 ? "" : "s"} with it` : ""}`
-                  : changed.length === 0
-                    ? "nothing changed yet"
-                    : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
+                    ? `the agent changes the ${item.type}${changed.length > 0 ? `, and ${changed.length} field${changed.length === 1 ? "" : "s"} with it` : ""}`
+                    : changed.length === 0
+                      ? "nothing changed yet"
+                      : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {phase === "done" ? (
+            <button
+              type="button"
+              onClick={close}
+              className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300"
+            >
+              back to the item
+            </button>
+          ) : (
+            <>
           {phase === "running" && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
           <IconButton icon={X} ariaLabel="cancel" tip="cancel" onClick={close} />
           <IconButton
@@ -245,6 +232,8 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
             disabled={busy || !!refusal || (!asked && changed.length === 0) || problems.length > 0 || (asked && !probe?.available)}
             spin={busy}
           />
+            </>
+          )}
         </div>
       </div>
       {draftErrors.length > 0 && (

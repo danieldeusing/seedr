@@ -82,9 +82,9 @@ if (inlineHandlers.length) problems.push(`inline handler/style attributes: ${[..
 const inlineScripts = await page.evaluate(() => document.querySelectorAll("script:not([src]), style").length);
 if (inlineScripts) problems.push(`${inlineScripts} inline <script>/<style> element(s)`);
 
-// click through every control once (the selectors cover all four playgrounds)
+// click through every control once (the selectors cover every playground)
 const controls = page.locator(
-  ".cmd-tab, .preset-btn, .view-tab, .type-chip, .tool-chip, .source-chip, .radio-btn, .toggle, .copy-btn, td[data-type], td[data-tool], .node, input[type=checkbox], .matrix td"
+  ".cmd-tab, .preset-btn, .view-tab, .type-chip, .tool-chip, .cap-chip, .job-btn, .source-chip, .radio-btn, .toggle, .copy-btn, td[data-type], td[data-tool], .node, input[type=checkbox], .matrix td"
 );
 const count = await controls.count();
 for (let i = 0; i < count; i++) {

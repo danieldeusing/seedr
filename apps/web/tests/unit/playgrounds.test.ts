@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const playgroundsDir = join(__dirname, "..", "..", "public", "playgrounds");
-const PLAYGROUNDS = ["cli-explorer", "compatibility-matrix", "install-paths", "registry-architecture"];
+const PLAYGROUNDS = ["agent-jobs", "cli-explorer", "compatibility-matrix", "install-paths", "registry-architecture"];
 
 const PAYLOADS = [
   '<img src=x onerror="window.__pwned = 1">',
@@ -130,16 +130,16 @@ describe("CLI explorer treats typed names as text, never as HTML", () => {
     document.querySelector<HTMLButtonElement>('[data-action="toggle-add"][data-key="dryRun"]')!.click();
     expect(document.querySelector<HTMLElement>("#dryRunBanner")?.hidden).toBe(false);
     document.querySelector<HTMLButtonElement>('[data-action="apply-preset"][data-value="2"]')!.click();
-    expect(document.querySelector("#cmdText")?.textContent).toBe("$ npx seedr add pre-commit-lint --type hook");
+    expect(document.querySelector("#cmdText")?.textContent).toBe("$ npx seedr add project-security-guard --type hook");
     expect(forbiddenElements()).toBe(0);
     expect(window.__pwned).toBeUndefined();
   });
 });
 
 describe("the other playgrounds mount and react to their controls without markup injection", () => {
-  it.each(["compatibility-matrix", "install-paths", "registry-architecture"])("%s", async (name) => {
+  it.each(["agent-jobs", "compatibility-matrix", "install-paths", "registry-architecture"])("%s", async (name) => {
     await mount(name);
-    const controls = document.querySelectorAll<HTMLElement>(".view-tab, .type-chip, .tool-chip, .source-chip, .radio-btn, .toggle, .preset-btn, .node, td[data-type]");
+    const controls = document.querySelectorAll<HTMLElement>(".view-tab, .type-chip, .tool-chip, .cap-chip, .job-btn, .source-chip, .radio-btn, .toggle, .preset-btn, .node, td[data-type]");
     expect(controls.length).toBeGreaterThan(0);
     for (const control of [...controls].slice(0, 25)) control.click();
     expect(document.querySelectorAll("script, iframe, object, embed").length).toBe(0);

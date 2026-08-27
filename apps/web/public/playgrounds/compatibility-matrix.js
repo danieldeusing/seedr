@@ -4,30 +4,38 @@
 
 const TYPES = {
   skill:    { label:'Skill',    color:'#f472b6', structure:'directory', dir:'skills',   mainFile:'SKILL.md',   desc:'Markdown-based instructions with optional scripts and references' },
-  command:  { label:'Command',  color:'#fbbf24', structure:'directory', dir:'commands', mainFile:'COMMAND.md', desc:'Slash commands with markdown body and optional scripts' },
+  command:  { label:'Command',  color:'#fbbf24', structure:'directory', dir:'commands', mainFile:'command.md', desc:'Slash commands with markdown body and optional scripts. Configured for Claude Code, but no install handler is registered for this type yet, and the registry holds no command items' },
   agent:    { label:'Agent',    color:'#60a5fa', structure:'file',      dir:'agents',   mainFile:'{slug}.md',  desc:'Single markdown file defining an agent persona and capabilities' },
   hook:     { label:'Hook',     color:'#c084fc', structure:'json-merge',dir:'hooks',    mergeTarget:'settings.json', desc:'Shell script + JSON config merged into settings.json hooks field' },
-  mcp:      { label:'MCP',      color:'#14b8a6', structure:'json-merge',dir:null,       mergeTarget:'.mcp.json',     desc:'Server configuration merged into .mcp.json mcpServers field' },
-  plugin:   { label:'Plugin',   color:'#818cf8', structure:'plugin',    dir:'plugins',  desc:'Bundled package cached in ~/.claude/plugins/cache/, marketplace git-cloned, enabled via enabledPlugins in scope-dependent settings.json' },
+  mcp:      { label:'MCP',      color:'#14b8a6', structure:'json-merge',dir:null,       desc:'Server configuration merged into the MCP config file of each supported agent' },
+  plugin:   { label:'Plugin',   color:'#818cf8', structure:'plugin',    dir:'plugins/cache', mainFile:'.claude-plugin/plugin.json', desc:'Bundled package cached in ~/.claude/plugins/cache/, marketplace git-cloned, enabled via enabledPlugins in scope-dependent settings.json' },
   settings: { label:'Settings', color:'#fb923c', structure:'json-merge',dir:null,       mergeTarget:'settings.json', desc:'Key-value pairs deep-merged into settings.json' },
 };
 
 const TOOLS = {
-  claude:   { label:'Claude Code',    short:'claude',   dir:'.claude' },
-  copilot:  { label:'GitHub Copilot', short:'copilot',  dir:'.github' },
-  gemini:   { label:'Gemini',         short:'gemini',   dir:'.gemini' },
-  codex:    { label:'OpenAI Codex',   short:'codex',    dir:'.codex' },
-  opencode: { label:'OpenCode',       short:'opencode', dir:'.opencode' },
+  claude:      { label:'Claude Code',        short:'claude',      dir:'.claude' },
+  copilot:     { label:'GitHub Copilot',     short:'copilot',     dir:'.github' },
+  antigravity: { label:'Google Antigravity', short:'antigravity', dir:'.agents' },
+  codex:       { label:'OpenAI Codex',       short:'codex',       dir:'.codex' },
+  opencode:    { label:'OpenCode',           short:'opencode',    dir:'.opencode' },
 };
 
 const COMPAT = {
-  skill:    ['claude','copilot','gemini','codex','opencode'],
+  skill:    ['claude','copilot','antigravity','codex','opencode'],
   command:  ['claude'],
   agent:    ['claude'],
   hook:     ['claude'],
   plugin:   ['claude'],
   settings: ['claude'],
-  mcp:      ['claude'],
+  mcp:      ['claude','codex','opencode'],
+};
+
+// MCP is the one json-merge type more than Claude Code takes, and each agent keeps
+// its servers in its own file under its own key.
+const MCP_TARGETS = {
+  claude:   { file:'.mcp.json',          entry:'mcpServers' },
+  codex:    { file:'.codex/config.toml', entry:'mcp_servers' },
+  opencode: { file:'opencode.json',      entry:'mcp' },
 };
 
 const VIEWS = ['matrix','structures'];
@@ -56,6 +64,12 @@ function el(tag, { className, text, attrs, dataset } = {}, ...children) {
 
 function classes(...names) {
   return names.filter(Boolean).join(' ');
+}
+
+// The file a json-merge type is merged into: fixed per type, except MCP, which
+// has one file per agent.
+function mergeTargetFor(typeKey, toolKey) {
+  return typeKey === 'mcp' ? MCP_TARGETS[toolKey].file : TYPES[typeKey].mergeTarget;
 }
 
 // ── Controls ──
@@ -135,12 +149,13 @@ function renderMatrix() {
       const detailItem = (label, value) => el('div', { className: 'detail-item' },
         el('div', { className: 'detail-item-label', text: label }),
         el('div', { className: 'detail-item-value', text: value }));
+      const mergeTarget = mergeTargetFor(state.type, state.tool);
       card.append(
         el('div', { className: 'detail-desc', text: yt.desc }),
         el('div', { className: 'detail-grid' },
           detailItem('Structure', yt.structure),
-          detailItem('Install Path', yt.structure === 'json-merge' ? (yt.mergeTarget || 'settings.json') : tt.dir + '/' + (yt.dir||'') + '/'),
-          detailItem('Main File', yt.mainFile || yt.mergeTarget || 'plugin.json'),
+          detailItem('Install Path', yt.structure === 'json-merge' ? mergeTarget : tt.dir + '/' + (yt.dir||'') + '/'),
+          detailItem('Main File', yt.mainFile || mergeTarget),
           detailItem('Operation', yt.structure === 'json-merge' ? 'Deep merge' : yt.structure === 'plugin' ? 'Cache + enable' : 'Copy or symlink')));
     } else {
       card.append(el('div', { className: 'detail-note', text: `${yt.label} content type is only supported by ${COMPAT[state.type].map(t => TOOLS[t].label).join(', ')}.` }));
@@ -158,7 +173,10 @@ function buildTree(k, t) {
   const dim = text => el('span', { className: 't-dim', text });
   const add = text => el('span', { className: 't-new', text });
   const mod = text => el('span', { className: 't-mod', text });
-  const toolDir = TOOLS[state.tool||'claude'].dir;
+  // A tool that does not take this type has no path for it, so an unsupported
+  // selection falls back to the type's first compatible tool.
+  const toolKey = COMPAT[k].includes(state.tool) ? state.tool : COMPAT[k][0];
+  const toolDir = TOOLS[toolKey].dir;
 
   if (t.structure === 'directory') {
     const nodes = [
@@ -187,7 +205,8 @@ function buildTree(k, t) {
       ];
     }
     if (k === 'mcp') {
-      return [mod('.mcp.json'), '                ', dim('← mcpServers merged')];
+      const { file, entry } = MCP_TARGETS[toolKey];
+      return [mod(file), ' '.repeat(25 - file.length), dim(`← ${entry} merged`)];
     }
     return [
       dim('.claude/'), '\n',
@@ -199,7 +218,7 @@ function buildTree(k, t) {
       dim('~/.claude/'), '                     ', dim('← always user home'), '\n',
       dim('  plugins/'), '\n',
       dim('    cache/{marketplace}/'), '\n',
-      add('      {slug}/{version}/'), '\n',
+      add('      {name}/{version}/'), '\n',
       add('        .claude-plugin/'), '       ', dim('← metadata'), '\n',
       add('        skills/ agents/ ...'), '\n',
       add('    marketplaces/{mp}/'), '       ', dim('← git clone'), '\n',

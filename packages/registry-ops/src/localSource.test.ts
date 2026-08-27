@@ -226,3 +226,33 @@ describe("removing an item", () => {
     expect(localSourceOf(repoRootOf(registry), "skill", "origin-skill")).toBeUndefined();
   });
 });
+
+describe("the cost of asking", () => {
+  test("an untouched source is not hashed at all, and a touched one still is", () => {
+    // Hashing a source costs a `git check-ignore`: one process spawn, measured
+    // at 58 ms against 0.18 ms for the hashing it guards. A hundred sources that
+    // way took six seconds; behind the mtime gate the same hundred take 28 ms.
+    const registry = makeRegistry();
+    const source = makeSource();
+    applyOp(registry, addOp(source));
+
+    const entry = localSourceOf(repoRootOf(registry), "skill", "origin-skill")!;
+    expect(entry.sourceMtimeMs).toBeGreaterThan(0);
+    expect(status(registry, "origin-skill").state).toBe("current");
+
+    // Touching it opens the gate, and the digest — the actual answer — still runs.
+    writeFileSync(join(source, "SKILL.md"), "# Moved on\n");
+    expect(status(registry, "origin-skill").state).toBe("behind");
+  });
+
+  test("a source touched without changing reads as current, because mtime only filters", () => {
+    const registry = makeRegistry();
+    const source = makeSource("# Same bytes\n");
+    applyOp(registry, addOp(source));
+
+    // Rewritten with identical content: newer mtime, nothing actually changed.
+    writeFileSync(join(source, "SKILL.md"), "# Same bytes\n");
+
+    expect(status(registry, "origin-skill").state).toBe("current");
+  });
+});

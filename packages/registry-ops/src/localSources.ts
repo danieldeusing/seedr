@@ -4,7 +4,7 @@ import type { ComponentType } from "@seedr/shared";
 import { contentDigestOfDir } from "./hash.js";
 import { itemDir } from "./fsPaths.js";
 import { itemKey } from "./paths.js";
-import { sourceDigest } from "./localSource.js";
+import { newestMtimeMs, sourceDigest } from "./localSource.js";
 import type { SourceStatus } from "./sourceState.js";
 
 /**
@@ -31,6 +31,8 @@ export interface LocalSourceEntry {
   itemDigest: string | null;
   /** ISO date of that copy. */
   syncedAt: string;
+  /** The newest mtime under the source then, so an untouched source is never re-hashed. */
+  sourceMtimeMs?: number;
 }
 
 type Stored = Record<string, LocalSourceEntry>;
@@ -65,6 +67,7 @@ export function rememberLocalSource(repoRoot: string, registryDir: string, type:
     sourceDigest: sourceDigest(path),
     itemDigest: contentDigestOfDir(itemDir(registryDir, type, slug)),
     syncedAt: new Date().toISOString().slice(0, 10),
+    sourceMtimeMs: newestMtimeMs(path),
   };
   write(repoRoot, sources);
 }
@@ -93,7 +96,11 @@ export function sourceStatus(repoRoot: string, registryDir: string, type: Compon
   if (!entry) return { state: "none" };
   if (!existsSync(entry.path)) return { state: "missing", path: entry.path, recorded: entry.sourceDigest, current: null };
 
-  const current = sourceDigest(entry.path);
+  // Hashing the source costs a `git check-ignore` — one process, and by far the
+  // most expensive thing here. Nothing under it touched since the copy means
+  // nothing to hash.
+  const untouched = entry.sourceMtimeMs !== undefined && newestMtimeMs(entry.path) <= entry.sourceMtimeMs;
+  const current = untouched ? entry.sourceDigest : sourceDigest(entry.path);
   const sourceMoved = current !== entry.sourceDigest;
   const itemMoved = contentDigestOfDir(itemDir(registryDir, type, slug)) !== entry.itemDigest;
   const state = sourceMoved ? (itemMoved ? "diverged" : "behind") : itemMoved ? "edited" : "current";

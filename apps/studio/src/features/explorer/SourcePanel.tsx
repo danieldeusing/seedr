@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FolderSearch, RefreshCw, RotateCw, Unlink } from "lucide-react";
 import { isFirstParty, type SourceStatus } from "@seedr/registry-ops/pure";
-import { itemHash, runRegistryOp, sourceStatusOf } from "@/api/registryCli";
+import { itemHash, runRegistryOp } from "@/api/registryCli";
 import { IconButton } from "@/core/ui/IconButton";
 import { useStudio } from "./store";
 import type { StudioItem } from "./registry";
@@ -26,7 +26,9 @@ const WORDING: Record<SourceStatus["state"], { label: string; tone: string; deta
 export function SourcePanel({ item }: { item: StudioItem }) {
   const refresh = useStudio((state) => state.refresh);
   const checkSources = useStudio((state) => state.checkSources);
-  const [status, setStatus] = useState<SourceStatus | null>(null);
+  // Read from the one batch answer rather than asking again: each ask is a
+  // process, and the batch already carries this item's path and digests.
+  const status = useStudio((store) => store.sourceStates[`${item.type}/${item.slug}`] ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmingAdopt, setConfirmingAdopt] = useState(false);
@@ -36,24 +38,25 @@ export function SourcePanel({ item }: { item: StudioItem }) {
   const look = useCallback(() => {
     if (!firstParty) return;
     setError(null);
-    sourceStatusOf(item.type, item.slug).then(setStatus, (failure: Error) => setError(failure.message));
-  }, [firstParty, item.type, item.slug]);
+    void checkSources(true);
+  }, [firstParty, checkSources]);
 
   useEffect(() => {
-    setStatus(null);
     setConfirmingAdopt(false);
-    look();
-  }, [look]);
+    // Asks only if nobody has asked recently: the registry refresh usually has,
+    // and then this costs nothing.
+    void checkSources();
+  }, [item.type, item.slug, checkSources]);
 
   useEffect(() => {
     // Nothing watches the source folder — it is outside the checkout, and the
     // host refuses every path that is. Coming back to the window is the moment
     // the answer is most likely to have changed, because editing the file is
     // what you left to do.
-    const onFocus = () => look();
+    const onFocus = () => void checkSources();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [look]);
+  }, [checkSources]);
 
   // A synced item is upstream's, and one that records no source is nobody's copy;
   // neither has anything to say here, so neither gets a panel.
@@ -66,8 +69,7 @@ export function SourcePanel({ item }: { item: StudioItem }) {
       const expectedHash = await itemHash(item.type, item.slug);
       await runRegistryOp({ v: 1, kind, type: item.type, slug: item.slug, expectedHash });
       await refresh();
-      look();
-      void checkSources();
+      void checkSources(true);
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -106,10 +108,7 @@ export function SourcePanel({ item }: { item: StudioItem }) {
             icon={RotateCw}
             ariaLabel="check the source again"
             tip="Look at the folder again"
-            onClick={() => {
-              look();
-              void checkSources();
-            }}
+            onClick={look}
             disabled={busy}
           />
           {(state === "behind" || state === "diverged") && (

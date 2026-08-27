@@ -98,7 +98,11 @@ describe("items that have parted from their source folder", () => {
     const { items } = await loadRegistry(fs, "registry");
     useStudio.setState({
       items,
-      sourceStates: { "skill/pdf": "behind", "mcp/playwright": "current", "skill/broken": "missing" },
+      sourceStates: {
+        "skill/pdf": { state: "behind" },
+        "mcp/playwright": { state: "current" },
+        "skill/broken": { state: "missing" },
+      },
     });
 
     render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);

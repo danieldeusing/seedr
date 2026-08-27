@@ -64,7 +64,7 @@ const SOURCE_MARK: Record<string, { icon: typeof Pencil; tone: string; tip: stri
 };
 
 function SourceMark({ type, slug }: { type: string; slug: string }) {
-  const state = useStudio((store) => store.sourceStates[`${type}/${slug}`]);
+  const state = useStudio((store) => store.sourceStates[`${type}/${slug}`]?.state);
   const mark = state ? SOURCE_MARK[state] : undefined;
   if (!mark) return null;
   const Icon = mark.icon;

@@ -14,7 +14,8 @@ export function Onboarding({ error, onChoose }: OnboardingProps) {
         <p className="prompt">seedr studio</p>
         <h1 className="glow-lg mt-4 text-2xl font-bold">Choose a registry</h1>
         <p className="mt-3 text-muted-foreground">
-          Studio works on a local checkout of a seedr repository — one with a <code className="text-primary">registry/</code> directory and the
+          Studio works on a local checkout of a seedr repository — one with a <code className="text-primary">registry/</code> directory, or whatever its{" "}
+          <code className="text-primary">seedr.config.json</code> names instead, and the
           operations CLI at <code className="text-primary">scripts/registry-op.ts</code>. Nothing is read outside that folder.
         </p>
         {error && (

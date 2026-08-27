@@ -308,7 +308,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       </div>
       <Problems errors={[...problemFor("description"), ...problemFor("longDescription")]} />
 
-      <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
+      <div className="mt-4 flex items-center gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
           <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="coding agent" disabled={busy} />
           <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
@@ -327,18 +327,6 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
                         : probe.diagnostic}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          {(phase === "drafting" || phase === "running") && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
-          <IconButton
-            icon={Check}
-            ariaLabel={byAgent ? "hand it to the agent" : "add to registry"}
-            tip={byAgent ? "hand it to the agent" : "add to registry"}
-            accentColor="violet"
-            onClick={() => formRef.current?.requestSubmit()}
-            disabled={busy || problems.length > 0}
-            spin={phase === "applying" || phase === "running"}
-          />
-        </div>
       </div>
 
       {draftErrors.length > 0 && (
@@ -348,6 +336,20 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       )}
       {error && <SignedOutNotice error={error} />}
       <JobLog />
+      {/* Below the log, not beside the status: the log grows and is resizable,
+          so buttons above it drift further from the output they act on. */}
+      <div className="mt-3 flex items-center justify-end gap-2">
+        {(phase === "drafting" || phase === "running") && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
+        <IconButton
+          icon={Check}
+          ariaLabel={byAgent ? "hand it to the agent" : "add to registry"}
+          tip={byAgent ? "hand it to the agent" : "add to registry"}
+          accentColor="violet"
+          onClick={() => formRef.current?.requestSubmit()}
+          disabled={busy || problems.length > 0}
+          spin={phase === "applying" || phase === "running"}
+        />
+      </div>
     </form>
   );
 }

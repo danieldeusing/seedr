@@ -58,23 +58,63 @@ export function CheckoutPage() {
       </header>
 
       <div className="space-y-3 border border-neutral-960 bg-neutral-980 p-4">
+        {/* The page's actual question, answered before it asks anything: is the
+            checkout you are looking at the one Studio calls home? The title bar
+            warns when it is not, and this is where that warning comes from. */}
         <div className="field-row">
-          <label className="lbl" htmlFor="default-checkout" data-tip="An absolute path to a folder holding a registry/ directory">
-            folder
+          <span className="lbl">open now</span>
+          <p className="field-val min-w-0">
+            {repo ? (
+              <>
+                <span className="truncate text-neutral-300" data-tip={repo.root}>
+                  {repo.name}
+                </span>
+                {repo.root === stored ? (
+                  <span className="text-success">is home</span>
+                ) : (
+                  <span className="text-amber-400">is not home — the title bar says so in red</span>
+                )}
+              </>
+            ) : (
+              <span className="text-muted-foreground">no checkout open</span>
+            )}
+          </p>
+        </div>
+
+        <div className="field-row">
+          <label className="lbl" htmlFor="default-checkout" data-tip="An absolute path to a folder holding a registry — registry/, or whatever its seedr.config.json names">
+            home folder
           </label>
           <div className="field-val">
-            <input id="default-checkout" className={input} value={path} onChange={(event) => setPath(event.target.value)} placeholder="/Users/you/Work/seedr" disabled={saving} />
-            <IconButton icon={FolderOpen} ariaLabel="choose the default checkout" tip="Pick the folder" onClick={() => void choose()} disabled={saving} />
+            {/* One row that cannot wrap: `field-val` wraps by default and the
+                input is full width, which put the folder picker on its own line
+                underneath, reading as a second control rather than this one's. */}
+            <div className="flex w-full items-center gap-2">
+              <input
+                id="default-checkout"
+                className={`${input} min-w-0 flex-1`}
+                value={path}
+                onChange={(event) => setPath(event.target.value)}
+                placeholder="/Users/you/Work/seedr"
+                disabled={saving}
+              />
+              <IconButton icon={FolderOpen} ariaLabel="choose the default checkout" tip="Pick the folder" onClick={() => void choose()} disabled={saving} />
+            </div>
           </div>
         </div>
+
         {repo && repo.root !== path.trim() && (
           <div className="field-row">
             <span className="lbl" />
-            <p className="field-val text-muted-foreground">
-              <button type="button" className="doc-link doc-link--forward cursor-pointer" onClick={() => setPath(repo.root)}>
-                use the checkout that is open ({repo.name})
+            <div className="field-val">
+              <button
+                type="button"
+                className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300"
+                onClick={() => setPath(repo.root)}
+              >
+                use the one that is open ({repo.name})
               </button>
-            </p>
+            </div>
           </div>
         )}
       </div>

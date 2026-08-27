@@ -85,6 +85,22 @@ const isHttpsUrl = (value: unknown): boolean => {
   }
 };
 
+/**
+ * `local://<path>` — the registry served beside the app rather than fetched
+ * from GitHub.
+ *
+ * A private instance serving its own registry over nginx cannot use a raw
+ * GitHub URL: the repository is private, so every file preview would 404. The
+ * web app has resolved this scheme against its own origin all along
+ * (`apps/web/src/lib/fileSource.ts`); the validator refusing it is what made a
+ * deliberate, working setup report itself as invalid.
+ *
+ * The path becomes a URL path, so it is held to the same rule as any path in an
+ * item: no climbing out, no absolute prefix.
+ */
+const isLocalUrl = (value: unknown): boolean =>
+  typeof value === "string" && value.startsWith("local://") && isSafeRelativePath(value.slice("local://".length));
+
 const oneOf = (allowed: readonly string[], value: unknown): boolean => allowed.includes(String(value));
 
 function isSafeRelativePath(value: unknown): boolean {
@@ -184,7 +200,8 @@ function checkAuthor(item: Item, push: Push): void {
       push("author.url", "must be an http(s) URL");
     }
   }
-  if (item.externalUrl !== undefined && !isHttpsUrl(item.externalUrl)) push("externalUrl", "must be an https URL");
+  if (item.externalUrl !== undefined && !isHttpsUrl(item.externalUrl) && !isLocalUrl(item.externalUrl))
+    push("externalUrl", "must be an https URL, or local://<path> for a registry served beside the app");
   if (item.targetScope !== undefined && !oneOf(KNOWN_SCOPES, item.targetScope)) {
     push("targetScope", `unknown scope "${String(item.targetScope)}"`);
   }

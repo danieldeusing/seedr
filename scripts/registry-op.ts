@@ -19,7 +19,7 @@
  * command line near 32 K and a longDescription alone can be a few KB.
  */
 import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, resolveRegistryDir, runRegistryTransaction, typeDirName, validateItem } from "@seedr/registry-ops";
 import type { ComponentType } from "@seedr/shared";

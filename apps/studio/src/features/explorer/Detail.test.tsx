@@ -114,4 +114,16 @@ describe("Detail", () => {
     expect(useExternalLink.getState().pending).toMatch(/^https:\/\/github\.com\/anthropics/);
     useExternalLink.getState().cancel();
   });
+
+  test("shows a local:// registry as its value, not as a link that goes nowhere", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs);
+    const playwright = items.find((i) => i.slug === "playwright")!;
+    const served = { ...playwright, item: { ...playwright.item, externalUrl: "local://registry/mcp/playwright" } };
+
+    render(<Detail item={served} />);
+
+    expect(await screen.findByText("local://registry/mcp/playwright")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "local://registry/mcp/playwright" })).toBeNull();
+  });
 });

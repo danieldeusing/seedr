@@ -6,13 +6,13 @@ import { applyOp } from "./ops/apply.js";
 import { parseOp } from "./ops/parse.js";
 import type { OpResult, RegistryOp } from "./ops/types.js";
 import { itemExists, readItem, readLabels } from "./read.js";
-import { itemDir } from "./fsPaths.js";
+import { itemDir, resolveRegistryDir } from "./fsPaths.js";
 import { ALL_TYPES, typeDirName } from "./paths.js";
 import { formatErrors, validateItem } from "./validate.js";
 
 export interface TransactionOptions {
   repoRoot: string;
-  /** Defaults to `<repoRoot>/registry`. */
+  /** Defaults to the registry `<repoRoot>` resolves to — its `seedr.config.json`, or `registry/`. */
   registryDir?: string;
   git?: GitRunner;
   /** Defaults to `seedr-ops.lock` in the repo's git directory (worktrees have their own). */
@@ -98,7 +98,14 @@ const toPosix = (path: string): string => path.split("\\").join("/");
 export async function runRegistryTransaction(rawOp: unknown, options: TransactionOptions): Promise<TransactionResult> {
   const op = parseOp(rawOp);
   const repoRoot = resolve(options.repoRoot);
-  const registryDir = options.registryDir ?? join(repoRoot, "registry");
+  // `resolveRegistryDir`, not a hardcoded `registry`: a fork names its own
+  // directory in `seedr.config.json`, and that directory *replaces* `registry/`.
+  // `scripts/registry-op.ts` is the only production caller and passes just a
+  // repoRoot, so hardcoding it here sent every mutation — add, update, remove,
+  // set-labels — into upstream's `registry/` in any fork. Labels made it visible:
+  // five were written to the wrong file and vanished from the page that reads
+  // the right one.
+  const registryDir = options.registryDir ?? resolveRegistryDir(repoRoot);
   const git = options.git ?? defaultGit;
   const registryRel = toPosix(relative(repoRoot, registryDir));
   if (registryRel.startsWith("..")) throw new TransactionError("registryDir must be inside repoRoot", "precondition");

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { makeTempDir } from "./test/tempDir.js";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -134,5 +134,30 @@ describe("runRegistryTransaction", () => {
     const error = await runRegistryTransaction(addOp(), { repoRoot: repo }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(TransactionError);
     expect((error as TransactionError).phase).toBe("precondition");
+  });
+});
+
+/*
+ * `scripts/registry-op.ts` passes only a repoRoot, and this defaulted to
+ * `<repoRoot>/registry`. In a fork — where `seedr.config.json` names another
+ * directory that *replaces* `registry/` — that sent every mutation into
+ * upstream's registry instead of the fork's own. Labels made it visible: five
+ * were written to the wrong file and disappeared from the page reading the right
+ * one, but add, update and remove went to the same wrong place.
+ */
+describe("the registry a transaction writes to", () => {
+  test("is the one seedr.config.json names, given only a repoRoot", async () => {
+    const repo = makeRepo();
+    // Move the fixture's registry to a fork's name and point the config at it.
+    renameSync(join(repo, "registry"), join(repo, "registry-fork"));
+    writeFileSync(join(repo, "seedr.config.json"), JSON.stringify({ registryDir: "registry-fork" }));
+    git(repo, "add", "-A");
+    git(repo, "commit", "-qm", "fork layout");
+
+    const { changedPaths } = await runRegistryTransaction(addOp(), { repoRoot: repo });
+
+    for (const path of changedPaths) expect(path.startsWith("registry-fork/"), `${path} escaped the fork's registry`).toBe(true);
+    expect(existsSync(join(repo, "registry-fork", "skills", "tx-skill", "item.json"))).toBe(true);
+    expect(existsSync(join(repo, "registry", "skills", "tx-skill"))).toBe(false);
   });
 });

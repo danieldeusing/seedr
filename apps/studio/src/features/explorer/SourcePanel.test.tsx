@@ -17,13 +17,13 @@ const ITEM: StudioItem = {
 
 const SOURCE = "/Users/someone/work/origin";
 
-/** A host answering `source-status` with the given state, collecting any op run. */
+/** A host answering the batch `source-status`, collecting any op run. */
 function host(state: string, ops: RunRequest[] = []) {
   onCommand("run_process", (args) => {
     const request = (args as { request: RunRequest }).request;
     ops.push(request);
     const answer = request.args.includes("source-status")
-      ? { type: "skill", slug: "origin-skill", state, path: SOURCE, recorded: "a".repeat(64), current: state === "behind" ? "b".repeat(64) : null }
+      ? { items: [{ type: "skill", slug: "origin-skill", state, path: SOURCE, recorded: "a".repeat(64), current: state === "behind" ? "b".repeat(64) : null }] }
       : { ok: true, kind: request.args.includes("adopt-source") ? "adopt-source" : "resync-source", changedPaths: [], headBefore: "abc1234", hash: "0123456789abcdef" };
     return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify(answer), stderr: "", durationMs: 1 };
   });
@@ -31,7 +31,13 @@ function host(state: string, ops: RunRequest[] = []) {
 }
 
 beforeEach(() => {
-  useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" }, refresh: vi.fn(async () => undefined) });
+  useStudio.setState({
+    repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" },
+    refresh: vi.fn(async () => undefined),
+    sourceStates: {},
+    sourceCheckedAt: 0,
+    sourceChecking: false,
+  });
 });
 
 describe("where an item was copied from", () => {
@@ -94,7 +100,7 @@ describe("where an item was copied from", () => {
       // Only the transaction refuses; the reads before it answer normally, or the
       // message under test would be the wrong step's.
       if (request.args.includes("source-status")) {
-        return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ state: "behind", path: SOURCE }), stderr: "", durationMs: 1 };
+        return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ items: [{ type: "skill", slug: "origin-skill", state: "behind", path: SOURCE }] }), stderr: "", durationMs: 1 };
       }
       if (request.args.includes("hash")) {
         return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ hash: "0123456789abcdef" }), stderr: "", durationMs: 1 };
@@ -112,11 +118,9 @@ describe("where an item was copied from", () => {
 describe("noticing that the folder moved on", () => {
   test("re-checks when the window comes back, which is when the file was just edited", async () => {
     let state = "current";
-    const asked: string[] = [];
     onCommand("run_process", (args) => {
       const request = (args as { request: RunRequest }).request;
-      asked.push(request.args.join(" "));
-      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ state, path: SOURCE }), stderr: "", durationMs: 1 };
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ items: [{ type: "skill", slug: "origin-skill", state, path: SOURCE }] }), stderr: "", durationMs: 1 };
     });
 
     render(<SourcePanel item={ITEM} />);
@@ -124,8 +128,14 @@ describe("noticing that the folder moved on", () => {
 
     // The file is edited in another window; nothing watches it, so nothing knows.
     state = "behind";
-    expect(screen.getByRole("status")).toHaveTextContent("in sync");
 
+    // Straight back: inside the window that exists to stop alt-tabbing from
+    // spawning a process each time, so the answer stands.
+    window.dispatchEvent(new Event("focus"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("in sync"));
+
+    // Once it is stale, coming back asks again.
+    useStudio.setState({ sourceCheckedAt: 0 });
     window.dispatchEvent(new Event("focus"));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("source has changes"));
   });
@@ -134,8 +144,7 @@ describe("noticing that the folder moved on", () => {
     let state = "current";
     onCommand("run_process", (args) => {
       const request = (args as { request: RunRequest }).request;
-      const answer = request.args.includes("source-status") && !request.args.includes("origin-skill") ? { items: [] } : { state, path: SOURCE };
-      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify(answer), stderr: "", durationMs: 1 };
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ items: [{ type: "skill", slug: "origin-skill", state, path: SOURCE }] }), stderr: "", durationMs: 1 };
     });
 
     render(<SourcePanel item={ITEM} />);

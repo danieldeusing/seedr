@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ComponentType } from "@seedr/shared";
+import type { SourceStatus } from "@seedr/registry-ops/pure";
 import { fs } from "@/api/fs";
 import { defaultRepo, getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
 import { allSourceStatuses, setOpsCheckout } from "@/api/registryCli";
@@ -15,8 +16,14 @@ import { usePrePrompts } from "@/features/settings/prePrompts";
  * project: its items are credited to someone else, and a pre-prompt naming a
  * skill is only right where that skill exists.
  */
-/** Guards `checkSources` against overlapping runs; module-level, not state, because nothing renders it. */
-let checking = false;
+/**
+ * How long an answer stands before focus is allowed to ask again.
+ *
+ * Short on purpose. It is there to stop a storm — alt-tabbing spawns a process
+ * each time — not to cache: the case that matters is editing the file and coming
+ * straight back, and a long window would answer that one with stale news.
+ */
+const CHECK_FRESH_MS = 2_000;
 
 const openCheckout = (repo: RepoInfo): void => {
   setOpsCheckout({ root: repo.root, hasOps: repo.hasOps });
@@ -46,12 +53,16 @@ interface StudioState {
   repo: RepoInfo | null;
   /**
    * Where each item stands against the folder it was copied from, keyed
-   * `type/slug`. Read in one run beside the registry, so the explorer can mark a
-   * whole list without a process per row.
+   * `type/slug` — the whole answer, not just the state, so the detail panel
+   * reads it here rather than spawning a second process to ask again.
    */
-  sourceStates: Record<string, string>;
+  sourceStates: Record<string, SourceStatus>;
   /** Why the marks are missing, when they are. Never silently absent. */
   sourceCheckError: string | null;
+  /** When the last source check finished, and whether one is running. In the
+   * store rather than a module variable so it resets with everything else. */
+  sourceCheckedAt: number;
+  sourceChecking: boolean;
   items: StudioItem[];
   problems: string[];
   loading: boolean;
@@ -69,7 +80,7 @@ interface StudioState {
   makeRepoDefault(path: string): Promise<string | null>;
   refresh(): Promise<void>;
   /** Re-read where every item stands against its source folder. */
-  checkSources(): Promise<void>;
+  checkSources(force?: boolean): Promise<void>;
   /**
    * Bumped on every reload. A file's path does not change when its contents do,
    * so anything holding a path — the preview, above all — has no other way to
@@ -93,6 +104,8 @@ export const useStudio = create<StudioState>((set, get) => ({
   repo: null,
   sourceStates: {},
   sourceCheckError: null,
+  sourceCheckedAt: 0,
+  sourceChecking: false,
   items: [],
   problems: [],
   loading: false,
@@ -148,24 +161,28 @@ export const useStudio = create<StudioState>((set, get) => ({
     }
   },
 
-  async checkSources() {
+  async checkSources(force = false) {
     // Nothing watches the source folders: they are outside the checkout, and the
     // host refuses every path that is. So this is asked for, not pushed.
     //
-    // One at a time: focus fires on every alt-tab, and a second pass would only
-    // re-read what the first is already reading.
-    if (!get().repo || checking) return;
-    checking = true;
+    // Each ask is a process: `npx tsx registry-op.ts`, measured at 440 ms and a
+    // 107 MB peak, nearly all of it Node and tsx starting up rather than the
+    // work. Focus fires on every alt-tab, so asking again within a few seconds
+    // buys a fresh answer to a question whose subject has not moved. Pressing
+    // the button says otherwise, and forces it.
+    if (!get().repo || get().sourceChecking) return;
+    if (!force && Date.now() - get().sourceCheckedAt < CHECK_FRESH_MS) return;
+    set({ sourceChecking: true });
     try {
       const statuses = await allSourceStatuses();
-      set({ sourceCheckError: null, sourceStates: Object.fromEntries(statuses.map((status) => [`${status.type}/${status.slug}`, status.state])) });
+      set({ sourceCheckError: null, sourceStates: Object.fromEntries(statuses.map((status) => [`${status.type}/${status.slug}`, status])) });
     } catch (error) {
       // Said out loud rather than swallowed. Swallowing it cost an afternoon:
       // a checkout whose CLI predates the batch command answers "unknown type",
       // and an empty marker column looks exactly like nothing being out of sync.
       set({ sourceStates: {}, sourceCheckError: (error as Error).message });
     } finally {
-      checking = false;
+      set({ sourceChecking: false, sourceCheckedAt: Date.now() });
     }
   },
 

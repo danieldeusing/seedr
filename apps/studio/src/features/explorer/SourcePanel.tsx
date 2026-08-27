@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { FolderSearch, RefreshCw, Unlink } from "lucide-react";
+import { FolderSearch, RefreshCw, RotateCw, Unlink } from "lucide-react";
 import { isFirstParty, type SourceStatus } from "@seedr/registry-ops/pure";
 import { itemHash, runRegistryOp, sourceStatusOf } from "@/api/registryCli";
 import { IconButton } from "@/core/ui/IconButton";
@@ -25,6 +25,7 @@ const WORDING: Record<SourceStatus["state"], { label: string; tone: string; deta
 
 export function SourcePanel({ item }: { item: StudioItem }) {
   const refresh = useStudio((state) => state.refresh);
+  const checkSources = useStudio((state) => state.checkSources);
   const [status, setStatus] = useState<SourceStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,16 @@ export function SourcePanel({ item }: { item: StudioItem }) {
     look();
   }, [look]);
 
+  useEffect(() => {
+    // Nothing watches the source folder — it is outside the checkout, and the
+    // host refuses every path that is. Coming back to the window is the moment
+    // the answer is most likely to have changed, because editing the file is
+    // what you left to do.
+    const onFocus = () => look();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [look]);
+
   // A synced item is upstream's, and one that records no source is nobody's copy;
   // neither has anything to say here, so neither gets a panel.
   if (!firstParty || (status?.state ?? "none") === "none") return null;
@@ -56,6 +67,7 @@ export function SourcePanel({ item }: { item: StudioItem }) {
       await runRegistryOp({ v: 1, kind, type: item.type, slug: item.slug, expectedHash });
       await refresh();
       look();
+      void checkSources();
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -90,6 +102,16 @@ export function SourcePanel({ item }: { item: StudioItem }) {
         )}
 
         <div className="mt-3 flex items-center gap-2">
+          <IconButton
+            icon={RotateCw}
+            ariaLabel="check the source again"
+            tip="Look at the folder again"
+            onClick={() => {
+              look();
+              void checkSources();
+            }}
+            disabled={busy}
+          />
           {(state === "behind" || state === "diverged") && (
             <IconButton
               icon={RefreshCw}

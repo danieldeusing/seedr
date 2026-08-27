@@ -21,7 +21,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, resolveRegistryDir, runRegistryTransaction, sourceStatus, typeDirName, validateItem } from "@seedr/registry-ops";
+import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, readLocalSources, resolveRegistryDir, runRegistryTransaction, sourceStatus, typeDirName, validateItem } from "@seedr/registry-ops";
 import type { ComponentType } from "@seedr/shared";
 
 /**
@@ -87,8 +87,20 @@ async function main(argv: string[]): Promise<void> {
       // Where an item stands against the folder it was copied from. Read-only,
       // and deliberately here rather than in Studio: the folder is outside the
       // checkout, which the app's own filesystem bridge refuses to read.
+      //
+      // Without arguments it answers for every item that records an origin, in
+      // one run: the explorer marks a whole list at once, and starting a process
+      // per item to do it would be slower than reading the folders is.
+      if (!rest[0]) {
+        const items = Object.keys(readLocalSources(repoRoot)).map((key) => {
+          const [type, slug] = key.split("/");
+          return { type, slug, ...sourceStatus(repoRoot, registryDir, requireType(type), slug ?? "") };
+        });
+        out({ items });
+        return;
+      }
       const type = requireType(rest[0]);
-      if (!rest[1]) fail("source-status needs <type> <slug>");
+      if (!rest[1]) fail("source-status needs <type> <slug>, or nothing for every recorded item");
       out({ type, slug: rest[1], ...sourceStatus(repoRoot, registryDir, type, rest[1]) });
       return;
     }

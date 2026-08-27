@@ -6,6 +6,7 @@ import { fs } from "@/api/fs";
 import { mockFs } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
 import { Explorer } from "./Explorer";
+import { useStudio } from "./store";
 import { loadRegistry } from "./registry";
 
 const SEARCH = "search capabilities";
@@ -88,5 +89,23 @@ describe("Explorer", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "expand all groups" }));
     expect(screen.getByRole("button", { name: /PDF$/ })).toBeInTheDocument();
+  });
+});
+
+describe("items that have parted from their source folder", () => {
+  test("are marked in the list, and the ones in sync are not", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    useStudio.setState({
+      items,
+      sourceStates: { "skill/pdf": "behind", "mcp/playwright": "current", "skill/broken": "missing" },
+    });
+
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    expect(screen.getByLabelText(/source folder has changed/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/source folder it was copied from is gone/i)).toBeInTheDocument();
+    // `current` says nothing: an unmarked row means there is nothing to answer for.
+    expect(screen.queryByLabelText(/unchanged/i)).toBeNull();
   });
 });

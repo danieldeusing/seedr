@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import type { ScopeType } from "@seedr/shared";
 import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import type { StudioItem } from "@/features/explorer/registry";
-import { Ban, Check, X } from "lucide-react";
+import { Ban, Check } from "lucide-react";
 import { AgentLog } from "@/core/ui/AgentLog";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
@@ -186,7 +186,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       </div>
       <Problems errors={problemFor("longDescription")} />
 
-      <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
+      <div className="mt-4 flex items-center gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
           <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="update" ariaLabel="coding agent" disabled={busy || !!refusal} />
           <span
@@ -210,31 +210,6 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
                       : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          {phase === "done" ? (
-            <button
-              type="button"
-              onClick={close}
-              className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300"
-            >
-              back to the item
-            </button>
-          ) : (
-            <>
-          {phase === "running" && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
-          <IconButton icon={X} ariaLabel="cancel" tip="cancel" onClick={close} />
-          <IconButton
-            icon={Check}
-            ariaLabel={asked ? "hand it to the agent" : `apply ${changed.length} change${changed.length === 1 ? "" : "s"}`}
-            tip={asked ? "hand it to the agent" : "apply the changes"}
-            accentColor="violet"
-            onClick={() => formRef.current?.requestSubmit()}
-            disabled={busy || !!refusal || (!asked && changed.length === 0) || problems.length > 0 || (asked && !probe?.available)}
-            spin={busy}
-          />
-            </>
-          )}
-        </div>
       </div>
       {draftErrors.length > 0 && (
         <p className="mt-3 text-destructive" role="alert">
@@ -242,6 +217,34 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
         </p>
       )}
       <JobLog />
+      {/* Below the log, not beside the status: the log grows and is resizable,
+          so buttons above it drift further from the output they act on. */}
+      <div className="mt-3 flex items-center justify-end gap-2">
+        {phase === "done" ? (
+          <button
+            type="button"
+            onClick={close}
+            className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300"
+          >
+            back to the item
+          </button>
+        ) : (
+          <>
+            {/* No cancel button: the dialog's own close, top right, is the way
+                out, and two of them side by side asked the same question twice. */}
+            {phase === "running" && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
+            <IconButton
+              icon={Check}
+              ariaLabel={asked ? "hand it to the agent" : `apply ${changed.length} change${changed.length === 1 ? "" : "s"}`}
+              tip={asked ? "hand it to the agent" : "apply the changes"}
+              accentColor="violet"
+              onClick={() => formRef.current?.requestSubmit()}
+              disabled={busy || !!refusal || (!asked && changed.length === 0) || problems.length > 0 || (asked && !probe?.available)}
+              spin={busy}
+            />
+          </>
+        )}
+      </div>
       {error && !refusal && <SignedOutNotice error={error} />}
     </form>
   );

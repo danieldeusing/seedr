@@ -133,7 +133,8 @@ export function App() {
               {repoError}
             </p>
             <p className="mt-3 text-muted-foreground">
-              Studio opens a folder that holds a <code className="text-primary">registry/</code> directory. It is still open on {repo.name}.
+              Studio opens a folder that holds a <code className="text-primary">registry/</code> directory — or the one its{" "}
+              <code className="text-primary">seedr.config.json</code> names instead. It is still open on {repo.name}.
             </p>
             <button type="button" onClick={clearRepoError} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
               back to {repo.name}

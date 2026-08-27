@@ -3,6 +3,7 @@ import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { CANONICAL_AGENTS, canonicalAgents, isFirstParty, parseOp, validateItem, type UpdateOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess } from "@/api/agent";
 import { batchedLog, type LogLine } from "@/core/logLines";
+import { borrowedTooling, type BorrowedTooling } from "@/features/author/store";
 import { runAgentJob } from "@/api/agentJob";
 import type { JobCapability } from "@/features/author/adapters";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
@@ -48,7 +49,6 @@ interface UpdateState {
   error: string | null;
   outcome: RegistryOpOutcome | null;
   /** The agent's report, when the change went through a job. */
-  jobReport: string | null;
   /** Capped live output of the running job. */
   log: LogLine[];
   start(item: StudioItem): Promise<void>;
@@ -78,8 +78,12 @@ const collectLog = (set: (partial: { log: LogLine[] }) => void, current: () => L
   batchedLog((batch) => set({ log: [...current(), ...batch].slice(-LOG_CAP) }));
 
 
+/** `registry-op`, as this checkout can actually invoke it. */
+const cli = (tooling: BorrowedTooling): string =>
+  tooling ? `npx tsx ${tooling.toolingRoot}/scripts/registry-op.ts --repo ${tooling.registryRoot}` : "npx tsx scripts/registry-op.ts";
+
 /** The whole instruction for a prompt-driven update — the capability, then its metadata. */
-export function updateJobPrompt(item: StudioItem, form: UpdateForm, patch: UpdateOp["patch"]): string {
+export function updateJobPrompt(item: StudioItem, form: UpdateForm, patch: UpdateOp["patch"], tooling: BorrowedTooling = null): string {
   const fields = Object.entries(patch)
     .filter(([field]) => form.refreshMeta || (field !== "description" && field !== "longDescription"))
     .map(([field, value]) => `- ${field}: ${Array.isArray(value) ? value.join(", ") : String(value)}`);
@@ -90,9 +94,14 @@ export function updateJobPrompt(item: StudioItem, form: UpdateForm, patch: Updat
     form.refreshMeta
       ? "When the content has changed, rewrite `description` and `longDescription` to match it, following .agents/rules/registry-descriptions.md."
       : "Leave `description` and `longDescription` exactly as they are — they were written by hand.",
-    "Edit content files directly, but change `item.json` only through `npx tsx scripts/registry-op.ts run --op -` as an `update` operation, whose `expectedHash` comes from `npx tsx scripts/registry-op.ts hash " +
-      `${item.type} ${item.slug}\`.`,
-    "Work inside this checkout only — a CLI refuses to write outside it, so a scratch directory belongs in here and should be removed afterwards.",
+    // The operation is named by absolute path when it is borrowed. Told to run
+    // `scripts/registry-op.ts` in a checkout that has no `scripts/`, an agent
+    // does not stop: it fetched the CLI out of another commit, copied it under
+    // `.cache/`, rewrote its imports and shimmed it into place.
+    `Edit content files directly, but change \`item.json\` only through \`${cli(tooling)} run --op -\` as an \`update\` operation, whose \`expectedHash\` comes from \`${cli(tooling)} hash ${item.type} ${item.slug}\`.`,
+    tooling
+      ? `That CLI is not in this checkout and neither is a copy of it — run it exactly as written above, from anywhere, and do not build one here. Read ${tooling.toolingRoot} if you need its rules; write only inside this checkout.`
+      : "Work inside this checkout only — a CLI refuses to write outside it, so a scratch directory belongs in here and should be removed afterwards.",
     "Do not commit or push. Finish with a final line of exactly `UPDATED <type>/<slug>`.",
   ]
     .filter(Boolean)
@@ -143,11 +152,10 @@ export const useUpdate = create<UpdateState>((set, get) => ({
   draftErrors: [],
   error: null,
   outcome: null,
-  jobReport: null,
   log: [],
 
   async start(item) {
-    set({ target: item, expectedHash: null, form: formFor(item), phase: "idle", draftErrors: [], error: updateRefusal(item), outcome: null, jobReport: null, log: [] });
+    set({ target: item, expectedHash: null, form: formFor(item), phase: "idle", draftErrors: [], error: updateRefusal(item), outcome: null, log: [] });
     if (!get().probe) set({ probe: await probeAgent(useAgentSettings.getState().preferred) });
     if (updateRefusal(item)) return;
     try {
@@ -193,11 +201,11 @@ export const useUpdate = create<UpdateState>((set, get) => ({
         set({ error: probe?.diagnostic ?? "no coding agent available — see settings → coding agents" });
         return;
       }
-      set({ phase: "running", error: null, draftErrors: [], log: [], jobReport: null });
+      set({ phase: "running", error: null, draftErrors: [], log: [] });
       try {
         const outcome = await runAgentJob({
           taskId: UPDATE_TASK,
-          prompt: updateJobPrompt(target, form, patch),
+          prompt: updateJobPrompt(target, form, patch, borrowedTooling()),
           capabilities: UPDATE_JOB_CAPABILITIES,
           onEvent: collectLog(set, () => get().log),
         });
@@ -209,7 +217,7 @@ export const useUpdate = create<UpdateState>((set, get) => ({
           set({ phase: "idle", error: outcome.denials.length > 0 ? `${outcome.text} (it asked for ${outcome.denials.join(", ")}, which it is not allowed)` : outcome.text });
           return;
         }
-        set({ phase: "done", jobReport: outcome.text });
+        set({ phase: "done" });
       } catch (error) {
         set({ phase: "idle", error: (error as Error).message });
       }
@@ -234,6 +242,6 @@ export const useUpdate = create<UpdateState>((set, get) => ({
   },
 
   reset() {
-    set({ target: null, phase: "idle", draftErrors: [], error: null, outcome: null, jobReport: null, log: [] });
+    set({ target: null, phase: "idle", draftErrors: [], error: null, outcome: null, log: [] });
   },
 }));

@@ -132,6 +132,21 @@ describe("updateStore", () => {
 });
 
 describe("UpdateForm", () => {
+  test("a finished agent job keeps its log, and says so in green", async () => {
+    const { playwright } = await items();
+    host();
+    render(<UpdateForm item={playwright} onDone={vi.fn()} />);
+    useUpdate.setState({ phase: "done", outcome: null, log: [{ kind: "markdown", text: "I changed the file." }] });
+
+    // The report used to replace the dialog, taking the log with it — the one
+    // place the run's own account of itself lives.
+    expect(await screen.findByLabelText("agent output")).toHaveTextContent("I changed the file.");
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("the agent is done");
+    expect(status.className).toContain("text-success");
+    expect(screen.getByRole("button", { name: "back to the item" })).toBeInTheDocument();
+  });
+
   test("edits a first-party item and applies the change", async () => {
     const { playwright } = await items();
     host();
@@ -145,7 +160,10 @@ describe("UpdateForm", () => {
     await userEvent.type(screen.getByLabelText("name"), "Playwright MCP");
     await userEvent.click(screen.getByRole("button", { name: "apply 1 change" }));
 
-    expect(await screen.findByText(/Updated mcp\/playwright at abc1234/)).toBeInTheDocument();
+        // The dialog stays where it was and says so in place, rather than being
+    // replaced by a summary that takes the log with it.
+    expect(await screen.findByRole("status")).toHaveTextContent("updated — 2 files changed at abc1234");
+    expect(screen.getByRole("button", { name: "back to the item" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "back to the item" }));
     expect(onDone).toHaveBeenCalled();
   });

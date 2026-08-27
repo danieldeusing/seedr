@@ -333,4 +333,32 @@ describe("AgentLog", () => {
     render(<AgentLog lines={[]} />);
     expect(screen.queryByLabelText("agent output")).not.toBeInTheDocument();
   });
+
+  test("a whole-JSON line is indented and folded, not one unreadable run", async () => {
+    // A drafting run answers with `--output-format json`: the descriptions plus
+    // several hundred bytes of token counts, all on one line.
+    const envelope = JSON.stringify({
+      is_error: false,
+      type: "result",
+      usage: { input_tokens: 2, output_tokens: 1318, cache_read_input_tokens: 880 },
+      structured_output: { description: "Documents Configr.", longDescription: "x".repeat(200) },
+    });
+    render(<AgentLog lines={[printed(envelope)]} />);
+
+    const summary = screen.getByText(/^json · result/);
+    expect(summary).toBeInTheDocument();
+    // Folded: the content is present but the disclosure is closed.
+    expect(summary.closest("details")?.open).toBe(false);
+
+    await userEvent.click(summary);
+    const shown = summary.closest("details")!.querySelector("pre")!.textContent!;
+    expect(shown).toContain('\n  "type": "result"');
+    expect(shown).toContain('\n    "input_tokens": 2');
+  });
+
+  test("a line that only looks like JSON is left exactly as it was", () => {
+    render(<AgentLog lines={[printed("{ not json at all, but long ".repeat(12) + "}")]} />);
+    expect(screen.queryByText(/^json ·/)).toBeNull();
+  });
+
 });

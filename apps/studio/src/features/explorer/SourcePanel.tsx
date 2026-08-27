@@ -53,7 +53,12 @@ export function SourcePanel({ item }: { item: StudioItem }) {
     // host refuses every path that is. Coming back to the window is the moment
     // the answer is most likely to have changed, because editing the file is
     // what you left to do.
-    const onFocus = () => void checkSources();
+    const onFocus = () => {
+      void checkSources();
+      // Cheap next to the source check — `git status` rather than a Node start —
+      // and the badge is stale the moment anything is committed elsewhere.
+      void useStudio.getState().countUncommitted();
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [checkSources]);

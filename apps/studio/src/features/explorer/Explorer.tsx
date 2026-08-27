@@ -165,6 +165,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
   const [collapsed, setCollapsed] = useState<Set<ComponentType>>(new Set());
   const rowStyle = useRowStyle((s) => s.style);
   const sourceCheckError = useStudio((store) => store.sourceCheckError);
+  const uncommitted = useStudio((store) => store.uncommitted);
   const setRowStyle = useRowStyle((s) => s.setStyle);
 
   // Every type is listed, empty ones included: a registry with no agents is a
@@ -304,7 +305,19 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
           </div>
         </details>
         <ThemeMenu direction="up" align="left" />
-        <IconButton icon={GitBranch} ariaLabel="git" tip="Branch, changes, and publishing them" onClick={onGitStatus} />
+        <span className="relative inline-flex">
+          <IconButton
+            icon={GitBranch}
+            ariaLabel="git"
+            tip={uncommitted > 0 ? `${uncommitted} uncommitted path(s) — every registry operation refuses until they are committed` : "Branch, changes, and publishing them"}
+            onClick={onGitStatus}
+          />
+          {uncommitted > 0 && (
+            <span className="count-badge" aria-label={`${uncommitted} uncommitted paths`}>
+              {uncommitted > 99 ? "99+" : uncommitted}
+            </span>
+          )}
+        </span>
         <IconButton icon={Settings} ariaLabel="settings" tip="Coding agents Studio can run" onClick={onSettings} />
         <span className="flex-1" />
         <IconButton icon={FolderInput} ariaLabel="switch repo" tip="Point Studio at another seedr checkout — e.g. a private fork" onClick={onSwitchRepo} />

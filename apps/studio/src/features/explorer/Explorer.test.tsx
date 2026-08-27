@@ -140,3 +140,28 @@ describe("items that have parted from their source folder", () => {
     expect(screen.getByText("Source marks unavailable")).toBeInTheDocument();
     expect(screen.getByText(/unknown type/)).toBeInTheDocument();
   });
+
+describe("the git button's count", () => {
+  test("shows how many paths are uncommitted, and says what that costs", async () => {
+    // Every registry operation refuses while the worktree is dirty. Finding that
+    // out by pressing a button and reading the failure is late.
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    useStudio.setState({ items, uncommitted: 3 });
+
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    expect(screen.getByLabelText("3 uncommitted paths")).toHaveTextContent("3");
+    expect(screen.getByRole("button", { name: "git" }).getAttribute("data-tip")).toMatch(/refuses until they are committed/);
+  });
+
+  test("says nothing when the worktree is clean", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    useStudio.setState({ items, uncommitted: 0 });
+
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    expect(screen.queryByLabelText(/uncommitted paths/)).toBeNull();
+  });
+});

@@ -17,6 +17,12 @@ const input =
  * agent. Studio does not push by itself — but it does say, before anything runs,
  * which of the chosen branches start a workflow when they receive a push.
  */
+/** Subscribed on its own, so the panel is not re-rendered per streamed line. */
+function JobLog() {
+  const log = usePublish((state) => state.log);
+  return <AgentLog lines={log} />;
+}
+
 export function PublishPanel({ summary }: { summary: GitSummary }) {
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [triggers, setTriggers] = useState<Record<string, string[]>>({});
@@ -27,7 +33,7 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
   const agent = useAgentSettings((state) => state.preferred);
   const setAgent = useAgentSettings((state) => state.setPreferred);
   const [error, setError] = useState<string | null>(null);
-  const { phase, log, verdict, error: jobError } = usePublish();
+  const { phase, verdict, error: jobError } = usePublish();
   const { run, cancel, reset } = usePublish.getState();
 
   useEffect(() => {
@@ -57,7 +63,7 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
           </p>
         )}
         {verdict.kind === "unclear" && <pre className="mt-4 whitespace-pre-wrap text-muted-foreground">{verdict.text}</pre>}
-        {log.length > 0 && <pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap border border-border bg-muted p-2">{log.join("\n")}</pre>}
+        <JobLog />
         <button type="button" onClick={reset} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
           back to publish
         </button>
@@ -162,7 +168,7 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
         </p>
       )}
       {jobError && <SignedOutNotice error={jobError} />}
-      <AgentLog lines={log} />
+      <JobLog />
     </section>
   );
 }

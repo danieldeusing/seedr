@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
+import { batchedLog, plainLine, type LogLine } from "@/core/logLines";
 import { AgentLog, blocksOf } from "./ui/AgentLog";
 import { AppHeader } from "./AppHeader";
 import { Modal } from "./Modal";
@@ -199,7 +200,7 @@ describe("AgentLog", () => {
     expect(view).toHaveTextContent("Todo added 5 items");
 
     rerender(<AgentLog lines={["one", "two", "three"].map(printed)} />);
-    expect(screen.getByLabelText("agent output")).toHaveTextContent("one two three");
+    for (const text of ["one", "two", "three"]) expect(screen.getByText(text)).toBeInTheDocument();
   });
 
   test("renders what the agent said as markdown, and what a tool printed as lines", () => {
@@ -219,10 +220,10 @@ describe("AgentLog", () => {
     expect(screen.getByRole("heading", { name: "Gotchas" })).toBeInTheDocument();
     expect(screen.getByRole("listitem")).toHaveTextContent("pnpm only");
 
-    const plain = screen.getByText(/ROOT_RULE_FILES/);
-    expect(plain.tagName).toBe("PRE");
-    // Both plain lines are one block, so their line breaks survive.
-    expect(plain).toHaveTextContent('{ "name": "SKILL.md" }');
+    // Each plain line is its own block, so an arriving line adds one element
+    // rather than rebuilding every line above it.
+    expect(screen.getByText(/ROOT_RULE_FILES/).tagName).toBe("PRE");
+    expect(screen.getByText('{ "name": "SKILL.md" }').tagName).toBe("PRE");
   });
 
   test("drags taller, and opens where it was left", async () => {
@@ -258,12 +259,41 @@ describe("AgentLog", () => {
     expect(screen.getAllByLabelText("all as markdown")[0]).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("joins consecutive lines of a kind, and splits where the kind changes", () => {
-    expect(blocksOf([printed("a"), printed("b"), said("# c"), printed("d")])).toEqual([
-      { markdown: false, text: "a\nb" },
-      { markdown: true, text: "# c" },
-      { markdown: false, text: "d" },
+  test("joins markdown so a fence survives, and leaves plain lines apart so they are cheap", () => {
+    expect(blocksOf([said("# a"), said("more"), printed("b"), printed("c")])).toEqual([
+      // Markdown only means anything whole.
+      { markdown: true, text: "# a\nmore" },
+      // Plain lines stay separate: joined, a streaming agent grew one enormous
+      // element that React rebuilt on every line, and the controls stopped
+      // answering.
+      { markdown: false, text: "b" },
+      { markdown: false, text: "c" },
     ]);
+  });
+
+  test("leaves every earlier block alone when a line arrives", () => {
+    const before = blocksOf([printed("a"), printed("b")]);
+    const after = blocksOf([printed("a"), printed("b"), printed("c")]);
+    // Same values in the same places, so the memoised blocks bail out and only
+    // the new one is rendered.
+    expect(after.slice(0, before.length)).toEqual(before);
+  });
+
+  test("hands a frame's worth of lines over at once, dropping none", async () => {
+    const batches: LogLine[][] = [];
+    const push = batchedLog((lines) => batches.push(lines));
+
+    for (const text of ["a", "b", "c"]) push(plainLine(text));
+    // Still the same frame: one update will carry all three, where before each
+    // line was its own store update and its own render of the whole panel.
+    expect(batches).toHaveLength(0);
+
+    await new Promise(requestAnimationFrame);
+    expect(batches).toEqual([[plainLine("a"), plainLine("b"), plainLine("c")]]);
+
+    push(plainLine("d"));
+    await new Promise(requestAnimationFrame);
+    expect(batches).toHaveLength(2);
   });
 
   test("shows nothing at all before there is output", () => {

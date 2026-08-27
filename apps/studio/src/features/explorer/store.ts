@@ -4,6 +4,7 @@ import type { SourceStatus } from "@seedr/registry-ops/pure";
 import { fs } from "@/api/fs";
 import { defaultRepo, getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
 import { allSourceStatuses, setOpsCheckout } from "@/api/registryCli";
+import { gitSummary } from "@/api/git";
 import { useAuthorSettings } from "@/features/settings/authorSettings";
 import { usePrePrompts } from "@/features/settings/prePrompts";
 
@@ -63,6 +64,12 @@ interface StudioState {
    * store rather than a module variable so it resets with everything else. */
   sourceCheckedAt: number;
   sourceChecking: boolean;
+  /**
+   * How many paths the worktree has uncommitted. Shown on the git button,
+   * because every registry operation refuses to run while there are any — and
+   * finding that out by pressing a button and reading a failure is late.
+   */
+  uncommitted: number;
   items: StudioItem[];
   problems: string[];
   loading: boolean;
@@ -81,6 +88,8 @@ interface StudioState {
   refresh(): Promise<void>;
   /** Re-read where every item stands against its source folder. */
   checkSources(force?: boolean): Promise<void>;
+  /** Re-count the worktree's uncommitted paths. */
+  countUncommitted(): Promise<void>;
   /**
    * Bumped on every reload. A file's path does not change when its contents do,
    * so anything holding a path — the preview, above all — has no other way to
@@ -106,6 +115,7 @@ export const useStudio = create<StudioState>((set, get) => ({
   sourceCheckError: null,
   sourceCheckedAt: 0,
   sourceChecking: false,
+  uncommitted: 0,
   items: [],
   problems: [],
   loading: false,
@@ -186,6 +196,14 @@ export const useStudio = create<StudioState>((set, get) => ({
     }
   },
 
+  async countUncommitted() {
+    if (!get().repo) return;
+    // A checkout with no git at all is not an error here; it just has nothing
+    // uncommitted, and the operations will say so in their own words.
+    const summary = await gitSummary().catch(() => null);
+    set({ uncommitted: summary?.changes.length ?? 0 });
+  },
+
   async refresh() {
     const repo = get().repo;
     if (!repo) return;
@@ -196,6 +214,7 @@ export const useStudio = create<StudioState>((set, get) => ({
       const stillThere = selected && items.some((i) => i.type === selected.type && i.slug === selected.slug);
       set({ items, problems, loading: false, selected: stillThere ? selected : null, revision: get().revision + 1 });
       void get().checkSources();
+      void get().countUncommitted();
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
     }

@@ -497,11 +497,22 @@ fn read_source_files(path: String, picked: State<PickedPaths>) -> Result<SourceF
 #[tauri::command]
 async fn test_install(app: AppHandle, request: TestInstallRequest, repo: State<'_, Repo>, registry: State<'_, Registry>) -> Result<TestInstallOutcome, String> {
     let root = current_root(&repo)?;
+    // The CLI comes from the checkout that has one — the open registry's own
+    // when it has it, the recorded default otherwise — and is told which
+    // registry to act on. Running a registry checkout's stale CLI is how a
+    // local item came to be fetched from GitHub.
+    let tooling = if root.join("packages").join("cli").join("src").join("cli.ts").is_file() {
+        root.clone()
+    } else {
+        default_repo_file().as_deref().and_then(default_repo_at).ok_or_else(|| {
+            "This checkout has no CLI to test with, and no default checkout is recorded to borrow one from".to_string()
+        })?
+    };
     let sink: Arc<dyn Fn(OutputEvent) + Send + Sync> = Arc::new(move |event| {
         let _ = app.emit("process-output", event);
     });
     let registry = registry.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || test_install::run(&registry, &root, request, sink)).await.map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || test_install::run(&registry, &root, &tooling, request, sink)).await.map_err(|e| e.to_string())?
 }
 
 /// `SEEDR_STUDIO_REPO=<path>` launches straight into that checkout (it still has
@@ -534,6 +545,11 @@ pub fn run() {
     // Anything a previous run left behind when it was killed mid-install.
     test_install::sweep_scratch(&std::env::temp_dir(), std::time::SystemTime::now(), test_install::STALE_AFTER);
     tauri::Builder::default()
+        // The window's size and position, kept between launches. Restoring
+        // them in Rust is what makes it invisible: the window is created at the
+        // remembered size rather than opening at the default and jumping once
+        // the webview has loaded.
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(preselected_repo())

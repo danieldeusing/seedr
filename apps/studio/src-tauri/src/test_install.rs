@@ -85,19 +85,25 @@ fn scratch_dir() -> Result<PathBuf, String> {
     Ok(dir)
 }
 
-/// The checkout's CLI through the checkout's own `tsx`, so the run needs no global tools.
-pub fn command(root: &Path, item_type: &str, slug: &str) -> Result<Vec<String>, String> {
+/// The CLI through its own `tsx`, so the run needs no global tools.
+///
+/// From the *tooling* checkout, not the open one. A registry checkout may carry
+/// no CLI at all, and one that carries an old copy is worse than none: a fork
+/// 89 commits behind still decided first-party by a string this repository has
+/// since renamed, so every local item looked remote and the install went to
+/// GitHub for a file that only exists on disk.
+pub fn command(tooling: &Path, item_type: &str, slug: &str) -> Result<Vec<String>, String> {
     if !TYPES.contains(&item_type) {
         return Err(format!("unknown type \"{item_type}\""));
     }
     if !is_slug(slug) {
         return Err(format!("invalid slug \"{slug}\""));
     }
-    let tsx = root.join("node_modules").join("tsx").join("dist").join("cli.mjs");
+    let tsx = tooling.join("node_modules").join("tsx").join("dist").join("cli.mjs");
     if !tsx.is_file() {
         return Err(format!("{}: not found — run `pnpm install` in the checkout first", tsx.display()));
     }
-    let cli = root.join("packages").join("cli").join("src").join("cli.ts");
+    let cli = tooling.join("packages").join("cli").join("src").join("cli.ts");
     if !cli.is_file() {
         return Err(format!("{}: not found", cli.display()));
     }
@@ -106,8 +112,14 @@ pub fn command(root: &Path, item_type: &str, slug: &str) -> Result<Vec<String>, 
     Ok(command)
 }
 
-pub fn run(registry: &Registry, root: &Path, request: TestInstallRequest, sink: Arc<dyn Fn(OutputEvent) + Send + Sync>) -> Result<TestInstallOutcome, String> {
-    let command = command(root, &request.item_type, &request.slug)?;
+pub fn run(
+    registry: &Registry,
+    root: &Path,
+    tooling: &Path,
+    request: TestInstallRequest,
+    sink: Arc<dyn Fn(OutputEvent) + Send + Sync>,
+) -> Result<TestInstallOutcome, String> {
+    let command = command(tooling, &request.item_type, &request.slug)?;
     let dir = scratch_dir()?;
     let run = executor::run(
         registry,
@@ -117,6 +129,10 @@ pub fn run(registry: &Registry, root: &Path, request: TestInstallRequest, sink: 
             args: command[1..].to_vec(),
             stdin: None,
             cwd: Some(dir.clone()),
+            // The CLI resolves its local registry from its own checkout, which
+            // is the wrong one whenever the tooling is borrowed. This is the
+            // override it already honours.
+            env: vec![("SEEDR_REGISTRY_DIR".to_string(), root.join("registry").display().to_string())],
             in_default_repo: false,
             keep_stdin: false,
             timeout_ms: request.timeout_ms,
@@ -147,6 +163,20 @@ mod tests {
         assert!(command(&root, "skill", "--force").unwrap_err().contains("invalid slug"));
         assert!(command(&root, "skill", "../x").unwrap_err().contains("invalid slug"));
         assert!(command(&root, "widget", "pdf").unwrap_err().contains("unknown type"));
+    }
+
+    #[test]
+    fn takes_the_cli_from_the_tooling_checkout_not_the_open_one() {
+        let tooling = checkout();
+        if !tooling.join("node_modules").join("tsx").is_dir() {
+            eprintln!("skipped: no node_modules in the checkout");
+            return;
+        }
+        // A registry checkout may carry no CLI, or an old one — which is worse,
+        // because it still runs and decides first-party by a renamed string.
+        let command = command(&tooling, "skill", "pdf").expect("command");
+        assert!(command[1].starts_with(tooling.to_str().expect("path")), "tsx: {}", command[1]);
+        assert!(command[2].starts_with(tooling.to_str().expect("path")), "cli: {}", command[2]);
     }
 
     #[test]
@@ -201,7 +231,7 @@ mod tests {
             return;
         }
         let request = TestInstallRequest { task_id: "test-install-fail".into(), item_type: "skill".into(), slug: "no-such-item-xyz".into(), timeout_ms: 120_000 };
-        let outcome = run(&Registry::default(), &root, request, quiet()).expect("run");
+        let outcome = run(&Registry::default(), &root, &root, request, quiet()).expect("run");
 
         assert_eq!(outcome.run.status, RunStatus::Failed, "stdout: {}", outcome.run.stdout);
         assert_eq!(outcome.cleanup_error, None);
@@ -233,7 +263,7 @@ mod tests {
             return;
         };
         let request = TestInstallRequest { task_id: "test-install".into(), item_type: "skill".into(), slug: slug.clone(), timeout_ms: 120_000 };
-        let outcome = run(&Registry::default(), &root, request, quiet()).expect("run");
+        let outcome = run(&Registry::default(), &root, &root, request, quiet()).expect("run");
 
         assert_eq!(outcome.run.status, RunStatus::Ok, "stdout: {}\nstderr: {}", outcome.run.stdout, outcome.run.stderr);
         assert_eq!(outcome.cleanup_error, None);

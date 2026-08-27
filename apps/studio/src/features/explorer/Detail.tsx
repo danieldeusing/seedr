@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileTreeNode } from "@seedr/shared";
 import { formatErrors, isFirstParty } from "@seedr/registry-ops/pure";
 import { fs, openPath } from "@/api/fs";
-import { useExternalLink } from "@/core/externalUrl";
+import { safeExternalUrl, useExternalLink } from "@/core/externalUrl";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
 import { useStudio } from "./store";
 import { useRememberedSize } from "@/core/remembered";
@@ -33,6 +33,11 @@ function renderValue(value: unknown): string {
 /** A value that goes somewhere: the forward doc-link, gated by the open-in-browser dialog. */
 function ExternalValue({ url, label }: { url: string; label: string }) {
   const request = useExternalLink((s) => s.request);
+  // `local://<path>` names a registry the site serves itself — a private
+  // instance's items all carry one, because their repository is private and a
+  // raw GitHub URL would 404. There is nowhere for a browser to go, so it reads
+  // as the value it is instead of as a link that does nothing when clicked.
+  if (!safeExternalUrl(url)) return <>{label}</>;
   return (
     <button type="button" className="doc-link doc-link--forward break-all" onClick={() => request(url)}>
       {label}

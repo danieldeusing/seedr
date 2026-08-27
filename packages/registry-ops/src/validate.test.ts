@@ -75,3 +75,21 @@ describe("longDescriptionProblems", () => {
     expect(longDescriptionProblems(exactly30)).toEqual([]);
   });
 });
+
+describe("externalUrl", () => {
+  const withUrl = (externalUrl: unknown) => validateItem({ ...seedrSkill, externalUrl });
+
+  test("takes local://<path>, which is how a private instance serves its own registry", () => {
+    // Its repository is private, so a raw GitHub URL 404s on every preview; the
+    // web app resolves this scheme against its own origin instead.
+    expect(withUrl("local://registry/skills/pdf")).toEqual([]);
+    expect(withUrl("https://github.com/danieldeusing/seedr/tree/main/registry/skills/pdf")).toEqual([]);
+  });
+
+  test("refuses a local path that could climb out of the site", () => {
+    // It becomes a URL path, so it is held to the same rule as any path here.
+    for (const bad of ["local://../secrets", "local:///etc", "local://", "local://a/../../b", "ftp://x", "not a url"]) {
+      expect(withUrl(bad)).toContainEqual(expect.objectContaining({ field: "externalUrl" }));
+    }
+  });
+});

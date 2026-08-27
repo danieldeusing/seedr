@@ -107,10 +107,24 @@ describe("items that have parted from their source folder", () => {
 
     render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
 
-    expect(screen.getByLabelText(/source folder has changed/i)).toBeInTheDocument();
+    const behind = screen.getByLabelText(/source folder has changed/i);
+    expect(behind).toBeInTheDocument();
     expect(screen.getByLabelText(/source folder it was copied from is gone/i)).toBeInTheDocument();
     // `current` says nothing: an unmarked row means there is nothing to answer for.
     expect(screen.queryByLabelText(/unchanged/i)).toBeNull();
+
+    // The icon sits at the far edge, so on a wide explorer the name carries the
+    // same colour — otherwise the only sign of it is an inch away from it.
+    expect(behind.getAttribute("class")).toMatch(/ml-auto/);
+    // The chip carries it, not the hue: on green and mono the amber sits at
+    // 1.03:1 against the row's own text, so a mark that was only a colour was
+    // invisible there. The border and fill come from `currentColor`.
+    expect(behind.getAttribute("class")).toMatch(/source-mark/);
+    const row = behind.closest("button")!;
+    const name = within(row).getByText("PDF");
+    expect(name.className).toMatch(/text-amber-400/);
+    // Weight too, because weight is the one signal no theme can wash out.
+    expect(name.className).toMatch(/font-medium/);
   });
 });
 

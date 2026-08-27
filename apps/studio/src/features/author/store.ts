@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
-import { ALL_TYPES, CANONICAL_AGENTS, mainFileName, parseOp, typeDirName, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
+import { ALL_TYPES, CANONICAL_AGENTS, isOneCapability, looksLikeType, parseOp, typeDirName, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess, onProcessOutput, pickPath } from "@/api/agent";
 import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
 import type { JobCapability } from "./adapters";
@@ -85,6 +85,14 @@ interface AuthorState {
   sourceChoices: string[];
   /** The folder the choice is being made inside. */
   pendingSource: string | null;
+  /** Its file list, kept so that changing the type re-answers both questions. */
+  sourceFiles: string[];
+  /**
+   * What the chosen content looks like, when that is not the type selected —
+   * a folder of skills picked while the type says plugin. Null when they agree,
+   * or when nothing about the content says.
+   */
+  sourceMismatch: ComponentType | null;
   /** Take the whole picked folder (null) or one file inside it. */
   takeSource(file: string | null): void;
   /** Probe Claude and prefill author/externalUrl from the repo's identity. */
@@ -247,6 +255,16 @@ export function jobPrompt(form: AddLocalForm, tooling: BorrowedTooling = null): 
     .join("\n\n");
 }
 
+/**
+ * What the picked content looks like, when that disagrees with the selected type.
+ * Null when they agree, or when nothing about the content says either way — a
+ * folder of loose markdown is not evidence of anything.
+ */
+function mismatchAgainst(files: string[], path: string, type: ComponentType): ComponentType | null {
+  const looks = looksLikeType(files, path);
+  return looks && looks !== type ? looks : null;
+}
+
 const slugFromPath = (path: string): string => {
   const segments = path.split(/[\\/]/).filter(Boolean);
   return (segments[segments.length - 1] ?? "")
@@ -367,6 +385,11 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     // hook is not the one a skill is added with. The run's own prompt is never
     // touched: it is what the person typed.
     set({ form: { ...form, type, prePrompt: form.prePromptTouched ? form.prePrompt : prePromptFor(type, "add") } });
+    // The type is the question the source is judged against, so changing it
+    // re-asks: a folder of skills chosen while the type said skill becomes a
+    // mismatch the moment the type says plugin.
+    const { sourceFiles, pendingSource } = get();
+    if (pendingSource) set({ sourceMismatch: mismatchAgainst(sourceFiles, pendingSource, type) });
   },
 
   setSourceKind(kind) {
@@ -385,17 +408,20 @@ export const useAuthor = create<AuthorState>((set, get) => ({
 
   sourceChoices: [],
   pendingSource: null,
+  sourceFiles: [],
+  sourceMismatch: null,
 
   async chooseSource() {
     const picked = await pickPath("folder");
     if (!picked) return;
-    set({ pendingSource: picked, sourceChoices: [] });
-    // A folder holding the type's main file *is* the capability. One that does
-    // not, and holds several files, is a folder *of* capabilities — `.claude/skills/`
-    // with three unrelated skills in it — and only one of them is this item.
+    set({ pendingSource: picked, sourceChoices: [], sourceMismatch: null, sourceFiles: [] });
     const listed = await readSourceFiles(picked).then(({ files }) => Object.keys(files), (): string[] => []);
+    set({ sourceFiles: listed, sourceMismatch: mismatchAgainst(listed, picked, get().form.type) });
+    // A folder carrying the type's marker *is* the capability. One that does not,
+    // and holds several files, is a folder *of* capabilities — `.claude/skills/`
+    // with three unrelated skills in it — and only one of them is this item.
     const topLevel = listed.filter((file) => !file.includes("/")).sort();
-    if (!listed.includes(mainFileName(get().form.type)) && topLevel.length > 1) {
+    if (!isOneCapability(listed, get().form.type) && topLevel.length > 1) {
       set({ sourceChoices: topLevel });
       return;
     }

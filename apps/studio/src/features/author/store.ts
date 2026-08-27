@@ -10,6 +10,7 @@ import { prePromptFor } from "@/features/settings/prePrompts";
 import { repoIdentity, runRegistryOp } from "@/api/registryCli";
 import { fs } from "@/api/fs";
 import { readSourceFiles } from "@/api/source";
+import { plainLine, type LogLine } from "@/core/ui/AgentLog";
 import { useStudio } from "@/features/explorer/store";
 import { draftWith, probeAgent, type AdapterProbe } from "./claudeAdapter";
 
@@ -64,7 +65,7 @@ interface AuthorState {
   phase: Phase;
   draftErrors: string[];
   /** Capped live output of the running agent / operation. */
-  log: string[];
+  log: LogLine[];
   /** The last run was stopped on purpose, which is not a failure. */
   cancelled: boolean;
   result: AddResult | null;
@@ -84,7 +85,8 @@ interface AuthorState {
   reset(): void;
 }
 
-const LOG_CAP = 200;
+// A long job scrolled its own beginning away at 200.
+const LOG_CAP = 1000;
 const DRAFT_TASK = "author-draft";
 const JOB_TASK = "author-job";
 
@@ -412,7 +414,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
       return;
     }
     set({ phase: "drafting", draftErrors: [], log: [], error: null });
-    const unlisten = await onProcessOutput(`${DRAFT_TASK}-0`, (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.line] }));
+    const unlisten = await onProcessOutput(`${DRAFT_TASK}-0`, (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), plainLine(event.line)] }));
     try {
       const { files } = await readSourceFiles(form.sourcePath);
       const notes = [form.prePrompt.trim(), form.prompt.trim()].filter(Boolean).join("\n\n");
@@ -471,7 +473,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
         taskId: JOB_TASK,
         prompt: jobPrompt(form, borrowedTooling()),
         capabilities: ADD_JOB_CAPABILITIES,
-        onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
+        onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), { kind: event.kind, text: event.kind === "tool" ? `· ${event.text}` : event.text }] }),
       });
       if (outcome.cancelled) {
         set({ phase: "idle", cancelled: true });

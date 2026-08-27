@@ -95,7 +95,7 @@ describe("useAuthor", () => {
       },
     });
     await useAuthor.getState().draft();
-    expect(useAuthor.getState().log).toEqual(["thinking…"]);
+    expect(useAuthor.getState().log).toEqual([{ kind: "text", text: "thinking…" }]);
   });
 
   test("apply refuses an invalid form, runs a valid one through the CLI transaction, and reports the result", async () => {

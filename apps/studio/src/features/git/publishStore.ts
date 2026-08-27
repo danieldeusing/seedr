@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { cancelProcess } from "@/api/agent";
+import type { LogLine } from "@/core/ui/AgentLog";
 import { runAgentJob } from "@/api/agentJob";
 import type { JobCapability } from "@/features/author/adapters";
 import type { ChangedPath } from "@/api/git";
@@ -65,7 +66,7 @@ export function readVerdict(text: string): PublishVerdict {
 
 interface PublishState {
   phase: "idle" | "running" | "done";
-  log: string[];
+  log: LogLine[];
   verdict: PublishVerdict | null;
   error: string | null;
   run(plan: PublishPlan): Promise<void>;
@@ -73,7 +74,8 @@ interface PublishState {
   reset(): void;
 }
 
-const LOG_CAP = 300;
+// A long job scrolled its own beginning away at 300.
+const LOG_CAP = 1000;
 
 export const usePublish = create<PublishState>((set, get) => ({
   phase: "idle",
@@ -88,7 +90,7 @@ export const usePublish = create<PublishState>((set, get) => ({
         taskId: PUBLISH_TASK,
         prompt: publishPrompt(plan),
         capabilities: PUBLISH_JOB_CAPABILITIES,
-        onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), event.kind === "tool" ? `· ${event.text}` : event.text] }),
+        onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), { kind: event.kind, text: event.kind === "tool" ? `· ${event.text}` : event.text }] }),
       });
       if (outcome.cancelled) {
         set({ phase: "idle", error: null });

@@ -175,7 +175,7 @@ function readClaudeLine(text: string): AgentJobEvent[] {
   if (event.type === "assistant") {
     const message = event.message as { content?: { type?: string; text?: string; name?: string; input?: unknown }[] } | undefined;
     return (message?.content ?? []).flatMap((block): AgentJobEvent[] => {
-      if (block.type === "text") return line("text", block.text ?? "");
+      if (block.type === "text") return line("markdown", block.text ?? "");
       if (block.type === "tool_use") return [{ kind: "tool", text: `${block.name ?? "tool"} ${summariseInput(block.input)}`.trim() }];
       return [];
     });

@@ -17,7 +17,13 @@ import { openRepoRoot } from "./registryCli";
 export const AGENT_JOB_TIMEOUT_MS = 900_000;
 
 export interface AgentJobEvent {
-  kind: "system" | "text" | "tool" | "error";
+  /**
+   * `markdown` is prose an agent wrote as markdown — only Claude Code reports
+   * its turns structurally enough to know. Everything else is `text`: a line of
+   * output, to be shown as the line it is. Rendering those as markdown reflows
+   * them into one paragraph and turns indented JSON into a wall of code blocks.
+   */
+  kind: "system" | "text" | "markdown" | "tool" | "error";
   text: string;
 }
 

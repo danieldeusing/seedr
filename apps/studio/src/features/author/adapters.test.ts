@@ -107,11 +107,43 @@ describe("adapters", () => {
     expect(codex.readOutcome(outcome({ stdout: "just text" })).text).toBe("just text");
   });
 
-  test("a tool call is named by its most telling argument", () => {
+  test("opencode: its own events, tool calls named and results dropped", () => {
+    const opencode = adapterFor("opencode");
+    // Real envelopes, from running `opencode run --format json`.
+    expect(opencode.readLine('{"type":"text","part":{"type":"text","text":"It printed hello."}}')).toEqual([{ kind: "markdown", text: "It printed hello." }]);
+    expect(
+      opencode.readLine('{"type":"tool_use","part":{"type":"tool","tool":"bash","state":{"status":"completed","input":{"command":"echo hello"},"output":"hello\\n","title":"echo hello"}}}')
+    ).toEqual([{ kind: "tool", text: "bash echo hello" }]);
+    // The step envelopes, and the command's own output, are not shown.
+    expect(opencode.readLine('{"type":"step_start","part":{"type":"step-start"}}')).toEqual([]);
+    expect(opencode.readLine('{"type":"step_finish","part":{"type":"step-finish","tokens":{"total":12463}}}')).toEqual([]);
+    expect(opencode.job("p", ["shell"], REPO).args).toEqual(expect.arrayContaining(["--format", "json"]));
+    expect(opencode.draft("p", REPO).args).not.toContain("--format");
+  });
+
+  test("copilot: the turn, not the token-by-token deltas", () => {
+    const copilot = adapterFor("copilot");
+    // Almost every line it prints is `ephemeral` — a fragment of a tool
+    // argument at a time — and none of them belong on screen.
+    expect(copilot.readLine('{"type":"assistant.tool_call_delta","data":{"toolName":"bash","inputDelta":"{\\"comm"},"ephemeral":true}')).toEqual([]);
+    expect(copilot.readLine('{"type":"assistant.message","data":{"content":"It printed \\"hello\\"."}}')).toEqual([{ kind: "markdown", text: 'It printed "hello".' }]);
+    expect(copilot.readLine('{"type":"tool.execution_start","data":{"toolName":"bash","arguments":{"command":"echo hello"}}}')).toEqual([{ kind: "tool", text: "bash echo hello" }]);
+    // The result is the part that fills a screen.
+    expect(copilot.readLine('{"type":"tool.execution_complete","data":{"toolName":"bash","result":{"content":"hello"}}}')).toEqual([]);
+    // A turn that only asked for a tool says nothing.
+    expect(copilot.readLine('{"type":"assistant.message","data":{"content":""}}')).toEqual([]);
+    expect(copilot.job("p", ["shell"], REPO).args).toEqual(expect.arrayContaining(["--output-format", "json"]));
+    expect(copilot.draft("p", REPO).args).not.toContain("--output-format");
+  });
+
+  test("a tool call is one short line: the call, never its contents", () => {
     expect(summariseInput({ command: "git status" })).toBe("git status");
     expect(summariseInput({ nothing: 1 })).toBe("");
     expect(summariseInput(null)).toBe("");
-    expect(summariseInput({ path: "x".repeat(200) })).toHaveLength(118);
+    // Long arguments are cut. A log of whole file bodies is not a log.
+    expect(summariseInput({ path: "x".repeat(200) })).toHaveLength(72);
+    // And a heredoc stays one line, however many the command had.
+    expect(summariseInput({ command: "cat <<EOF\nline one\nline two\nEOF" })).toBe("cat <<EOF line one line two EOF");
   });
 });
 

@@ -152,14 +152,29 @@ export function jsonCandidates(text: string): string[] {
 }
 
 /** The one field of a tool call worth a log line — a path, a command, a URL. */
+/**
+ * A tool call is one short line: what was called, and just enough of the
+ * argument to tell two calls apart. Never the contents.
+ *
+ * The agents will hand over the whole of it if allowed — a command with its
+ * entire output, a file with its entire body — and a log of those is not a log
+ * anyone reads. Newlines are collapsed too, so a heredoc stays one line.
+ */
+const TOOL_LINE = 72;
+
 export function summariseInput(input: unknown): string {
   if (typeof input !== "object" || input === null) return "";
   const record = input as Record<string, unknown>;
   for (const key of ["command", "file_path", "path", "url", "pattern", "skill", "filePath"]) {
     const value = record[key];
-    if (typeof value === "string") return value.length > 120 ? `${value.slice(0, 117)}…` : value;
+    if (typeof value === "string") return shorten(value);
   }
   return "";
+}
+
+export function shorten(value: string): string {
+  const oneLine = value.replace(/\s+/g, " ").trim();
+  return oneLine.length > TOOL_LINE ? `${oneLine.slice(0, TOOL_LINE - 1)}…` : oneLine;
 }
 
 /**
@@ -253,7 +268,7 @@ function readCodexLine(text: string): AgentJobEvent[] {
   if (!event) return line("text", text);
   const item = event.item as { type?: string; command?: string; status?: string; text?: string } | undefined;
   if (event.type === "item.started" && item?.type === "command_execution") {
-    return [{ kind: "tool", text: item.command ?? "command" }];
+    return [{ kind: "tool", text: shorten(item.command ?? "command") }];
   }
   if (event.type === "item.completed" && item?.type === "agent_message") return line("markdown", item.text ?? "");
   // Everything else — the turn and thread envelopes, and a command's completion
@@ -263,13 +278,56 @@ function readCodexLine(text: string): AgentJobEvent[] {
 
 /** The last thing codex said, whether it was asked for JSONL or not. */
 function readCodexOutcome(outcome: RunOutcome): { ok: boolean; text: string; denials: string[] } {
-  const said = outcome.stdout
+  return lastSaid(outcome, (event) => {
+    const item = event.item as { type?: string; text?: string } | undefined;
+    return event.type === "item.completed" && item?.type === "agent_message" ? (item.text ?? null) : null;
+  });
+}
+
+/**
+ * opencode's `--format json`: `{"type":"text","part":{"text":…}}` for what it
+ * says and `{"type":"tool_use","part":{"tool":…,"state":{"title":…}}}` for what
+ * it runs, wrapped in `step_start`/`step_finish` that say nothing. Its `title`
+ * is already the short form of the call, which is exactly what a log wants.
+ */
+function readOpencodeLine(text: string): AgentJobEvent[] {
+  const event = parseJson(text);
+  if (!event) return line("text", text);
+  const part = event.part as { type?: string; text?: string; tool?: string; state?: { title?: string; input?: unknown } } | undefined;
+  if (event.type === "text") return line("markdown", part?.text ?? "");
+  if (event.type === "tool_use") {
+    const detail = part?.state?.title ?? summariseInput(part?.state?.input);
+    return [{ kind: "tool", text: shorten(`${part?.tool ?? "tool"} ${detail}`) }];
+  }
+  return [];
+}
+
+/**
+ * Copilot's `--output-format json`. Almost all of it is `ephemeral` — a token
+ * of a tool argument at a time — and dropping those leaves the turn: an
+ * `assistant.message` carrying what it said, and `tool.execution_start`
+ * carrying what it called. `tool.execution_complete` is the result, which is
+ * the part that fills a screen, so it is not shown.
+ */
+function readCopilotLine(text: string): AgentJobEvent[] {
+  const event = parseJson(text);
+  if (!event) return line("text", text);
+  if (event.ephemeral === true) return [];
+  const data = event.data as { content?: string; toolName?: string; arguments?: unknown } | undefined;
+  if (event.type === "assistant.message") return line("markdown", data?.content ?? "");
+  if (event.type === "tool.execution_start") return [{ kind: "tool", text: shorten(`${data?.toolName ?? "tool"} ${summariseInput(data?.arguments)}`) }];
+  return [];
+}
+
+/** The last thing an agent said, out of its JSONL — or the plain text it printed. */
+function lastSaid(outcome: RunOutcome, said: (event: Record<string, unknown>) => string | null): { ok: boolean; text: string; denials: string[] } {
+  const messages = outcome.stdout
     .split("\n")
     .map(parseJson)
-    .filter((event) => event?.type === "item.completed" && (event.item as { type?: string } | undefined)?.type === "agent_message")
-    .map((event) => String((event?.item as { text?: string }).text ?? ""));
-  if (said.length === 0) return readPlainOutcome(outcome);
-  return { ok: outcome.status === "ok", text: said.join("\n"), denials: [] };
+    .flatMap((event) => (event ? [said(event)] : []))
+    .filter((value): value is string => value !== null && value !== "");
+  if (messages.length === 0) return readPlainOutcome(outcome);
+  return { ok: outcome.status === "ok", text: messages.join("\n"), denials: [] };
 }
 
 export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
@@ -334,13 +392,18 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
         ...(hasOpenShell(capabilities)
           ? ["--allow-all-tools", "--deny-tool", `shell(${DENIED_SHELL}:*)`]
           : spell(capabilities, COPILOT_TOOLS, (prefix) => `shell(${prefix}:*)`, "shell").flatMap((tool) => ["--allow-tool", tool])),
+        "--output-format",
+        "json",
         "-p",
         prompt,
       ],
     }),
     schemaEnforced: false,
-    readLine: (text) => line("text", text),
-    readOutcome: readPlainOutcome,
+    readLine: readCopilotLine,
+    readOutcome: (outcome) =>
+      lastSaid(outcome, (event) =>
+        event.type === "assistant.message" && event.ephemeral !== true ? ((event.data as { content?: string } | undefined)?.content ?? null) : null
+      ),
   },
 
   // `codex exec` reads the prompt from stdin when the argument is `-`, and its
@@ -377,10 +440,12 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
     // itself — "permission requested: external_directory (/tmp/*);
     // auto-rejecting". There is nobody to ask in a `-p` run, so it must be
     // settled up front.
-    job: (prompt, _capabilities, cwd) => ({ args: ["run", "--auto", ...runDir(cwd), prompt] }),
+    // `--format json` only on a job: a draft's answer is read out of plain text.
+    job: (prompt, _capabilities, cwd) => ({ args: ["run", "--auto", "--format", "json", ...runDir(cwd), prompt] }),
     schemaEnforced: false,
-    readLine: (text) => line("text", text),
-    readOutcome: readPlainOutcome,
+    readLine: readOpencodeLine,
+    readOutcome: (outcome) =>
+      lastSaid(outcome, (event) => (event.type === "text" ? ((event.part as { text?: string } | undefined)?.text ?? null) : null)),
   },
 };
 

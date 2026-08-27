@@ -69,6 +69,14 @@ const CHECKS: Record<string, (op: Envelope) => void> = {
   "set-labels": (op) => {
     if (!Array.isArray(op.labels)) fail('"labels" must be an array');
   },
+  "adopt-source": (op) => {
+    requireItemKey(op);
+    requireString(op, "expectedHash");
+  },
+  "resync-source": (op) => {
+    requireItemKey(op);
+    requireString(op, "expectedHash");
+  },
 };
 
 /**

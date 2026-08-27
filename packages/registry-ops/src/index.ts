@@ -5,6 +5,7 @@ export * from "./labels.js";
 export * from "./fsPaths.js";
 export * from "./validate.js";
 export * from "./hash.js";
+export * from "./localSource.js";
 export * from "./read.js";
 export * from "./compile.js";
 export * from "./identity.js";

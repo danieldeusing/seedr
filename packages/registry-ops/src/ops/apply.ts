@@ -2,6 +2,7 @@ import { addLocal } from "./addLocal.js";
 import { addRemote } from "./addRemote.js";
 import { remove } from "./remove.js";
 import { setLabels } from "./setLabels.js";
+import { adoptSource, resyncSource } from "./source.js";
 import type { OpResult, RegistryOp } from "./types.js";
 import { update } from "./update.js";
 
@@ -18,5 +19,9 @@ export function applyOp(registryDir: string, op: RegistryOp): OpResult {
       return remove(registryDir, op);
     case "set-labels":
       return setLabels(registryDir, op);
+    case "adopt-source":
+      return adoptSource(registryDir, op);
+    case "resync-source":
+      return resyncSource(registryDir, op);
   }
 }

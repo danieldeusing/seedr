@@ -10,7 +10,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ALL_TYPES, MIN_LONG_DESCRIPTION_WORDS, formatErrors, gateErrors, typeDirName, validateItem } from "@seedr/registry-ops";
+import { ALL_TYPES, MIN_LONG_DESCRIPTION_WORDS, formatErrors, gateErrors, resolveRegistryDir, typeDirName, validateItem } from "@seedr/registry-ops";
 
 export interface GateReport {
   errors: string[];
@@ -47,7 +47,12 @@ export function checkDescriptions(registryDir: string): GateReport {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const registryDir = process.argv[2] ? resolve(process.argv[2]) : resolve(dirname(fileURLToPath(import.meta.url)), "..", "registry");
+  // Not a hardcoded `registry`: a fork names its own directory in
+  // seedr.config.json, and that directory *replaces* this one. Hardcoded, the
+  // gate passed on upstream's items — which are already fine — and never looked
+  // at the fork's own, which are the ones it exists to check.
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const registryDir = process.argv[2] ? resolve(process.argv[2]) : resolveRegistryDir(repoRoot);
   const { errors, checked } = checkDescriptions(registryDir);
   for (const error of errors) console.error(`ERROR: ${error}`);
   if (errors.length > 0) {

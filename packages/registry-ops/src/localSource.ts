@@ -53,3 +53,40 @@ export function sourceDigest(path: string): string | null {
   }
   return digest.digest("hex");
 }
+
+/**
+ * The newest modification time anywhere under `path`, or 0 when it is gone.
+ *
+ * A gate in front of `sourceDigest`, which costs a `git check-ignore` — one
+ * process spawn, measured at 58 ms, against 0.18 ms for the hashing it guards.
+ * Walking a hundred sources that way took six seconds; stat-ing them takes
+ * milliseconds, so a source that has not been touched since it was copied is
+ * never hashed at all.
+ *
+ * mtime is a filter, never the answer: a touched-but-unchanged file falls
+ * through to the digest, which then correctly reports no change.
+ */
+export function newestMtimeMs(path: string): number {
+  let stat;
+  try {
+    stat = statSync(path);
+  } catch {
+    return 0;
+  }
+  if (!stat.isDirectory()) return stat.mtimeMs;
+  let newest = stat.mtimeMs;
+  const walk = (current: string) => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) continue;
+      const full = join(current, entry.name);
+      try {
+        newest = Math.max(newest, statSync(full).mtimeMs);
+      } catch {
+        continue;
+      }
+      if (entry.isDirectory()) walk(full);
+    }
+  };
+  walk(path);
+  return newest;
+}

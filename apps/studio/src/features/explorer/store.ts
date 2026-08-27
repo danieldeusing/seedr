@@ -15,6 +15,9 @@ import { usePrePrompts } from "@/features/settings/prePrompts";
  * project: its items are credited to someone else, and a pre-prompt naming a
  * skill is only right where that skill exists.
  */
+/** Guards `checkSources` against overlapping runs; module-level, not state, because nothing renders it. */
+let checking = false;
+
 const openCheckout = (repo: RepoInfo): void => {
   setOpsCheckout({ root: repo.root, hasOps: repo.hasOps });
   useAuthorSettings.getState().forRepo(repo.root);
@@ -148,7 +151,11 @@ export const useStudio = create<StudioState>((set, get) => ({
   async checkSources() {
     // Nothing watches the source folders: they are outside the checkout, and the
     // host refuses every path that is. So this is asked for, not pushed.
-    if (!get().repo) return;
+    //
+    // One at a time: focus fires on every alt-tab, and a second pass would only
+    // re-read what the first is already reading.
+    if (!get().repo || checking) return;
+    checking = true;
     try {
       const statuses = await allSourceStatuses();
       set({ sourceCheckError: null, sourceStates: Object.fromEntries(statuses.map((status) => [`${status.type}/${status.slug}`, status.state])) });
@@ -157,6 +164,8 @@ export const useStudio = create<StudioState>((set, get) => ({
       // a checkout whose CLI predates the batch command answers "unknown type",
       // and an empty marker column looks exactly like nothing being out of sync.
       set({ sourceStates: {}, sourceCheckError: (error as Error).message });
+    } finally {
+      checking = false;
     }
   },
 

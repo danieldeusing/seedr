@@ -265,16 +265,6 @@ function mismatchAgainst(files: string[], path: string, type: ComponentType): Co
   return looks && looks !== type ? looks : null;
 }
 
-const slugFromPath = (path: string): string => {
-  const segments = path.split(/[\\/]/).filter(Boolean);
-  return (segments[segments.length - 1] ?? "")
-    .replace(/\.[^.]+$/, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^[^a-z0-9]+/, "");
-};
-
-const titleFromSlug = (slug: string): string => slug.split(/[-_.]/).filter(Boolean).map((w) => w[0]!.toUpperCase() + w.slice(1)).join(" ");
 
 export const emptyForm = (): AddLocalForm => ({
   sourceKind: "folder",
@@ -431,10 +421,11 @@ export const useAuthor = create<AuthorState>((set, get) => ({
   takeSource(file) {
     const folder = get().pendingSource;
     if (!folder) return;
+    // Only the path. The slug and the name are not guessed from the folder: a
+    // container like `.claude/skills` gave the slug `skills`, which names nothing,
+    // and a guess in a field you must get right reads as an answer.
     const path = file === null ? folder : `${folder}/${file}`;
-    const { form } = get();
-    const slug = form.slug || slugFromPath(path);
-    set({ form: { ...form, sourcePath: path, slug, name: form.name || titleFromSlug(slug) }, sourceChoices: [] });
+    set({ form: { ...get().form, sourcePath: path }, sourceChoices: [] });
   },
 
   async prepare() {

@@ -69,7 +69,9 @@ describe("useAuthor", () => {
 
     expect(asked).toEqual(["folder"]);
     expect(useAuthor.getState().sourceChoices).toEqual([]);
-    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/fill-pdf_forms", slug: "fill-pdf_forms", name: "Fill Pdf Forms" });
+    // The path, and only the path: `.claude/skills` gave the slug `skills`, which
+    // names nothing, so nothing is guessed from a folder name any more.
+    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/fill-pdf_forms", slug: "", name: "" });
   });
 
   test("a folder of several capabilities asks which one, and takes that file", async () => {
@@ -90,7 +92,7 @@ describe("useAuthor", () => {
 
     useAuthor.getState().takeSource("configr-design.md");
 
-    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/configr-design.md", slug: "configr-design", name: "Configr Design" });
+    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/configr-design.md", slug: "", name: "" });
     expect(useAuthor.getState().sourceChoices).toEqual([]);
   });
 

@@ -35,7 +35,10 @@ describe("AuthorForm", () => {
     expect(screen.getByLabelText("author")).toHaveValue("Acme");
 
     await userEvent.click(screen.getByRole("button", { name: "choose source" }));
-    expect(screen.getByLabelText("slug")).toHaveValue("pdf");
+    // The slug and the name are not guessed from the folder — they are typed.
+    expect(screen.getByLabelText("slug")).toHaveValue("");
+    await userEvent.type(screen.getByLabelText("slug"), "pdf");
+    await userEvent.type(screen.getByLabelText("name"), "PDF");
 
     // The descriptions are the agent's to write — the form does not ask for them.
     expect(screen.queryByLabelText("description")).not.toBeInTheDocument();
@@ -124,6 +127,8 @@ describe("AuthorForm — where the capability comes from", () => {
     render(<AuthorForm onAdded={() => {}} />);
     await screen.findByText("2.1.226");
     await userEvent.click(screen.getByRole("button", { name: "choose source" }));
+    await userEvent.type(screen.getByLabelText("slug"), "pdf");
+    await userEvent.type(screen.getByLabelText("name"), "PDF");
 
     expect(screen.getByText(/The agent writes the description and the TL;DR/)).toBeInTheDocument();
     expect(screen.queryByText(/is missing 'description'/)).not.toBeInTheDocument();
@@ -204,6 +209,8 @@ describe("AuthorForm — content that does not match the type", () => {
     await userEvent.click(await screen.findByRole("button", { name: "the whole folder" }));
     await userEvent.click(screen.getByRole("button", { name: "type" }));
     await userEvent.click(await screen.findByRole("option", { name: "hook" }));
+    await userEvent.type(screen.getByLabelText("slug"), "guard");
+    await userEvent.type(screen.getByLabelText("name"), "Guard");
   }
 
   test("names the mismatch and marks the type as the field that is wrong", async () => {

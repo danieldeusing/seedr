@@ -75,6 +75,38 @@ describe("adapters", () => {
     expect(codex.readOutcome(outcome({ status: "failed", exitCode: 1, stderr: "nope" }))).toEqual({ ok: false, text: "nope", denials: [] });
   });
 
+  test("codex: its own events, so a command and a sentence are not the same thing", () => {
+    const codex = adapterFor("codex");
+    // Real envelopes, from running `codex exec --json`.
+    expect(codex.readLine('{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"It printed hello"}}')).toEqual([
+      { kind: "markdown", text: "It printed hello" },
+    ]);
+    expect(codex.readLine('{"type":"item.started","item":{"type":"command_execution","command":"/bin/zsh -lc \'echo hello\'","status":"in_progress"}}')).toEqual([
+      { kind: "tool", text: "/bin/zsh -lc 'echo hello'" },
+    ]);
+    // The envelopes around a turn say nothing a reader needs.
+    expect(codex.readLine('{"type":"turn.started"}')).toEqual([]);
+    expect(codex.readLine('{"type":"thread.started","thread_id":"x"}')).toEqual([]);
+    // Its stderr is not JSON, and a broken MCP server writes real failures there.
+    expect(codex.readLine("ERROR rmcp::transport::worker: worker quit")).toEqual([{ kind: "text", text: "ERROR rmcp::transport::worker: worker quit" }]);
+
+    // `--json` is asked for only where the reader expects it.
+    expect(codex.job("p", ["edit"], REPO).args).toContain("--json");
+    expect(codex.draft("p", REPO).args).not.toContain("--json");
+  });
+
+  test("codex: the verdict is the last thing it said, in either output shape", () => {
+    const codex = adapterFor("codex");
+    const jsonl = [
+      '{"type":"turn.started"}',
+      '{"type":"item.completed","item":{"type":"agent_message","text":"ADDED skill/pdf"}}',
+      '{"type":"turn.completed","usage":{"input_tokens":1}}',
+    ].join("\n");
+    expect(codex.readOutcome(outcome({ stdout: jsonl }))).toEqual({ ok: true, text: "ADDED skill/pdf", denials: [] });
+    // A draft still answers as plain text, and is still read that way.
+    expect(codex.readOutcome(outcome({ stdout: "just text" })).text).toBe("just text");
+  });
+
   test("a tool call is named by its most telling argument", () => {
     expect(summariseInput({ command: "git status" })).toBe("git status");
     expect(summariseInput({ nothing: 1 })).toBe("");

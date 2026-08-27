@@ -10,13 +10,20 @@ import { runRegistryOp } from "@/api/registryCli";
  * the registry, not in this machine's settings: everyone working on the checkout
  * sees the same list, and the CLI and the web app read the same file.
  */
-export const LABELS_PATH = "registry/labels.json";
+/**
+ * `registry/labels.json`, or the same file inside whatever `seedr.config.json`
+ * names. Hardcoding `registry/` showed a fork upstream's catalogue instead of
+ * its own — and the page sends back what it is showing, so saving would have
+ * written upstream's list over the fork's.
+ */
+export const labelsPath = (registryDir: string): string => `${registryDir}/labels.json`;
 
 interface LabelsState {
   labels: LabelDefinition[];
   loading: boolean;
   error: string | null;
-  load(): Promise<void>;
+  /** Read the catalogue out of the registry directory this checkout uses. */
+  load(registryDir: string): Promise<void>;
   /** Replaces the catalogue in one transaction. Resolves to an error, or null. */
   save(labels: LabelDefinition[]): Promise<string | null>;
 }
@@ -26,11 +33,12 @@ export const useLabels = create<LabelsState>((set) => ({
   loading: false,
   error: null,
 
-  async load() {
+  async load(registryDir) {
     set({ loading: true, error: null });
     try {
+      const path = labelsPath(registryDir);
       // A checkout from before labels existed simply has none.
-      const raw: unknown = (await fs.pathExists(LABELS_PATH)) ? JSON.parse(await fs.readText(LABELS_PATH)) : { version: 1, labels: [] };
+      const raw: unknown = (await fs.pathExists(path)) ? JSON.parse(await fs.readText(path)) : { version: 1, labels: [] };
       set({ labels: parseLabels(raw), loading: false });
     } catch (error) {
       set({ loading: false, error: (error as Error).message });

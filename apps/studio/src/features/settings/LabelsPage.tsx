@@ -4,6 +4,7 @@ import type { LabelColor, LabelDefinition } from "@seedr/shared";
 import { LABEL_COLORS } from "@seedr/registry-ops/pure";
 import { IconButton } from "@/core/ui/IconButton";
 import { Select } from "@/core/ui/Select";
+import { useStudio } from "@/features/explorer/store";
 import { useLabels } from "./labels";
 
 const input =
@@ -57,12 +58,13 @@ export function LabelsPage() {
   const loading = useLabels((state) => state.loading);
   const error = useLabels((state) => state.error);
   const { load, save } = useLabels.getState();
+  const registryDir = useStudio((state) => state.repo?.registryDir ?? "");
   const [draft, setDraft] = useState<LabelDefinition[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (registryDir) void load(registryDir);
+  }, [load, registryDir]);
 
   useEffect(() => {
     setDraft(stored);

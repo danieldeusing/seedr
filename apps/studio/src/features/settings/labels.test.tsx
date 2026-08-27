@@ -5,6 +5,7 @@ import type { RunRequest } from "@/api/agent";
 import { onCommand } from "@/test/mockIpc";
 import { labelProblems, LabelsPage, slugify } from "./LabelsPage";
 import { LabelRow } from "./LabelRow";
+import { useStudio } from "@/features/explorer/store";
 import { useLabels } from "./labels";
 
 const CATALOGUE = { version: 1, labels: [{ slug: "project-x", name: "Project X", color: "violet" }] };
@@ -24,8 +25,12 @@ function host(catalogue: unknown = CATALOGUE, ops: RunRequest[] = []) {
   return ops;
 }
 
+/** The catalogue belongs to a checkout, so the page needs one open to read it. */
+const OPEN_REPO = { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" };
+
 beforeEach(() => {
   useLabels.setState({ labels: [], loading: false, error: null });
+  useStudio.setState({ repo: OPEN_REPO });
 });
 
 describe("slugify and labelProblems", () => {
@@ -110,5 +115,27 @@ describe("LabelRow", () => {
 
     expect(await screen.findByText(/no labels in this checkout/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "label" })).not.toBeInTheDocument();
+  });
+});
+
+describe("the catalogue belongs to the open checkout", () => {
+  test("reads it from the registry seedr.config.json names, not `registry/`", async () => {
+    // A fork keeps its own items in `registry-internal/` and carries upstream's
+    // `registry/` untouched. Reading `registry/labels.json` regardless showed it
+    // upstream's catalogue — and the page sends back what it is showing, so
+    // saving would have written upstream's list over the fork's own.
+    const read: string[] = [];
+    onCommand("path_exists", (args) => {
+      read.push((args as { rel: string }).rel);
+      return true;
+    });
+    onCommand("read_text", () => JSON.stringify({ version: 1, labels: [{ slug: "estate", name: "Estate", color: "green" }] }));
+    useStudio.setState({ repo: { ...OPEN_REPO, root: "/fork", registryDir: "registry-internal" } });
+
+    render(<LabelsPage />);
+
+    expect(await screen.findByDisplayValue("Estate")).toBeInTheDocument();
+    expect(read).toContain("registry-internal/labels.json");
+    expect(read).not.toContain("registry/labels.json");
   });
 });

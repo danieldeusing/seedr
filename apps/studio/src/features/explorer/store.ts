@@ -3,12 +3,23 @@ import type { ComponentType } from "@seedr/shared";
 import { fs } from "@/api/fs";
 import { defaultRepo, getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
 import { setOpsCheckout } from "@/api/registryCli";
+import { useAuthorSettings } from "@/features/settings/authorSettings";
+import { usePrePrompts } from "@/features/settings/prePrompts";
 
 /**
- * Tell the api layer which checkout operations act on, and whether it can run
- * its own CLI. A checkout without one borrows the default checkout's.
+ * Tell the rest of the app which checkout is open: which one operations act on
+ * and whether it can run its own CLI (a checkout without one borrows the default
+ * checkout's), and which one the per-repository settings belong to.
+ *
+ * Author and pre-prompts are per-repository because a fork is a different
+ * project: its items are credited to someone else, and a pre-prompt naming a
+ * skill is only right where that skill exists.
  */
-const openCheckout = (repo: RepoInfo): void => setOpsCheckout({ root: repo.root, hasOps: repo.hasOps });
+const openCheckout = (repo: RepoInfo): void => {
+  setOpsCheckout({ root: repo.root, hasOps: repo.hasOps });
+  useAuthorSettings.getState().forRepo(repo.root);
+  usePrePrompts.getState().forRepo(repo.root);
+};
 
 /**
  * The checkout whose operations CLI this one borrows, when it has none of its

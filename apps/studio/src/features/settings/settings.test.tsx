@@ -8,6 +8,7 @@ import { AgentSelect } from "./AgentSelect";
 import { AGENT_LABELS } from "@seedr/registry-ops/pure";
 import { AGENT_PROGRAMS, NO_TOOL_DENIAL, useAgentSettings } from "./agentSettings";
 import { emptyPrePrompts, prePromptFor, usePrePrompts } from "./prePrompts";
+import { configuredAuthor, useAuthorSettings } from "./authorSettings";
 import { useStudio } from "@/features/explorer/store";
 import { SettingsPanel } from "./SettingsPanel";
 import { SignInBanner } from "./SignInBanner";
@@ -129,6 +130,55 @@ describe("pre-prompts settings", () => {
   });
 });
 
+/*
+ * A fork is a different project: its items are credited to someone else, and a
+ * pre-prompt naming a skill is only right where that skill exists. One key each
+ * meant opening a fork showed whatever was configured last, and editing it there
+ * changed the other checkout's settings too.
+ */
+describe("settings that belong to a checkout, not to the machine", () => {
+  test("pre-prompts follow the open checkout, and one does not overwrite the other", () => {
+    const { forRepo, set } = usePrePrompts.getState();
+
+    forRepo("/repo/seedr");
+    set("skill", "add", "use skill-creator");
+    expect(prePromptFor("skill", "add")).toBe("use skill-creator");
+
+    forRepo("/repo/fork");
+    expect(prePromptFor("skill", "add")).toBe("");
+    set("skill", "add", "use the estate skill");
+
+    forRepo("/repo/seedr");
+    expect(prePromptFor("skill", "add")).toBe("use skill-creator");
+    forRepo("/repo/fork");
+    expect(prePromptFor("skill", "add")).toBe("use the estate skill");
+  });
+
+  test("the author follows the open checkout", () => {
+    const { forRepo, set } = useAuthorSettings.getState();
+
+    forRepo("/repo/seedr");
+    set("name", "Daniel");
+    forRepo("/repo/fork");
+    expect(configuredAuthor().name).toBe("");
+
+    forRepo("/repo/seedr");
+    expect(configuredAuthor().name).toBe("Daniel");
+  });
+
+  test("a checkout with none of its own falls back to what was configured before this was per-repository", () => {
+    // Settings written under the single old key are not lost; nothing writes it
+    // again, so each checkout gets its own the first time it is edited.
+    localStorage.setItem("studio-author", JSON.stringify({ name: "Legacy", url: "https://example.test" }));
+    useAuthorSettings.getState().forRepo("/repo/never-configured");
+    expect(configuredAuthor()).toEqual({ name: "Legacy", url: "https://example.test" });
+
+    useAuthorSettings.getState().set("name", "Its Own");
+    expect(JSON.parse(localStorage.getItem("studio-author") ?? "{}").name).toBe("Legacy");
+    expect(JSON.parse(localStorage.getItem("studio-author::/repo/never-configured") ?? "{}").name).toBe("Its Own");
+  });
+});
+
 describe("AgentSelect", () => {
   test("lists every agent but lets only the certified ones be chosen", async () => {
     const onChange = vi.fn();
@@ -186,7 +236,7 @@ describe("default checkout settings", () => {
     render(<SettingsPanel />);
     await userEvent.click(screen.getByRole("button", { name: /checkout/ }));
 
-    const field = await screen.findByLabelText("folder");
+    const field = await screen.findByLabelText("home folder");
     await waitFor(() => expect(field).toHaveValue("/Users/me/Work/seedr"));
     expect(screen.getByRole("button", { name: "save the default checkout" })).toBeDisabled();
 
@@ -208,7 +258,7 @@ describe("default checkout settings", () => {
     render(<SettingsPanel />);
     await userEvent.click(screen.getByRole("button", { name: /checkout/ }));
 
-    const field = await screen.findByLabelText("folder");
+    const field = await screen.findByLabelText("home folder");
     await waitFor(() => expect(field).toHaveValue(OPEN.root));
 
     await userEvent.clear(field);

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Select } from "@/core/ui/Select";
+import { useStudio } from "@/features/explorer/store";
 import { useLabels } from "./labels";
 
 /**
@@ -10,10 +11,11 @@ import { useLabels } from "./labels";
 export function LabelRow({ value, onChange, disabled, id }: { value: string; onChange(label: string): void; disabled: boolean; id: string }) {
   const labels = useLabels((state) => state.labels);
   const load = useLabels((state) => state.load);
+  const registryDir = useStudio((state) => state.repo?.registryDir ?? "");
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (registryDir) void load(registryDir);
+  }, [load, registryDir]);
 
   return (
     <div className="field-row">

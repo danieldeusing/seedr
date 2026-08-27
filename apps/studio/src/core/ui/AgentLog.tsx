@@ -23,7 +23,18 @@ const MODE_LABELS: Record<LogMode, string> = {
   raw: "raw text",
 };
 
-type Block = { markdown: boolean; text: string };
+type Block = { markdown: boolean; text: string; repeats: number };
+
+/**
+ * The same message, however many times it came, is one message.
+ *
+ * A CLI with a broken MCP server reports the failure on every model call — ten
+ * identical auth errors in an eighteen-line log, saying one thing ten times.
+ * The timestamp is what makes them look distinct, so it is not what they are
+ * compared by. Only plain output is collapsed: what an agent says and what it
+ * runs are events, and two identical ones really did happen twice.
+ */
+const withoutTimestamp = (text: string): string => text.replace(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z?\s*/, "");
 
 /**
  * What to render, given the lines and how they are to be read.
@@ -37,11 +48,23 @@ type Block = { markdown: boolean; text: string };
  */
 export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
   const blocks: Block[] = [];
+  const shown = new Map<string, Block>();
   for (const line of lines) {
     const markdown = mode === "raw" ? false : mode === "formatted" || line.kind === "markdown";
+    if (!markdown && line.kind === "text") {
+      const already = shown.get(withoutTimestamp(line.text));
+      if (already) {
+        already.repeats += 1;
+        continue;
+      }
+      const block = { markdown: false, text: line.text, repeats: 1 };
+      shown.set(withoutTimestamp(line.text), block);
+      blocks.push(block);
+      continue;
+    }
     const last = blocks.at(-1);
     if (markdown && last?.markdown) last.text += `\n${line.text}`;
-    else blocks.push({ markdown, text: line.text });
+    else blocks.push({ markdown, text: line.text, repeats: 1 });
   }
   return blocks;
 }
@@ -50,13 +73,16 @@ export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
  * One block, rendered once. Only the newest changes as output arrives, so
  * everything above it must be allowed to stay exactly as it is.
  */
-const LogBlock = memo(function LogBlock({ markdown, text }: Block) {
+const LogBlock = memo(function LogBlock({ markdown, text, repeats }: Block) {
   return markdown ? (
     <div className="formatted-preview text-neutral-300">
       <SafeMarkdown>{text}</SafeMarkdown>
     </div>
   ) : (
-    <pre className="whitespace-pre-wrap text-neutral-400">{text}</pre>
+    <pre className="whitespace-pre-wrap text-neutral-400">
+      {text}
+      {repeats > 1 && <span className="text-neutral-500"> ×{repeats}</span>}
+    </pre>
   );
 });
 
@@ -129,7 +155,7 @@ export function AgentLog({ lines, fill = false }: { lines: LogLine[]; fill?: boo
         aria-label="agent output"
       >
         {blocks.map((block, index) => (
-          <LogBlock key={index} markdown={block.markdown} text={block.text} />
+          <LogBlock key={index} markdown={block.markdown} text={block.text} repeats={block.repeats} />
         ))}
       </div>
       {!fill && <PaneResizeHandle axis="y" label="resize agent output" onResize={(delta) => setHeight((current: number) => Math.max(SHORTEST, current + delta))} />}

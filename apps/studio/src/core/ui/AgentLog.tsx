@@ -30,9 +30,17 @@ const MODE_LABELS: Record<LogMode, string> = {
  * things before it says anything — and a log that lists them one under another
  * buries the sentence that follows. Grouped, they are one line until opened.
  */
+/** One row inside a group: what it was, and how many times it came. */
+type Entry = { text: string; detail?: string; repeats: number };
+
 type Block =
-  | { calls: LogLine[]; markdown?: never; text?: never; repeats?: never }
-  | { calls?: never; markdown: boolean; text: string; repeats: number };
+  | { group: "tool" | "error"; entries: Entry[]; markdown?: never; text?: never; repeats?: never }
+  | { group?: never; entries?: never; markdown: boolean; text: string; repeats: number };
+
+const GROUP_LABEL: Record<"tool" | "error", (count: number) => string> = {
+  tool: (count) => `Ran ${count} ${count === 1 ? "command" : "commands"}`,
+  error: (count) => `${count} ${count === 1 ? "error" : "errors"}`,
+};
 
 /**
  * The same message, however many times it came, is one message.
@@ -58,11 +66,26 @@ const withoutTimestamp = (text: string): string => text.replace(/^\d{4}-\d{2}-\d
 export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
   const blocks: Block[] = [];
   const shown = new Map<string, Block>();
+  const grouped = new Map<string, Entry>();
   for (const line of lines) {
-    if (line.kind === "tool" && mode !== "raw") {
+    // Calls and the runtime's own errors both gather: an agent looks at six
+    // things before it says anything, and a CLI whose MCP server is broken logs
+    // the same failure on every model call. Either way the sentence that
+    // follows should not be buried under them.
+    if ((line.kind === "tool" || line.kind === "error") && mode !== "raw") {
+      const key = `${withoutTimestamp(line.text)}:${line.detail ?? ""}`;
+      const already = line.kind === "error" ? grouped.get(key) : undefined;
+      if (already) {
+        already.repeats += 1;
+        continue;
+      }
+      const entry: Entry = { text: line.text, detail: line.detail, repeats: 1 };
+      // Only an error is worth counting instead of repeating; two identical
+      // calls are two things the agent did.
+      if (line.kind === "error") grouped.set(key, entry);
       const last = blocks.at(-1);
-      if (last?.calls) last.calls.push(line);
-      else blocks.push({ calls: [line] });
+      if (last?.group === line.kind) last.entries.push(entry);
+      else blocks.push({ group: line.kind, entries: [entry] });
       continue;
     }
     const markdown = mode === "raw" ? false : mode === "formatted" || line.kind === "markdown";
@@ -88,19 +111,21 @@ export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
  * One block, rendered once. Only the newest changes as output arrives, so
  * everything above it must be allowed to stay exactly as it is.
  */
-/** A run of calls: how many, and which, once opened. */
-const CallGroup = memo(function CallGroup({ calls }: { calls: LogLine[] }) {
+/** A run of calls, or of runtime errors: how many, and which, once opened. */
+const Group = memo(function Group({ group, entries }: { group: "tool" | "error"; entries: Entry[] }) {
+  const total = entries.reduce((sum, entry) => sum + entry.repeats, 0);
   return (
     <details className="my-1">
-      <summary className="cursor-pointer list-none text-neutral-500 transition-colors hover:text-neutral-300">
-        <span className="mr-1 inline-block transition-transform">▸</span>
-        Ran {calls.length} {calls.length === 1 ? "command" : "commands"}
+      <summary className={`cursor-pointer list-none transition-colors hover:text-neutral-300 ${group === "error" ? "text-destructive/80" : "text-neutral-500"}`}>
+        <span className="mr-1 inline-block">▸</span>
+        {GROUP_LABEL[group](total)}
       </summary>
       <ul className="mt-1 ml-4 space-y-0.5">
-        {calls.map((call, index) => (
+        {entries.map((entry, index) => (
           <li key={index} className="flex gap-2">
-            <span className="shrink-0 text-primary">{call.text}</span>
-            <span className="min-w-0 truncate text-neutral-500">{call.detail}</span>
+            <span className={`shrink-0 ${group === "error" ? "text-destructive/70" : "text-primary"}`}>{entry.text}</span>
+            {entry.detail && <span className="min-w-0 truncate text-neutral-500">{entry.detail}</span>}
+            {entry.repeats > 1 && <span className="shrink-0 text-neutral-600">×{entry.repeats}</span>}
           </li>
         ))}
       </ul>
@@ -190,8 +215,8 @@ export function AgentLog({ lines, fill = false }: { lines: LogLine[]; fill?: boo
         aria-label="agent output"
       >
         {blocks.map((block, index) =>
-          block.calls ? (
-            <CallGroup key={index} calls={block.calls} />
+          block.group ? (
+            <Group key={index} group={block.group} entries={block.entries} />
           ) : (
             <LogBlock key={index} markdown={block.markdown} text={block.text} repeats={block.repeats} />
           )

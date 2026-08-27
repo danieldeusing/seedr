@@ -271,6 +271,29 @@ describe("AgentLog", () => {
     ]);
   });
 
+  test("gathers the runtime's own errors, counted rather than repeated", () => {
+    // Verbatim shape from a run: a broken MCP server logs the same failure on
+    // every model call, in tracing's format on stderr.
+    const mcp = (stamp: string, host: string) => ({
+      kind: "error" as const,
+      text: `${stamp} ERROR rmcp::transport::worker: worker quit with fatal: AuthRequired(${host})`,
+    });
+    const blocks = blocksOf([
+      mcp("2026-08-27T01:51:31.217654Z", "mcp.notion.com"),
+      mcp("2026-08-27T01:51:31.353846Z", "mcp.linear.app"),
+      mcp("2026-08-27T01:52:02.100000Z", "mcp.notion.com"),
+      mcp("2026-08-27T01:52:02.200000Z", "mcp.linear.app"),
+      said("done"),
+    ]);
+
+    // One group of two distinct failures, each seen twice — not four lines
+    // between the reader and the sentence that follows.
+    expect(blocks[0]?.group).toBe("error");
+    expect(blocks[0]?.entries).toHaveLength(2);
+    expect(blocks[0]?.entries?.map((e) => e.repeats)).toEqual([2, 2]);
+    expect(blocks[1]?.markdown).toBe(true);
+  });
+
   test("shows a repeated message once, with how many times it came", () => {
     // Verbatim from a run: a broken MCP server reports the same auth failure on
     // every model call, and ten of an eighteen-line log said one thing.
@@ -295,9 +318,9 @@ describe("AgentLog", () => {
 
     // Two identical calls really did happen twice, so both are kept — they are
     // events, not a repeated message. The prose splits the groups.
-    expect(blocks[0]?.calls).toHaveLength(2);
+    expect(blocks[0]?.entries).toHaveLength(2);
     expect(blocks[1]?.markdown).toBe(true);
-    expect(blocks[2]?.calls).toHaveLength(1);
+    expect(blocks[2]?.entries).toHaveLength(1);
   });
 
   test("leaves every earlier block alone when a line arrives", () => {

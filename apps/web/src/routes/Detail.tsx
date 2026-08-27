@@ -152,6 +152,14 @@ export function Detail() {
       <AuthorLink
         author={item.author!}
       />
+      {item.version && (
+        <>
+          <span className="text-text-dim">·</span>
+          {/* Counts up when the installable content changes, so it means the same
+              thing as the copy someone has already installed. */}
+          <span className="text-text-dim">v{item.version}</span>
+        </>
+      )}
       {item.updatedAt && (
         <>
           <span className="text-text-dim">·</span>

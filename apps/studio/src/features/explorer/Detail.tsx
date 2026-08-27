@@ -22,7 +22,7 @@ interface DetailProps {
   onTest?(): void;
 }
 
-const FIELDS = ["name", "type", "slug", "sourceType", "description", "compatibility", "author", "externalUrl", "targetScope", "pluginType", "updatedAt", "contentHash"] as const;
+const FIELDS = ["name", "type", "slug", "version", "sourceType", "description", "compatibility", "author", "externalUrl", "targetScope", "pluginType", "updatedAt", "contentHash"] as const;
 
 function renderValue(value: unknown): string {
   if (value === undefined || value === null) return "—";

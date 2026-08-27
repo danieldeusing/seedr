@@ -4,8 +4,9 @@ import type { RegistryItem } from "@seedr/shared";
 import { itemDir, itemJsonPath, repoRootOf } from "../fsPaths.js";
 import { forgetLocalSource, localSourceOf, rememberLocalSource } from "../localSources.js";
 import { isFirstParty } from "../sourceTypes.js";
-import { itemStateHash } from "../hash.js";
+import { contentDigestOfDir, itemStateHash } from "../hash.js";
 import { fileTree, readItem } from "../read.js";
+import { bumpPatch } from "../version.js";
 import { assertStructurallyValid } from "../validate.js";
 import { copyDereferenced, removeIgnoredFiles } from "./copy.js";
 import type { AdoptSourceOp, OpResult, ResyncSourceOp } from "./types.js";
@@ -57,6 +58,7 @@ export function resyncSource(registryDir: string, op: ResyncSourceOp): OpResult 
   if (!existsSync(source.path)) throw new Error(`Source path does not exist: ${source.path} — adopt the item instead`);
 
   const dir = itemDir(registryDir, op.type, op.slug);
+  const before = contentDigestOfDir(dir);
   // The whole directory goes, item.json aside: this replaces the content rather
   // than layering a new copy over whatever the last one left behind.
   const json = itemJsonPath(registryDir, op.type, op.slug);
@@ -66,7 +68,14 @@ export function resyncSource(registryDir: string, op: ResyncSourceOp): OpResult 
   else copyDereferenced(source.path, join(dir, basename(source.path)));
   removeIgnoredFiles(dir);
 
-  const resynced: RegistryItem = { ...item, contents: { ...item.contents, files: fileTree(dir) } };
+  // Copying the source across changes the content whenever the source had moved,
+  // which is the only reason to run this.
+  const changed = contentDigestOfDir(dir) !== before;
+  const resynced: RegistryItem = {
+    ...item,
+    ...(changed ? { version: bumpPatch(item.version), updatedAt: new Date().toISOString().slice(0, 10) } : {}),
+    contents: { ...item.contents, files: fileTree(dir) },
+  };
   assertStructurallyValid(resynced, { expectedType: op.type, expectedSlug: op.slug });
   writeFileSync(json, JSON.stringify(resynced, null, 2) + "\n");
   // Both sides are level again, so both digests are noted anew.

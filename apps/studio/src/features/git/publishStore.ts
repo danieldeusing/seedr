@@ -30,6 +30,10 @@ const RULES = [
   "Never cherry-pick between branches. To put a commit on another branch, check that branch out and merge the source branch into it, so the SHA stays the same.",
   "Never amend or force-push a commit that is already pushed; add a new commit instead.",
   "Pull before pushing, and push each target branch only after its merge is clean.",
+  // The panel marks a branch with no upstream `·new` and its hover says one will
+  // be set. Nothing here said so, which left the promise resting on the agent's
+  // instinct — and a plain `git push` on such a branch fails.
+  "Push to `origin`. A branch with no upstream yet needs `git push -u origin <branch>` the first time; every other push is a plain `git push`.",
   "If a conflict is not safe to resolve, stop and report the files — do not guess.",
 ];
 

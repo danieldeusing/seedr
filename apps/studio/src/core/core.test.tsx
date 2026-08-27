@@ -240,25 +240,6 @@ describe("AgentLog", () => {
     await waitFor(() => expect(localStorage.getItem("studio-agent-log-height")).toBe("350"));
   });
 
-  test("the reader chooses how much is read as markdown, and it is remembered", async () => {
-    const lines = [printed("ROOT_RULE_FILES ./x.md"), said("# said")];
-    const { rerender } = render(<AgentLog lines={lines} />);
-    // auto: only what the agent wrote as markdown.
-    expect(screen.getByRole("heading", { name: "said" })).toBeInTheDocument();
-    expect(screen.getByText(/ROOT_RULE_FILES/).tagName).toBe("PRE");
-
-    await userEvent.click(screen.getByLabelText("raw text"));
-    expect(screen.queryByRole("heading", { name: "said" })).toBeNull();
-
-    await userEvent.click(screen.getByLabelText("all as markdown"));
-    expect(screen.queryByText(/ROOT_RULE_FILES/)?.tagName).not.toBe("PRE");
-
-    await waitFor(() => expect(localStorage.getItem("studio-agent-log-mode")).toBe("formatted"));
-    rerender(<AgentLog lines={[]} />);
-    render(<AgentLog lines={lines} />);
-    expect(screen.getAllByLabelText("all as markdown")[0]).toHaveAttribute("aria-pressed", "true");
-  });
-
   test("joins markdown so a fence survives, and leaves plain lines apart so they are cheap", () => {
     expect(blocksOf([said("# a"), said("more"), printed("b"), printed("c")])).toEqual([
       // Markdown only means anything whole.

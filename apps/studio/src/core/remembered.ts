@@ -43,29 +43,3 @@ export function useRememberedSize(key: string, fallback: number): [number, (next
   return [size, setSize];
 }
 
-/**
- * One of a fixed set of choices, remembered the same way. Anything stored that
- * is no longer an option falls back rather than being trusted — the set changes
- * between releases, the stored value does not.
- */
-export function useRememberedChoice<T extends string>(key: string, options: readonly T[], fallback: T): [T, (next: T) => void] {
-  const [choice, setChoice] = useState<T>(() => {
-    try {
-      const value = localStorage.getItem(key) as T | null;
-      return value !== null && options.includes(value) ? value : fallback;
-    } catch {
-      return fallback;
-    }
-  });
-
-  const remember = (next: T) => {
-    setChoice(next);
-    try {
-      localStorage.setItem(key, next);
-    } catch {
-      // A webview with storage disabled still switches, just not for next time.
-    }
-  };
-
-  return [choice, remember];
-}

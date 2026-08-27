@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
 import { Ban, Check, FolderOpen } from "lucide-react";
-import { mainFileName } from "@seedr/registry-ops/pure";
+import { TYPE_MARKERS } from "@seedr/registry-ops/pure";
 import { AgentLog } from "@/core/ui/AgentLog";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
@@ -68,6 +68,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const error = useAuthor((s) => s.error);
   const { setField, setType, setSourceKind, toggleAgent, chooseSource, takeSource, prepare, apply, cancel, reset } = useAuthor.getState();
   const sourceChoices = useAuthor((state) => state.sourceChoices);
+  const sourceMismatch = useAuthor((state) => state.sourceMismatch);
 
   useEffect(() => {
     void prepare();
@@ -148,6 +149,15 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         </div>
       </div>
 
+      <div className="field-row">
+        <label className="lbl" htmlFor="author-type" data-tip={TIPS.type}>
+          type
+        </label>
+        <div className="field-val">
+          <Select id="author-type" ariaLabel="type" value={form.type} options={AUTHORABLE_TYPES.map((type) => ({ value: type, label: type }))} onChange={setType} disabled={busy} />
+        </div>
+      </div>
+
       {form.sourceKind === "folder" && (
         <>
           <div className="field-row">
@@ -161,20 +171,30 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           </div>
           {sourceChoices.length > 0 && (
             <div className="field-row">
-              <span className="lbl" />
-              <div className="field-val flex-col items-start">
-                <p className="text-muted-foreground">That folder holds several files and no {mainFileName(form.type)} — copy all of it, or one file?</p>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <button type="button" className={choiceButton} onClick={() => takeSource(null)}>
-                    the whole folder
+              <span
+                className="lbl"
+                data-tip={`That folder carries no ${TYPE_MARKERS[form.type].join(" or ")}, so it holds several ${form.type}s rather than being one. Copy all of it, or the one file that is this item.`}
+              >
+                which part
+              </span>
+              <div className="field-val">
+                <button type="button" className={choiceButton} onClick={() => takeSource(null)}>
+                  the whole folder
+                </button>
+                {sourceChoices.map((file) => (
+                  <button key={file} type="button" className={choiceButton} onClick={() => takeSource(file)}>
+                    {file}
                   </button>
-                  {sourceChoices.map((file) => (
-                    <button key={file} type="button" className={choiceButton} onClick={() => takeSource(file)}>
-                      {file}
-                    </button>
-                  ))}
-                </div>
+                ))}
               </div>
+            </div>
+          )}
+          {sourceMismatch && (
+            <div className="field-row">
+              <span className="lbl" />
+              <p className="field-val text-amber-400" role="alert">
+                That content looks like a {sourceMismatch}, but the type says {form.type}. Change the type, or pick different content.
+              </p>
             </div>
           )}
           <Problems errors={problemFor("sourcePath")} />
@@ -234,15 +254,6 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           <p className="field-val text-muted-foreground">The fields below are hints — the agent derives whatever you leave empty.</p>
         </div>
       )}
-
-      <div className="field-row">
-        <label className="lbl" htmlFor="author-type" data-tip={TIPS.type}>
-          type
-        </label>
-        <div className="field-val">
-          <Select id="author-type" ariaLabel="type" value={form.type} options={AUTHORABLE_TYPES.map((type) => ({ value: type, label: type }))} onChange={setType} disabled={busy} />
-        </div>
-      </div>
 
       <div className="field-row">
         <label className="lbl" htmlFor="author-slug" data-tip={TIPS.slug}>

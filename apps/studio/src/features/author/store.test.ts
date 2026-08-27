@@ -104,6 +104,46 @@ describe("useAuthor", () => {
     expect(useAuthor.getState().form.sourcePath).toBe("/Users/me/rules");
   });
 
+  test("a plugin folder is one capability, marked by its plugin.json and not by any plugin.md", async () => {
+    // `mainFileName("plugin")` says `plugin.md`, a file no plugin has ever had.
+    // The marker is `.claude-plugin/plugin.json`, so this folder IS the plugin.
+    useAuthor.setState({ form: { ...emptyForm(), type: "plugin" } });
+    onCommand("pick_path", () => "/Users/me/work/superpowers");
+    onCommand("read_source_files", () => ({ files: { ".claude-plugin/plugin.json": "{}", "README.md": "x" }, skipped: [] }));
+
+    await useAuthor.getState().chooseSource();
+
+    expect(useAuthor.getState().sourceChoices).toEqual([]);
+    expect(useAuthor.getState().sourceMismatch).toBeNull();
+    expect(useAuthor.getState().form.sourcePath).toBe("/Users/me/work/superpowers");
+  });
+
+  test("content that looks like another type is called out", async () => {
+    // The reported case: type says plugin, the folder picked is `.claude/skills/`.
+    useAuthor.setState({ form: { ...emptyForm(), type: "plugin" } });
+    onCommand("pick_path", () => "/Users/me/.claude/skills");
+    onCommand("read_source_files", () => ({ files: { "configr-design.md": "a", "ui-styling.md": "b" }, skipped: [] }));
+
+    await useAuthor.getState().chooseSource();
+
+    expect(useAuthor.getState().sourceMismatch).toBe("skill");
+  });
+
+  test("changing the type re-asks the question the source was judged against", async () => {
+    useAuthor.setState({ form: { ...emptyForm(), type: "skill" } });
+    onCommand("pick_path", () => "/Users/me/.claude/skills/pdf");
+    onCommand("read_source_files", () => ({ files: { "SKILL.md": "# PDF" }, skipped: [] }));
+
+    await useAuthor.getState().chooseSource();
+    expect(useAuthor.getState().sourceMismatch).toBeNull();
+
+    useAuthor.getState().setType("plugin");
+    expect(useAuthor.getState().sourceMismatch).toBe("skill");
+
+    useAuthor.getState().setType("skill");
+    expect(useAuthor.getState().sourceMismatch).toBeNull();
+  });
+
   test("draft reads the source through the host, asks Claude with the prompt on stdin, and fills the descriptions", async () => {
     useAuthor.setState({ probe: PROBE_OK, form: { ...emptyForm(), sourcePath: "/src/pdf", slug: "pdf", name: "PDF" } });
     onCommand("read_source_files", () => ({ files: { "SKILL.md": "# PDF" }, skipped: [] }));

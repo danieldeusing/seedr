@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
-import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
-import { Ban, Check, FolderOpen } from "lucide-react";
-import { TYPE_MARKERS } from "@seedr/registry-ops/pure";
+import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, TYPE_MARKERS } from "@seedr/registry-ops/pure";
+import { Ban, Check, FolderOpen, TriangleAlert } from "lucide-react";
 import { AgentLog } from "@/core/ui/AgentLog";
+import { FormActions } from "@/core/ui/FormActions";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
@@ -69,6 +69,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const { setField, setType, setSourceKind, toggleAgent, chooseSource, takeSource, prepare, apply, cancel, reset } = useAuthor.getState();
   const sourceChoices = useAuthor((state) => state.sourceChoices);
   const sourceMismatch = useAuthor((state) => state.sourceMismatch);
+  const [askingAboutMismatch, setAskingAboutMismatch] = useState(false);
 
   useEffect(() => {
     void prepare();
@@ -135,6 +136,12 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       className="flex h-full min-h-0 flex-col overflow-y-auto p-6 pb-10 text-xs"
       onSubmit={(event) => {
         event.preventDefault();
+        // A mismatch is not refused outright — the detection is a reading of file
+        // names, and the person picking the folder knows more than it does.
+        if (sourceMismatch) {
+          setAskingAboutMismatch(true);
+          return;
+        }
         void apply();
       }}
     >
@@ -154,7 +161,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           type
         </label>
         <div className="field-val">
-          <Select id="author-type" ariaLabel="type" value={form.type} options={AUTHORABLE_TYPES.map((type) => ({ value: type, label: type }))} onChange={setType} disabled={busy} />
+          <Select id="author-type" ariaLabel="type" value={form.type} options={AUTHORABLE_TYPES.map((type) => ({ value: type, label: type }))} onChange={setType} disabled={busy} invalid={!!sourceMismatch} />
         </div>
       </div>
 
@@ -192,7 +199,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           {sourceMismatch && (
             <div className="field-row">
               <span className="lbl" />
-              <p className="field-val text-amber-400" role="alert">
+              <p className="field-val text-destructive" role="alert">
+                <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
                 That content looks like a {sourceMismatch}, but the type says {form.type}. Change the type, or pick different content.
               </p>
             </div>
@@ -369,6 +377,38 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       )}
       {error && <SignedOutNotice error={error} />}
       <JobLog />
+      {askingAboutMismatch && sourceMismatch && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-label="add it anyway">
+          <div className="absolute inset-0 bg-[var(--dialog-backdrop)] backdrop-blur-sm" onClick={() => setAskingAboutMismatch(false)} />
+          <div className="relative mx-4 w-full max-w-md border border-neutral-700 bg-neutral-980 shadow-2xl">
+            <div className="flex items-center gap-2 border-b border-neutral-960 px-6 py-4">
+              <TriangleAlert className="size-4 shrink-0 text-destructive" aria-hidden="true" />
+              <h3 className="text-lg font-semibold text-white">Add it as a {form.type} anyway?</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-neutral-300">
+                The content at <code className="break-all text-primary">{form.sourcePath}</code> looks like a {sourceMismatch}: it carries{" "}
+                {TYPE_MARKERS[sourceMismatch].join(" or ")}, not {TYPE_MARKERS[form.type].join(" or ")}.
+              </p>
+              <p className="mt-2 text-muted-foreground">
+                That is read from file names alone, so it can be wrong — a {form.type} that happens to look like a {sourceMismatch} is yours to add.
+              </p>
+              <FormActions
+                border={false}
+                confirmLabel={`add as a ${form.type}`}
+                confirmIcon={Check}
+                confirmColor="red"
+                onConfirm={() => {
+                  setAskingAboutMismatch(false);
+                  void apply();
+                }}
+                cancelLabel="go back and change it"
+                onCancel={() => setAskingAboutMismatch(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       {/* Below the log, not beside the status: the log grows and is resizable,
           so buttons above it drift further from the output they act on. */}
       {/* `mt-auto` pins this to the bottom of the dialog: the form is a full-height

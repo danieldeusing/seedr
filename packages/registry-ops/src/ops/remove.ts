@@ -1,6 +1,7 @@
 import { rmSync } from "node:fs";
 import { itemStateHash } from "../hash.js";
-import { itemDir } from "../fsPaths.js";
+import { itemDir, repoRootOf } from "../fsPaths.js";
+import { forgetLocalSource } from "../localSources.js";
 import { readItem } from "../read.js";
 import { canonicalSourceType } from "../sourceTypes.js";
 import type { OpResult, RemoveOp } from "./types.js";
@@ -24,5 +25,9 @@ export function remove(registryDir: string, op: RemoveOp): OpResult {
     throw new Error(`${op.type} "${op.slug}" changed since it was read (expected ${op.expectedHash}, found ${actualHash}) — re-read and retry`);
   }
   rmSync(itemDir(registryDir, op.type, op.slug), { recursive: true, force: true });
+  // The origin goes with it. Left behind, it would be handed to the next item
+  // that happened to take the same (type, slug) — a folder it was never copied
+  // from, reported as its source.
+  forgetLocalSource(repoRootOf(registryDir), op.type, op.slug);
   return { kind: op.kind, type: op.type, slug: op.slug, item: null };
 }

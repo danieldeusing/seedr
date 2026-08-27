@@ -213,3 +213,16 @@ describe("the copy in the registry can move too", () => {
     expect(existsSync(join(repoRootOf(registry), ".seedr", "local-sources.json"))).toBe(true);
   });
 });
+
+describe("removing an item", () => {
+  test("takes its origin with it, so the next item of that name inherits nothing", () => {
+    const registry = makeRegistry();
+    const source = makeSource();
+    applyOp(registry, addOp(source));
+    expect(localSourceOf(repoRootOf(registry), "skill", "origin-skill")).toBeDefined();
+
+    applyOp(registry, { v: 1, kind: "remove", type: "skill", slug: "origin-skill", sourceType: "seedr", expectedHash: hash(registry) });
+
+    expect(localSourceOf(repoRootOf(registry), "skill", "origin-skill")).toBeUndefined();
+  });
+});

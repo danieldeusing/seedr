@@ -7,6 +7,7 @@ import { allSourceStatuses, setOpsCheckout } from "@/api/registryCli";
 import { gitSummary } from "@/api/git";
 import { useAuthorSettings } from "@/features/settings/authorSettings";
 import { usePrePrompts } from "@/features/settings/prePrompts";
+import { useJobModels } from "@/features/settings/jobModels";
 
 /**
  * Tell the rest of the app which checkout is open: which one operations act on
@@ -30,6 +31,7 @@ const openCheckout = (repo: RepoInfo): void => {
   setOpsCheckout({ root: repo.root, hasOps: repo.hasOps });
   useAuthorSettings.getState().forRepo(repo.root);
   usePrePrompts.getState().forRepo(repo.root);
+  useJobModels.getState().forRepo(repo.root);
 };
 
 /**

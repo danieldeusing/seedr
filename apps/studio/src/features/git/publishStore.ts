@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { cancelProcess } from "@/api/agent";
 import { batchedLog, type LogLine } from "@/core/logLines";
 import { runAgentJob } from "@/api/agentJob";
+import { useAgentSettings } from "@/features/settings/agentSettings";
+import { modelFor } from "@/features/settings/jobModels";
 import type { JobCapability } from "@/features/author/adapters";
 import type { ChangedPath } from "@/api/git";
 
@@ -98,6 +100,7 @@ export const usePublish = create<PublishState>((set, get) => ({
         taskId: PUBLISH_TASK,
         prompt: publishPrompt(plan),
         capabilities: PUBLISH_JOB_CAPABILITIES,
+        model: modelFor(useAgentSettings.getState().preferred, "publish"),
         onEvent: collectLog(set, () => get().log),
       });
       if (outcome.cancelled) {

@@ -9,6 +9,7 @@ import type { JobCapability } from "@/features/author/adapters";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
 import { probeAgent, type AdapterProbe } from "@/features/author/claudeAdapter";
 import { useAgentSettings } from "@/features/settings/agentSettings";
+import { modelFor } from "@/features/settings/jobModels";
 import { prePromptFor } from "@/features/settings/prePrompts";
 import type { StudioItem } from "@/features/explorer/registry";
 
@@ -207,6 +208,7 @@ export const useUpdate = create<UpdateState>((set, get) => ({
           taskId: UPDATE_TASK,
           prompt: updateJobPrompt(target, form, patch, borrowedTooling()),
           capabilities: UPDATE_JOB_CAPABILITIES,
+          model: modelFor(useAgentSettings.getState().preferred, "update"),
           onEvent: collectLog(set, () => get().log),
         });
         if (outcome.cancelled) {

@@ -408,7 +408,11 @@ fn watch_registry(app: AppHandle, repo: State<Repo>, watcher: State<RegistryWatc
 /// Everything the webview may run: the registry CLI (`npx`), read-only `git`,
 /// and the coding-agent CLIs the settings page probes. A compromised webview
 /// must not become a shell.
-const RUNNABLE_PROGRAMS: [&str; 7] = ["npx", "claude", "git", "copilot", "agy", "codex", "opencode"];
+// `node` is here for one thing: the copilot CLI has no way to list its models,
+// and the SDK its own picker uses is a library, not a command. Not a widening in
+// practice — `npx tsx <script from the checkout>` was already arbitrary JS — and
+// the alternative was hardcoding a model list that goes stale in silence.
+const RUNNABLE_PROGRAMS: [&str; 8] = ["npx", "node", "claude", "git", "copilot", "agy", "codex", "opencode"];
 
 /// The programs a user may point at a custom binary (Settings → coding agents).
 /// `npx` and `git` stay resolution-only: overriding infrastructure would be a

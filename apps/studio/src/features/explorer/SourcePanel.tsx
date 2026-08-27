@@ -78,9 +78,9 @@ export function SourcePanel({ item }: { item: StudioItem }) {
             {wording.label}
           </span>
         </div>
-        <p className="mt-1 break-all text-muted-foreground" data-tip={status?.path}>
-          {status?.path}
-        </p>
+        {/* No `data-tip`: the path wraps and is shown in full, so a hover would
+            repeat it and cover the line beneath. */}
+        <p className="mt-1 break-all text-muted-foreground">{status?.path}</p>
         <p className="mt-2 text-muted-foreground">{wording.detail}</p>
 
         {error && (

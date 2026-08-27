@@ -162,8 +162,11 @@ describe("runRemove", () => {
   it("returns 1 for invalid options and types", async () => {
     const { runRemove } = await import("./remove.js");
     expect(await runRemove(TEST_SKILL, { yes: true }, PROJECT)).toBe(1);
-    expect(await runRemove(TEST_SKILL, { type: "command", yes: true }, PROJECT)).toBe(1);
-    expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/No handler found for type "command"/));
+    // `command` stood here until 2026-08-27, pinning the fact that it had no
+    // handler. It has one now, and every ComponentType does — see the handler
+    // registry's own test — so an unknown name is the only way in.
+    expect(await runRemove(TEST_SKILL, { type: "widget", yes: true }, PROJECT)).toBe(1);
+    expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/widget/));
   });
 
   it("stays idempotent: removing an absent item succeeds whether or not agents are named", async () => {

@@ -12,9 +12,7 @@ import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSett
 import { SignedOutNotice } from "@/features/settings/SignedOutNotice";
 import { formProblems, useAuthor, type SourceKind } from "./store";
 
-// The CLI has no install handler for `command` items yet (plan trap 12); until
-// it does, Studio does not offer authoring them.
-const AUTHORABLE_TYPES = ALL_TYPES.filter((type) => type !== "command");
+const AUTHORABLE_TYPES = ALL_TYPES;
 
 const SOURCE_KINDS: { value: SourceKind; label: string }[] = [
   { value: "folder", label: "a local folder" },

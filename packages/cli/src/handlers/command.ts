@@ -12,22 +12,27 @@ import { exists, ensureDir, writeTextFile, installFile, assertOverwritable, reso
 import { assertValidSlug } from "../utils/slug.js";
 import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
 
-const SLUG_LABEL = "agent slug";
+const SLUG_LABEL = "command slug";
 
-/** `<agent agents dir>/<slug>.md`, proven contained in the scope root. */
-async function resolveAgentFilePath(
+/**
+ * `<agent commands dir>/<slug>.md`, proven contained in the scope root.
+ *
+ * The installed name is the slug, because that is what the agent invokes it by:
+ * `commands/review.md` is `/review`.
+ */
+async function resolveCommandFilePath(
   agent: CodingAgent,
   slug: string,
   scope: InstallScope,
   cwd: string
 ): Promise<string | null> {
-  const destDir = getContentPath(agent, "agent", scope, cwd);
+  const destDir = getContentPath(agent, "command", scope, cwd);
   if (!destDir) return null;
   const scopeRoot = scope === "user" ? homedir() : cwd;
   return resolveContained(scopeRoot, relative(scopeRoot, destDir), `${slug}.md`);
 }
 
-async function installAgentForCodingAgent(
+async function installCommandForCodingAgent(
   item: RegistryItem,
   agent: CodingAgent,
   scope: InstallScope,
@@ -41,24 +46,21 @@ async function installAgentForCodingAgent(
 
   try {
     assertValidSlug(item.slug, SLUG_LABEL);
-    const destPath = await resolveAgentFilePath(agent, item.slug, scope, cwd);
+    const destPath = await resolveCommandFilePath(agent, item.slug, scope, cwd);
     if (!destPath) {
-      throw new Error(`${CODING_AGENTS[agent].name} does not support agents`);
+      throw new Error(`${CODING_AGENTS[agent].name} does not support commands`);
     }
 
     await assertOverwritable(destPath, force);
     const sourcePath = getItemSourcePath(item);
-    // `mainFileName`, not a literal: this said `AGENT.md` until 2026-08-27 while
-    // `getItemContent` fetched `agent.md`, so on a case-sensitive filesystem the
-    // symlink branch never matched and a local item was silently refetched.
-    const sourceFile = sourcePath ? join(sourcePath, mainFileName("agent")) : null;
+    const sourceFile = sourcePath ? join(sourcePath, mainFileName("command")) : null;
 
     if (method === "symlink" && sourceFile && (await exists(sourceFile))) {
       // Symlink for local first-party items
       await installFile(sourceFile, destPath, "symlink");
     } else {
       const content = await getItemContent(item);
-      await ensureDir(getContentPath(agent, "agent", scope, cwd)!);
+      await ensureDir(getContentPath(agent, "command", scope, cwd)!);
       await writeTextFile(destPath, content);
     }
 
@@ -75,7 +77,7 @@ async function installAgentForCodingAgent(
   }
 }
 
-export async function installAgent(
+export async function installCommand(
   item: RegistryItem,
   agents: CodingAgent[],
   scope: InstallScope,
@@ -86,7 +88,7 @@ export async function installAgent(
   const results: InstallResult[] = [];
 
   for (const agent of agents) {
-    const result = await installAgentForCodingAgent(item, agent, scope, method, force, cwd);
+    const result = await installCommandForCodingAgent(item, agent, scope, method, force, cwd);
     results.push(result);
   }
 
@@ -94,17 +96,17 @@ export async function installAgent(
 }
 
 /**
- * Remove the agent's single `.md` entry: a regular file, or the symlink a
+ * Remove the command's single `.md` entry: a regular file, or the symlink a
  * symlink install created (unlinked, never followed). Directories are refused.
  */
-export async function uninstallAgent(
+export async function uninstallCommand(
   slug: string,
   agent: CodingAgent,
   scope: InstallScope,
   cwd: string = process.cwd()
 ): Promise<boolean> {
   assertValidSlug(slug, SLUG_LABEL);
-  const destPath = await resolveAgentFilePath(agent, slug, scope, cwd);
+  const destPath = await resolveCommandFilePath(agent, slug, scope, cwd);
   if (!destPath) return false;
 
   let stats;
@@ -121,12 +123,12 @@ export async function uninstallAgent(
   return true;
 }
 
-export async function getInstalledAgents(
+export async function getInstalledCommands(
   agent: CodingAgent,
   scope: InstallScope,
   cwd: string = process.cwd()
 ): Promise<string[]> {
-  const destDir = getContentPath(agent, "agent", scope, cwd);
+  const destDir = getContentPath(agent, "command", scope, cwd);
   if (!destDir || !(await exists(destDir))) {
     return [];
   }
@@ -137,7 +139,7 @@ export async function getInstalledAgents(
     .map((f) => f.replace(".md", ""));
 }
 
-export async function planAgent(
+export async function planCommand(
   item: RegistryItem,
   agents: CodingAgent[],
   scope: InstallScope,
@@ -147,25 +149,25 @@ export async function planAgent(
   assertValidSlug(item.slug, SLUG_LABEL);
   const changes: PlannedChange[] = [];
   for (const agent of agents) {
-    const destPath = await resolveAgentFilePath(agent, item.slug, scope, cwd);
-    if (!destPath) throw new Error(`${CODING_AGENTS[agent].name} does not support agents`);
+    const destPath = await resolveCommandFilePath(agent, item.slug, scope, cwd);
+    if (!destPath) throw new Error(`${CODING_AGENTS[agent].name} does not support commands`);
     const sourcePath = getItemSourcePath(item);
-    const linked = method === "symlink" && sourcePath !== null && (await exists(join(sourcePath, mainFileName("agent"))));
+    const linked = method === "symlink" && sourcePath !== null && (await exists(join(sourcePath, mainFileName("command"))));
     changes.push({
       agent,
       kind: (await exists(destPath)) ? "modify" : "create",
       path: destPath,
-      detail: linked ? `symlink → ${join(sourcePath!, mainFileName("agent"))}` : "agent definition file",
+      detail: linked ? `symlink → ${join(sourcePath!, mainFileName("command"))}` : "slash command file",
     });
   }
   return changes;
 }
 
 /**
- * Agent content handler implementing the ContentHandler interface.
+ * Command content handler implementing the ContentHandler interface.
  */
-export const agentHandler: ContentHandler = {
-  type: "agent",
+export const commandHandler: ContentHandler = {
+  type: "command",
 
   async install(
     item: RegistryItem,
@@ -175,7 +177,7 @@ export const agentHandler: ContentHandler = {
     force: boolean,
     cwd?: string
   ): Promise<InstallResult[]> {
-    return installAgent(item, agents, scope, method, force, cwd);
+    return installCommand(item, agents, scope, method, force, cwd);
   },
 
   async uninstall(
@@ -184,7 +186,7 @@ export const agentHandler: ContentHandler = {
     scope: InstallScope,
     cwd?: string
   ): Promise<boolean> {
-    return uninstallAgent(slug, agent, scope, cwd);
+    return uninstallCommand(slug, agent, scope, cwd);
   },
 
   async listInstalled(
@@ -192,8 +194,8 @@ export const agentHandler: ContentHandler = {
     scope: InstallScope,
     cwd?: string
   ): Promise<string[]> {
-    return getInstalledAgents(agent, scope, cwd);
+    return getInstalledCommands(agent, scope, cwd);
   },
 
-  plan: planAgent,
+  plan: planCommand,
 };

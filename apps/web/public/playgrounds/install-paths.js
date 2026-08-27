@@ -8,6 +8,7 @@
   const TYPES = {
     skill:    { label: 'Skill',    color: '#f472b6', structure: 'directory', handler: 'SkillHandler',    mainFile: 'SKILL.md',   subDir: 'skills',   sampleFiles: ['SKILL.md', 'scripts/', 'references/'] },
     agent:    { label: 'Agent',    color: '#60a5fa', structure: 'file',      handler: 'AgentHandler',    mainFile: '{slug}.md',  subDir: 'agents',   sampleFiles: [] },
+    command:  { label: 'Command',  color: '#fbbf24', structure: 'file',      handler: 'CommandHandler',  mainFile: '{slug}.md',  subDir: 'commands', sampleFiles: [] },
     hook:     { label: 'Hook',     color: '#c084fc', structure: 'json-merge',handler: 'HookHandler',     mergeTarget: 'settings.json', mergeField: 'hooks', subDir: 'hooks' },
     mcp:      { label: 'MCP',      color: '#14b8a6', structure: 'json-merge',handler: 'McpHandler',      subDir: null },
     plugin:   { label: 'Plugin',   color: '#818cf8', structure: 'plugin',    handler: 'PluginHandler',   subDir: 'plugins' },
@@ -33,6 +34,7 @@
   const COMPAT = {
     skill: ['claude','copilot','antigravity','codex','opencode'],
     agent: ['claude'],
+    command: ['claude'],
     hook: ['claude'],
     plugin: ['claude'],
     settings: ['claude'],

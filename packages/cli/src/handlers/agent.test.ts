@@ -4,7 +4,7 @@ import { isFirstParty } from "@seedr/registry-ops/pure";
 import type { RegistryItem } from "@seedr/shared";
 
 const TEST_AGENT = "test-agent";
-const OUTSIDE_AGENT = "/outside/AGENT.md";
+const OUTSIDE_AGENT = "/outside/agent.md";
 
 // Mock fs/promises with memfs
 vi.mock("node:fs/promises", async () => {
@@ -13,7 +13,11 @@ vi.mock("node:fs/promises", async () => {
 });
 
 // Mock the registry module
-vi.mock("../config/registry.js", () => ({
+vi.mock("../config/registry.js", async () => ({
+  // `mainFileName` stays real: it is the one definition of what a type's content
+  // file is called, and the point of these tests is that the handler agrees with
+  // whatever `getItemContent` would fetch.
+  ...(await vi.importActual<typeof import("../config/registry.js")>("../config/registry.js")),
   getItemSourcePath: vi.fn((item: RegistryItem) => {
     if (isFirstParty(item.sourceType)) {
       return `/registry/agents/${item.slug}`;
@@ -66,15 +70,15 @@ describe("agent handler", () => {
       expect(vol.readFileSync(AGENT_FILE, "utf-8")).toContain("# Test Agent");
     });
 
-    it("symlinks a local AGENT.md when asked to", async () => {
-      vol.fromJSON({ "/registry/agents/test-agent/AGENT.md": "# local" });
+    it("symlinks a local agent.md when asked to", async () => {
+      vol.fromJSON({ "/registry/agents/test-agent/agent.md": "# local" });
       const { installAgent } = await import("./agent.js");
 
       const results = await installAgent(agentItem(), ["claude"], "project", "symlink", true, PROJECT);
 
       expect(results[0]?.success).toBe(true);
       expect(vol.lstatSync(AGENT_FILE).isSymbolicLink()).toBe(true);
-      expect(vol.readlinkSync(AGENT_FILE)).toBe("../../../../registry/agents/test-agent/AGENT.md");
+      expect(vol.readlinkSync(AGENT_FILE)).toBe("../../../../registry/agents/test-agent/agent.md");
     });
 
     it("falls back to content when symlink is requested but no local file exists", async () => {
@@ -180,9 +184,9 @@ describe("agent handler", () => {
   describe("planAgent", () => {
     it("describes the file that would be written", async () => {
       const { planAgent } = await import("./agent.js");
-      vol.fromJSON({ "/registry/agents/test-agent/AGENT.md": "# local" });
+      vol.fromJSON({ "/registry/agents/test-agent/agent.md": "# local" });
       expect(await planAgent(agentItem(), ["claude"], "project", "symlink", PROJECT)).toEqual([
-        { agent: "claude", kind: "create", path: AGENT_FILE, detail: "symlink → /registry/agents/test-agent/AGENT.md" },
+        { agent: "claude", kind: "create", path: AGENT_FILE, detail: "symlink → /registry/agents/test-agent/agent.md" },
       ]);
       vol.mkdirSync(AGENTS_DIR, { recursive: true });
       vol.writeFileSync(AGENT_FILE, "x");

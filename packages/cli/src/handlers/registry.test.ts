@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { ALL_TYPES } from "@seedr/registry-ops/pure";
 import { registerHandler, getHandler, hasHandler, getRegisteredTypes } from "./registry.js";
 import type { ContentHandler, InstallResult } from "./types.js";
 
@@ -49,5 +50,20 @@ describe("handler registry", () => {
       const types = getRegisteredTypes();
       expect(Array.isArray(types)).toBe(true);
     });
+  });
+});
+
+/*
+ * The gap this closes: `command` was a ComponentType, was in AGENT_COMPATIBILITY
+ * and had an install path under `.claude/commands`, but no handler was ever
+ * registered — so `seedr add --type command` would have died on "No handler
+ * found" for the first command item anyone added. Nothing connected the
+ * vocabulary to the registry, so nothing said so.
+ */
+describe("every type in the vocabulary can actually be installed", () => {
+  it.each(ALL_TYPES)("%s has a registered handler", async (type) => {
+    await import("./index.js");
+    expect(hasHandler(type), `no handler registered for "${type}"`).toBe(true);
+    expect(getHandler(type)?.type).toBe(type);
   });
 });

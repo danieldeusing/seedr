@@ -63,12 +63,58 @@ const SOURCE_MARK: Record<string, { icon: typeof Pencil; tone: string; tip: stri
   missing: { icon: FolderX, tone: "text-destructive", tip: "The source folder it was copied from is gone" },
 };
 
-function SourceMark({ type, slug }: { type: string; slug: string }) {
+/** The mark for one row, or undefined when it has nothing to answer for. */
+function useSourceMark(type: string, slug: string) {
   const state = useStudio((store) => store.sourceStates[`${type}/${slug}`]?.state);
-  const mark = state ? SOURCE_MARK[state] : undefined;
-  if (!mark) return null;
-  const Icon = mark.icon;
-  return <Icon className={`size-3 shrink-0 ${mark.tone}`} data-tip={mark.tip} aria-label={mark.tip} />;
+  return state ? SOURCE_MARK[state] : undefined;
+}
+
+/**
+ * One capability in the list. Its own component because the source mark is read
+ * from the store, and a hook cannot be called inside the loop that renders these.
+ */
+function CapabilityRow({
+  type,
+  slug,
+  item,
+  errors,
+  active,
+  rowStyle,
+  onSelect,
+}: {
+  type: ComponentType;
+  slug: string;
+  item: StudioItem["item"];
+  errors: number;
+  active: boolean;
+  rowStyle: RowStyle;
+  onSelect(selection: { type: ComponentType; slug: string }): void;
+}) {
+  const mark = useSourceMark(type, slug);
+  return (
+    <button
+      type="button"
+      aria-current={active ? "true" : undefined}
+      onClick={() => onSelect({ type, slug })}
+      className={`flex w-full cursor-pointer items-center gap-3 px-2 py-0.5 text-left text-sm transition-colors ${active ? "bg-violet-500/20 text-neutral-200" : "text-neutral-300 hover:bg-neutral-960/50 hover:text-neutral-200"}`}
+    >
+      <RowIndicators item={item} style={rowStyle} />
+      {/* The name takes the mark's colour as well as the icon: on a wide explorer
+          the icon sits at the far edge, and a colour on the name keeps the sign
+          next to the thing it is about. */}
+      <span className={`truncate ${mark ? `font-medium ${mark.tone}` : ""}`}>{item.name ?? slug}</span>
+      {mark && (
+        <span className={`source-mark ml-auto shrink-0 ${mark.tone}`} data-tip={mark.tip} aria-label={mark.tip} role="img">
+          <mark.icon className="size-3" aria-hidden="true" />
+        </span>
+      )}
+      {errors > 0 && (
+        <span className={`${mark ? "" : "ml-auto "}text-destructive`} data-tip={`${errors} validation problem(s)`} aria-label={`${errors} validation problems`}>
+          !
+        </span>
+      )}
+    </button>
+  );
 }
 
 function RowIndicators({ item, style }: { item: StudioItem["item"]; style: RowStyle }) {
@@ -210,24 +256,17 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
               {!isCollapsed && (
                 <ul>
                   {ofType.map(({ slug, item, errors }) => {
-                    const active = sameKey(selected, type, slug);
                     return (
                       <li key={slug}>
-                        <button
-                          type="button"
-                          aria-current={active ? "true" : undefined}
-                          onClick={() => onSelect({ type, slug })}
-                          className={`flex w-full cursor-pointer items-center gap-3 px-2 py-0.5 text-left text-sm transition-colors ${active ? "bg-violet-500/20 text-neutral-200" : "text-neutral-300 hover:bg-neutral-960/50 hover:text-neutral-200"}`}
-                        >
-                          <RowIndicators item={item} style={rowStyle} />
-                          <span className="truncate">{item.name ?? slug}</span>
-                          <SourceMark type={type} slug={slug} />
-                          {errors.length > 0 && (
-                            <span className="text-destructive" data-tip={`${errors.length} validation problem(s)`} aria-label={`${errors.length} validation problems`}>
-                              !
-                            </span>
-                          )}
-                        </button>
+                        <CapabilityRow
+                          type={type}
+                          slug={slug}
+                          item={item}
+                          errors={errors.length}
+                          active={sameKey(selected, type, slug)}
+                          rowStyle={rowStyle}
+                          onSelect={onSelect}
+                        />
                       </li>
                     );
                   })}

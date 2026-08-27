@@ -236,6 +236,42 @@ function readPlainOutcome(outcome: RunOutcome): { ok: boolean; text: string; den
   return { ok: outcome.status === "ok", text: said || outcome.stderr.trim() || `exit code ${outcome.exitCode}`, denials: [] };
 }
 
+/**
+ * codex's JSONL, from running it: `{"type":"item.completed","item":{"type":
+ * "agent_message","text":…}}` for what it says, `command_execution` for what it
+ * runs, and `thread.started`/`turn.*` around the outside.
+ *
+ * Without this every line was reported as plain text, so a command it ran, the
+ * whole of that command's output, and the sentence explaining it were one
+ * undifferentiated wall — and the log's `auto` mode had nothing to tell apart.
+ * Lines that are not JSON are its own stderr, which is where a broken MCP
+ * server writes its connection failures; they are kept, because a real failure
+ * belongs on screen.
+ */
+function readCodexLine(text: string): AgentJobEvent[] {
+  const event = parseJson(text);
+  if (!event) return line("text", text);
+  const item = event.item as { type?: string; command?: string; status?: string; text?: string } | undefined;
+  if (event.type === "item.started" && item?.type === "command_execution") {
+    return [{ kind: "tool", text: item.command ?? "command" }];
+  }
+  if (event.type === "item.completed" && item?.type === "agent_message") return line("markdown", item.text ?? "");
+  // Everything else — the turn and thread envelopes, and a command's completion
+  // after its start was already shown — says nothing a reader needs.
+  return [];
+}
+
+/** The last thing codex said, whether it was asked for JSONL or not. */
+function readCodexOutcome(outcome: RunOutcome): { ok: boolean; text: string; denials: string[] } {
+  const said = outcome.stdout
+    .split("\n")
+    .map(parseJson)
+    .filter((event) => event?.type === "item.completed" && (event.item as { type?: string } | undefined)?.type === "agent_message")
+    .map((event) => String((event?.item as { text?: string }).text ?? ""));
+  if (said.length === 0) return readPlainOutcome(outcome);
+  return { ok: outcome.status === "ok", text: said.join("\n"), denials: [] };
+}
+
 export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // `--tools ""` removes every tool; `--max-turns 1` additionally bounds the run.
   claude: {
@@ -313,10 +349,15 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   codex: {
     program: AGENT_PROGRAMS.codex,
     draft: (prompt) => ({ args: ["exec", "--color", "never", "-s", "read-only", "-"], stdin: prompt }),
-    job: (prompt, capabilities) => ({ args: ["exec", "--color", "never", "-s", writesFiles(capabilities) ? "workspace-write" : "read-only", "-"], stdin: prompt }),
+    // `--json` only for a job: a draft's answer is read out of plain text, and
+    // the JSONL envelopes would be the first JSON objects the parser found.
+    job: (prompt, capabilities) => ({
+      args: ["exec", "--json", "--color", "never", "-s", writesFiles(capabilities) ? "workspace-write" : "read-only", "-"],
+      stdin: prompt,
+    }),
     schemaEnforced: false,
-    readLine: (text) => line("text", text),
-    readOutcome: readPlainOutcome,
+    readLine: readCodexLine,
+    readOutcome: readCodexOutcome,
   },
 
   // opencode takes the message as positional words; one argument is one message.

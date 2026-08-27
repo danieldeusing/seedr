@@ -4,6 +4,7 @@ import { formatErrors, isFirstParty } from "@seedr/registry-ops/pure";
 import { fs, openPath } from "@/api/fs";
 import { useExternalLink } from "@/core/externalUrl";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
+import { SafeMarkdown } from "@/core/ui/SafeMarkdown";
 import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
@@ -162,7 +163,12 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           {item.item.longDescription && (
             <section className="mt-6">
               <p className="prompt text-xs">cat "tl;dr.md"</p>
-              <p className="mt-2 text-xs whitespace-pre-wrap text-muted-foreground">{item.item.longDescription}</p>
+              {/* The TL;DR is written in markdown by contract — bullets, bold
+                  category names, backticked identifiers — so it is read as
+                  markdown rather than shown as its own source. */}
+              <div className="formatted-preview mt-2 text-xs text-muted-foreground">
+                <SafeMarkdown>{item.item.longDescription}</SafeMarkdown>
+              </div>
             </section>
           )}
             </div>

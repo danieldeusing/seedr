@@ -64,10 +64,22 @@ export const openRepoRoot = (): string => openCheckout?.root ?? "";
 /** `npx tsx scripts/registry-op.ts …`; npx resolves the `.cmd` shim on Windows. */
 const cli = (...args: string[]): OpsInvocation => opsInvocation(openCheckout, args);
 
+/**
+ * The operation's own message, out of whatever the toolchain printed around it.
+ * `npx` warns about unknown env config on some machines — six lines of it — and
+ * the one sentence that says what went wrong was arriving underneath, where a
+ * reader stops looking. The CLI prefixes its own errors, so they can be picked
+ * out; anything else is passed through whole rather than guessed at.
+ */
+export function operationError(outcome: RunOutcome): string {
+  const stderr = outcome.stderr.trim();
+  const own = stderr.split("\n").filter((line) => line.trim().startsWith("registry-op:"));
+  return own.length > 0 ? own.join("\n") : stderr || outcome.stdout.trim() || `exit code ${outcome.exitCode}`;
+}
+
 function parseJsonStdout<T>(outcome: RunOutcome, what: string): T {
   if (outcome.status !== "ok") {
-    const detail = outcome.stderr.trim() || outcome.stdout.trim() || `exit code ${outcome.exitCode}`;
-    throw new Error(`${what} ${outcome.status === "failed" ? "failed" : outcome.status}: ${detail}`);
+    throw new Error(`${what} ${outcome.status === "failed" ? "failed" : outcome.status}: ${operationError(outcome)}`);
   }
   try {
     return JSON.parse(outcome.stdout) as T;

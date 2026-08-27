@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest";
+import type { RunOutcome } from "./agent";
 import { fs, openPath } from "./fs";
 import { getRepo, pickRepo } from "./repo";
-import { opsInvocation } from "./registryCli";
+import { operationError, opsInvocation } from "./registryCli";
 import { onRegistryChanged, REGISTRY_CHANGED, watchRegistry } from "./watch";
 import { emit, invoke, listen, onCommand } from "@/test/mockIpc";
 
@@ -78,5 +79,29 @@ describe("opsInvocation", () => {
 
   test("with no checkout open there is nothing to point at", () => {
     expect(opsInvocation(null, ["identity"])).toEqual({ args: ["tsx", "scripts/registry-op.ts", "identity"], inDefaultRepo: false });
+  });
+});
+
+describe("what an operation reports when it fails", () => {
+  const outcome = (over: Partial<RunOutcome>): RunOutcome => ({ taskId: "t", status: "failed", exitCode: 1, stdout: "", stderr: "", durationMs: 1, ...over });
+
+  test("is the operation's own line, not the six npm warnings above it", () => {
+    // Verbatim from a real run: npx warns about the machine's npm config, and
+    // the sentence that says what to do arrived under all of it.
+    const noisy = [
+      'npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.',
+      'npm warn Unknown env config "recursive". This will stop working in the next major version of npm.',
+      "registry-op: The worktree has uncommitted changes; commit or stash them first so the operation's diff stays its own",
+    ].join("\n");
+
+    expect(operationError(outcome({ stderr: noisy }))).toBe(
+      "registry-op: The worktree has uncommitted changes; commit or stash them first so the operation's diff stays its own"
+    );
+  });
+
+  test("is passed through whole when the CLI did not speak", () => {
+    expect(operationError(outcome({ stderr: "tsx: command not found" }))).toBe("tsx: command not found");
+    expect(operationError(outcome({ stdout: "something on stdout" }))).toBe("something on stdout");
+    expect(operationError(outcome({ exitCode: 3 }))).toBe("exit code 3");
   });
 });

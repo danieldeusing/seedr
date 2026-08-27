@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import type { LocalSource, RegistryItem } from "@seedr/shared";
 import { gitIgnored } from "./gitIgnore.js";
+import type { SourceStatus } from "./sourceState.js";
 
 /**
  * A first-party item copied from a folder on this machine keeps a note of where
@@ -61,26 +62,6 @@ export const localSourceOf = (path: string): LocalSource => ({
   digest: sourceDigest(path),
   syncedAt: new Date().toISOString().slice(0, 10),
 });
-
-export type SourceState =
-  /** The item records no origin: written in place, or its origin was adopted. */
-  | "none"
-  /** The source is where it was, and unchanged since the last copy. */
-  | "current"
-  /** The source is there and has changed — the item is behind it. */
-  | "behind"
-  /** The recorded path is not there any more. Adopt the item, or point it elsewhere. */
-  | "missing";
-
-export interface SourceStatus {
-  state: SourceState;
-  /** The recorded path, absent when the item records no origin. */
-  path?: string;
-  /** The digest recorded when the item was last copied from the source. */
-  recorded?: string | null;
-  /** The source's digest now; null when it is gone or has no content files. */
-  current?: string | null;
-}
 
 /** Where an item stands relative to the folder it was copied from. */
 export function sourceStatus(item: Pick<RegistryItem, "localSource">): SourceStatus {

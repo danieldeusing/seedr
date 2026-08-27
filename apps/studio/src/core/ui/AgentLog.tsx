@@ -1,27 +1,8 @@
 import { memo, useEffect, useMemo, useRef } from "react";
-import { FileText, Type, Wand2 } from "lucide-react";
 import type { LogLine } from "@/core/logLines";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
-import { useRememberedChoice, useRememberedSize } from "@/core/remembered";
+import { useRememberedSize } from "@/core/remembered";
 import { SafeMarkdown } from "./SafeMarkdown";
-
-/**
- * How much of the output to read as markdown.
- *
- * `auto` trusts the agent: only Claude Code reports its turns structurally
- * enough to know which of them are prose. Every other CLI reports each line of
- * output as text, so under `formatted` their traces reflow into paragraphs and
- * indented JSON becomes a column of code blocks — which is why the choice is
- * offered rather than decided here.
- */
-export const LOG_MODES = ["auto", "formatted", "raw"] as const;
-export type LogMode = (typeof LOG_MODES)[number];
-
-const MODE_LABELS: Record<LogMode, string> = {
-  auto: "as the agent wrote it",
-  formatted: "all as markdown",
-  raw: "raw text",
-};
 
 /**
  * A run of consecutive tool calls, or one piece of output.
@@ -63,7 +44,7 @@ const withoutTimestamp = (text: string): string => text.replace(/^\d{4}-\d{2}-\d
  * whole seconds to answer. Separate, an arriving line adds one element and
  * every earlier one is left alone.
  */
-export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
+export function blocksOf(lines: LogLine[]): Block[] {
   const blocks: Block[] = [];
   const shown = new Map<string, Block>();
   const grouped = new Map<string, Entry>();
@@ -72,7 +53,7 @@ export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
     // things before it says anything, and a CLI whose MCP server is broken logs
     // the same failure on every model call. Either way the sentence that
     // follows should not be buried under them.
-    if ((line.kind === "tool" || line.kind === "error") && mode !== "raw") {
+    if (line.kind === "tool" || line.kind === "error") {
       const key = `${withoutTimestamp(line.text)}:${line.detail ?? ""}`;
       const already = line.kind === "error" ? grouped.get(key) : undefined;
       if (already) {
@@ -88,8 +69,8 @@ export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
       else blocks.push({ group: line.kind, entries: [entry] });
       continue;
     }
-    const markdown = mode === "raw" ? false : mode === "formatted" || line.kind === "markdown";
-    if (!markdown && (line.kind === "text" || line.kind === "tool")) {
+    const markdown = line.kind === "markdown";
+    if (line.kind === "text") {
       const already = shown.get(withoutTimestamp(line.text));
       if (already?.repeats !== undefined) {
         already.repeats += 1;
@@ -170,8 +151,7 @@ const SHORTEST = 90;
 export function AgentLog({ lines, fill = false }: { lines: LogLine[]; fill?: boolean }) {
   const view = useRef<HTMLDivElement>(null);
   const following = useRef(true);
-  const [mode, setMode] = useRememberedChoice<LogMode>("studio-agent-log-mode", LOG_MODES, "auto");
-  const blocks = useMemo(() => blocksOf(lines, mode), [lines, mode]);
+  const blocks = useMemo(() => blocksOf(lines), [lines]);
   const [height, setHeight] = useRememberedSize("studio-agent-log-height", TEN_LINES);
 
   useEffect(() => {
@@ -187,22 +167,6 @@ export function AgentLog({ lines, fill = false }: { lines: LogLine[]; fill?: boo
         <span className="size-2 rounded-full bg-neutral-600" aria-hidden="true" />
         <span className="size-2 rounded-full bg-neutral-600" aria-hidden="true" />
         <span className="ml-1.5 text-xss tracking-wider text-neutral-500 uppercase">agent output</span>
-        <span className="flex-1" />
-        <div className="flex items-center border border-neutral-600">
-          {([["auto", Wand2], ["formatted", FileText], ["raw", Type]] as const).map(([value, Icon]) => (
-            <button
-              key={value}
-              type="button"
-              aria-label={MODE_LABELS[value]}
-              aria-pressed={mode === value}
-              data-tip={MODE_LABELS[value]}
-              className={`flex size-4 cursor-pointer items-center justify-center transition-colors ${mode === value ? "bg-violet-500/20 text-violet-300" : "text-neutral-500 hover:bg-neutral-500/20 hover:text-neutral-300"}`}
-              onClick={() => setMode(value)}
-            >
-              <Icon className="size-2.5" />
-            </button>
-          ))}
-        </div>
       </div>
       <div
         ref={view}

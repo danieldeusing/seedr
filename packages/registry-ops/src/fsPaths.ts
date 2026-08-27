@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { ComponentType } from "@seedr/shared";
 import { DEFAULT_REGISTRY_DIR, assertSlug, registryDirName, typeDirName } from "./paths.js";
 
@@ -18,6 +18,15 @@ export function resolveRegistryDir(repoRoot: string): string {
     throw new Error(`${REPO_CONFIG_FILE} is not readable JSON: ${(error as Error).message}`, { cause: error });
   }
   return join(repoRoot, registryDirName(parsed));
+}
+
+/**
+ * The checkout a registry directory sits in — the inverse of `resolveRegistryDir`.
+ * Exact rather than a guess: `registryDirName` allows one plain segment, so the
+ * registry is always exactly one level under the root.
+ */
+export function repoRootOf(registryDir: string): string {
+  return dirname(registryDir);
 }
 
 export function typeDir(registryDir: string, type: ComponentType): string {

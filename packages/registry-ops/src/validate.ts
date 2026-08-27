@@ -40,7 +40,7 @@ export const KNOWN_FIELDS = new Set([
   "pluginType", "wrapper", "integration", "package", "sourceType", "targetScope", "label",
   "contentHash", "marketplace", "author", "externalUrl", "updatedAt", "contents",
   // immutable source identity and provenance (docs/registry-integrity.md)
-  "sourceRevision", "contentDigest", "pluginSource", "marketplaceRef", "strict", "localSource",
+  "sourceRevision", "contentDigest", "pluginSource", "marketplaceRef", "strict",
   "lspServers", "skills", "version", "license",
 ]);
 
@@ -189,22 +189,6 @@ function checkCompatibility(item: Item, push: Push): void {
   if (new Set(item.compatibility).size !== item.compatibility.length) {
     push("compatibility", "lists an agent twice");
   }
-}
-
-/**
- * The note of where a first-party item was copied from. The path is absolute and
- * machine-local by nature — another checkout will not find it, and is meant to
- * report the source as missing rather than to guess at it.
- */
-function checkLocalSource(item: Item, push: Push): void {
-  if (item.localSource === undefined) return;
-  const source = item.localSource as Item | null;
-  if (typeof source !== "object" || source === null || !isNonEmptyString(source.path)) {
-    push("localSource", "must be an object with a non-empty path");
-    return;
-  }
-  if (source.digest !== null && !SHA256_HEX.test(String(source.digest))) push("localSource.digest", "must be 64 lowercase hex, or null when the source has no content files");
-  if (!isNonEmptyString(source.syncedAt)) push("localSource.syncedAt", "must be the date the source was last copied");
 }
 
 function checkAuthor(item: Item, push: Push): void {
@@ -475,7 +459,6 @@ export function validateItem(value: unknown, options: ValidateOptions = {}): Val
   checkText(item, push);
   checkCompatibility(item, push);
   checkAuthor(item, push);
-  checkLocalSource(item, push);
   checkContents(item, options, push);
   checkPluginFields(item, push);
   checkProvenance(item, options, push);

@@ -11,6 +11,10 @@ export type SourceState =
   | "current"
   /** The source is there and has changed — the item is behind it. */
   | "behind"
+  /** The source has not moved, but the copy here has: local work, not yet upstream. */
+  | "edited"
+  /** Both moved. Copying across overwrites the work done here; leaving it strands the source. */
+  | "diverged"
   /** The recorded path is not there any more. Adopt the item, or point it elsewhere. */
   | "missing";
 

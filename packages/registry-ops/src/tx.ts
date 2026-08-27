@@ -7,6 +7,7 @@ import { parseOp } from "./ops/parse.js";
 import type { OpResult, RegistryOp } from "./ops/types.js";
 import { itemExists, readItem, readLabels } from "./read.js";
 import { itemDir, resolveRegistryDir } from "./fsPaths.js";
+import { LOCAL_SOURCES_FILE } from "./localSources.js";
 import { ALL_TYPES, typeDirName } from "./paths.js";
 import { formatErrors, validateItem } from "./validate.js";
 
@@ -120,11 +121,19 @@ export async function runRegistryTransaction(rawOp: unknown, options: Transactio
     }
     const headBefore = await git(["rev-parse", "HEAD"], repoRoot);
 
+    // The note of where things were copied from lives outside the registry, so
+    // the rollback below does not reach it. Kept here so an add that fails
+    // leaves no record of a source for an item that does not exist.
+    const localSourcesPath = join(repoRoot, LOCAL_SOURCES_FILE);
+    const localSourcesBefore = existsSync(localSourcesPath) ? readFileSync(localSourcesPath, "utf8") : null;
+
     const rollback = async (cause: unknown, phase: TransactionError["phase"]): Promise<never> => {
       try {
         await git(["checkout", "--", registryRel], repoRoot);
         // -x removes gitignored strays too: rollback means exactly HEAD, nothing else.
         await git(["clean", "-fdqx", "--", registryRel], repoRoot);
+        if (localSourcesBefore === null) rmSync(localSourcesPath, { force: true });
+        else writeFileSync(localSourcesPath, localSourcesBefore);
       } catch (rollbackError) {
         throw new TransactionError(
           `Rollback failed: ${(rollbackError as Error).message} — after ${phase} error: ${(cause as Error).message}`,
@@ -146,7 +155,15 @@ export async function runRegistryTransaction(rawOp: unknown, options: Transactio
 
     try {
       verifyPostconditions(registryDir, op);
-      const changedPaths = statusPaths(await git(["status", "--porcelain", "--untracked-files=all"], repoRoot));
+      // `add-local` and `resync-source` note where they copied from, in a file
+      // outside the registry. It is not a registry change: not reported as one,
+      // and not a stray write either. Dropped here rather than allowlisted
+      // because it is gitignored in this repository and so usually invisible —
+      // a checkout without that ignore rule would otherwise have every add
+      // refused, and correctness should not rest on a `.gitignore`.
+      const changedPaths = statusPaths(await git(["status", "--porcelain", "--untracked-files=all"], repoRoot)).filter(
+        (path) => path !== toPosix(LOCAL_SOURCES_FILE)
+      );
       // Every manifest is compile's output and may legitimately change — including one
       // that was stale before this operation. Item content may change only under the
       // operation's own (type, slug), and the catalogue only under its own operation.

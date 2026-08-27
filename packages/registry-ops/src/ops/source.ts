@@ -1,12 +1,11 @@
 import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
-import { itemDir, itemJsonPath } from "../fsPaths.js";
-import { localSourceOf } from "../localSource.js";
+import { itemDir, itemJsonPath, repoRootOf } from "../fsPaths.js";
+import { forgetLocalSource, localSourceOf, rememberLocalSource } from "../localSources.js";
 import { isFirstParty } from "../sourceTypes.js";
 import { itemStateHash } from "../hash.js";
 import { fileTree, readItem } from "../read.js";
-import { omit } from "../util.js";
 import { assertStructurallyValid } from "../validate.js";
 import { copyDereferenced, removeIgnoredFiles } from "./copy.js";
 import type { AdoptSourceOp, OpResult, ResyncSourceOp } from "./types.js";
@@ -38,10 +37,11 @@ function itemToChange(registryDir: string, op: AdoptSourceOp | ResyncSourceOp): 
  */
 export function adoptSource(registryDir: string, op: AdoptSourceOp): OpResult {
   const item = itemToChange(registryDir, op);
-  if (!item.localSource) throw new Error(`${op.type}/${op.slug} records no source to adopt`);
-  const adopted = omit(item, "localSource");
-  writeFileSync(itemJsonPath(registryDir, op.type, op.slug), JSON.stringify(adopted, null, 2) + "\n");
-  return { kind: op.kind, type: op.type, slug: op.slug, item: adopted };
+  const repoRoot = repoRootOf(registryDir);
+  if (!localSourceOf(repoRoot, op.type, op.slug)) throw new Error(`${op.type}/${op.slug} records no source to adopt`);
+  forgetLocalSource(repoRoot, op.type, op.slug);
+  // The item itself does not change — only this checkout stops looking at a folder.
+  return { kind: op.kind, type: op.type, slug: op.slug, item };
 }
 
 /**
@@ -51,7 +51,8 @@ export function adoptSource(registryDir: string, op: AdoptSourceOp): OpResult {
  */
 export function resyncSource(registryDir: string, op: ResyncSourceOp): OpResult {
   const item = itemToChange(registryDir, op);
-  const source = item.localSource;
+  const repoRoot = repoRootOf(registryDir);
+  const source = localSourceOf(repoRoot, op.type, op.slug);
   if (!source) throw new Error(`${op.type}/${op.slug} records no source to copy from`);
   if (!existsSync(source.path)) throw new Error(`Source path does not exist: ${source.path} — adopt the item instead`);
 
@@ -65,12 +66,10 @@ export function resyncSource(registryDir: string, op: ResyncSourceOp): OpResult 
   else copyDereferenced(source.path, join(dir, basename(source.path)));
   removeIgnoredFiles(dir);
 
-  const resynced: RegistryItem = {
-    ...item,
-    localSource: localSourceOf(source.path),
-    contents: { ...item.contents, files: fileTree(dir) },
-  };
+  const resynced: RegistryItem = { ...item, contents: { ...item.contents, files: fileTree(dir) } };
   assertStructurallyValid(resynced, { expectedType: op.type, expectedSlug: op.slug });
   writeFileSync(json, JSON.stringify(resynced, null, 2) + "\n");
+  // Both sides are level again, so both digests are noted anew.
+  rememberLocalSource(repoRoot, registryDir, op.type, op.slug, source.path);
   return { kind: op.kind, type: op.type, slug: op.slug, item: resynced };
 }

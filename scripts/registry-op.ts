@@ -89,7 +89,7 @@ async function main(argv: string[]): Promise<void> {
       // checkout, which the app's own filesystem bridge refuses to read.
       const type = requireType(rest[0]);
       if (!rest[1]) fail("source-status needs <type> <slug>");
-      out({ type, slug: rest[1], ...sourceStatus(readItem(registryDir, type, rest[1])) });
+      out({ type, slug: rest[1], ...sourceStatus(repoRoot, registryDir, type, rest[1]) });
       return;
     }
     case "validate": {

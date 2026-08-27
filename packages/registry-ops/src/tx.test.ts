@@ -161,3 +161,27 @@ describe("the registry a transaction writes to", () => {
     expect(existsSync(join(repo, "registry", "skills", "tx-skill"))).toBe(false);
   });
 });
+
+describe("the note of where content was copied from", () => {
+  test("is put back when the operation rolls back, like everything else", async () => {
+    // It lives outside the registry, so `git clean` inside the registry does not
+    // reach it — without restoring it by hand, a failed add would leave a record
+    // of a source for an item that does not exist.
+    const repo = makeRepo();
+    const notes = join(repo, ".seedr", "local-sources.json");
+    expect(existsSync(notes)).toBe(false);
+
+    await runRegistryTransaction(addOp(), { repoRoot: repo });
+    expect(existsSync(notes)).toBe(true);
+    const after = readFileSync(notes, "utf8");
+    // Commit, or the next transaction stops at the clean-worktree precondition
+    // and never reaches the rollback this is about.
+    git(repo, "add", "-A");
+    git(repo, "commit", "-qm", "the first add");
+
+    // The same slug again: refused during apply, so the rollback runs.
+    await expect(runRegistryTransaction(addOp(), { repoRoot: repo })).rejects.toThrow(/already exists/);
+    expect(readFileSync(notes, "utf8")).toBe(after);
+    expect(status(repo)).toBe("");
+  });
+});

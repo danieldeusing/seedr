@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
@@ -194,8 +194,8 @@ describe("AgentLog", () => {
 
     const view = screen.getByLabelText("agent output");
     // A box that grows from one line makes the first message look like the
-    // whole story; the floor is stated in lines, not pixels.
-    expect(view.className).toContain("min-h-[calc(10*1.45em+1rem)]");
+    // whole story, so it opens at ten lines' worth.
+    expect(view).toHaveStyle({ height: "190px" });
     expect(view).toHaveTextContent("Todo added 5 items");
 
     rerender(<AgentLog lines={["one", "two", "three"].map(printed)} />);
@@ -223,6 +223,39 @@ describe("AgentLog", () => {
     expect(plain.tagName).toBe("PRE");
     // Both plain lines are one block, so their line breaks survive.
     expect(plain).toHaveTextContent('{ "name": "SKILL.md" }');
+  });
+
+  test("drags taller, and opens where it was left", async () => {
+    render(<AgentLog lines={[printed("one")]} />);
+    const view = screen.getByLabelText("agent output");
+    expect(view).toHaveStyle({ height: "190px" });
+
+    fireEvent.mouseDown(screen.getByLabelText("resize agent output"), { clientY: 400 });
+    fireEvent.mouseMove(document, { clientY: 560 });
+    fireEvent.mouseUp(document);
+    expect(view).toHaveStyle({ height: "350px" });
+
+    // Ten lines is a start, not a ceiling: the next run opens at 350.
+    await waitFor(() => expect(localStorage.getItem("studio-agent-log-height")).toBe("350"));
+  });
+
+  test("the reader chooses how much is read as markdown, and it is remembered", async () => {
+    const lines = [printed("ROOT_RULE_FILES ./x.md"), said("# said")];
+    const { rerender } = render(<AgentLog lines={lines} />);
+    // auto: only what the agent wrote as markdown.
+    expect(screen.getByRole("heading", { name: "said" })).toBeInTheDocument();
+    expect(screen.getByText(/ROOT_RULE_FILES/).tagName).toBe("PRE");
+
+    await userEvent.click(screen.getByLabelText("raw text"));
+    expect(screen.queryByRole("heading", { name: "said" })).toBeNull();
+
+    await userEvent.click(screen.getByLabelText("all as markdown"));
+    expect(screen.queryByText(/ROOT_RULE_FILES/)?.tagName).not.toBe("PRE");
+
+    await waitFor(() => expect(localStorage.getItem("studio-agent-log-mode")).toBe("formatted"));
+    rerender(<AgentLog lines={[]} />);
+    render(<AgentLog lines={lines} />);
+    expect(screen.getAllByLabelText("all as markdown")[0]).toHaveAttribute("aria-pressed", "true");
   });
 
   test("joins consecutive lines of a kind, and splits where the kind changes", () => {

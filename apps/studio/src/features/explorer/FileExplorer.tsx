@@ -19,7 +19,7 @@ import {
 import { useAppTheme } from "@/core/useAppTheme";
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator, type ContextMenuPosition } from "@/core/ContextMenu";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
-import { useRememberedWidth } from "@/core/useRememberedWidth";
+import { useRememberedSize } from "@/core/remembered";
 import { FormattedPreview } from "./FormattedPreview";
 
 // Monaco is ~3 MB and only needed once a file preview opens; it stays out of the
@@ -93,7 +93,7 @@ export function FileExplorer({ files, rootName, onFetchContent, onOpenFile }: Fi
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [mode, setMode] = useState<PreviewMode>("syntax");
   const [menu, setMenu] = useState<{ position: ContextMenuPosition; relativePath: string } | null>(null);
-  const [treeWidth, setTreeWidth] = useRememberedWidth("studio-file-tree-width", 240);
+  const [treeWidth, setTreeWidth] = useRememberedSize("studio-file-tree-width", 240);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [fetchedFilePath, setFetchedFilePath] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);

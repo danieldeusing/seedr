@@ -4,7 +4,7 @@ import { formatErrors, isFirstParty } from "@seedr/registry-ops/pure";
 import { fs, openPath } from "@/api/fs";
 import { useExternalLink } from "@/core/externalUrl";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
-import { useRememberedWidth } from "@/core/useRememberedWidth";
+import { useRememberedSize } from "@/core/remembered";
 import { SafeMarkdown } from "@/core/ui/SafeMarkdown";
 import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
@@ -78,7 +78,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
   const hasOps = useCanMutate();
   const [tree, setTree] = useState<FileTreeNode[] | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
-  const [metaWidth, setMetaWidth] = useRememberedWidth("studio-meta-width", 340);
+  const [metaWidth, setMetaWidth] = useRememberedSize("studio-meta-width", 340);
   const [metaCollapsed, setMetaCollapsed] = useState(false);
   const [filesCollapsed, setFilesCollapsed] = useState(false);
   const [stacked, setStacked] = useState(false);

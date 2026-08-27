@@ -4,7 +4,7 @@ import { AppHeader } from "./core/AppHeader";
 import { ExternalLinkDialog } from "./core/ExternalLinkDialog";
 import { Modal } from "./core/Modal";
 import { PaneResizeHandle } from "./core/PaneResizeHandle";
-import { useRememberedWidth } from "./core/useRememberedWidth";
+import { useRememberedSize } from "./core/remembered";
 import { AuthorForm } from "./features/author/AuthorForm";
 import { Detail } from "./features/explorer/Detail";
 import { Explorer } from "./features/explorer/Explorer";
@@ -26,7 +26,7 @@ type DialogKind = null | "author" | "git" | "update" | "test" | "settings";
 
 export function App() {
   const [dialog, setDialog] = useState<DialogKind>(null);
-  const [sidebarWidth, setSidebarWidth] = useRememberedWidth("studio-sidebar-width", 288);
+  const [sidebarWidth, setSidebarWidth] = useRememberedSize("studio-sidebar-width", 288);
   const repo = useStudio((s) => s.repo);
   const items = useStudio((s) => s.items);
   const problems = useStudio((s) => s.problems);

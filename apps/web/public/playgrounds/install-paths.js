@@ -7,41 +7,47 @@
 
   const TYPES = {
     skill:    { label: 'Skill',    color: '#f472b6', structure: 'directory', handler: 'SkillHandler',    mainFile: 'SKILL.md',   subDir: 'skills',   sampleFiles: ['SKILL.md', 'scripts/', 'references/'] },
-    command:  { label: 'Command',  color: '#fbbf24', structure: 'directory', handler: 'SkillHandler',    mainFile: 'COMMAND.md', subDir: 'commands', sampleFiles: ['COMMAND.md', 'scripts/'] },
     agent:    { label: 'Agent',    color: '#60a5fa', structure: 'file',      handler: 'AgentHandler',    mainFile: '{slug}.md',  subDir: 'agents',   sampleFiles: [] },
     hook:     { label: 'Hook',     color: '#c084fc', structure: 'json-merge',handler: 'HookHandler',     mergeTarget: 'settings.json', mergeField: 'hooks', subDir: 'hooks' },
-    mcp:      { label: 'MCP',      color: '#14b8a6', structure: 'json-merge',handler: 'McpHandler',      mergeTarget: '.mcp.json', mergeField: 'mcpServers', subDir: null },
+    mcp:      { label: 'MCP',      color: '#14b8a6', structure: 'json-merge',handler: 'McpHandler',      subDir: null },
     plugin:   { label: 'Plugin',   color: '#818cf8', structure: 'plugin',    handler: 'PluginHandler',   subDir: 'plugins' },
     settings: { label: 'Settings', color: '#fb923c', structure: 'json-merge',handler: 'SettingsHandler', mergeTarget: 'settings.json', subDir: null },
   };
 
   const TOOLS = {
-    claude:   { label: 'Claude Code',    short: 'claude',   projectDir: '.claude',   userDir: '~/.claude' },
-    copilot:  { label: 'GitHub Copilot', short: 'copilot',  projectDir: '.github',   userDir: '~/.config/github-copilot' },
-    gemini:   { label: 'Gemini',         short: 'gemini',   projectDir: '.gemini',   userDir: '~/.gemini' },
-    codex:    { label: 'OpenAI Codex',   short: 'codex',    projectDir: '.codex',    userDir: '~/.codex' },
-    opencode: { label: 'OpenCode',       short: 'opencode', projectDir: '.opencode', userDir: '~/.opencode' },
+    claude:      { label: 'Claude Code',        short: 'claude',      projectDir: '.claude',   userDir: '~/.claude' },
+    copilot:     { label: 'GitHub Copilot',     short: 'copilot',     projectDir: '.github',   userDir: '~/.github' },
+    antigravity: { label: 'Google Antigravity', short: 'antigravity', projectDir: '.agents',   userDir: '~/.agents' },
+    codex:       { label: 'OpenAI Codex',       short: 'codex',       projectDir: '.codex',    userDir: '~/.codex' },
+    opencode:    { label: 'OpenCode',           short: 'opencode',    projectDir: '.opencode', userDir: '~/.opencode' },
+  };
+
+  // Where each agent keeps its MCP servers, and the entry the handler writes there.
+  // Copilot and Antigravity have no verified format, so they are refused rather than guessed at.
+  const MCP_CONFIG = {
+    claude:   { project: ['.mcp.json'],             user: ['.claude.json'],                         entry: 'mcpServers.my-item' },
+    codex:    { project: ['.codex', 'config.toml'], user: ['.codex', 'config.toml'],                entry: '[mcp_servers.my-item]' },
+    opencode: { project: ['opencode.json'],         user: ['.config', 'opencode', 'opencode.json'], entry: 'mcp.my-item' },
   };
 
   const COMPAT = {
-    skill: ['claude','copilot','gemini','codex','opencode'],
-    command: ['claude'],
+    skill: ['claude','copilot','antigravity','codex','opencode'],
     agent: ['claude'],
     hook: ['claude'],
     plugin: ['claude'],
     settings: ['claude'],
-    mcp: ['claude'],
+    mcp: ['claude','codex','opencode'],
   };
 
-  // Tools that read .agents/ directly (no symlink needed)
-  const READS_AGENTS_DIR = ['gemini', 'codex', 'opencode'];
+  // Tools that read .agents/skills/ directly (no symlink needed)
+  const READS_AGENTS_DIR = ['antigravity', 'codex', 'opencode'];
 
   const PRESETS = [
-    { label: 'Skill \u2192 Claude',        type: 'skill',   tools: ['claude'],                  scope: 'project', method: 'copy' },
-    { label: 'Skill \u2192 3 Tools',       type: 'skill',   tools: ['claude','copilot','gemini'], scope: 'project', method: 'symlink' },
-    { label: 'Hook \u2192 Project',        type: 'hook',    tools: ['claude'],                  scope: 'project', method: 'copy' },
-    { label: 'MCP \u2192 User',            type: 'mcp',     tools: ['claude'],                  scope: 'user',    method: 'copy' },
-    { label: 'Plugin \u2192 User',         type: 'plugin',  tools: ['claude'],                  scope: 'user',    method: 'copy' },
+    { label: 'Skill \u2192 Claude',        type: 'skill',   tools: ['claude'],                       scope: 'project', method: 'copy' },
+    { label: 'Skill \u2192 3 Tools',       type: 'skill',   tools: ['claude','copilot','antigravity'], scope: 'project', method: 'symlink' },
+    { label: 'Hook \u2192 Project',        type: 'hook',    tools: ['claude'],                       scope: 'project', method: 'copy' },
+    { label: 'MCP \u2192 User',            type: 'mcp',     tools: ['claude'],                       scope: 'user',    method: 'copy' },
+    { label: 'Plugin \u2192 User',         type: 'plugin',  tools: ['claude'],                       scope: 'user',    method: 'copy' },
   ];
 
   const state = {
@@ -98,7 +104,10 @@
     const compat = COMPAT[state.type];
     document.getElementById('toolChecks').replaceChildren(...Object.entries(TOOLS).map(([key, tool]) => {
       const ok = compat.includes(key);
-      const dir = state.scope === 'user' ? tool.userDir : tool.projectDir;
+      // MCP servers go into one config file per agent, not into the agent's content root.
+      const target = state.type === 'mcp' && ok
+        ? mcpConfigPath(key)
+        : (state.scope === 'user' ? tool.userDir : tool.projectDir) + '/';
 
       const checkbox = el('input', { dataset: { tool: key } });
       checkbox.type = 'checkbox';
@@ -113,7 +122,7 @@
       const item = el('label', { className: 'check-item' },
         checkbox,
         el('span', { className: 'tool-label', text: tool.short }),
-        ok ? el('span', { className: 'tool-dir', text: dir + '/' }) : el('span', { className: 'compat-tag', text: 'not supported' }));
+        ok ? el('span', { className: 'tool-dir', text: target }) : el('span', { className: 'compat-tag', text: 'not supported' }));
       item.classList.toggle('disabled', !ok);
       return item;
     }));
@@ -132,7 +141,7 @@
   }
 
   function renderMethodSection() {
-    const show = state.type === 'skill' || state.type === 'command';
+    const show = state.type === 'skill';
     const section = document.getElementById('methodSection');
     section.hidden = !show;
     if (show) {
@@ -152,21 +161,26 @@
 
   function renderSummary() {
     const t = TYPES[state.type];
-    const isMulti = state.tools.length > 1;
-    const useSymlink = state.method === 'symlink' && (state.type === 'skill' || state.type === 'command');
+    const useSymlink = state.method === 'symlink' && state.type === 'skill';
+    const linkedTools = state.tools.filter(tool => !READS_AGENTS_DIR.includes(tool));
 
     let operation = 'Copy files';
-    if (t.structure === 'json-merge') operation = 'Deep merge into JSON';
+    if (state.type === 'hook') operation = 'Copy script + merge triggers';
+    else if (state.type === 'mcp') operation = 'Write one server entry';
+    else if (t.structure === 'json-merge') operation = 'Deep merge into JSON';
     else if (t.structure === 'plugin') operation = 'Cache to ~/.claude + clone marketplace + enable';
-    else if (useSymlink && isMulti) operation = 'Central copy + symlinks';
-    else if (useSymlink) operation = 'Symlink';
+    else if (useSymlink) operation = 'Central copy + symlinks';
 
     let fileCount = 0;
-    if (t.structure === 'directory') fileCount = (t.sampleFiles?.length || 1) * (useSymlink && isMulti ? 1 : state.tools.length);
+    if (t.structure === 'directory') {
+      const itemFileCount = t.sampleFiles?.length || 1;
+      fileCount = useSymlink ? itemFileCount + linkedTools.length : itemFileCount * state.tools.length;
+    }
     else if (t.structure === 'file') fileCount = state.tools.length;
-    else if (t.structure === 'json-merge') fileCount = state.type === 'hook' ? 2 : 1;
-    else if (t.structure === 'plugin') fileCount = 7; // cache dir + marketplace clone + installed_plugins + known_marketplaces + settings
-    if (useSymlink && isMulti) fileCount += state.tools.length;
+    else if (state.type === 'hook') fileCount = 2;
+    else if (state.type === 'mcp') fileCount = state.tools.length;
+    else if (t.structure === 'json-merge') fileCount = 1;
+    else if (t.structure === 'plugin') fileCount = 5; // cache dir + marketplace clone + installed_plugins + known_marketplaces + settings
 
     const rows = [
       ['Handler', el('span', { className: 'summary-value' }, t.handler, el('span', { className: 'handler-method', text: '.install()' }))],
@@ -185,14 +199,14 @@
   function renderFileTree() {
     const tree = document.getElementById('fileTree');
     const t = TYPES[state.type];
-    const isMulti = state.tools.length > 1;
-    const useSymlink = state.method === 'symlink' && (state.type === 'skill' || state.type === 'command');
+    const useSymlink = state.method === 'symlink' && state.type === 'skill';
     const slug = 'my-item';
     const rootName = state.scope === 'user' ? '~/' : 'my-project/';
     const nodes = [];
 
     if (t.structure === 'directory') {
-      if (useSymlink && isMulti) {
+      // Symlink mode always writes the central copy first, however many tools were picked.
+      if (useSymlink) {
         // Central storage
         const itemFiles = (t.sampleFiles || [t.mainFile]).map(f => ({ name: f, type: f.endsWith('/') ? 'new-dir' : 'new' }));
         nodes.push({ name: '.agents/', cls: 'dir', children: [
@@ -240,11 +254,11 @@
           { name: settingsFile, cls: 'mod', note: 'hooks merged' }
         ]});
       } else if (state.type === 'mcp') {
-        if (state.scope === 'user') {
-          nodes.push({ name: '.claude.json', cls: 'mod', note: 'mcpServers merged' });
-        } else {
-          nodes.push({ name: '.mcp.json', cls: 'mod', note: 'mcpServers merged' });
-        }
+        state.tools.forEach(tool => {
+          const config = MCP_CONFIG[tool];
+          const segments = state.scope === 'user' ? config.user : config.project;
+          nodes.push(...pathNodes(segments, { cls: 'mod', note: config.entry + ' written' }));
+        });
       } else if (state.type === 'settings') {
         const dir = toolDir('claude');
         const settingsFile = state.scope === 'local' ? 'settings.local.json' : 'settings.json';
@@ -319,6 +333,20 @@
     return state.scope === 'user' ? TOOLS[tool].userDir.replace('~/', '') : TOOLS[tool].projectDir;
   }
 
+  function mcpConfigPath(tool) {
+    const config = MCP_CONFIG[tool];
+    return state.scope === 'user' ? '~/' + config.user.join('/') : config.project.join('/');
+  }
+
+  // Nests a path given as segments, so `['.codex', 'config.toml']` becomes a directory
+  // holding the leaf. Only the last segment carries the leaf's class and note.
+  function pathNodes(segments, leaf) {
+    const [head, ...rest] = segments;
+    return rest.length === 0
+      ? [{ ...leaf, name: head }]
+      : [{ name: head + '/', cls: 'dir', children: pathNodes(rest, leaf) }];
+  }
+
   const TREE_CLASS = { dir: 't-dir', new: 't-new', 'new-dir': 't-new', mod: 't-mod', sym: 't-sym' };
 
   // Appends one line per node (text for the indentation, <span>s for the coloured parts) to the
@@ -342,6 +370,41 @@
     });
   }
 
+  // The registry's definition uses Claude Code's vocabulary; every other agent's adapter
+  // translates it into that agent's own schema before writing.
+  function mcpEntry(tool) {
+    if (tool === 'codex') {
+      return jsonBox([
+        ['jk', '[mcp_servers.my-item]'], '\n',
+        ['ja jk', 'command'], ' = ', ['ja js', '"npx"'], '\n',
+        ['ja jk', 'args'], ' = ', ['jb', '['], ['ja js', '"-y"'], ', ', ['ja js', '"@scope/my-item-mcp"'], ['jb', ']'],
+      ]);
+    }
+    if (tool === 'opencode') {
+      return jsonBox([
+        ['jb', '{'], '\n',
+        '  ', ['jk', '"mcp"'], ': ', ['jb', '{'], '\n',
+        '    ', ['ja jk', '"my-item"'], ': ', ['jb', '{'], '\n',
+        '      ', ['ja jk', '"type"'], ': ', ['ja js', '"local"'], ',\n',
+        '      ', ['ja jk', '"command"'], ': ', ['jb', '['], ['ja js', '"npx"'], ', ', ['ja js', '"-y"'], ', ', ['ja js', '"@scope/my-item-mcp"'], ['jb', ']'], ',\n',
+        '      ', ['ja jk', '"enabled"'], ': ', ['ja', 'true'], '\n',
+        '    ', ['jb', '}'], '\n',
+        '  ', ['jb', '}'], '\n',
+        ['jb', '}'],
+      ]);
+    }
+    return jsonBox([
+      ['jb', '{'], '\n',
+      '  ', ['jk', '"mcpServers"'], ': ', ['jb', '{'], '\n',
+      '    ', ['ja jk', '"my-item"'], ': ', ['jb', '{'], '\n',
+      '      ', ['ja jk', '"command"'], ': ', ['ja js', '"npx"'], ',\n',
+      '      ', ['ja jk', '"args"'], ': ', ['jb', '['], ['ja js', '"-y"'], ', ', ['ja js', '"@scope/my-item-mcp"'], ['jb', ']'], '\n',
+      '    ', ['jb', '}'], '\n',
+      '  ', ['jb', '}'], '\n',
+      ['jb', '}'],
+    ]);
+  }
+
   function jsonPreview() {
     if (state.type === 'hook') {
       return ['\n', jsonBox([
@@ -351,7 +414,7 @@
         '      ', ['ja jk', '"matcher"'], ': ', ['ja js', '"Bash"'], ',\n',
         '      ', ['ja jk', '"hooks"'], ': ', ['jb', '[{'], '\n',
         '        ', ['ja jk', '"type"'], ': ', ['ja js', '"command"'], ',\n',
-        '        ', ['ja jk', '"command"'], ': ', ['ja js', '".claude/hooks/my-item.sh"'], '\n',
+        '        ', ['ja jk', '"command"'], ': ', ['ja js', `"${state.scope === 'user' ? '~/' : ''}.claude/hooks/my-item.sh"`], '\n',
         '      ', ['jb', '}]'], '\n',
         '    ', ['jb', '}]'], '\n',
         '  ', ['jb', '}'], '\n',
@@ -359,16 +422,10 @@
       ])];
     }
     if (state.type === 'mcp') {
-      return ['\n', jsonBox([
-        ['jb', '{'], '\n',
-        '  ', ['jk', '"mcpServers"'], ': ', ['jb', '{'], '\n',
-        '    ', ['ja jk', '"my-item"'], ': ', ['jb', '{'], '\n',
-        '      ', ['ja jk', '"command"'], ': ', ['ja js', '"npx"'], ',\n',
-        '      ', ['ja jk', '"args"'], ': ', ['jb', '['], ['ja js', '"-y"'], ', ', ['ja js', '"@scope/my-item-mcp"'], ['jb', ']'], '\n',
-        '    ', ['jb', '}'], '\n',
-        '  ', ['jb', '}'], '\n',
-        ['jb', '}'],
-      ])];
+      return state.tools.flatMap(tool => [
+        '\n', el('div', { className: 'json-label', text: `${mcpConfigPath(tool)} (${TOOLS[tool].short})` }),
+        '\n', mcpEntry(tool),
+      ]);
     }
     if (state.type === 'settings') {
       return ['\n', jsonBox([
@@ -415,14 +472,16 @@
     const parts = [];
     parts.push(`Installing a **${t.label.toLowerCase()}** for ${state.tools.map(k => TOOLS[k].label).join(', ')}`);
     parts.push(`at **${state.scope}** scope`);
-    if ((state.type === 'skill' || state.type === 'command') && state.method !== 'copy') {
+    if (state.type === 'skill' && state.method !== 'copy') {
       parts.push(`using **${state.method}** method`);
     }
     parts.push('.');
 
     const details = [];
-    if (t.structure === 'directory' && state.method === 'symlink' && state.tools.length > 1) {
+    if (t.structure === 'directory' && state.method === 'symlink') {
       details.push('Files are stored centrally in `.agents/` with relative symlinks from each tool directory.');
+    } else if (state.type === 'mcp') {
+      details.push(`The server entry is written into ${state.tools.map(tool => `\`${mcpConfigPath(tool)}\``).join(', ')}.`);
     } else if (t.structure === 'json-merge') {
       details.push(`Config is deep-merged into \`${t.mergeTarget}\`${state.scope === 'local' ? ' (using settings.local.json for local scope)' : ''}.`);
     } else if (t.structure === 'plugin') {
@@ -441,7 +500,7 @@
     const compat = COMPAT[type];
     state.tools = state.tools.filter(t => compat.includes(t));
     if (!state.tools.length) state.tools = [compat[0]];
-    if (type !== 'skill' && type !== 'command') state.method = 'copy';
+    if (type !== 'skill') state.method = 'copy';
     renderAll();
   }
 

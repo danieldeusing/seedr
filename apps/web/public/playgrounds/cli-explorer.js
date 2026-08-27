@@ -9,7 +9,6 @@
 
   const TYPES = {
     skill: { label: "Skill", structure: "directory", mainFile: "SKILL.md" },
-    command: { label: "Command", structure: "directory", mainFile: "COMMAND.md" },
     agent: { label: "Agent", structure: "file", mainFile: "{slug}.md" },
     hook: { label: "Hook", structure: "json-merge", mergeTarget: "settings.json", mergeField: "hooks" },
     mcp: { label: "MCP", structure: "json-merge", mergeTarget: ".mcp.json", mergeField: "mcpServers" },
@@ -19,50 +18,68 @@
 
   const TOOLS = {
     claude: { label: "Claude Code", short: "claude", dir: ".claude", userDir: "~/.claude" },
-    copilot: { label: "GitHub Copilot", short: "copilot", dir: ".github", userDir: "~/.config/github-copilot" },
-    gemini: { label: "Gemini", short: "gemini", dir: ".gemini", userDir: "~/.gemini" },
-    codex: { label: "OpenAI Codex", short: "codex", dir: ".codex", userDir: "~/.codex" },
+    copilot: { label: "GitHub Copilot", short: "copilot", dir: ".github", userDir: "~/.github" },
+    antigravity: { label: "Google Antigravity", short: "antigravity", dir: ".agents", userDir: "~/.agents" },
+    codex: { label: "OpenAI Codex CLI", short: "codex", dir: ".codex", userDir: "~/.codex" },
     opencode: { label: "OpenCode", short: "opencode", dir: ".opencode", userDir: "~/.opencode" },
   };
 
   const COMPATIBILITY = {
-    skill: ["claude", "copilot", "gemini", "codex", "opencode"],
-    command: ["claude"],
+    skill: ["claude", "copilot", "antigravity", "codex", "opencode"],
     agent: ["claude"],
     hook: ["claude"],
     plugin: ["claude"],
     settings: ["claude"],
-    mcp: ["claude"],
+    mcp: ["claude", "codex", "opencode"],
   };
 
   // Tools that read .agents/skills/ directly (no symlink needed when using central storage)
-  const READS_AGENTS_DIR = ["gemini", "codex", "opencode"];
+  const READS_AGENTS_DIR = ["antigravity", "codex", "opencode"];
 
+  // Where each tool keeps its MCP servers. Copilot and Antigravity have no
+  // verified format, so the CLI refuses them rather than guessing.
+  const MCP_TARGETS = {
+    claude: { file: ".mcp.json", userFile: "~/.claude.json", entry: (name) => `mcpServers.${name}` },
+    codex: { file: ".codex/config.toml", userFile: "~/.codex/config.toml", entry: (name) => `[mcp_servers.${name}]` },
+    opencode: { file: "opencode.json", userFile: "~/.config/opencode/opencode.json", entry: (name) => `mcp.${name}` },
+  };
+
+  // Real slugs, so a command copied out of here resolves. The registry holds no
+  // agent and no settings item, so those two are the only invented names —
+  // chosen not to collide with a real slug of another type, which is what
+  // `code-review` and `context7` were doing here: both are plugins.
   const SAMPLE_ITEMS = {
     pdf: { type: "skill", desc: "Generate, read, and manipulate PDF documents", files: ["SKILL.md", "scripts/"] },
-    commit: { type: "skill", desc: "Commit changes following project conventions", files: ["SKILL.md"] },
-    playground: { type: "skill", desc: "Create interactive HTML playgrounds", files: ["SKILL.md", "templates/"] },
-    "pre-commit-lint": { type: "hook", desc: "Run linting before commits", hook: "PreToolUse", matcher: "Bash", script: "pre-commit-lint.sh" },
-    context7: { type: "mcp", desc: "Fetch up-to-date documentation", server: { command: "npx", args: ["-y", "@upstash/context7-mcp"] } },
-    superpowers: { type: "plugin", desc: "Ships 29 agents, 22 commands, 19 skills", version: "1.0.0", marketplace: "superpowers", pluginName: "superpowers" },
-    "code-review": { type: "agent", desc: "Review code for quality and security issues", files: ["code-review.md"] },
+    "lint-doctor": { type: "skill", desc: "Diagnose and fix linting issues across multiple languages", files: ["SKILL.md", "references/"], label: "project-x" },
+    "code-smell-doctor": { type: "skill", desc: "Detect and refactor code smells using Martin Fowler's catalog", files: ["SKILL.md", "references/"] },
+    "project-security-guard": { type: "hook", desc: "Block dangerous Bash commands and protect sensitive files", hook: "PreToolUse", matcher: "Bash", script: "project-security-guard.sh", label: "project-x" },
+    playwright: { type: "mcp", desc: "Drive a real browser through the accessibility tree", server: { command: "npx", args: ["-y", "@playwright/mcp@latest"] } },
+    superpowers: { type: "plugin", desc: "Brainstorming, subagent-driven development, systematic debugging and red/green TDD", version: "6.3.0", marketplace: "claude-plugins-official", pluginName: "superpowers" },
+    "release-notes": { type: "agent", desc: "Draft release notes from the commits on a branch", files: ["release-notes.md"] },
     memory: { type: "settings", desc: "Optimized memory and context settings", settings: { preferredNotifyMethod: "terminal", taskAutoArchive: true } },
-    "slash-commands": { type: "command", desc: "Custom slash commands for workflows", files: ["COMMAND.md", "scripts/"] },
+  };
+
+  // What `list --installed` finds on disk, per type and per tool. Settings items
+  // are never in here: they merge into settings.json and leave no marker behind.
+  const INSTALLED_SAMPLE = {
+    skill: { claude: ["lint-doctor", "pdf"], antigravity: ["pdf"] },
+    hook: { claude: ["project-security-guard"] },
   };
 
   const PRESETS = [
     { label: "Simple Skill", command: "add", add: { name: "pdf", type: "skill", agents: ["claude"], scope: "project", method: "copy", yes: false, force: false, dryRun: false } },
-    { label: "Multi-Tool", command: "add", add: { name: "pdf", type: "skill", agents: ["claude", "copilot", "gemini"], scope: "project", method: "symlink", yes: false, force: false, dryRun: false } },
-    { label: "Hook", command: "add", add: { name: "pre-commit-lint", type: "hook", agents: ["claude"], scope: "project", method: "copy", yes: false, force: false, dryRun: false } },
-    { label: "MCP Server", command: "add", add: { name: "context7", type: "mcp", agents: ["claude"], scope: "user", method: "copy", yes: false, force: false, dryRun: false } },
+    { label: "Multi-Tool", command: "add", add: { name: "pdf", type: "skill", agents: ["claude", "copilot", "antigravity"], scope: "project", method: "symlink", yes: false, force: false, dryRun: false } },
+    { label: "Hook", command: "add", add: { name: "project-security-guard", type: "hook", agents: ["claude"], scope: "project", method: "copy", yes: false, force: false, dryRun: false } },
+    { label: "MCP Server", command: "add", add: { name: "playwright", type: "mcp", agents: ["claude"], scope: "user", method: "copy", yes: false, force: false, dryRun: false } },
     { label: "Dry Run", command: "add", add: { name: "pdf", type: "skill", agents: ["claude", "copilot"], scope: "project", method: "symlink", yes: false, force: false, dryRun: true } },
   ];
 
   const state = {
     command: "add",
     add: { name: "pdf", type: "skill", agents: ["claude"], scope: "project", method: "copy", yes: false, force: false, dryRun: false },
-    list: { type: "", installed: false, scope: "project" },
-    remove: { name: "pdf", agents: ["claude"], scope: "project", yes: false },
+    list: { type: "", label: "", installed: false, agents: Object.keys(TOOLS), scope: "project" },
+    remove: { name: "pdf", type: "skill", agents: ["claude"], scope: "project", yes: false },
+    init: { agents: ["claude"], yes: false },
   };
 
   // ── DOM helpers ──
@@ -138,17 +155,19 @@
     return select;
   }
 
-  function toolChecks(dataKey, agents, compat) {
+  /** Agent checkboxes for whichever command's panel is on screen; only one is rendered at a time. */
+  function toolChecks(agents, type) {
+    const compat = type ? COMPATIBILITY[type] : null;
     return el(
       "div",
       { className: "check-group" },
       ...Object.entries(TOOLS).map(([key, tool]) => {
         const supported = compat ? compat.includes(key) : true;
-        const checkbox = el("input", { attrs: { type: "checkbox" }, dataset: { [dataKey]: key } });
+        const checkbox = el("input", { attrs: { type: "checkbox" }, dataset: { agent: key } });
         checkbox.checked = agents.includes(key) && supported;
         checkbox.disabled = !supported;
         const label = el("label", { className: `check-item${supported ? "" : " disabled"}` }, checkbox, span("tool-label", tool.short));
-        if (!supported) label.append(span("compat-badge", `${TYPES[state.add.type].label} only`));
+        if (!supported) label.append(span("compat-badge", `no ${TYPES[type].label.toLowerCase()} support`));
         return label;
       })
     );
@@ -156,14 +175,13 @@
 
   function renderAddOptions() {
     const s = state.add;
-    const compat = COMPATIBILITY[s.type] || [];
-    const showMethod = s.type === "skill" || s.type === "command";
+    const showMethod = s.type === "skill";
     const nameInput = el("input", { className: "text-input", attrs: { type: "text", id: "addName", placeholder: "e.g. pdf, commit" } });
     nameInput.value = s.name;
     const groups = [
       el("div", { className: "control-group" }, sectionLabel("Item Name"), nameInput),
-      el("div", { className: "control-group" }, sectionLabel("Type"), typeSelect("addType", s.type, false)),
-      el("div", { className: "control-group" }, sectionLabel("Target Tools", "(-a, --agents)"), toolChecks("tool", s.agents, compat)),
+      el("div", { className: "control-group" }, sectionLabel("Type", "(-t, --type)"), typeSelect("addType", s.type, false)),
+      el("div", { className: "control-group" }, sectionLabel("Target Tools", "(-a, --agents)"), toolChecks(s.agents, s.type)),
       el("div", { className: "control-group" }, sectionLabel("Scope", "(-s, --scope)"), radioGroup(["project", "user", "local"], s.scope, "set-add-scope")),
     ];
     if (showMethod) {
@@ -188,8 +206,16 @@
       el("div", { className: "control-group" }, sectionLabel("Type Filter", "(-t, --type)"), typeSelect("listType", s.type, true)),
       el("div", { className: "control-group" }, sectionLabel("Mode"), toggleRow("--installed", s.installed, "toggle-list", "installed")),
     ];
+    // --label filters the registry listing; --agents and --scope only narrow the installed check.
     if (s.installed) {
-      groups.push(el("div", { className: "control-group" }, sectionLabel("Scope"), radioGroup(["project", "user"], s.scope, "set-list-scope")));
+      groups.push(
+        el("div", { className: "control-group" }, sectionLabel("Target Tools", "(-a, --agents)"), toolChecks(s.agents, null)),
+        el("div", { className: "control-group" }, sectionLabel("Scope", "(--scope)"), radioGroup(["project", "user", "local"], s.scope, "set-list-scope"))
+      );
+    } else {
+      const labelInput = el("input", { className: "text-input", attrs: { type: "text", id: "listLabel", placeholder: "e.g. project-x" } });
+      labelInput.value = s.label;
+      groups.push(el("div", { className: "control-group" }, sectionLabel("Label Filter", "(--label)"), labelInput));
     }
     return groups;
   }
@@ -200,21 +226,24 @@
     nameInput.value = s.name;
     return [
       el("div", { className: "control-group" }, sectionLabel("Item Name"), nameInput),
-      el("div", { className: "control-group" }, sectionLabel("Target Tools", "(-a, --agents)"), toolChecks("rtool", s.agents, null)),
-      el("div", { className: "control-group" }, sectionLabel("Scope"), radioGroup(["project", "user"], s.scope, "set-remove-scope")),
+      el("div", { className: "control-group" }, sectionLabel("Type", "(-t, --type)"), typeSelect("removeType", s.type, false)),
+      el("div", { className: "control-group" }, sectionLabel("Target Tools", "(-a, --agents)"), toolChecks(s.agents, s.type)),
+      el("div", { className: "control-group" }, sectionLabel("Scope", "(--scope)"), radioGroup(["project", "user", "local"], s.scope, "set-remove-scope")),
       el("div", { className: "control-group" }, sectionLabel("Flags"), toggleRow("--yes", s.yes, "toggle-remove", "yes")),
     ];
   }
 
   function renderInitOptions() {
+    const s = state.init;
     return [
       el(
         "div",
         { className: "init-help" },
-        el("p", {}, el("strong", { text: "seedr init" }), " sets up a new project for seedr."),
-        el("p", { text: "Creates the base directory structure and configuration files needed to install and manage AI coding assistant content." }),
-        el("p", { className: "muted", text: "No options available." })
+        el("p", {}, el("strong", { text: "seedr init" }), " creates each tool's skills directory with a README."),
+        el("p", { text: "It writes nothing else — no settings.json, no registry entry. Install items afterwards with seedr add." })
       ),
+      el("div", { className: "control-group" }, sectionLabel("Target Tools", "(-a, --agents)"), toolChecks(s.agents, null)),
+      el("div", { className: "control-group" }, sectionLabel("Flags"), toggleRow("--yes", s.yes, "toggle-init", "yes")),
     ];
   }
 
@@ -242,10 +271,10 @@
       });
     }
 
-    document.querySelectorAll("[data-tool]").forEach((checkbox) => {
+    document.querySelectorAll("[data-agent]").forEach((checkbox) => {
       checkbox.addEventListener("change", () => {
-        const checked = [...document.querySelectorAll("[data-tool]:checked")].map((node) => node.dataset.tool);
-        state.add.agents = checked.length ? checked : ["claude"];
+        const checked = [...document.querySelectorAll("[data-agent]:checked")].map((node) => node.dataset.agent);
+        state[state.command].agents = checked.length ? checked : ["claude"];
         updateAll();
       });
     });
@@ -258,6 +287,14 @@
       });
     }
 
+    const listLabel = document.getElementById("listLabel");
+    if (listLabel) {
+      listLabel.addEventListener("input", (event) => {
+        state.list.label = event.target.value;
+        updateAll();
+      });
+    }
+
     const removeName = document.getElementById("removeName");
     if (removeName) {
       removeName.addEventListener("input", (event) => {
@@ -266,13 +303,17 @@
       });
     }
 
-    document.querySelectorAll("[data-rtool]").forEach((checkbox) => {
-      checkbox.addEventListener("change", () => {
-        const checked = [...document.querySelectorAll("[data-rtool]:checked")].map((node) => node.dataset.rtool);
-        state.remove.agents = checked.length ? checked : ["claude"];
+    const removeType = document.getElementById("removeType");
+    if (removeType) {
+      removeType.addEventListener("change", (event) => {
+        state.remove.type = event.target.value;
+        const compat = COMPATIBILITY[state.remove.type];
+        state.remove.agents = state.remove.agents.filter((agent) => compat.includes(agent));
+        if (state.remove.agents.length === 0) state.remove.agents = [compat[0]];
+        renderOptions();
         updateAll();
       });
-    });
+    }
   }
 
   // ── Command string ──
@@ -285,7 +326,7 @@
       if (s.type) parts.push("--type", s.type);
       if (s.agents.length && !(s.agents.length === 1 && s.agents[0] === "claude")) parts.push("--agents", s.agents.join(","));
       if (s.scope !== "project") parts.push("--scope", s.scope);
-      if (s.method !== "copy" && (s.type === "skill" || s.type === "command")) parts.push("--method", s.method);
+      if (s.method !== "copy" && s.type === "skill") parts.push("--method", s.method);
       if (s.yes) parts.push("--yes");
       if (s.force) parts.push("--force");
       if (s.dryRun) parts.push("--dry-run");
@@ -293,16 +334,25 @@
       const s = state.list;
       parts.push("list");
       if (s.type) parts.push("--type", s.type);
-      if (s.installed) parts.push("--installed");
-      if (s.installed && s.scope !== "project") parts.push("--scope", s.scope);
+      if (s.installed) {
+        parts.push("--installed");
+        if (s.agents.length < Object.keys(TOOLS).length) parts.push("--agents", s.agents.join(","));
+        if (s.scope !== "project") parts.push("--scope", s.scope);
+      } else if (s.label) {
+        parts.push("--label", s.label);
+      }
     } else if (state.command === "remove") {
       const s = state.remove;
-      parts.push("remove", s.name);
+      // --type is mandatory: remove refuses to guess which type a slug belongs to.
+      parts.push("remove", s.name, "--type", s.type);
       if (s.agents.length && !(s.agents.length === 1 && s.agents[0] === "claude")) parts.push("--agents", s.agents.join(","));
       if (s.scope !== "project") parts.push("--scope", s.scope);
       if (s.yes) parts.push("--yes");
     } else {
+      const s = state.init;
       parts.push("init");
+      if (!(s.agents.length === 1 && s.agents[0] === "claude")) parts.push("--agents", s.agents.join(","));
+      if (s.yes) parts.push("--yes");
     }
     return parts;
   }
@@ -347,7 +397,7 @@
     lines.push(blank());
     lines.push(line("check", "Tools:", s.agents.map((agent) => TOOLS[agent].label).join(", ")));
     lines.push(line("check", "Scope:", s.scope));
-    if (s.type === "skill" || s.type === "command") lines.push(line("check", "Method:", s.method));
+    if (s.type === "skill") lines.push(line("check", "Method:", s.method));
 
     if (s.dryRun) {
       lines.push(blank());
@@ -359,20 +409,24 @@
     lines.push(muted(s.yes ? "Confirmation skipped (--yes)" : "? Confirm installation (Y/n)"));
     lines.push(blank());
 
-    const useSymlink = s.method === "symlink" && (s.type === "skill" || s.type === "command");
-    const multiTool = s.agents.length > 1;
+    const useSymlink = s.method === "symlink" && s.type === "skill";
 
-    if (useSymlink && multiTool) {
+    if (useSymlink) {
       const typeDir = `${s.type}s`;
-      lines.push(line("check", "Copied to central:", `.agents/${typeDir}/${s.name}/`));
+      const central = `${s.scope === "user" ? "~/" : ""}.agents/${typeDir}`;
+      lines.push(line("check", "Copied to central:", `${central}/${s.name}/`));
       for (const tool of s.agents) {
-        if (READS_AGENTS_DIR.includes(tool)) lines.push(line("check", `${TOOLS[tool].short}:`, `reads .agents/${typeDir}/ directly (no symlink needed)`));
+        if (READS_AGENTS_DIR.includes(tool)) lines.push(line("check", `${TOOLS[tool].short}:`, `reads ${central}/ directly (no symlink needed)`));
         else lines.push(line("check", `Symlinked for ${TOOLS[tool].short}:`, `${getToolDir(tool, s.scope)}/${typeDir}/${s.name}/`));
       }
+    } else if (s.type === "mcp") {
+      for (const tool of s.agents) {
+        const target = MCP_TARGETS[tool];
+        lines.push(line("check", `Merged for ${TOOLS[tool].short}:`, `${s.scope === "user" ? target.userFile : target.file} → ${target.entry(s.name)}`));
+      }
     } else if (typeDef?.structure === "json-merge") {
-      const target = getSettingsTarget(s.type, s.scope, s.agents[0]);
       if (s.type === "hook") lines.push(line("check", "Copied hook script:", `${getToolDir("claude", s.scope)}/hooks/${s.name}.sh`));
-      lines.push(line("check", "Merged config into:", target));
+      lines.push(line("check", "Merged config into:", getSettingsTarget(s.scope)));
     } else if (typeDef?.structure === "plugin") {
       const mp = item?.marketplace || "seedr";
       const pn = item?.pluginName || s.name;
@@ -384,8 +438,7 @@
       lines.push(line("check", "Marketplace:", `cloned to ~/.claude/plugins/marketplaces/${mp}/`));
       lines.push(line("check", "Cached to:", `~/.claude/plugins/cache/${mp}/${pn}/${pv}/`));
       lines.push(line("check", "Registry:", "~/.claude/plugins/installed_plugins.json"));
-      const settingsFile = s.scope === "local" ? ".claude/settings.local.json" : s.scope === "user" ? "~/.claude/settings.json" : ".claude/settings.json";
-      lines.push(line("check", "Enabled in:", `${settingsFile} → enabledPlugins["${pid}"] = true`));
+      lines.push(line("check", "Enabled in:", `${getSettingsTarget(s.scope)} → enabledPlugins["${pid}"] = true`));
     } else {
       for (const tool of s.agents) {
         const typeDir = `${s.type}s`;
@@ -396,6 +449,7 @@
 
     lines.push(blank());
     if (s.force) lines.push(muted("Existing files overwritten (--force)"));
+    else if (s.yes) lines.push(muted("Existing files kept (--yes without --force refuses to overwrite)"));
     lines.push(done("Installation complete"));
   }
 
@@ -404,48 +458,87 @@
     if (s.installed) {
       lines.push(el("div", { className: "term-value term-heading", text: `Installed items (${s.scope} scope):` }));
       lines.push(blank());
-      lines.push(el("div", { className: "term-group term-group-skill", text: "  claude:" }));
-      for (const name of ["pdf", "commit", "playground"]) lines.push(el("div", { className: "term-value", text: `    ${name}` }));
-      if (!s.type || s.type === "hook") {
-        lines.push(el("div", { className: "term-group term-group-hook", text: "  hooks:" }));
-        lines.push(el("div", { className: "term-value", text: "    pre-commit-lint" }));
+      let total = 0;
+      // Grouped by type, then by agent — empty groups are omitted.
+      for (const [type, byAgent] of Object.entries(INSTALLED_SAMPLE)) {
+        if (s.type && s.type !== type) continue;
+        const agents = s.agents.filter((agent) => byAgent[agent]);
+        if (agents.length === 0) continue;
+        lines.push(el("div", { className: "term-group term-group-type", text: `${type.toUpperCase()}S` }));
+        for (const agent of agents) {
+          lines.push(el("div", { className: "term-value term-pre", text: `  ${TOOLS[agent].label}` }));
+          for (const slug of byAgent[agent]) lines.push(el("div", { className: "term-value term-pre", text: `    ${slug}` }));
+          total += byAgent[agent].length;
+        }
+        lines.push(blank());
       }
+      if (!s.type || s.type === "settings") lines.push(muted("Note: settings items cannot be discovered (they are merged into settings.json)"));
+      lines.push(el("div", { className: "term-value", text: total === 0 ? "No items installed" : `Total: ${total} installed` }));
       return;
     }
-    const types = s.type ? { [s.type]: TYPES[s.type] } : TYPES;
-    for (const [key, type] of Object.entries(types)) {
-      const items = Object.entries(SAMPLE_ITEMS).filter(([, item]) => item.type === key);
-      if (items.length === 0) continue;
-      lines.push(el("div", { className: "term-group term-group-type", text: `${type.label}s (${items.length})` }));
-      for (const [slug, item] of items) {
-        lines.push(el("div", { className: "term-value" }, "  ", span("term-slug", slug), " ", span("term-desc-inline", item.desc)));
+
+    const all = Object.entries(SAMPLE_ITEMS).filter(([, item]) => !s.type || item.type === s.type);
+    const items = s.label ? all.filter(([, item]) => item.label === s.label) : all;
+    // A label no item carries is almost always a typo, so the CLI names the ones in use and exits 1.
+    if (items.length === 0 && s.label) {
+      const known = [...new Set(all.map(([, item]) => item.label).filter(Boolean))].sort();
+      lines.push(el("div", { className: "term-line" }, span("term-warn", "⚠"), " ", span("term-value", `No item carries the label "${s.label}".`)));
+      if (known.length > 0) lines.push(muted(`Labels in use: ${known.join(", ")}`));
+      return;
+    }
+
+    for (const key of Object.keys(TYPES)) {
+      const typeItems = items.filter(([, item]) => item.type === key);
+      if (typeItems.length === 0) continue;
+      lines.push(el("div", { className: "term-group term-group-type", text: `${key.toUpperCase()}S` }));
+      for (const [slug, item] of typeItems) {
+        lines.push(el("div", { className: "term-value term-pre" }, "  ", span("term-slug", slug), " ", span("term-desc-inline", item.desc)));
       }
       lines.push(blank());
     }
+    lines.push(el("div", { className: "term-value", text: `Total: ${items.length} items. Use 'npx @danieldeusing/seedr add <name>' to install.` }));
+  }
+
+  /** The paths and entries `remove` clears for one tool, mirroring each handler's uninstall. */
+  function removalTargets(type, tool, scope, name) {
+    const toolDir = getToolDir(tool, scope);
+    const settings = getSettingsTarget(scope);
+    if (type === "agent") return [`${toolDir}/agents/${name}.md`];
+    if (type === "hook") return [`${getToolDir("claude", scope)}/hooks/${name}.sh`, `${settings} → hooks entries dropped`];
+    if (type === "mcp") {
+      const target = MCP_TARGETS[tool];
+      return [`${scope === "user" ? target.userFile : target.file} → ${target.entry(name)} deleted`];
+    }
+    if (type === "settings") return [`${settings} → merged keys unmerged`];
+    if (type === "plugin") return ["~/.claude/plugins/installed_plugins.json", `${settings} → enabledPlugins entry dropped`];
+    return [`${toolDir}/skills/${name}/`];
   }
 
   function renderRemoveTerminal(lines) {
     const s = state.remove;
-    lines.push(line("check", "Found", `${s.name} installed for: ${s.agents.map((agent) => TOOLS[agent].short).join(", ")}`));
+    lines.push(line("check", "Found", `${s.name} (${TYPES[s.type].label}) installed for: ${s.agents.map((agent) => TOOLS[agent].short).join(", ")}`));
     lines.push(blank());
-    lines.push(muted(s.yes ? "Confirmation skipped (--yes)" : "? Confirm removal (Y/n)"));
+    lines.push(muted(s.yes ? "Confirmation skipped (--yes)" : "? Proceed with removal? (Y/n)"));
     lines.push(blank());
-    for (const tool of s.agents) lines.push(line("check", `Removed from ${TOOLS[tool].short}:`, `${getToolDir(tool, s.scope)}/skills/${s.name}/`));
+    for (const tool of s.agents) {
+      for (const target of removalTargets(s.type, tool, s.scope, s.name)) {
+        lines.push(line("check", `Removed from ${TOOLS[tool].short}:`, target));
+      }
+    }
     lines.push(blank());
-    lines.push(done("Removal complete"));
+    lines.push(done(`Successfully removed from ${s.agents.length} agent(s)`));
   }
 
   function renderInitTerminal(lines) {
-    lines.push(muted("Initializing seedr project..."));
+    const s = state.init;
+    lines.push(el("div", { className: "term-value term-heading", text: "Will initialize configuration for:" }));
+    for (const tool of s.agents) lines.push(el("div", { className: "term-value term-pre", text: `  - ${TOOLS[tool].label} → ${TOOLS[tool].dir}/skills` }));
     lines.push(blank());
-    lines.push(line("check", "Created", ".claude/ directory"));
-    lines.push(line("check", "Created", ".claude/settings.json"));
-    lines.push(line("check", "Created", ".claude/skills/ directory"));
-    lines.push(line("check", "Created", ".claude/commands/ directory"));
+    lines.push(muted(s.yes ? "Confirmation skipped (--yes)" : "? Proceed? (Y/n)"));
     lines.push(blank());
-    lines.push(done("Project initialized"));
+    for (const tool of s.agents) lines.push(line("check", `Initialized ${TOOLS[tool].short}:`, `${TOOLS[tool].dir}/skills/README.md`));
     lines.push(blank());
-    lines.push(muted("Install items with: npx seedr add <name>"));
+    lines.push(muted("Done! Use 'npx @danieldeusing/seedr add <skill>' to install skills."));
   }
 
   function renderTerminal() {
@@ -465,6 +558,17 @@
     return scope === "user" ? `${TOOLS[tool].userDir.replace("~/", "")}/` : `${TOOLS[tool].dir}/`;
   }
 
+  const settingsFileName = (scope) => (scope === "local" ? "settings.local.json" : "settings.json");
+
+  /** The tool's MCP config file as a tree node, relative to the scope root. */
+  function mcpConfigNode(tool, scope, annotation) {
+    const path = scope === "user" ? MCP_TARGETS[tool].userFile.replace("~/", "") : MCP_TARGETS[tool].file;
+    const segments = path.split("/");
+    return segments
+      .slice(0, -1)
+      .reduceRight((node, segment) => dir(`${segment}/`, [node]), modified(segments[segments.length - 1], annotation));
+  }
+
   function renderFileTree() {
     const container = document.getElementById("fileTree");
     if (state.command === "list") {
@@ -472,32 +576,63 @@
       return;
     }
     if (state.command === "init") {
-      container.replaceChildren(...treeNodes([dir("my-project/", [created(".claude/", { children: [created("skills/"), created("commands/"), created("settings.json")] })])]));
-      return;
-    }
-    if (state.command === "remove") {
-      const s = state.remove;
-      const root = dir(s.scope === "user" ? "~/" : "my-project/", []);
-      for (const tool of s.agents) {
-        root.children.push(dir(toolDirName(tool, s.scope), [dir("skills/", [{ name: `${s.name}/`, type: "deleted", annotation: "removed" }])]));
+      const root = dir("my-project/", []);
+      for (const tool of state.init.agents) {
+        root.children.push(created(toolDirName(tool, "project"), { children: [created("skills/", { children: [created("README.md")] })] }));
       }
       container.replaceChildren(...treeNodes([root]));
       return;
     }
+    if (state.command === "remove") {
+      container.replaceChildren(...renderRemoveFileTree());
+      return;
+    }
     container.replaceChildren(...renderAddFileTree());
+  }
+
+  function renderRemoveFileTree() {
+    const s = state.remove;
+    const typeDef = TYPES[s.type];
+    const deleted = (name) => ({ name, type: "deleted", annotation: "removed" });
+    const root = dir(s.scope === "user" ? "~/" : "my-project/", []);
+
+    if (typeDef.structure === "directory" || typeDef.structure === "file") {
+      const typeDir = `${s.type}s`;
+      for (const tool of s.agents) {
+        const entry = typeDef.structure === "file" ? deleted(`${s.name}.md`) : deleted(`${s.name}/`);
+        root.children.push(dir(toolDirName(tool, s.scope), [dir(`${typeDir}/`, [entry])]));
+      }
+      return treeNodes([root]);
+    }
+
+    if (s.type === "mcp") {
+      for (const tool of s.agents) root.children.push(mcpConfigNode(tool, s.scope, `${MCP_TARGETS[tool].entry(s.name)} deleted`));
+      return treeNodes([root]);
+    }
+
+    if (s.type === "plugin") {
+      const userHome = dir("~/", [dir(".claude/", [dir("plugins/", [modified("installed_plugins.json", "entry dropped")])])]);
+      const projectRoot = dir("my-project/", [dir(".claude/", [modified(settingsFileName(s.scope), "enabledPlugins entry dropped")])]);
+      return [...treeNodes([userHome]), "\n", ...treeNodes([projectRoot])];
+    }
+
+    const children = [];
+    if (s.type === "hook") children.push(dir("hooks/", [deleted(`${s.name}.sh`)]));
+    children.push(modified(settingsFileName(s.scope), s.type === "hook" ? "hooks entries dropped" : "merged keys unmerged"));
+    root.children.push(dir(toolDirName("claude", s.scope), children));
+    return treeNodes([root]);
   }
 
   function renderAddFileTree() {
     const s = state.add;
     const typeDef = TYPES[s.type];
     const item = SAMPLE_ITEMS[s.name];
-    const useSymlink = s.method === "symlink" && (s.type === "skill" || s.type === "command");
-    const multiTool = s.agents.length > 1;
+    const useSymlink = s.method === "symlink" && s.type === "skill";
     const typeDir = `${s.type}s`;
     const root = dir(s.scope === "user" ? "~/" : "my-project/", []);
 
     if (typeDef?.structure === "directory" || typeDef?.structure === "file") {
-      if (useSymlink && multiTool) {
+      if (useSymlink) {
         root.children.push(dir(".agents/", [dir(`${typeDir}/`, [created(`${s.name}/`, { annotation: "central copy", children: buildItemFiles(s.type, item) })])]));
         for (const tool of s.agents) {
           if (READS_AGENTS_DIR.includes(tool)) continue; // reads .agents/ directly, no symlink
@@ -512,24 +647,24 @@
       return treeNodes([root]);
     }
 
+    if (s.type === "mcp") {
+      for (const tool of s.agents) root.children.push(mcpConfigNode(tool, s.scope, `${MCP_TARGETS[tool].entry(s.name)} merged`));
+      const nodes = treeNodes([root]);
+      // The registry stores MCP servers in Claude Code's vocabulary; Codex and
+      // OpenCode get a translation into their own schema instead.
+      if (item && s.agents.includes("claude")) {
+        nodes.push(el("div", { className: "json-label", text: MCP_TARGETS.claude[s.scope === "user" ? "userFile" : "file"] }), buildJsonMerge(s.type, s.name, item));
+      }
+      return nodes;
+    }
+
     if (typeDef?.structure === "json-merge") {
-      const toolDir = toolDirName("claude", s.scope);
       const children = [];
       if (s.type === "hook") children.push(dir("hooks/", [created(`${s.name}.sh`, { annotation: "hook script" })]));
-      const target = s.type === "mcp" ? ".mcp.json" : s.scope === "local" ? "settings.local.json" : "settings.json";
-      if (s.type === "mcp" && s.scope !== "user") {
-        // .mcp.json is at project root, not inside .claude/
-        root.children.push(modified(target, "merged"));
-        if (children.length) root.children.push(dir(toolDir, children));
-      } else if (s.type === "mcp" && s.scope === "user") {
-        // User-scope MCP config goes to ~/.claude.json
-        root.children.push(modified(".claude.json", "mcpServers merged"));
-      } else {
-        children.push(modified(target, "merged"));
-        root.children.push(dir(toolDir, children));
-      }
+      children.push(modified(settingsFileName(s.scope), "merged"));
+      root.children.push(dir(toolDirName("claude", s.scope), children));
       const nodes = treeNodes([root]);
-      if (item && (s.type === "hook" || s.type === "mcp" || s.type === "settings")) nodes.push("\n", buildJsonMerge(s.type, s.name, item));
+      if (item) nodes.push("\n", buildJsonMerge(s.type, s.name, item));
       return nodes;
     }
 
@@ -552,8 +687,7 @@
         claudeDir.children.push(modified("settings.json", `enabledPlugins["${pid}"] = true`));
         return [...treeNodes([userHome]), ...buildPluginJsonPreview(pid, s.scope, pv)];
       }
-      const settingsFile = s.scope === "local" ? "settings.local.json" : "settings.json";
-      const projectRoot = dir("my-project/", [dir(".claude/", [modified(settingsFile, `enabledPlugins["${pid}"] = true`)])]);
+      const projectRoot = dir("my-project/", [dir(".claude/", [modified(settingsFileName(s.scope), `enabledPlugins["${pid}"] = true`)])]);
       return [...treeNodes([userHome]), "\n", ...treeNodes([projectRoot]), ...buildPluginJsonPreview(pid, s.scope, pv)];
     }
 
@@ -663,11 +797,11 @@
     return scope === "user" ? TOOLS[tool].userDir : TOOLS[tool].dir;
   }
 
-  function getSettingsTarget(type, scope, tool) {
-    if (type === "mcp") return scope === "user" ? "~/.claude.json" : ".mcp.json";
-    if (scope === "local") return `${TOOLS[tool].dir}/settings.local.json`;
-    if (scope === "user") return `${TOOLS[tool].userDir}/settings.json`;
-    return `${TOOLS[tool].dir}/settings.json`;
+  /** Claude Code's settings file for a scope — hooks, settings items and plugin enablement all land here. */
+  function getSettingsTarget(scope) {
+    if (scope === "local") return `${TOOLS.claude.dir}/settings.local.json`;
+    if (scope === "user") return `${TOOLS.claude.userDir}/settings.json`;
+    return `${TOOLS.claude.dir}/settings.json`;
   }
 
   // ── Actions (event delegation on data-action) ──
@@ -704,6 +838,10 @@
     },
     "toggle-remove": (_value, key) => {
       state.remove[key] = !state.remove[key];
+      renderOptions();
+    },
+    "toggle-init": (_value, key) => {
+      state.init[key] = !state.init[key];
       renderOptions();
     },
     "apply-preset": (value) => {

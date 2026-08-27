@@ -21,7 +21,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, resolveRegistryDir, runRegistryTransaction, typeDirName, validateItem } from "@seedr/registry-ops";
+import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, resolveRegistryDir, runRegistryTransaction, sourceStatus, typeDirName, validateItem } from "@seedr/registry-ops";
 import type { ComponentType } from "@seedr/shared";
 
 /**
@@ -81,6 +81,15 @@ async function main(argv: string[]): Promise<void> {
       const hash = rest[1] ? itemStateHash(registryDir, type, rest[1]) : null;
       if (!hash) fail(`no ${type} item "${rest[1] ?? ""}"`);
       out({ type, slug: rest[1], hash });
+      return;
+    }
+    case "source-status": {
+      // Where an item stands against the folder it was copied from. Read-only,
+      // and deliberately here rather than in Studio: the folder is outside the
+      // checkout, which the app's own filesystem bridge refuses to read.
+      const type = requireType(rest[0]);
+      if (!rest[1]) fail("source-status needs <type> <slug>");
+      out({ type, slug: rest[1], ...sourceStatus(readItem(registryDir, type, rest[1])) });
       return;
     }
     case "validate": {

@@ -102,7 +102,30 @@ export interface SetLabelsOp {
   labels: LabelDefinition[];
 }
 
-export type RegistryOp = AddLocalOp | AddRemoteOp | UpdateOp | RemoveOp | SetLabelsOp;
+/**
+ * Stop tracking where a first-party item was copied from. Its own operation
+ * because it is the one irreversible thing about a local source: the path is
+ * recorded nowhere else, so dropping it is confirmed on its own rather than
+ * riding along with an edit.
+ */
+export interface AdoptSourceOp {
+  v: 1;
+  kind: "adopt-source";
+  type: ComponentType;
+  slug: string;
+  expectedHash: string;
+}
+
+/** Copy the item's content from its recorded source again, replacing the file set. */
+export interface ResyncSourceOp {
+  v: 1;
+  kind: "resync-source";
+  type: ComponentType;
+  slug: string;
+  expectedHash: string;
+}
+
+export type RegistryOp = AddLocalOp | AddRemoteOp | UpdateOp | RemoveOp | SetLabelsOp | AdoptSourceOp | ResyncSourceOp;
 
 export interface OpResult {
   kind: RegistryOp["kind"];

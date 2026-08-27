@@ -57,9 +57,28 @@ describe("useAuthor", () => {
   });
 
   test("chooseSource derives slug and name from the picked folder", async () => {
-    onCommand("pick_path", () => "/Users/me/.claude/skills/fill-pdf_forms");
-    await useAuthor.getState().chooseSource();
+    const asked: unknown[] = [];
+    onCommand("pick_path", (args) => {
+      asked.push((args as { kind: string }).kind);
+      return "/Users/me/.claude/skills/fill-pdf_forms";
+    });
+    await useAuthor.getState().chooseSource("folder");
+    expect(asked).toEqual(["folder"]);
     expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/fill-pdf_forms", slug: "fill-pdf_forms", name: "Fill Pdf Forms" });
+  });
+
+  test("a single file can be the source, for a folder holding several capabilities", async () => {
+    // `.claude/skills/` with three unrelated skill files in it: the folder is not
+    // the capability, one file in it is. The slug comes from the file without its
+    // extension, and the operation copies that one file.
+    const asked: unknown[] = [];
+    onCommand("pick_path", (args) => {
+      asked.push((args as { kind: string }).kind);
+      return "/Users/me/.claude/skills/configr-design.md";
+    });
+    await useAuthor.getState().chooseSource("file");
+    expect(asked).toEqual(["file"]);
+    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/configr-design.md", slug: "configr-design", name: "Configr Design" });
   });
 
   test("draft reads the source through the host, asks Claude with the prompt on stdin, and fills the descriptions", async () => {

@@ -74,7 +74,12 @@ interface AuthorState {
   setType(type: ComponentType): void;
   setSourceKind(kind: SourceKind): void;
   toggleAgent(agent: CodingAgent): void;
-  chooseSource(): Promise<void>;
+  /**
+   * Pick the content to copy. A folder becomes the item's whole file tree; a
+   * single file becomes an item of one file — which is what a directory holding
+   * several unrelated skills needs, since only one of them is the capability.
+   */
+  chooseSource(kind: "file" | "folder"): Promise<void>;
   /** Probe Claude and prefill author/externalUrl from the repo's identity. */
   prepare(): Promise<void>;
   draft(): Promise<void>;
@@ -371,8 +376,8 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     set({ form: { ...get().form, compatibility: CANONICAL_AGENTS.filter((a) => next.includes(a)) } });
   },
 
-  async chooseSource() {
-    const picked = await pickPath("folder");
+  async chooseSource(kind) {
+    const picked = await pickPath(kind);
     if (!picked) return;
     const { form } = get();
     const slug = form.slug || slugFromPath(picked);

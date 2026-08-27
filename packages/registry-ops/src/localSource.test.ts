@@ -151,3 +151,25 @@ describe("adopt-source", () => {
     expect(() => applyOp(registry, { v: 1, kind: "adopt-source", type: "skill", slug: "origin-skill", expectedHash: hash(registry) })).toThrow(/records no source/);
   });
 });
+
+describe("a single file as the source", () => {
+  test("copies just that file, and tracks it like a folder", () => {
+    // A `.claude/skills/` folder holds several unrelated skills; only one of them
+    // is the item. Picking the file copies that one, under its own name.
+    const registry = makeRegistry();
+    const folder = makeSource("# One of several\n");
+    writeFileSync(join(folder, "another-skill.md"), "# Not this one\n");
+    const file = join(folder, "SKILL.md");
+
+    applyOp(registry, { ...addOp(file), slug: "one-file" });
+    const item = readItem(registry, "skill", "one-file");
+
+    expect(item.contents?.files?.map((entry) => entry.name)).toEqual(["SKILL.md"]);
+    expect(item.localSource?.path).toBe(file);
+    expect(sourceStatus(item).state).toBe("current");
+
+    // And it is tracked: editing that file alone shows the item as behind.
+    writeFileSync(file, "# One of several, revised\n");
+    expect(sourceStatus(readItem(registry, "skill", "one-file")).state).toBe("behind");
+  });
+});

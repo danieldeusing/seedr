@@ -23,7 +23,7 @@ describe("Explorer", () => {
 
   test("groups populated types with counts, ownership mode and the agent matrix", async () => {
     mockFs(registryFiles());
-    const { items, problems } = await loadRegistry(fs);
+    const { items, problems } = await loadRegistry(fs, "registry");
     const onSelect = vi.fn();
     render(<Explorer items={items} problems={problems} selected={{ type: "skill", slug: "pdf" }} onSelect={onSelect} {...controls} />);
 
@@ -58,7 +58,7 @@ describe("Explorer", () => {
 
   test("search narrows every group at once and says when nothing matches", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     render(<Explorer items={items} problems={[]} selected={null} onSelect={() => {}} {...controls} />);
 
     await userEvent.type(screen.getByLabelText(SEARCH), "play");
@@ -76,7 +76,7 @@ describe("Explorer", () => {
 
   test("groups collapse one by one and all at once", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     render(<Explorer items={items} problems={[]} selected={null} onSelect={() => {}} {...controls} />);
 
     await userEvent.click(screen.getByRole("button", { name: /skills\/ 2/ }));

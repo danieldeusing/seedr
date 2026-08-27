@@ -4,7 +4,7 @@ import { registryFiles } from "@/test/fixtures";
 import { REGISTRY_CHANGED } from "@/api/watch";
 import { selectedItem, useStudio } from "./store";
 
-const repo = { root: "/repo", name: "repo", isDefault: true, hasOps: true };
+const repo = { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" };
 
 beforeEach(() => {
   useStudio.setState({ repo: null, items: [], problems: [], loading: false, error: null, selected: null });
@@ -60,17 +60,17 @@ describe("useStudio", () => {
   });
 
   test("makeRepoDefault records the named checkout, and reports what the host refused", async () => {
-    const elsewhere = { root: "/forks/seedr", name: "seedr", isDefault: false, hasOps: true };
+    const elsewhere = { root: "/forks/seedr", name: "seedr", isDefault: false, hasOps: true, registryDir: "registry" };
     useStudio.setState({ repo: elsewhere });
     let named: string | undefined;
     onCommand("set_default_repo", (args) => {
       named = (args as { path: string }).path;
-      return { ...elsewhere, isDefault: true, hasOps: true };
+      return { ...elsewhere, isDefault: true, hasOps: true, registryDir: "registry" };
     });
 
     expect(await useStudio.getState().makeRepoDefault("/forks/seedr")).toBeNull();
     expect(named).toBe("/forks/seedr");
-    expect(useStudio.getState().repo).toEqual({ ...elsewhere, isDefault: true, hasOps: true });
+    expect(useStudio.getState().repo).toEqual({ ...elsewhere, isDefault: true, hasOps: true, registryDir: "registry" });
 
     onCommand("set_default_repo", () => {
       throw new Error("No configuration directory to record the default checkout in");
@@ -110,7 +110,7 @@ describe("useStudio", () => {
 
 describe("a registry without the operations CLI", () => {
   test("opens read-only, and the actions that would change it say why", async () => {
-    const readOnly = { root: "/internal/seedr-internal", name: "seedr-internal", isDefault: false, hasOps: false };
+    const readOnly = { root: "/internal/seedr-internal", name: "seedr-internal", isDefault: false, hasOps: false, registryDir: "registry" };
     onCommand("pick_repo", () => readOnly);
     mockFs(registryFiles());
 
@@ -119,6 +119,29 @@ describe("a registry without the operations CLI", () => {
     expect(useStudio.getState().repo).toEqual(readOnly);
     expect(useStudio.getState().repoError).toBeNull();
     expect(useStudio.getState().items.length).toBeGreaterThan(0);
+  });
+
+  test("lists the directory seedr.config.json names, not `registry/`", async () => {
+    // The fork this is named after keeps its own items in `registry-internal/`
+    // and carries upstream's `registry/` untouched so merges stay clean. Reading
+    // `registry/` regardless showed it all 111 of upstream's items in place of
+    // its own — the open checkout's own catalogue was nowhere on screen.
+    const fork = { root: "/internal/seedr-internal", name: "seedr-internal", isDefault: false, hasOps: false, registryDir: "registry-internal" };
+    onCommand("pick_repo", () => fork);
+    mockFs({
+      ...registryFiles(),
+      "registry-internal": null,
+      "registry-internal/skills": null,
+      "registry-internal/skills/estate-only": null,
+      "registry-internal/skills/estate-only/item.json": JSON.stringify({
+        slug: "estate-only", name: "Estate Only", type: "skill", description: "The fork's own item.", compatibility: ["claude"], sourceType: "seedr",
+      }),
+    });
+
+    await useStudio.getState().chooseRepo();
+
+    expect(useStudio.getState().items.map((item) => item.slug)).toEqual(["estate-only"]);
+    expect(useStudio.getState().items[0]?.dir).toBe("registry-internal/skills/estate-only");
   });
 
   test("a folder that is not a registry at all is refused, and the open checkout stays", async () => {

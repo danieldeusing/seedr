@@ -14,7 +14,7 @@ beforeEach(() => {
 describe("App", () => {
   test("starts on onboarding without a repo and opens the explorer after choosing one", async () => {
     onCommand("get_repo", () => null);
-    onCommand("pick_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
+    onCommand("pick_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" }));
     mockFs(registryFiles());
 
     render(<App />);
@@ -29,10 +29,10 @@ describe("App", () => {
   });
 
   test("switches to the add-capability pane and back to an item", async () => {
-    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
+    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" }));
     onCommand("run_process", (args) => ({ taskId: (args?.request as { taskId: string }).taskId, status: "not-found", exitCode: null, stdout: "", stderr: "", durationMs: 1 }));
     mockFs(registryFiles());
-    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
+    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" } });
 
     render(<App />);
     // wait for the loaded explorer first: the empty state carries an add button too,
@@ -51,9 +51,9 @@ describe("App", () => {
   });
 
   test("gives the workspace the height its siblings leave, however many there are", async () => {
-    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
+    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" }));
     mockFs(registryFiles());
-    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
+    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" } });
 
     render(<App />);
     // The sign-in banner renders only when an agent is signed out. Under a
@@ -65,9 +65,9 @@ describe("App", () => {
   });
 
   test("widens the sidebar when its right edge is dragged", async () => {
-    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
+    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" }));
     mockFs(registryFiles());
-    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
+    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" } });
 
     render(<App />);
     const workspace = await screen.findByTestId("workspace");
@@ -81,9 +81,9 @@ describe("App", () => {
   });
 
   test("holds the sidebar between its minimum and maximum width", async () => {
-    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true }));
+    onCommand("get_repo", () => ({ root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" }));
     mockFs(registryFiles());
-    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
+    useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" } });
 
     render(<App />);
     const workspace = await screen.findByTestId("workspace");

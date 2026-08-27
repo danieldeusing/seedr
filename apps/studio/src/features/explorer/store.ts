@@ -123,9 +123,11 @@ export const useStudio = create<StudioState>((set, get) => ({
   },
 
   async refresh() {
+    const repo = get().repo;
+    if (!repo) return;
     set({ loading: true, error: null });
     try {
-      const { items, problems } = await loadRegistry(fs);
+      const { items, problems } = await loadRegistry(fs, repo.registryDir);
       const { selected } = get();
       const stillThere = selected && items.some((i) => i.type === selected.type && i.slug === selected.slug);
       set({ items, problems, loading: false, selected: stillThere ? selected : null, revision: get().revision + 1 });

@@ -46,6 +46,12 @@ struct RepoInfo {
     /// Whether `scripts/registry-op.ts` is here. Without it the registry can be
     /// read but not changed, and the actions that would change it say so.
     has_ops: bool,
+    /// The registry directory this checkout actually uses — `registry`, or what
+    /// `seedr.config.json` names. A fork points it at a directory of its own,
+    /// which *replaces* `registry/` rather than adding to it, so the webview
+    /// must read this rather than assume. Assuming showed a fork all 111 of
+    /// upstream's items instead of its own four.
+    registry_dir: String,
 }
 
 #[derive(Serialize)]
@@ -81,13 +87,37 @@ fn scoped(root: &Path, rel: &str) -> Result<PathBuf, String> {
     Ok(canonical)
 }
 
+/// The registry directory a checkout uses, from `seedr.config.json`.
+///
+/// Mirrors `registryDirName()` in `packages/registry-ops/src/paths.ts`, including
+/// its rule: one directory name, starting with `registry`. That prefix is the
+/// traversal guard here as well as a naming convention, so a config naming
+/// anything else is refused rather than quietly ignored.
+fn registry_dir_name(root: &Path) -> Result<String, String> {
+    let config = root.join("seedr.config.json");
+    if !config.is_file() {
+        return Ok("registry".to_string());
+    }
+    let text = fs::read_to_string(&config).map_err(|e| format!("seedr.config.json: {e}"))?;
+    let parsed: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("seedr.config.json is not readable JSON: {e}"))?;
+    let Some(value) = parsed.get("registryDir") else {
+        return Ok("registry".to_string());
+    };
+    let name = value.as_str().filter(|name| {
+        name.starts_with("registry") && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+    });
+    name.map(str::to_string)
+        .ok_or_else(|| format!("seedr.config.json: registryDir must be a single directory name starting with \"registry\", not {value}"))
+}
+
 /// What makes a folder a seedr registry checkout Studio can work on.
 fn repo_info(path: &Path) -> Result<RepoInfo, String> {
     if !path.is_dir() {
         return Err(format!("{}: not a directory", path.display()));
     }
-    if !path.join("registry").is_dir() {
-        return Err("Not a seedr registry: no registry/ directory".to_string());
+    let registry_dir = registry_dir_name(path)?;
+    if !path.join(&registry_dir).is_dir() {
+        return Err(format!("Not a seedr registry: no {registry_dir}/ directory"));
     }
     let name = path
         .file_name()
@@ -98,7 +128,7 @@ fn repo_info(path: &Path) -> Result<RepoInfo, String> {
     // every mutation goes through that script as a transaction, so this is a
     // capability the webview reports rather than a reason to refuse the folder.
     let has_ops = path.join("scripts").join("registry-op.ts").is_file();
-    Ok(RepoInfo { root: path.display().to_string(), name, is_default: is_default_repo(path), has_ops })
+    Ok(RepoInfo { root: path.display().to_string(), name, is_default: is_default_repo(path), has_ops, registry_dir })
 }
 
 
@@ -361,7 +391,8 @@ fn open_external(url: String) -> Result<(), String> {
 /// the webview coalesces bursts. Calling it again replaces the watcher.
 #[tauri::command]
 fn watch_registry(app: AppHandle, repo: State<Repo>, watcher: State<RegistryWatcher>) -> Result<(), String> {
-    let registry = current_root(&repo)?.join("registry");
+    let root = current_root(&repo)?;
+    let registry = root.join(registry_dir_name(&root)?);
     let handle = app.clone();
     let mut new_watcher = notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
         if event.is_ok() {
@@ -742,5 +773,38 @@ mod tests {
 
         // Without a registry at all there is nothing to show.
         assert!(repo_info(&root.join("registry").join("skills")).unwrap_err().contains("no registry/"));
+    }
+
+    /// A fork names its own registry directory, and that directory *replaces*
+    /// `registry/`. The host has to answer with it, because the webview has no
+    /// filesystem of its own to read `seedr.config.json` from — and reading
+    /// `registry/` regardless showed a fork all of upstream's items in place of
+    /// its own four.
+    #[test]
+    fn registry_dir_comes_from_the_config_when_there_is_one() {
+        let root = temp_root("registry-dir");
+        assert_eq!(registry_dir_name(&root).expect("default"), "registry");
+        assert_eq!(repo_info(&root).expect("valid").registry_dir, "registry");
+
+        fs::write(root.join("seedr.config.json"), r#"{"registryDir":"registry-internal"}"#).expect("config");
+        assert_eq!(registry_dir_name(&root).expect("named"), "registry-internal");
+        // Named but absent is not a registry, whatever `registry/` still holds.
+        assert!(repo_info(&root).unwrap_err().contains("no registry-internal/"));
+
+        fs::create_dir_all(root.join("registry-internal").join("skills")).expect("dir");
+        assert_eq!(repo_info(&root).expect("valid").registry_dir, "registry-internal");
+    }
+
+    #[test]
+    fn a_registry_dir_that_could_escape_the_root_is_refused() {
+        let root = temp_root("registry-dir-guard");
+        // The `registry` prefix is the traversal guard as well as a naming rule,
+        // the same rule `registryDirName()` applies in TypeScript.
+        for bad in [r#"{"registryDir":"../elsewhere"}"#, r#"{"registryDir":"/etc"}"#, r#"{"registryDir":"other"}"#, r#"{"registryDir":"registry/nested"}"#, r#"{"registryDir":42}"#] {
+            fs::write(root.join("seedr.config.json"), bad).expect("config");
+            assert!(registry_dir_name(&root).is_err(), "accepted {bad}");
+        }
+        fs::write(root.join("seedr.config.json"), "{ not json").expect("config");
+        assert!(registry_dir_name(&root).unwrap_err().contains("not readable JSON"));
     }
 }

@@ -17,6 +17,13 @@ export interface RepoInfo {
    * mutation runs through that script as a transaction.
    */
   hasOps: boolean;
+  /**
+   * The registry directory this checkout uses: `registry`, or whatever
+   * `seedr.config.json` names. A fork points it at a directory of its own, and
+   * that directory *replaces* `registry/` rather than adding to it — so this is
+   * read, never assumed. Assumed, it showed a fork all of upstream's items.
+   */
+  registryDir: string;
 }
 
 /** Opens the folder picker; `null` when the user cancelled. */

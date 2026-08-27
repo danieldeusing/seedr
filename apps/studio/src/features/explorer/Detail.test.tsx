@@ -12,7 +12,7 @@ describe("Detail", () => {
   test("shows metadata, the file tree, the first file's preview, and opens it with the default app", async () => {
     mockFs(registryFiles());
     onCommand("open_path", () => undefined);
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     const playwright = items.find((i) => i.slug === "playwright")!;
 
     render(<Detail item={playwright} />);
@@ -40,7 +40,7 @@ describe("Detail", () => {
 
   test("states validation problems and the absence of content files", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     render(<Detail item={items.find((i) => i.slug === "broken")!} />);
 
     expect(screen.getByRole("alert")).toHaveTextContent(/compatibility: must list at least one coding agent/);
@@ -49,7 +49,7 @@ describe("Detail", () => {
 
   test("a file the host refuses to read shows the refusal", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     onCommand("read_text", () => {
       throw new Error("registry/mcp/playwright/mcp.md: too large");
     });
@@ -68,7 +68,7 @@ describe("Detail", () => {
       const rel = String(args?.rel);
       return rel.endsWith(".json") ? (files[rel] ?? "") : onDisk;
     });
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
 
     render(<Detail item={items.find((i) => i.slug === "playwright")!} />);
     expect(await screen.findByTestId("monaco-preview")).toHaveTextContent("before");
@@ -86,7 +86,7 @@ describe("Detail", () => {
 
   test("each pane hides behind its own control and comes back from its strip", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     render(<Detail item={items.find((i) => i.slug === "playwright")!} />);
     await screen.findByRole("button", { name: "docs" });
 
@@ -104,7 +104,7 @@ describe("Detail", () => {
   test("the externalUrl is a forward link that asks before opening the browser", async () => {
     mockFs(registryFiles());
     onCommand("open_external", () => undefined);
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     render(<Detail item={items.find((i) => i.slug === "pdf")!} />);
 
     await userEvent.click(screen.getByRole("button", { name: /github\.com\/anthropics/ }));
@@ -117,7 +117,7 @@ describe("Detail", () => {
 
   test("shows a local:// registry as its value, not as a link that goes nowhere", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     const playwright = items.find((i) => i.slug === "playwright")!;
     const served = { ...playwright, item: { ...playwright.item, externalUrl: "local://registry/mcp/playwright" } };
 

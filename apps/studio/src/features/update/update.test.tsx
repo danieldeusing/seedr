@@ -14,7 +14,7 @@ const ok = (request: RunRequest, stdout: string) => ({ taskId: request.taskId, s
 
 async function items(): Promise<{ playwright: StudioItem; pdf: StudioItem }> {
   mockFs(registryFiles());
-  const { items } = await loadRegistry(fs);
+  const { items } = await loadRegistry(fs, "registry");
   return { playwright: items.find((i) => i.slug === "playwright")!, pdf: items.find((i) => i.slug === "pdf")! };
 }
 

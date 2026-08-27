@@ -16,26 +16,35 @@ const cli = (args, input) =>
 
 describe("registry-op CLI", () => {
   test("list [type] prints (type, slug, sourceType, name, hash) for every item of the type", () => {
-    const result = cli(["list", "skill"]);
+    // The type is taken from the registry rather than named, for the same reason
+    // as below: a fork's registry need not hold a skill.
+    const [type] = JSON.parse(cli(["list"]).stdout).map((item) => item.type);
+    assert.ok(type, "the registry is empty — nothing for this to check");
+    const result = cli(["list", type]);
     assert.equal(result.status, 0, result.stderr);
     const items = JSON.parse(result.stdout);
     assert.ok(items.length > 0);
     for (const item of items) {
-      assert.equal(item.type, "skill");
+      assert.equal(item.type, type);
       assert.deepEqual(Object.keys(item), ["type", "slug", "sourceType", "name", "hash"]);
       assert.match(item.hash, /^[0-9a-f]{16}$/);
     }
   });
 
   test("hash agrees with list, and validate passes for the same item", () => {
-    const [item] = JSON.parse(cli(["list", "hook"]).stdout);
-    const hash = cli(["hash", "hook", item.slug]);
+    // Whichever type this registry actually holds, rather than a named one: a
+    // fork points `registryDir` at a registry of its own, and naming `hook` here
+    // failed on `item.slug` of undefined in any fork that has none.
+    const [type] = JSON.parse(cli(["list"]).stdout).map((item) => item.type);
+    assert.ok(type, "the registry is empty — nothing for this to check");
+    const [item] = JSON.parse(cli(["list", type]).stdout);
+    const hash = cli(["hash", type, item.slug]);
     assert.equal(hash.status, 0, hash.stderr);
-    assert.deepEqual(JSON.parse(hash.stdout), { type: "hook", slug: item.slug, hash: item.hash });
+    assert.deepEqual(JSON.parse(hash.stdout), { type, slug: item.slug, hash: item.hash });
 
-    const validate = cli(["validate", "hook", item.slug]);
+    const validate = cli(["validate", type, item.slug]);
     assert.equal(validate.status, 0, validate.stderr);
-    assert.deepEqual(JSON.parse(validate.stdout), { type: "hook", slug: item.slug, ok: true, errors: [] });
+    assert.deepEqual(JSON.parse(validate.stdout), { type, slug: item.slug, ok: true, errors: [] });
   });
 
   test("identity derives owner, repo and the externalUrl template from this clone's git", () => {

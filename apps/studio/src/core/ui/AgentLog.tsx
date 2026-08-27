@@ -92,6 +92,30 @@ export function blocksOf(lines: LogLine[]): Block[] {
  * One block, rendered once. Only the newest changes as output arrives, so
  * everything above it must be allowed to stay exactly as it is.
  */
+/**
+ * A line that is one whole JSON document, indented, or null when it is not.
+ *
+ * A drafting run answers with `--output-format json`, so its entire reply — the
+ * descriptions, and several hundred bytes of token counts and cache statistics
+ * around them — arrives as a single line. Unindented it is unreadable; expanded
+ * in place it buries everything else, so it is folded like the tool calls are.
+ */
+function asJson(text: string): { formatted: string; summary: string } | null {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{") || trimmed.length < 200) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null) return null;
+  const record = parsed as Record<string, unknown>;
+  // Named by what the agent called it, when it says: `result`, `assistant`.
+  const named = typeof record.type === "string" ? record.type : Object.keys(record)[0];
+  return { formatted: JSON.stringify(parsed, null, 2), summary: `json${named ? ` · ${named}` : ""} · ${Math.round(trimmed.length / 100) / 10} kB` };
+}
+
 /** A run of calls, or of runtime errors: how many, and which, once opened. */
 const Group = memo(function Group({ group, entries }: { group: "tool" | "error"; entries: Entry[] }) {
   const total = entries.reduce((sum, entry) => sum + entry.repeats, 0);
@@ -115,6 +139,18 @@ const Group = memo(function Group({ group, entries }: { group: "tool" | "error";
 });
 
 const LogBlock = memo(function LogBlock({ markdown, text, repeats }: { markdown: boolean; text: string; repeats: number }) {
+  const json = markdown ? null : asJson(text);
+  if (json) {
+    return (
+      <details className="my-1">
+        <summary className="cursor-pointer list-none text-neutral-500 transition-colors hover:text-neutral-300">
+          <span className="mr-1 inline-block">▸</span>
+          {json.summary}
+        </summary>
+        <pre className="mt-1 ml-4 whitespace-pre-wrap text-neutral-400">{json.formatted}</pre>
+      </details>
+    );
+  }
   return markdown ? (
     <div className="formatted-preview text-neutral-300">
       <SafeMarkdown>{text}</SafeMarkdown>

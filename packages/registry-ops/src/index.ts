@@ -8,6 +8,7 @@ export * from "./hash.js";
 export * from "./sourceShape.js";
 export * from "./sourceState.js";
 export * from "./localSource.js";
+export * from "./localSources.js";
 export * from "./read.js";
 export * from "./compile.js";
 export * from "./identity.js";

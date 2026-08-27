@@ -123,25 +123,6 @@ export interface LicenseInfo {
   note?: string;
 }
 
-/**
- * The folder a first-party item was copied from, so the copy can be checked
- * against it later. `digest` is that folder's content digest at the moment it
- * was copied — source is compared to source, never to the item, because the
- * copy drops files git ignores and the two would never match.
- *
- * The path is machine-local by nature. Another checkout of the same registry
- * will not find it, and is expected to report the source as missing rather than
- * to guess.
- */
-export interface LocalSource {
-  /** Absolute path, as it was when the item was added. */
-  path: string;
-  /** SHA-256 over the source's content files at that moment; null when it had none. */
-  digest: string | null;
-  /** ISO date of the last copy from it. */
-  syncedAt: string;
-}
-
 export interface RegistryItem {
   slug: string;
   name: string;
@@ -172,12 +153,6 @@ export interface RegistryItem {
   sourceRevision?: string;
   /** SHA-256 (64 lowercase hex) over the canonical file set; verified by the CLI before install. */
   contentDigest?: string;
-  /**
-   * Where a first-party item was copied from on this machine, when it came from
-   * a local folder. Absent means nobody is upstream of it: either it was written
-   * in place, or its origin was adopted (below).
-   */
-  localSource?: LocalSource;
   /** Plugins: the pinned marketplace `source` descriptor. */
   pluginSource?: PluginSource;
   /** Plugins: the pinned marketplace the entry was read from. */

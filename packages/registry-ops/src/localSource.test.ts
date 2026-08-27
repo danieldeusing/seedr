@@ -1,9 +1,11 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { applyOp } from "./ops/apply.js";
 import { itemStateHash } from "./hash.js";
-import { sourceDigest, sourceStatus } from "./localSource.js";
+import { sourceDigest } from "./localSource.js";
+import { localSourceOf, sourceStatus } from "./localSources.js";
+import { repoRootOf } from "./fsPaths.js";
 import { readItem } from "./read.js";
 import { LONG, makeRegistry } from "./test/fixtures.js";
 import { makeTempDir } from "./test/tempDir.js";
@@ -31,6 +33,8 @@ const addOp = (sourcePath: string): AddLocalOp => ({
 });
 
 const hash = (registry: string) => itemStateHash(registry, "skill", "origin-skill") as string;
+/** The origin is recorded in the checkout, not on the item, so the check takes both. */
+const status = (registry: string, slug: string) => sourceStatus(repoRootOf(registry), registry, "skill", slug);
 
 describe("where a local item came from", () => {
   test("add-local records the folder, and the item starts in sync with it", () => {
@@ -40,9 +44,9 @@ describe("where a local item came from", () => {
     applyOp(registry, addOp(source));
     const item = readItem(registry, "skill", "origin-skill");
 
-    expect(item.localSource?.path).toBe(source);
-    expect(item.localSource?.digest).toBe(sourceDigest(source));
-    expect(sourceStatus(item).state).toBe("current");
+    expect(localSourceOf(repoRootOf(registry), "skill", "origin-skill")?.path).toBe(source);
+    expect(localSourceOf(repoRootOf(registry), "skill", "origin-skill")?.sourceDigest).toBe(sourceDigest(source));
+    expect(status(registry, item.slug).state).toBe("current");
   });
 
   test("an edit at the source shows the item as behind it", () => {
@@ -52,9 +56,9 @@ describe("where a local item came from", () => {
 
     writeFileSync(join(source, "SKILL.md"), "# Origin, revised\n");
 
-    const status = sourceStatus(readItem(registry, "skill", "origin-skill"));
-    expect(status.state).toBe("behind");
-    expect(status.current).not.toBe(status.recorded);
+    const found = status(registry, "origin-skill");
+    expect(found.state).toBe("behind");
+    expect(found.current).not.toBe(found.recorded);
   });
 
   test("a new file at the source counts as a change", () => {
@@ -64,7 +68,7 @@ describe("where a local item came from", () => {
 
     writeFileSync(join(source, "reference.md"), "extra\n");
 
-    expect(sourceStatus(readItem(registry, "skill", "origin-skill")).state).toBe("behind");
+    expect(status(registry, "origin-skill").state).toBe("behind");
   });
 
   test("a folder that is gone is reported as missing, not as unchanged", () => {
@@ -74,13 +78,13 @@ describe("where a local item came from", () => {
 
     rmSync(source, { recursive: true, force: true });
 
-    const status = sourceStatus(readItem(registry, "skill", "origin-skill"));
-    expect(status.state).toBe("missing");
-    expect(status.path).toBe(source);
+    const found = status(registry, "origin-skill");
+    expect(found.state).toBe("missing");
+    expect(found.path).toBe(source);
   });
 
   test("an item with no recorded source is nobody's copy", () => {
-    expect(sourceStatus({}).state).toBe("none");
+    expect(status(makeRegistry(), "nothing-here").state).toBe("none");
   });
 });
 
@@ -95,7 +99,7 @@ describe("resync-source", () => {
     applyOp(registry, { v: 1, kind: "resync-source", type: "skill", slug: "origin-skill", expectedHash: hash(registry) });
 
     const item = readItem(registry, "skill", "origin-skill");
-    expect(sourceStatus(item).state).toBe("current");
+    expect(status(registry, item.slug).state).toBe("current");
     expect(item.contents?.files?.map((file) => file.name).sort()).toEqual(["SKILL.md", "reference.md"]);
   });
 
@@ -137,8 +141,8 @@ describe("adopt-source", () => {
     applyOp(registry, { v: 1, kind: "adopt-source", type: "skill", slug: "origin-skill", expectedHash: hash(registry) });
 
     const item = readItem(registry, "skill", "origin-skill");
-    expect(item.localSource).toBeUndefined();
-    expect(sourceStatus(item).state).toBe("none");
+    expect(localSourceOf(repoRootOf(registry), "skill", "origin-skill")).toBeUndefined();
+    expect(status(registry, item.slug).state).toBe("none");
     // The content stays exactly as it was — adopting takes it over, not away.
     expect(item.contents?.files?.map((file) => file.name)).toEqual(["SKILL.md"]);
   });
@@ -165,11 +169,47 @@ describe("a single file as the source", () => {
     const item = readItem(registry, "skill", "one-file");
 
     expect(item.contents?.files?.map((entry) => entry.name)).toEqual(["SKILL.md"]);
-    expect(item.localSource?.path).toBe(file);
-    expect(sourceStatus(item).state).toBe("current");
+    expect(localSourceOf(repoRootOf(registry), "skill", "one-file")?.path).toBe(file);
+    expect(status(registry, item.slug).state).toBe("current");
 
     // And it is tracked: editing that file alone shows the item as behind.
     writeFileSync(file, "# One of several, revised\n");
-    expect(sourceStatus(readItem(registry, "skill", "one-file")).state).toBe("behind");
+    expect(status(registry, "one-file").state).toBe("behind");
+  });
+});
+
+describe("the copy in the registry can move too", () => {
+  test("an edit made here, with the source untouched, is `edited` and not `behind`", () => {
+    // Different problems: `behind` is content waiting to be pulled, `edited` is
+    // work that pulling would overwrite. Calling both "out of date" would offer
+    // to destroy the second.
+    const registry = makeRegistry();
+    applyOp(registry, addOp(makeSource()));
+
+    writeFileSync(join(registry, "skills", "origin-skill", "SKILL.md"), "# Edited here\n");
+
+    expect(status(registry, "origin-skill").state).toBe("edited");
+  });
+
+  test("both moving is `diverged`, which is the one state that loses something either way", () => {
+    const registry = makeRegistry();
+    const source = makeSource();
+    applyOp(registry, addOp(source));
+
+    writeFileSync(join(source, "SKILL.md"), "# Changed at the source\n");
+    writeFileSync(join(registry, "skills", "origin-skill", "SKILL.md"), "# And changed here\n");
+
+    expect(status(registry, "origin-skill").state).toBe("diverged");
+  });
+
+  test("the origin is kept out of item.json, which is committed and served", () => {
+    const registry = makeRegistry();
+    applyOp(registry, addOp(makeSource()));
+
+    // An absolute path from one machine means nothing in another checkout, and
+    // a public instance would publish it.
+    expect(JSON.stringify(readItem(registry, "skill", "origin-skill"))).not.toContain(makeTempDir("local-source").split("/")[1]);
+    expect(readItem(registry, "skill", "origin-skill")).not.toHaveProperty("localSource");
+    expect(existsSync(join(repoRootOf(registry), ".seedr", "local-sources.json"))).toBe(true);
   });
 });

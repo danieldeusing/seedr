@@ -18,6 +18,8 @@ const WORDING: Record<SourceStatus["state"], { label: string; tone: string; deta
   none: { label: "", tone: "", detail: "" },
   current: { label: "in sync", tone: "text-success", detail: "The folder is where it was, and unchanged since the last copy." },
   behind: { label: "source has changes", tone: "text-amber-400", detail: "The folder has been edited since this item was copied from it." },
+  edited: { label: "changed here", tone: "text-primary", detail: "This copy has been edited and the folder has not. Copying across would undo that work." },
+  diverged: { label: "both have changed", tone: "text-destructive", detail: "The folder and this copy have each been edited. Copying across keeps the folder's version and loses the edits made here." },
   missing: { label: "source is gone", tone: "text-destructive", detail: "The folder is no longer there. Adopt the item to stop looking for it." },
 };
 
@@ -88,12 +90,12 @@ export function SourcePanel({ item }: { item: StudioItem }) {
         )}
 
         <div className="mt-3 flex items-center gap-2">
-          {state === "behind" && (
+          {(state === "behind" || state === "diverged") && (
             <IconButton
               icon={RefreshCw}
               ariaLabel="copy the changes across"
-              tip="Copy the source's content across again, replacing this item's files"
-              accentColor="violet"
+              tip={state === "diverged" ? "Copy the source across, losing the edits made here" : "Copy the source's content across again, replacing this item's files"}
+              accentColor={state === "diverged" ? "red" : "violet"}
               onClick={() => void run("resync-source")}
               disabled={busy}
               spin={busy}

@@ -2,8 +2,8 @@ import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
 import { canonicalAgent, storageAgents } from "../agents.js";
-import { itemDir, itemJsonPath } from "../fsPaths.js";
-import { localSourceOf } from "../localSource.js";
+import { itemDir, itemJsonPath, repoRootOf } from "../fsPaths.js";
+import { rememberLocalSource } from "../localSources.js";
 import { assertLabelDefined, fileTree, itemExists } from "../read.js";
 import { assertStructurallyValid, formatErrors, validateItem } from "../validate.js";
 import { copyDereferenced, removeIgnoredFiles } from "./copy.js";
@@ -58,13 +58,12 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
 
   const item: RegistryItem = {
     ...provisional,
-    // Where it came from, so the copy can be checked against the original later.
-    // Recorded from the source as it was *before* the copy dropped ignored files,
-    // because that is what a later check re-reads.
-    localSource: localSourceOf(op.sourcePath),
     contents: { files: fileTree(dir), ...(op.triggers?.length ? { triggers: op.triggers } : {}) },
   };
   assertStructurallyValid(item, { expectedType: op.type, expectedSlug: op.slug });
   writeFileSync(itemJsonPath(registryDir, op.type, op.slug), JSON.stringify(item, null, 2) + "\n");
+  // Where it came from, kept out of `item.json`: the path is machine-local and
+  // item.json is committed and served.
+  rememberLocalSource(repoRootOf(registryDir), registryDir, op.type, op.slug, op.sourcePath);
   return { kind: op.kind, type: op.type, slug: op.slug, item };
 }

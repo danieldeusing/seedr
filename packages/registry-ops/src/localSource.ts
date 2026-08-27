@@ -1,13 +1,11 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, join, relative } from "node:path";
-import type { LocalSource, RegistryItem } from "@seedr/shared";
 import { gitIgnored } from "./gitIgnore.js";
-import type { SourceStatus } from "./sourceState.js";
 
 /**
- * A first-party item copied from a folder on this machine keeps a note of where
- * it came from, so the copy can be checked against the original later.
+ * Digesting a source folder, so a copy can be checked against the original later.
+ * Where that record is kept, and what it is compared against, is `localSources.ts`.
  *
  * Nothing about this is automatic. There is no nightly job for it and there
  * cannot usefully be one in CI: the folder is on one person's disk, and a
@@ -54,20 +52,4 @@ export function sourceDigest(path: string): string | null {
     digest.update("\n");
   }
   return digest.digest("hex");
-}
-
-/** A note of the folder an item was copied from, as of now. */
-export const localSourceOf = (path: string): LocalSource => ({
-  path,
-  digest: sourceDigest(path),
-  syncedAt: new Date().toISOString().slice(0, 10),
-});
-
-/** Where an item stands relative to the folder it was copied from. */
-export function sourceStatus(item: Pick<RegistryItem, "localSource">): SourceStatus {
-  const source = item.localSource;
-  if (!source) return { state: "none" };
-  if (!existsSync(source.path)) return { state: "missing", path: source.path, recorded: source.digest, current: null };
-  const current = sourceDigest(source.path);
-  return { state: current === source.digest ? "current" : "behind", path: source.path, recorded: source.digest, current };
 }

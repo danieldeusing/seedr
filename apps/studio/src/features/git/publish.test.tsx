@@ -119,3 +119,29 @@ describe("PublishPanel", () => {
     expect(await screen.findByText(/could not push \(it asked for WebFetch/)).toBeInTheDocument();
   });
 });
+
+  test("names origin and how a branch with no upstream is first pushed", () => {
+    // The panel marks such a branch `·new` and its hover promises an upstream
+    // will be set. Nothing in the prompt said so, which left the promise resting
+    // on the agent's instinct — and a plain `git push` there fails.
+    const prompt = publishPrompt({ source: "main", targets: ["main"], message: "", notes: "", changes: [] });
+    expect(prompt).toMatch(/push -u origin/);
+    expect(prompt).toMatch(/Push to `origin`/);
+  });
+
+describe("reading a real publish run's answer", () => {
+  test("finds the verdict after the agent's own summary table", () => {
+    // Verbatim from the run of 2026-08-27, which committed and pushed for real.
+    const said = [
+      "| # | Task | Status | Notes |",
+      "| --- | --- | --- | --- |",
+      "| 1 | Commit `ESTATE.md` on `main` | ✅ done | One changed path, as expected |",
+      "",
+      "2 of 2 done. Working tree clean, still on `main`, commit `1896305`.",
+      "",
+      "PUBLISHED main",
+    ].join("\n");
+
+    expect(readVerdict(said)).toEqual({ kind: "published", branches: ["main"] });
+  });
+});

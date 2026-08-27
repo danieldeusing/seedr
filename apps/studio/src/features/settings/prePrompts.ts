@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { ComponentType } from "@seedr/shared";
 import { ALL_TYPES } from "@seedr/registry-ops/pure";
+import { readRepoScoped, writeRepoScoped } from "./repoScoped";
 
 /**
  * Standing context for the coding agent, per capability type and per job: what
@@ -17,10 +18,10 @@ const STORAGE_KEY = "studio-pre-prompts";
 export const emptyPrePrompts = (): PrePrompts =>
   Object.fromEntries(ALL_TYPES.map((type) => [type, { add: "", update: "" }])) as PrePrompts;
 
-const load = (): PrePrompts => {
+const load = (root: string): PrePrompts => {
   const prompts = emptyPrePrompts();
   try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    const parsed: unknown = JSON.parse(readRepoScoped(STORAGE_KEY, root) ?? "{}");
     if (typeof parsed !== "object" || parsed === null) return prompts;
     for (const type of ALL_TYPES) {
       const stored = (parsed as Record<string, unknown>)[type];
@@ -38,14 +39,22 @@ const load = (): PrePrompts => {
 
 interface PrePromptState {
   prompts: PrePrompts;
+  /** The checkout these belong to; "" before one is open. */
+  root: string;
+  /** Point the store at a checkout — its own prompts, or the machine-wide ones. */
+  forRepo(root: string): void;
   set(type: ComponentType, job: PrePromptJob, text: string): void;
 }
 
 export const usePrePrompts = create<PrePromptState>((set, get) => ({
-  prompts: load(),
+  prompts: load(""),
+  root: "",
+  forRepo(root) {
+    set({ root, prompts: load(root) });
+  },
   set(type, job, text) {
     const prompts: PrePrompts = { ...get().prompts, [type]: { ...get().prompts[type], [job]: text } };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts));
+    writeRepoScoped(STORAGE_KEY, get().root, JSON.stringify(prompts));
     set({ prompts });
   },
 }));

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
-import { Ban, Check, FolderOpen } from "lucide-react";
+import { Ban, Check, FileText, FolderOpen } from "lucide-react";
 import { AgentLog } from "@/core/ui/AgentLog";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
@@ -152,7 +152,10 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
             </span>
             <div className="field-val">
               <code className="truncate text-muted-foreground">{form.sourcePath || "nothing chosen"}</code>
-              <IconButton icon={FolderOpen} ariaLabel="choose folder" tip="Pick the capability's source folder" onClick={() => void chooseSource()} disabled={busy} />
+              <IconButton icon={FolderOpen} ariaLabel="choose folder" tip="Copy a whole folder — everything in it becomes the item's files" onClick={() => void chooseSource("folder")} disabled={busy} />
+              {/* A folder of several skills holds several capabilities, and only
+                  one of them is this item. Picking the file copies that one. */}
+              <IconButton icon={FileText} ariaLabel="choose file" tip="Copy a single file — for a folder holding more than one capability" onClick={() => void chooseSource("file")} disabled={busy} />
             </div>
           </div>
           <Problems errors={problemFor("sourcePath")} />

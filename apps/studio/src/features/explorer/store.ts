@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { ComponentType } from "@seedr/shared";
 import { fs } from "@/api/fs";
 import { defaultRepo, getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
-import { setOpsCheckout } from "@/api/registryCli";
+import { allSourceStatuses, setOpsCheckout } from "@/api/registryCli";
 import { useAuthorSettings } from "@/features/settings/authorSettings";
 import { usePrePrompts } from "@/features/settings/prePrompts";
 
@@ -41,6 +41,12 @@ export interface Selection {
 
 interface StudioState {
   repo: RepoInfo | null;
+  /**
+   * Where each item stands against the folder it was copied from, keyed
+   * `type/slug`. Read in one run beside the registry, so the explorer can mark a
+   * whole list without a process per row.
+   */
+  sourceStates: Record<string, string>;
   items: StudioItem[];
   problems: string[];
   loading: boolean;
@@ -57,6 +63,8 @@ interface StudioState {
   /** Record a checkout as the default. Resolves to an error, or null. */
   makeRepoDefault(path: string): Promise<string | null>;
   refresh(): Promise<void>;
+  /** Re-read where every item stands against its source folder. */
+  checkSources(): Promise<void>;
   /**
    * Bumped on every reload. A file's path does not change when its contents do,
    * so anything holding a path — the preview, above all — has no other way to
@@ -78,6 +86,7 @@ async function watch(refresh: () => Promise<void>): Promise<void> {
 
 export const useStudio = create<StudioState>((set, get) => ({
   repo: null,
+  sourceStates: {},
   items: [],
   problems: [],
   loading: false,
@@ -133,6 +142,14 @@ export const useStudio = create<StudioState>((set, get) => ({
     }
   },
 
+  async checkSources() {
+    // Nothing watches the source folders: they are outside the checkout, and the
+    // host refuses every path that is. So this is asked for, not pushed.
+    if (!get().repo) return;
+    const statuses = await allSourceStatuses().catch(() => []);
+    set({ sourceStates: Object.fromEntries(statuses.map((status) => [`${status.type}/${status.slug}`, status.state])) });
+  },
+
   async refresh() {
     const repo = get().repo;
     if (!repo) return;
@@ -142,6 +159,7 @@ export const useStudio = create<StudioState>((set, get) => ({
       const { selected } = get();
       const stillThere = selected && items.some((i) => i.type === selected.type && i.slug === selected.slug);
       set({ items, problems, loading: false, selected: stillThere ? selected : null, revision: get().revision + 1 });
+      void get().checkSources();
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
     }

@@ -108,3 +108,42 @@ describe("where an item was copied from", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/uncommitted changes/);
   });
 });
+
+describe("noticing that the folder moved on", () => {
+  test("re-checks when the window comes back, which is when the file was just edited", async () => {
+    let state = "current";
+    const asked: string[] = [];
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      asked.push(request.args.join(" "));
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ state, path: SOURCE }), stderr: "", durationMs: 1 };
+    });
+
+    render(<SourcePanel item={ITEM} />);
+    expect(await screen.findByRole("status")).toHaveTextContent("in sync");
+
+    // The file is edited in another window; nothing watches it, so nothing knows.
+    state = "behind";
+    expect(screen.getByRole("status")).toHaveTextContent("in sync");
+
+    window.dispatchEvent(new Event("focus"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("source has changes"));
+  });
+
+  test("and on demand, without leaving the item", async () => {
+    let state = "current";
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      const answer = request.args.includes("source-status") && !request.args.includes("origin-skill") ? { items: [] } : { state, path: SOURCE };
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify(answer), stderr: "", durationMs: 1 };
+    });
+
+    render(<SourcePanel item={ITEM} />);
+    await screen.findByRole("status");
+    state = "behind";
+
+    await userEvent.click(screen.getByRole("button", { name: "check the source again" }));
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("source has changes"));
+  });
+});

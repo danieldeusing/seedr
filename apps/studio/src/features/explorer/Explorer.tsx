@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, isFirstParty, typeDirName } from "@seedr/registry-ops/pure";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, GitBranch, Pencil, Plus, Rows3, Settings } from "lucide-react";
+import { useStudio } from "./store";
+import { ArrowDownToLine, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, FolderX, GitBranch, GitCompareArrows, Pencil, PencilLine, Plus, Rows3, Settings } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { Input } from "@/core/ui/Input";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
@@ -49,6 +50,27 @@ export function sourceMode(sourceType: string | undefined): { text: string; edit
 }
 
 /** The row's two indicators, as brand marks or as the `rw-`/`cgaxo` text. */
+/**
+ * A mark on the row when an item and the folder it was copied from have parted
+ * company. Nothing is shown for `current`, or for an item that records no
+ * origin: an unmarked row means there is nothing to answer for, which is most
+ * of them.
+ */
+const SOURCE_MARK: Record<string, { icon: typeof Pencil; tone: string; tip: string }> = {
+  behind: { icon: ArrowDownToLine, tone: "text-amber-400", tip: "The source folder has changed — this item is behind it" },
+  edited: { icon: PencilLine, tone: "text-primary", tip: "Edited here since the last copy from its source folder" },
+  diverged: { icon: GitCompareArrows, tone: "text-destructive", tip: "The source folder and this item have each changed" },
+  missing: { icon: FolderX, tone: "text-destructive", tip: "The source folder it was copied from is gone" },
+};
+
+function SourceMark({ type, slug }: { type: string; slug: string }) {
+  const state = useStudio((store) => store.sourceStates[`${type}/${slug}`]);
+  const mark = state ? SOURCE_MARK[state] : undefined;
+  if (!mark) return null;
+  const Icon = mark.icon;
+  return <Icon className={`size-3 shrink-0 ${mark.tone}`} data-tip={mark.tip} aria-label={mark.tip} />;
+}
+
 function RowIndicators({ item, style }: { item: StudioItem["item"]; style: RowStyle }) {
   const mode = sourceMode(item.sourceType);
   if (style === "text") {
@@ -192,6 +214,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
                         >
                           <RowIndicators item={item} style={rowStyle} />
                           <span className="truncate">{item.name ?? slug}</span>
+                          <SourceMark type={type} slug={slug} />
                           {errors.length > 0 && (
                             <span className="text-destructive" data-tip={`${errors.length} validation problem(s)`} aria-label={`${errors.length} validation problems`}>
                               !

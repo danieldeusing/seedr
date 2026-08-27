@@ -113,6 +113,14 @@ export async function sourceStatusOf(type: string, slug: string, run: typeof run
   return parseJsonStdout<SourceStatus>(outcome, `source-status ${type}/${slug}`);
 }
 
+/** Every item that records an origin, and where each stands — one run for the lot. */
+export async function allSourceStatuses(run: typeof runProcess = runProcess): Promise<(SourceStatus & { type: string; slug: string })[]> {
+  const outcome = await run({ taskId: "registry-source-all", program: "npx", ...cli("source-status"), cwd: "", timeoutMs: 60_000 });
+  // `?? []` because this parses another process's output: a CLI that answered
+  // something else should leave the list empty, not crash the window.
+  return parseJsonStdout<{ items?: (SourceStatus & { type: string; slug: string })[] }>(outcome, "source-status").items ?? [];
+}
+
 export async function repoIdentity(run: typeof runProcess = runProcess): Promise<RepoIdentity> {
   const outcome = await run({ taskId: "registry-identity", program: "npx", ...cli("identity"), cwd: "", timeoutMs: 60_000 });
   return parseJsonStdout<RepoIdentity>(outcome, "identity");

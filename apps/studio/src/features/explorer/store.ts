@@ -47,6 +47,8 @@ interface StudioState {
    * whole list without a process per row.
    */
   sourceStates: Record<string, string>;
+  /** Why the marks are missing, when they are. Never silently absent. */
+  sourceCheckError: string | null;
   items: StudioItem[];
   problems: string[];
   loading: boolean;
@@ -87,6 +89,7 @@ async function watch(refresh: () => Promise<void>): Promise<void> {
 export const useStudio = create<StudioState>((set, get) => ({
   repo: null,
   sourceStates: {},
+  sourceCheckError: null,
   items: [],
   problems: [],
   loading: false,
@@ -146,8 +149,15 @@ export const useStudio = create<StudioState>((set, get) => ({
     // Nothing watches the source folders: they are outside the checkout, and the
     // host refuses every path that is. So this is asked for, not pushed.
     if (!get().repo) return;
-    const statuses = await allSourceStatuses().catch(() => []);
-    set({ sourceStates: Object.fromEntries(statuses.map((status) => [`${status.type}/${status.slug}`, status.state])) });
+    try {
+      const statuses = await allSourceStatuses();
+      set({ sourceCheckError: null, sourceStates: Object.fromEntries(statuses.map((status) => [`${status.type}/${status.slug}`, status.state])) });
+    } catch (error) {
+      // Said out loud rather than swallowed. Swallowing it cost an afternoon:
+      // a checkout whose CLI predates the batch command answers "unknown type",
+      // and an empty marker column looks exactly like nothing being out of sync.
+      set({ sourceStates: {}, sourceCheckError: (error as Error).message });
+    }
   },
 
   async refresh() {

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
-import { Ban, Check, FileText, FolderOpen } from "lucide-react";
+import { Ban, Check, FolderOpen } from "lucide-react";
+import { mainFileName } from "@seedr/registry-ops/pure";
 import { AgentLog } from "@/core/ui/AgentLog";
 import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
@@ -55,6 +56,8 @@ function JobLog({ fill = false }: { fill?: boolean }) {
   return <AgentLog lines={log} fill={fill} />;
 }
 
+const choiceButton = "cursor-pointer border border-violet-500/30 px-2 py-0.5 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300";
+
 export function AuthorForm({ onAdded }: AuthorFormProps) {
   const form = useAuthor((s) => s.form);
   const probe = useAuthor((s) => s.probe);
@@ -63,7 +66,8 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const cancelled = useAuthor((s) => s.cancelled);
   const result = useAuthor((s) => s.result);
   const error = useAuthor((s) => s.error);
-  const { setField, setType, setSourceKind, toggleAgent, chooseSource, prepare, apply, cancel, reset } = useAuthor.getState();
+  const { setField, setType, setSourceKind, toggleAgent, chooseSource, takeSource, prepare, apply, cancel, reset } = useAuthor.getState();
+  const sourceChoices = useAuthor((state) => state.sourceChoices);
 
   useEffect(() => {
     void prepare();
@@ -152,12 +156,27 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
             </span>
             <div className="field-val">
               <code className="truncate text-muted-foreground">{form.sourcePath || "nothing chosen"}</code>
-              <IconButton icon={FolderOpen} ariaLabel="choose folder" tip="Copy a whole folder — everything in it becomes the item's files" onClick={() => void chooseSource("folder")} disabled={busy} />
-              {/* A folder of several skills holds several capabilities, and only
-                  one of them is this item. Picking the file copies that one. */}
-              <IconButton icon={FileText} ariaLabel="choose file" tip="Copy a single file — for a folder holding more than one capability" onClick={() => void chooseSource("file")} disabled={busy} />
+              <IconButton icon={FolderOpen} ariaLabel="choose source" tip="Pick the folder to copy — Studio asks which part of it if the folder holds several capabilities" onClick={() => void chooseSource()} disabled={busy} />
             </div>
           </div>
+          {sourceChoices.length > 0 && (
+            <div className="field-row">
+              <span className="lbl" />
+              <div className="field-val flex-col items-start">
+                <p className="text-muted-foreground">That folder holds several files and no {mainFileName(form.type)} — copy all of it, or one file?</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <button type="button" className={choiceButton} onClick={() => takeSource(null)}>
+                    the whole folder
+                  </button>
+                  {sourceChoices.map((file) => (
+                    <button key={file} type="button" className={choiceButton} onClick={() => takeSource(file)}>
+                      {file}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           <Problems errors={problemFor("sourcePath")} />
         </>
       )}
@@ -341,7 +360,11 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       <JobLog />
       {/* Below the log, not beside the status: the log grows and is resizable,
           so buttons above it drift further from the output they act on. */}
-      <div className="mt-3 flex items-center justify-end gap-2">
+      {/* `mt-auto` pins this to the bottom of the dialog: the form is a full-height
+          flex column, so a short form leaves the gap above the buttons rather
+          than below them. Moving them under the log had left the submit floating
+          in the middle of an otherwise empty dialog. */}
+      <div className="mt-auto flex items-center justify-end gap-2 pt-3">
         {(phase === "drafting" || phase === "running") && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
         <IconButton
           icon={Check}

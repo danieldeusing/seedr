@@ -219,7 +219,11 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       <JobLog />
       {/* Below the log, not beside the status: the log grows and is resizable,
           so buttons above it drift further from the output they act on. */}
-      <div className="mt-3 flex items-center justify-end gap-2">
+      {/* `mt-auto` pins this to the bottom of the dialog: the form is a full-height
+          flex column, so a short form leaves the gap above the buttons rather
+          than below them. Moving them under the log had left the submit floating
+          in the middle of an otherwise empty dialog. */}
+      <div className="mt-auto flex items-center justify-end gap-2 pt-3">
         {phase === "done" ? (
           <button
             type="button"

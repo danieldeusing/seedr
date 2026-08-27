@@ -56,29 +56,52 @@ describe("useAuthor", () => {
     expect(state.form.authorUrl).toBe("https://github.com/acme");
   });
 
-  test("chooseSource derives slug and name from the picked folder", async () => {
+  test("a folder that is the capability is taken as it is", async () => {
     const asked: unknown[] = [];
     onCommand("pick_path", (args) => {
       asked.push((args as { kind: string }).kind);
       return "/Users/me/.claude/skills/fill-pdf_forms";
     });
-    await useAuthor.getState().chooseSource("folder");
+    // It holds SKILL.md, so the folder *is* the skill — nothing to choose.
+    onCommand("read_source_files", () => ({ files: { "SKILL.md": "# Fill", "references/notes.md": "x" }, skipped: [] }));
+
+    await useAuthor.getState().chooseSource();
+
     expect(asked).toEqual(["folder"]);
+    expect(useAuthor.getState().sourceChoices).toEqual([]);
     expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/fill-pdf_forms", slug: "fill-pdf_forms", name: "Fill Pdf Forms" });
   });
 
-  test("a single file can be the source, for a folder holding several capabilities", async () => {
-    // `.claude/skills/` with three unrelated skill files in it: the folder is not
-    // the capability, one file in it is. The slug comes from the file without its
-    // extension, and the operation copies that one file.
-    const asked: unknown[] = [];
-    onCommand("pick_path", (args) => {
-      asked.push((args as { kind: string }).kind);
-      return "/Users/me/.claude/skills/configr-design.md";
-    });
-    await useAuthor.getState().chooseSource("file");
-    expect(asked).toEqual(["file"]);
+  test("a folder of several capabilities asks which one, and takes that file", async () => {
+    // `.claude/skills/` with three unrelated skills in it: the folder is not the
+    // capability, one file in it is. The native panel cannot offer files and
+    // folders at once, so the choice is made after the folder is picked.
+    onCommand("pick_path", () => "/Users/me/.claude/skills");
+    onCommand("read_source_files", () => ({
+      files: { "configr-architecture.md": "a", "configr-design.md": "b", "ui-styling.md": "c" },
+      skipped: [],
+    }));
+
+    await useAuthor.getState().chooseSource();
+
+    expect(useAuthor.getState().sourceChoices).toEqual(["configr-architecture.md", "configr-design.md", "ui-styling.md"]);
+    // Nothing is chosen until it is chosen.
+    expect(useAuthor.getState().form.sourcePath).toBe("");
+
+    useAuthor.getState().takeSource("configr-design.md");
+
     expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/configr-design.md", slug: "configr-design", name: "Configr Design" });
+    expect(useAuthor.getState().sourceChoices).toEqual([]);
+  });
+
+  test("the whole folder stays an option when it was offered", async () => {
+    onCommand("pick_path", () => "/Users/me/rules");
+    onCommand("read_source_files", () => ({ files: { "a.md": "a", "b.md": "b" }, skipped: [] }));
+
+    await useAuthor.getState().chooseSource();
+    useAuthor.getState().takeSource(null);
+
+    expect(useAuthor.getState().form.sourcePath).toBe("/Users/me/rules");
   });
 
   test("draft reads the source through the host, asks Claude with the prompt on stdin, and fills the descriptions", async () => {

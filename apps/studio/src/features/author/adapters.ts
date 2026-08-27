@@ -191,7 +191,7 @@ function readClaudeLine(text: string): AgentJobEvent[] {
     const message = event.message as { content?: { type?: string; text?: string; name?: string; input?: unknown }[] } | undefined;
     return (message?.content ?? []).flatMap((block): AgentJobEvent[] => {
       if (block.type === "text") return line("markdown", block.text ?? "");
-      if (block.type === "tool_use") return [{ kind: "tool", text: `${block.name ?? "tool"} ${summariseInput(block.input)}`.trim() }];
+      if (block.type === "tool_use") return [{ kind: "tool", text: block.name ?? "tool", detail: summariseInput(block.input) }];
       return [];
     });
   }
@@ -268,7 +268,8 @@ function readCodexLine(text: string): AgentJobEvent[] {
   if (!event) return line("text", text);
   const item = event.item as { type?: string; command?: string; status?: string; text?: string } | undefined;
   if (event.type === "item.started" && item?.type === "command_execution") {
-    return [{ kind: "tool", text: shorten(item.command ?? "command") }];
+    // codex runs everything through a login shell; the shell is the tool.
+    return [{ kind: "tool", text: "bash", detail: shorten(item.command ?? "") }];
   }
   if (event.type === "item.completed" && item?.type === "agent_message") return line("markdown", item.text ?? "");
   // Everything else — the turn and thread envelopes, and a command's completion
@@ -296,8 +297,7 @@ function readOpencodeLine(text: string): AgentJobEvent[] {
   const part = event.part as { type?: string; text?: string; tool?: string; state?: { title?: string; input?: unknown } } | undefined;
   if (event.type === "text") return line("markdown", part?.text ?? "");
   if (event.type === "tool_use") {
-    const detail = part?.state?.title ?? summariseInput(part?.state?.input);
-    return [{ kind: "tool", text: shorten(`${part?.tool ?? "tool"} ${detail}`) }];
+    return [{ kind: "tool", text: part?.tool ?? "tool", detail: shorten(part?.state?.title ?? summariseInput(part?.state?.input)) }];
   }
   return [];
 }
@@ -315,7 +315,7 @@ function readCopilotLine(text: string): AgentJobEvent[] {
   if (event.ephemeral === true) return [];
   const data = event.data as { content?: string; toolName?: string; arguments?: unknown } | undefined;
   if (event.type === "assistant.message") return line("markdown", data?.content ?? "");
-  if (event.type === "tool.execution_start") return [{ kind: "tool", text: shorten(`${data?.toolName ?? "tool"} ${summariseInput(data?.arguments)}`) }];
+  if (event.type === "tool.execution_start") return [{ kind: "tool", text: data?.toolName ?? "tool", detail: summariseInput(data?.arguments) }];
   return [];
 }
 

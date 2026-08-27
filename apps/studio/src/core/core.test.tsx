@@ -289,9 +289,15 @@ describe("AgentLog", () => {
     expect(blocks.map((b) => b.repeats)).toEqual([2, 2]);
   });
 
-  test("does not collapse what an agent said or ran — two identical ones really happened twice", () => {
-    const blocks = blocksOf([{ kind: "tool", text: "· bash echo hello" }, { kind: "tool", text: "· bash echo hello" }]);
-    expect(blocks).toHaveLength(2);
+  test("gathers consecutive calls into one group, keeping every one of them", () => {
+    const call = (detail: string) => ({ kind: "tool" as const, text: "bash", detail });
+    const blocks = blocksOf([call("echo hello"), call("echo hello"), said("done"), call("ls")]);
+
+    // Two identical calls really did happen twice, so both are kept — they are
+    // events, not a repeated message. The prose splits the groups.
+    expect(blocks[0]?.calls).toHaveLength(2);
+    expect(blocks[1]?.markdown).toBe(true);
+    expect(blocks[2]?.calls).toHaveLength(1);
   });
 
   test("leaves every earlier block alone when a line arrives", () => {

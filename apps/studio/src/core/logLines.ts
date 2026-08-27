@@ -1,7 +1,7 @@
 import type { AgentJobEvent } from "@/api/agentJob";
 
 /** One line of a run, still knowing what kind of line it is. */
-export type LogLine = Pick<AgentJobEvent, "kind" | "text">;
+export type LogLine = Pick<AgentJobEvent, "kind" | "text" | "detail">;
 
 /** A plain line of output — what a raw process stream gives, with no turns in it. */
 export const plainLine = (text: string): LogLine => ({ kind: "text", text });

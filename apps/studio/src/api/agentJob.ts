@@ -25,6 +25,12 @@ export interface AgentJobEvent {
    */
   kind: "system" | "text" | "markdown" | "tool" | "error";
   text: string;
+  /**
+   * For a tool call, the argument — `text` is then the tool's own name. Kept
+   * apart so the log can show what kind of call it was, rather than one run-on
+   * string the reader has to parse back.
+   */
+  detail?: string;
 }
 
 export interface AgentJobResult {

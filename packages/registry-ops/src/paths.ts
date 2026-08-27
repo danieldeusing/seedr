@@ -63,6 +63,15 @@ export function typeDirName(type: ComponentType): string {
   return type === "settings" || type === "mcp" ? type : `${type}s`;
 }
 
+/**
+ * The main content file of a single-file item type. `SKILL.md` is Claude Code's
+ * own spelling for skills; everything else is `<type>.md`, which is what
+ * `registry/mcp/playwright/mcp.md` on disk actually is.
+ */
+export function mainFileName(type: ComponentType): string {
+  return type === "skill" ? "SKILL.md" : `${type}.md`;
+}
+
 /** The (type, slug) primary key as one string, for sets and maps. Never key by slug alone. */
 export function itemKey(type: ComponentType, slug: string): string {
   return `${type}/${slug}`;

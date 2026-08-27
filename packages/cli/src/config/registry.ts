@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isFirstParty, resolveRegistryDir, typeDirName } from "@seedr/registry-ops";
+import { isFirstParty, mainFileName, resolveRegistryDir, typeDirName } from "@seedr/registry-ops";
 export { typeDirName };
 import type {
   RegistryManifest,
@@ -286,10 +286,9 @@ function getItemBaseUrl(item: RegistryItem): ItemLocation {
   return { local: null, remote: source.baseUrl, rootUrl: source.rootUrl, revision: source.revision };
 }
 
-/** The main content file of a single-file item type (e.g. `SKILL.md`, `mcp.md`). */
-export function mainFileName(type: ComponentType): string {
-  return type === "skill" ? "SKILL.md" : `${type}.md`;
-}
+// One definition, in the shared package: Studio needs the same rule to tell a
+// folder that *is* a capability from one that merely holds several.
+export { mainFileName };
 
 /**
  * Fetch the main content file for an item (e.g., SKILL.md).

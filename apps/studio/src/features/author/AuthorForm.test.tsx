@@ -34,7 +34,7 @@ describe("AuthorForm", () => {
     expect(screen.getByRole("button", { name: "coding agent" })).toHaveTextContent("Claude Code");
     expect(screen.getByLabelText("author")).toHaveValue("Acme");
 
-    await userEvent.click(screen.getByRole("button", { name: "choose folder" }));
+    await userEvent.click(screen.getByRole("button", { name: "choose source" }));
     expect(screen.getByLabelText("slug")).toHaveValue("pdf");
 
     // The descriptions are the agent's to write — the form does not ask for them.
@@ -85,7 +85,7 @@ describe("AuthorForm — where the capability comes from", () => {
     render(<AuthorForm onAdded={() => {}} />);
     await choose("source kind", "a git repository");
 
-    expect(screen.queryByRole("button", { name: "choose folder" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "choose source" })).not.toBeInTheDocument();
     expect(screen.getByText(/paste the repository's URL/)).toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText("repository"), "https://gitlab.com/o/r");
@@ -123,7 +123,7 @@ describe("AuthorForm — where the capability comes from", () => {
   test("the descriptions are the agent's, and their absence never blocks the submit", async () => {
     render(<AuthorForm onAdded={() => {}} />);
     await screen.findByText("2.1.226");
-    await userEvent.click(screen.getByRole("button", { name: "choose folder" }));
+    await userEvent.click(screen.getByRole("button", { name: "choose source" }));
 
     expect(screen.getByText(/The agent writes the description and the TL;DR/)).toBeInTheDocument();
     expect(screen.queryByText(/is missing 'description'/)).not.toBeInTheDocument();

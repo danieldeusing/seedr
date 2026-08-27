@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
-import { ALL_TYPES, CANONICAL_AGENTS, parseOp, typeDirName, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
+import { ALL_TYPES, CANONICAL_AGENTS, mainFileName, parseOp, typeDirName, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess, onProcessOutput, pickPath } from "@/api/agent";
 import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
 import type { JobCapability } from "./adapters";
@@ -75,11 +75,18 @@ interface AuthorState {
   setSourceKind(kind: SourceKind): void;
   toggleAgent(agent: CodingAgent): void;
   /**
-   * Pick the content to copy. A folder becomes the item's whole file tree; a
-   * single file becomes an item of one file — which is what a directory holding
-   * several unrelated skills needs, since only one of them is the capability.
+   * Pick the content to copy. One dialog, because the native panel is configured
+   * for files or for folders and cannot offer both — so this asks for a folder,
+   * then asks *which part of it* when the folder turns out to hold several
+   * capabilities rather than being one.
    */
-  chooseSource(kind: "file" | "folder"): Promise<void>;
+  chooseSource(): Promise<void>;
+  /** Files offered after picking such a folder; empty when there is nothing to choose. */
+  sourceChoices: string[];
+  /** The folder the choice is being made inside. */
+  pendingSource: string | null;
+  /** Take the whole picked folder (null) or one file inside it. */
+  takeSource(file: string | null): void;
   /** Probe Claude and prefill author/externalUrl from the repo's identity. */
   prepare(): Promise<void>;
   draft(): Promise<void>;
@@ -376,12 +383,32 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     set({ form: { ...get().form, compatibility: CANONICAL_AGENTS.filter((a) => next.includes(a)) } });
   },
 
-  async chooseSource(kind) {
-    const picked = await pickPath(kind);
+  sourceChoices: [],
+  pendingSource: null,
+
+  async chooseSource() {
+    const picked = await pickPath("folder");
     if (!picked) return;
+    set({ pendingSource: picked, sourceChoices: [] });
+    // A folder holding the type's main file *is* the capability. One that does
+    // not, and holds several files, is a folder *of* capabilities — `.claude/skills/`
+    // with three unrelated skills in it — and only one of them is this item.
+    const listed = await readSourceFiles(picked).then(({ files }) => Object.keys(files), (): string[] => []);
+    const topLevel = listed.filter((file) => !file.includes("/")).sort();
+    if (!listed.includes(mainFileName(get().form.type)) && topLevel.length > 1) {
+      set({ sourceChoices: topLevel });
+      return;
+    }
+    get().takeSource(null);
+  },
+
+  takeSource(file) {
+    const folder = get().pendingSource;
+    if (!folder) return;
+    const path = file === null ? folder : `${folder}/${file}`;
     const { form } = get();
-    const slug = form.slug || slugFromPath(picked);
-    set({ form: { ...form, sourcePath: picked, slug, name: form.name || titleFromSlug(slug) } });
+    const slug = form.slug || slugFromPath(path);
+    set({ form: { ...form, sourcePath: path, slug, name: form.name || titleFromSlug(slug) }, sourceChoices: [] });
   },
 
   async prepare() {

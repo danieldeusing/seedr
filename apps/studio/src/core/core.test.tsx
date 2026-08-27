@@ -262,13 +262,36 @@ describe("AgentLog", () => {
   test("joins markdown so a fence survives, and leaves plain lines apart so they are cheap", () => {
     expect(blocksOf([said("# a"), said("more"), printed("b"), printed("c")])).toEqual([
       // Markdown only means anything whole.
-      { markdown: true, text: "# a\nmore" },
+      { markdown: true, text: "# a\nmore", repeats: 1 },
       // Plain lines stay separate: joined, a streaming agent grew one enormous
       // element that React rebuilt on every line, and the controls stopped
       // answering.
-      { markdown: false, text: "b" },
-      { markdown: false, text: "c" },
+      { markdown: false, text: "b", repeats: 1 },
+      { markdown: false, text: "c", repeats: 1 },
     ]);
+  });
+
+  test("shows a repeated message once, with how many times it came", () => {
+    // Verbatim from a run: a broken MCP server reports the same auth failure on
+    // every model call, and ten of an eighteen-line log said one thing.
+    const mcp = (stamp: string, host: string) =>
+      printed(`${stamp} ERROR rmcp::transport::worker: worker quit with fatal: AuthRequired(${host})`);
+    const blocks = blocksOf([
+      mcp("2026-08-27T01:21:31.739829Z", "mcp.notion.com"),
+      mcp("2026-08-27T01:21:31.785706Z", "mcp.linear.app"),
+      mcp("2026-08-27T01:22:14.908055Z", "mcp.linear.app"),
+      mcp("2026-08-27T01:22:25.003106Z", "mcp.notion.com"),
+    ]);
+
+    // Two distinct failures, not four events: the timestamp is what made them
+    // look different, so it is not what they are compared by.
+    expect(blocks).toHaveLength(2);
+    expect(blocks.map((b) => b.repeats)).toEqual([2, 2]);
+  });
+
+  test("does not collapse what an agent said or ran — two identical ones really happened twice", () => {
+    const blocks = blocksOf([{ kind: "tool", text: "· bash echo hello" }, { kind: "tool", text: "· bash echo hello" }]);
+    expect(blocks).toHaveLength(2);
   });
 
   test("leaves every earlier block alone when a line arrives", () => {

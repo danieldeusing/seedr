@@ -19,6 +19,12 @@ interface UpdateFormProps {
 }
 
 /** Edit a first-party item's metadata; applied as one hash-guarded `update` transaction. */
+/** Subscribed on its own, so the form is not re-rendered per streamed line. */
+function JobLog() {
+  const log = useUpdate((state) => state.log);
+  return <AgentLog lines={log} />;
+}
+
 export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const form = useUpdate((s) => s.form);
   const probe = useUpdate((s) => s.probe);
@@ -27,7 +33,6 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const error = useUpdate((s) => s.error);
   const outcome = useUpdate((s) => s.outcome);
   const jobReport = useUpdate((s) => s.jobReport);
-  const log = useUpdate((s) => s.log);
   const target = useUpdate((s) => s.target);
   const { start, setField, toggleAgent, apply, cancel, reset } = useUpdate.getState();
 
@@ -247,7 +252,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           Draft rejected: {draftErrors.join("; ")}
         </p>
       )}
-      <AgentLog lines={log} />
+      <JobLog />
       {error && !refusal && <SignedOutNotice error={error} />}
     </form>
   );

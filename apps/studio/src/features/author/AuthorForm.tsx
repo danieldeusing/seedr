@@ -46,12 +46,22 @@ interface AuthorFormProps {
  * transaction; a repository or a prompt is a job the coding agent does with
  * this repo's own add skills — which end in that same transaction.
  */
+/**
+ * The log subscribes for itself so the form does not.
+ *
+ * A form of two dozen controls re-rendered on every line an agent streamed,
+ * which is what made clicking and scrolling take seconds while a job ran.
+ */
+function JobLog({ fill = false }: { fill?: boolean }) {
+  const log = useAuthor((state) => state.log);
+  return <AgentLog lines={log} fill={fill} />;
+}
+
 export function AuthorForm({ onAdded }: AuthorFormProps) {
   const form = useAuthor((s) => s.form);
   const probe = useAuthor((s) => s.probe);
   const phase = useAuthor((s) => s.phase);
   const draftErrors = useAuthor((s) => s.draftErrors);
-  const log = useAuthor((s) => s.log);
   const cancelled = useAuthor((s) => s.cancelled);
   const result = useAuthor((s) => s.result);
   const error = useAuthor((s) => s.error);
@@ -102,7 +112,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           <p className="mt-4 text-primary">{result.added ? `Added ${result.added.type}/${result.added.slug}.` : "The job finished without naming what it added."}</p>
         )}
         <p className="mt-4 text-muted-foreground">Review with git status and commit when you are happy. It is selected in the explorer behind this dialog.</p>
-        <AgentLog lines={log} fill />
+        <JobLog fill />
         <div className="mt-4 flex">
           <button
             type="button"
@@ -339,7 +349,7 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         </p>
       )}
       {error && <SignedOutNotice error={error} />}
-      <AgentLog lines={log} />
+      <JobLog />
     </form>
   );
 }

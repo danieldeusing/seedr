@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { cancelProcess } from "@/api/agent";
-import type { LogLine } from "@/core/ui/AgentLog";
+import { batchedLog, type LogLine } from "@/core/logLines";
 import { runAgentJob } from "@/api/agentJob";
 import type { JobCapability } from "@/features/author/adapters";
 import type { ChangedPath } from "@/api/git";
@@ -77,6 +77,14 @@ interface PublishState {
 // A long job scrolled its own beginning away at 300.
 const LOG_CAP = 1000;
 
+/**
+ * Lines from a running job, coalesced to one store update a frame. Per line,
+ * each of these was a render of the whole panel.
+ */
+const collectLog = (set: (partial: { log: LogLine[] }) => void, current: () => LogLine[]) =>
+  batchedLog((batch) => set({ log: [...current(), ...batch].slice(-LOG_CAP) }));
+
+
 export const usePublish = create<PublishState>((set, get) => ({
   phase: "idle",
   log: [],
@@ -90,7 +98,7 @@ export const usePublish = create<PublishState>((set, get) => ({
         taskId: PUBLISH_TASK,
         prompt: publishPrompt(plan),
         capabilities: PUBLISH_JOB_CAPABILITIES,
-        onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), { kind: event.kind, text: event.kind === "tool" ? `· ${event.text}` : event.text }] }),
+        onEvent: collectLog(set, () => get().log),
       });
       if (outcome.cancelled) {
         set({ phase: "idle", error: null });

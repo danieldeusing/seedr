@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { CANONICAL_AGENTS, canonicalAgents, isFirstParty, parseOp, validateItem, type UpdateOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess } from "@/api/agent";
-import type { LogLine } from "@/core/ui/AgentLog";
+import { batchedLog, type LogLine } from "@/core/logLines";
 import { runAgentJob } from "@/api/agentJob";
 import type { JobCapability } from "@/features/author/adapters";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
@@ -69,6 +69,14 @@ export const UPDATE_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search
 const UPDATE_TASK = "update-job";
 // A long job scrolled its own beginning away at 200.
 const LOG_CAP = 1000;
+
+/**
+ * Lines from a running job, coalesced to one store update a frame. Per line,
+ * each of these was a render of the whole panel.
+ */
+const collectLog = (set: (partial: { log: LogLine[] }) => void, current: () => LogLine[]) =>
+  batchedLog((batch) => set({ log: [...current(), ...batch].slice(-LOG_CAP) }));
+
 
 /** The whole instruction for a prompt-driven update — the capability, then its metadata. */
 export function updateJobPrompt(item: StudioItem, form: UpdateForm, patch: UpdateOp["patch"]): string {
@@ -191,7 +199,7 @@ export const useUpdate = create<UpdateState>((set, get) => ({
           taskId: UPDATE_TASK,
           prompt: updateJobPrompt(target, form, patch),
           capabilities: UPDATE_JOB_CAPABILITIES,
-          onEvent: (event) => set({ log: [...get().log.slice(-LOG_CAP + 1), { kind: event.kind, text: event.kind === "tool" ? `· ${event.text}` : event.text }] }),
+          onEvent: collectLog(set, () => get().log),
         });
         if (outcome.cancelled) {
           set({ phase: "idle", error: null });

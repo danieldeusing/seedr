@@ -1,15 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { FileText, Type, Wand2 } from "lucide-react";
-import type { AgentJobEvent } from "@/api/agentJob";
+import type { LogLine } from "@/core/logLines";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
 import { useRememberedChoice, useRememberedSize } from "@/core/remembered";
 import { SafeMarkdown } from "./SafeMarkdown";
-
-/** One line of a run, still knowing what kind of line it is. */
-export type LogLine = Pick<AgentJobEvent, "kind" | "text">;
-
-/** A plain line of output — what a raw process stream gives, with no turns in it. */
-export const plainLine = (text: string): LogLine => ({ kind: "text", text });
 
 /**
  * How much of the output to read as markdown.
@@ -32,23 +26,39 @@ const MODE_LABELS: Record<LogMode, string> = {
 type Block = { markdown: boolean; text: string };
 
 /**
- * Consecutive lines of the same kind, joined.
+ * What to render, given the lines and how they are to be read.
  *
- * Markdown is not a line at a time — a fence, a list or a table only means
- * anything whole — so prose is joined before it is rendered. Everything else is
- * joined too, but stays preformatted: a tool trace and a command's JSON are
- * lines, and reflowing them into a paragraph is how they became unreadable.
+ * Markdown runs are joined — a fence, a list or a table only means anything
+ * whole. Plain lines are deliberately *not* joined, each staying its own block.
+ * Joined, a streaming agent grew one enormous `<pre>` that React rebuilt on
+ * every arriving line, and a job long enough left the mode buttons taking
+ * whole seconds to answer. Separate, an arriving line adds one element and
+ * every earlier one is left alone.
  */
 export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
   const blocks: Block[] = [];
   for (const line of lines) {
     const markdown = mode === "raw" ? false : mode === "formatted" || line.kind === "markdown";
     const last = blocks.at(-1);
-    if (last && last.markdown === markdown) last.text += `\n${line.text}`;
+    if (markdown && last?.markdown) last.text += `\n${line.text}`;
     else blocks.push({ markdown, text: line.text });
   }
   return blocks;
 }
+
+/**
+ * One block, rendered once. Only the newest changes as output arrives, so
+ * everything above it must be allowed to stay exactly as it is.
+ */
+const LogBlock = memo(function LogBlock({ markdown, text }: Block) {
+  return markdown ? (
+    <div className="formatted-preview text-neutral-300">
+      <SafeMarkdown>{text}</SafeMarkdown>
+    </div>
+  ) : (
+    <pre className="whitespace-pre-wrap text-neutral-400">{text}</pre>
+  );
+});
 
 /** Within a few pixels of the bottom, which is where "following the output" means. */
 const atBottom = (element: HTMLElement): boolean => element.scrollHeight - element.scrollTop - element.clientHeight < 24;
@@ -113,20 +123,14 @@ export function AgentLog({ lines, fill = false }: { lines: LogLine[]; fill?: boo
         onScroll={(event) => (following.current = atBottom(event.currentTarget))}
         style={fill ? undefined : { height }}
         className={`overflow-auto bg-neutral-960/50 p-3 leading-relaxed ${fill ? "min-h-0 flex-1" : ""}`}
-        aria-live="polite"
+        // No `aria-live`: this region changes many times a second and runs to a
+        // thousand lines, so announcing it would announce nothing usable and
+        // cost a subtree diff per line.
         aria-label="agent output"
       >
-        {blocks.map((block, index) =>
-          block.markdown ? (
-            <div key={index} className="formatted-preview text-neutral-300">
-              <SafeMarkdown>{block.text}</SafeMarkdown>
-            </div>
-          ) : (
-            <pre key={index} className="whitespace-pre-wrap text-neutral-400">
-              {block.text}
-            </pre>
-          )
-        )}
+        {blocks.map((block, index) => (
+          <LogBlock key={index} markdown={block.markdown} text={block.text} />
+        ))}
       </div>
       {!fill && <PaneResizeHandle axis="y" label="resize agent output" onResize={(delta) => setHeight((current: number) => Math.max(SHORTEST, current + delta))} />}
     </div>

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { FolderSearch, RefreshCw, RotateCw, Unlink } from "lucide-react";
+import { FileDiff, FolderSearch, RefreshCw, RotateCw, Unlink } from "lucide-react";
 import { isFirstParty, type SourceStatus } from "@seedr/registry-ops/pure";
-import { itemHash, runRegistryOp } from "@/api/registryCli";
+import { itemHash, runRegistryOp, sourceDiffOf } from "@/api/registryCli";
+import { DiffText } from "@/core/ui/DiffText";
 import { IconButton } from "@/core/ui/IconButton";
 import { useStudio } from "./store";
 import type { StudioItem } from "./registry";
@@ -32,6 +33,7 @@ export function SourcePanel({ item }: { item: StudioItem }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmingAdopt, setConfirmingAdopt] = useState(false);
+  const [diff, setDiff] = useState<string | null>(null);
 
   const firstParty = isFirstParty(item.item.sourceType);
 
@@ -109,6 +111,21 @@ export function SourcePanel({ item }: { item: StudioItem }) {
         )}
 
         <div className="mt-3 flex items-center gap-2">
+          {(state === "behind" || state === "edited" || state === "diverged") && (
+            <IconButton
+              icon={FileDiff}
+              ariaLabel="show the difference"
+              tip="What the folder has that this copy does not, and the other way round"
+              onClick={() => {
+                setDiff("");
+                sourceDiffOf(item.type, item.slug).then(setDiff, (failure: Error) => {
+                  setDiff(null);
+                  setError(failure.message);
+                });
+              }}
+              disabled={busy}
+            />
+          )}
           <IconButton
             icon={RotateCw}
             ariaLabel="check the source again"
@@ -140,6 +157,28 @@ export function SourcePanel({ item }: { item: StudioItem }) {
           )}
         </div>
       </div>
+      {diff !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-label="source difference">
+          <div className="absolute inset-0 bg-[var(--dialog-backdrop)] backdrop-blur-sm" onClick={() => setDiff(null)} />
+          <div className="relative mx-4 flex max-h-[80vh] w-full max-w-4xl flex-col border border-neutral-700 bg-neutral-980 shadow-2xl">
+            <div className="flex items-center gap-2 border-b border-neutral-960 px-6 py-4">
+              <FileDiff className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <h3 className="text-lg font-semibold text-white">
+                {item.type}/{item.slug}
+              </h3>
+              <span className="ml-auto text-muted-foreground">source → registry</span>
+            </div>
+            <pre className="min-h-0 flex-1 overflow-auto p-4 leading-relaxed" data-testid="source-diff">
+              {diff === "" ? "reading…" : diff.trim() === "" ? "The files are identical." : <DiffText text={diff} />}
+            </pre>
+            <div className="flex justify-end border-t border-neutral-960 px-6 py-3">
+              <button type="button" className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300" onClick={() => setDiff(null)}>
+                close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

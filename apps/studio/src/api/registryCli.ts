@@ -121,6 +121,12 @@ export async function allSourceStatuses(run: typeof runProcess = runProcess): Pr
   return parseJsonStdout<{ items?: (SourceStatus & { type: string; slug: string })[] }>(outcome, "source-status").items ?? [];
 }
 
+/** What the source folder has that the copy here does not, as a unified diff. */
+export async function sourceDiffOf(type: string, slug: string, run: typeof runProcess = runProcess): Promise<string> {
+  const outcome = await run({ taskId: `registry-source-diff-${type}-${slug}`, program: "npx", ...cli("source-diff", type, slug), cwd: "", timeoutMs: 60_000 });
+  return parseJsonStdout<{ diff?: string }>(outcome, `source-diff ${type}/${slug}`).diff ?? "";
+}
+
 export async function repoIdentity(run: typeof runProcess = runProcess): Promise<RepoIdentity> {
   const outcome = await run({ taskId: "registry-identity", program: "npx", ...cli("identity"), cwd: "", timeoutMs: 60_000 });
   return parseJsonStdout<RepoIdentity>(outcome, "identity");

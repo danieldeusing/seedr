@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RunRequest } from "@/api/agent";
@@ -171,5 +171,71 @@ describe("a signed-out agent", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("uncommitted changes");
     expect(screen.queryByRole("button", { name: /sign in to/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("AuthorForm — content that does not match the type", () => {
+  /** Re-registers the host, keeping its answers, and collects what was run. */
+  function collecting(): RunRequest[] {
+    const ops: RunRequest[] = [];
+    const answer = (request: RunRequest) => {
+      if (request.program === "claude" && request.args[0] === "--version") return ok(request, "2.1.226");
+      if (request.program === "claude" && request.args[0] === "--help") return ok(request, "--output-format --json-schema --tools");
+      // The add-local route drafts the descriptions before it applies, so the
+      // drafting answer has to be a real one or apply never reaches the op.
+      if (request.program === "claude") return ok(request, JSON.stringify({ type: "result", is_error: false, result: "", structured_output: { description: "Blocks risky commands.", longDescription: LONG } }));
+      if (request.args.includes("identity")) return ok(request, JSON.stringify({ owner: "acme", authorName: "Acme" }));
+      return ok(request, JSON.stringify({ ok: true, kind: "add-local", type: "hook", slug: "skills", item: {}, changedPaths: [], headBefore: "abc1234def" }));
+    };
+    onCommand("run_process", (args) => {
+      const request = args?.request as RunRequest;
+      ops.push(request);
+      return answer(request);
+    });
+    return ops;
+  }
+
+  /** The reported case: type says hook, the folder picked is `.claude/skills/`. */
+  async function pickMismatched() {
+    onCommand("pick_path", () => "/Users/me/.claude/skills");
+    onCommand("read_source_files", () => ({ files: { "configr-design.md": "a", "ui-styling.md": "b" }, skipped: [] }));
+    render(<AuthorForm onAdded={() => undefined} />);
+    await userEvent.click(await screen.findByRole("button", { name: "choose source" }));
+    await userEvent.click(await screen.findByRole("button", { name: "the whole folder" }));
+    await userEvent.click(screen.getByRole("button", { name: "type" }));
+    await userEvent.click(await screen.findByRole("option", { name: "hook" }));
+  }
+
+  test("names the mismatch and marks the type as the field that is wrong", async () => {
+    collecting();
+    await pickMismatched();
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/looks like a skill, but the type says hook/);
+    // The type is what has to change, so the type is what is marked.
+    expect(screen.getByRole("button", { name: "type" }).className).toMatch(/border-destructive/);
+  });
+
+  test("submitting asks before it adds, and going back adds nothing", async () => {
+    const ops = collecting();
+    await pickMismatched();
+
+    await userEvent.click(screen.getByRole("button", { name: /add to registry/ }));
+
+    const dialog = await screen.findByRole("dialog", { name: "add it anyway" });
+    expect(dialog).toHaveTextContent(/carries SKILL.md, not hook.md/);
+
+    await userEvent.click(within(dialog).getByRole("button", { name: "go back and change it" }));
+    expect(screen.queryByRole("dialog", { name: "add it anyway" })).toBeNull();
+    expect(ops.some((op) => op.stdin?.includes("add-local"))).toBe(false);
+  });
+
+  test("confirming goes ahead, because the reading is of file names and can be wrong", async () => {
+    const ops = collecting();
+    await pickMismatched();
+
+    await userEvent.click(screen.getByRole("button", { name: /add to registry/ }));
+    await userEvent.click(within(await screen.findByRole("dialog", { name: "add it anyway" })).getByRole("button", { name: "add as a hook" }));
+
+    await waitFor(() => expect(ops.some((op) => op.stdin?.includes("add-local"))).toBe(true));
   });
 });

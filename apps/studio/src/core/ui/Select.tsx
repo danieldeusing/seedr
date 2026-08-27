@@ -17,6 +17,8 @@ interface SelectProps<T extends string> {
   ariaLabel: string;
   id?: string;
   disabled?: boolean;
+  /** Paint the trigger as wrong: the value is refused by something outside it. */
+  invalid?: boolean;
 }
 
 /**
@@ -26,7 +28,7 @@ interface SelectProps<T extends string> {
  * select-only combobox shape: arrows move the highlight, Enter/Space choose,
  * Escape closes, focus never leaves the trigger.
  */
-export function Select<T extends string>({ value, options, onChange, ariaLabel, id, disabled = false }: SelectProps<T>) {
+export function Select<T extends string>({ value, options, onChange, ariaLabel, id, disabled = false, invalid = false }: SelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -96,7 +98,11 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel, 
         disabled={disabled}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={onKeyDown}
-        className="flex h-7 min-w-40 cursor-pointer items-center gap-1.5 border border-violet-500/30 bg-transparent px-2 text-sm text-neutral-200 transition-colors hover:border-violet-500/40 hover:bg-violet-500/20 focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        className={`flex h-7 min-w-40 cursor-pointer items-center gap-1.5 border bg-transparent px-2 text-sm text-neutral-200 transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+          invalid
+            ? "border-destructive hover:bg-destructive/10 focus:border-destructive"
+            : "border-violet-500/30 hover:border-violet-500/40 hover:bg-violet-500/20 focus:border-violet-500"
+        }`}
       >
         <span className="min-w-0 truncate">{current?.label ?? ""}</span>
         <ChevronDown className={`ml-auto h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />

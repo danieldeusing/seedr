@@ -4,6 +4,7 @@ import { formatErrors, isFirstParty } from "@seedr/registry-ops/pure";
 import { fs, openPath } from "@/api/fs";
 import { useExternalLink } from "@/core/externalUrl";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
+import { useStudio } from "./store";
 import { useRememberedSize } from "@/core/remembered";
 import { SafeMarkdown } from "@/core/ui/SafeMarkdown";
 import { loadFileTree, type StudioItem } from "./registry";
@@ -94,6 +95,16 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
     return () => observer.disconnect();
   }, []);
 
+  /**
+   * How many times the registry has been reloaded.
+   *
+   * A dependency, not decoration: an item's path is the same after its files
+   * change on disk, so neither the tree nor the preview has any other way to
+   * know that what it read is stale. Without it, a file edited or restored
+   * outside the app looked like the app ignoring it.
+   */
+  const revision = useStudio((state) => state.revision);
+
   useEffect(() => {
     let cancelled = false;
     setTree(null);
@@ -109,9 +120,9 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
     return () => {
       cancelled = true;
     };
-  }, [item.dir]);
+  }, [item.dir, revision]);
 
-  const fetchContent = useCallback((relativePath: string) => fs.readText(`${item.dir}/${relativePath}`), [item.dir]);
+  const fetchContent = useCallback((relativePath: string) => fs.readText(`${item.dir}/${relativePath}`), [item.dir, revision]);
 
   return (
     <article className="flex h-full min-h-0 flex-col overflow-hidden">

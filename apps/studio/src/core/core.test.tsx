@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { invoke, onCommand } from "@/test/mockIpc";
-import { AgentLog } from "./ui/AgentLog";
+import { AgentLog, blocksOf } from "./ui/AgentLog";
 import { AppHeader } from "./AppHeader";
 import { Modal } from "./Modal";
 import { originSlug } from "./RepoBadge";
@@ -197,6 +197,39 @@ describe("AgentLog", () => {
 
     rerender(<AgentLog lines={["one", "two", "three"]} />);
     expect(screen.getByLabelText("agent output")).toHaveTextContent("one two three");
+  });
+
+  test("renders what the agent said as the markdown it wrote, and a tool call as one line", () => {
+    render(
+      <AgentLog
+        lines={[
+          "· Read AGENTS.md",
+          "## Gotchas",
+          "",
+          "- **pnpm only** — use `pnpm`",
+          "",
+          "```json",
+          '{ "slug": "pdf" }',
+          "```",
+        ]}
+      />
+    );
+
+    // A heading was arriving as the characters `## Gotchas`.
+    expect(screen.getByRole("heading", { name: "Gotchas" })).toBeInTheDocument();
+    expect(screen.getByRole("listitem")).toHaveTextContent("pnpm only");
+    // A fenced block only means anything whole, so the lines must not be split.
+    expect(screen.getByText('{ "slug": "pdf" }')).toBeInTheDocument();
+    // The trace stays a trace: no markdown, no reflow.
+    expect(screen.getByText("· Read AGENTS.md").tagName).toBe("PRE");
+  });
+
+  test("groups consecutive lines of the same kind, and only those", () => {
+    expect(blocksOf(["· one", "· two", "said", "more", "· three"])).toEqual([
+      { tool: true, lines: ["· one", "· two"] },
+      { tool: false, text: "said\nmore" },
+      { tool: true, lines: ["· three"] },
+    ]);
   });
 
   test("shows nothing at all before there is output", () => {

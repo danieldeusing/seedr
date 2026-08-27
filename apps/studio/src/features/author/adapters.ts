@@ -86,9 +86,9 @@ export interface AgentAdapter {
    * absolute path — required, not optional, because an agent that ignores it
    * works on the wrong repository and says nothing about it.
    */
-  draft(prompt: string, cwd: string): AgentInvocation;
+  draft(prompt: string, cwd: string, model?: string): AgentInvocation;
   /** One prompt that may do the named things inside the checkout at `cwd`. */
-  job(prompt: string, capabilities: JobCapability[], cwd: string): AgentInvocation;
+  job(prompt: string, capabilities: JobCapability[], cwd: string, model?: string): AgentInvocation;
   /** True when this CLI can be told to answer against a JSON schema. */
   schemaEnforced: boolean;
   /** One line of the agent's output, as something a person can read. */
@@ -96,6 +96,14 @@ export interface AgentAdapter {
   /** The whole run: did it work, and what did it say at the end. */
   readOutcome(outcome: RunOutcome): { ok: boolean; text: string; denials: string[] };
 }
+
+/**
+ * `--model <id>`, or nothing. Every one of the five takes that spelling —
+ * checked against each CLI's own `--help`, not assumed — so this is the one
+ * place it is written. Empty means the CLI's default, which is what an
+ * unconfigured job should get.
+ */
+const withModel = (model: string | undefined, args: string[]): string[] => (model ? ["--model", model, ...args] : args);
 
 const line = (kind: AgentJobEvent["kind"], value: string): AgentJobEvent[] => (value.trim() ? [{ kind, text: value.trim() }] : []);
 
@@ -346,9 +354,9 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // `--tools ""` removes every tool; `--max-turns 1` additionally bounds the run.
   claude: {
     program: AGENT_PROGRAMS.claude,
-    draft: (prompt) => ({ args: ["-p", "--output-format", "json", "--json-schema", JSON.stringify(DRAFT_SCHEMA), "--tools", "", "--max-turns", "1"], stdin: prompt }),
-    job: (prompt, capabilities) => ({
-      args: [
+    draft: (prompt, _cwd, model) => ({ args: withModel(model, ["-p", "--output-format", "json", "--json-schema", JSON.stringify(DRAFT_SCHEMA), "--tools", "", "--max-turns", "1"]), stdin: prompt }),
+    job: (prompt, capabilities, _cwd, model) => ({
+      args: withModel(model, [
         "-p",
         "--output-format",
         "stream-json",
@@ -356,7 +364,7 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
         "--allowedTools",
         spell(capabilities, CLAUDE_TOOLS, (prefix) => `Bash(${prefix}:*)`, "Bash").join(","),
         ...(hasOpenShell(capabilities) ? ["--disallowedTools", `Bash(${DENIED_SHELL}:*)`] : []),
-      ],
+      ]),
       stdin: prompt,
     }),
     schemaEnforced: true,
@@ -371,15 +379,15 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // takes the same text path as the other plain agents.
   antigravity: {
     program: AGENT_PROGRAMS.antigravity,
-    draft: (prompt) => ({ args: [`--print=${prompt}`, "--output-format", "json", "--disable-slash-commands"] }),
+    draft: (prompt, _cwd, model) => ({ args: withModel(model, [`--print=${prompt}`, "--output-format", "json", "--disable-slash-commands"]) }),
     // `--mode accept-edits` covers edits and not commands: agy auto-denies any
     // command in print mode and says so — "headless mode cannot prompt". Its own
     // remedy is an allow-rule in its settings or this flag, and Studio will not
     // write into another tool's configuration. The cost is real and worth
     // knowing: agy has no deny-list, so for this one agent `git` is held off by
     // the prompt alone rather than by the CLI.
-    job: (prompt, capabilities) => ({
-      args: [`--print=${prompt}`, "--output-format", "stream-json", ...(writesFiles(capabilities) ? ["--dangerously-skip-permissions"] : ["--mode", "plan"])],
+    job: (prompt, capabilities, _cwd, model) => ({
+      args: withModel(model, [`--print=${prompt}`, "--output-format", "stream-json", ...(writesFiles(capabilities) ? ["--dangerously-skip-permissions"] : ["--mode", "plan"])]),
     }),
     schemaEnforced: false,
     readLine: readAgyLine,
@@ -390,14 +398,14 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // no --allow-tool it can still answer, which is what a draft needs.
   copilot: {
     program: AGENT_PROGRAMS.copilot,
-    draft: (prompt) => ({ args: ["--no-color", "--log-level", "none", "-p", prompt] }),
+    draft: (prompt, _cwd, model) => ({ args: withModel(model, ["--no-color", "--log-level", "none", "-p", prompt]) }),
     // Copilot's allowlist is a minefield of names it does not use consistently:
     // it lists `bash` and permits `shell`, lists `create` and refuses it under
     // that name. Its own help calls --allow-all-tools "required for
     // non-interactive mode", so an open-shell job takes that and states the one
     // boundary explicitly; a job with named capabilities still spells them.
-    job: (prompt, capabilities) => ({
-      args: [
+    job: (prompt, capabilities, _cwd, model) => ({
+      args: withModel(model, [
         "--no-color",
         "--log-level",
         "none",
@@ -408,7 +416,7 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
         "json",
         "-p",
         prompt,
-      ],
+      ]),
     }),
     schemaEnforced: false,
     readLine: readCopilotLine,
@@ -423,11 +431,11 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // job that has to change files.
   codex: {
     program: AGENT_PROGRAMS.codex,
-    draft: (prompt) => ({ args: ["exec", "--color", "never", "-s", "read-only", "-"], stdin: prompt }),
+    draft: (prompt, _cwd, model) => ({ args: ["exec", ...withModel(model, ["--color", "never", "-s", "read-only", "-"])], stdin: prompt }),
     // `--json` only for a job: a draft's answer is read out of plain text, and
     // the JSONL envelopes would be the first JSON objects the parser found.
-    job: (prompt, capabilities) => ({
-      args: ["exec", "--json", "--color", "never", "-s", writesFiles(capabilities) ? "workspace-write" : "read-only", "-"],
+    job: (prompt, capabilities, _cwd, model) => ({
+      args: ["exec", ...withModel(model, ["--json", "--color", "never", "-s", writesFiles(capabilities) ? "workspace-write" : "read-only", "-"])],
       stdin: prompt,
     }),
     schemaEnforced: false,
@@ -444,7 +452,7 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
     // checkout, `pnpm compile` included, leaving the clone it was pointed at
     // untouched. Its session is keyed to a project it resolves for itself, and
     // --dir is the only thing that moves it.
-    draft: (prompt, cwd) => ({ args: ["run", ...runDir(cwd), prompt] }),
+    draft: (prompt, cwd, model) => ({ args: ["run", ...withModel(model, [...runDir(cwd), prompt])] }),
     // `--auto` is opencode's headless grant, the same decision already made for
     // every other agent here. Without it a job dies on its own scratch files:
     // written inside the checkout they leave the worktree dirty and the
@@ -453,7 +461,7 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
     // auto-rejecting". There is nobody to ask in a `-p` run, so it must be
     // settled up front.
     // `--format json` only on a job: a draft's answer is read out of plain text.
-    job: (prompt, _capabilities, cwd) => ({ args: ["run", "--auto", "--format", "json", ...runDir(cwd), prompt] }),
+    job: (prompt, _capabilities, cwd, model) => ({ args: ["run", ...withModel(model, ["--auto", "--format", "json", ...runDir(cwd), prompt])] }),
     schemaEnforced: false,
     readLine: readOpencodeLine,
     readOutcome: (outcome) =>

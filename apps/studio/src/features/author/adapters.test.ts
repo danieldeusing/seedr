@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { RunOutcome } from "@/api/agent";
 import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
-import { adapterFor, jsonCandidates, summariseInput } from "./adapters";
+import { ADAPTERS, adapterFor, jsonCandidates, summariseInput } from "./adapters";
 
 /** Every invocation names the checkout it is for; only opencode has to be told twice. */
 const REPO = "/checkout";
@@ -258,5 +258,28 @@ describe("an open shell", () => {
   test("an open shell counts as changing things, for the CLIs that only answer that", () => {
     expect(adapterFor("codex").job("p", ["shell"], REPO).args).toEqual(expect.arrayContaining(["-s", "workspace-write"]));
     expect(adapterFor("antigravity").job("p", ["shell"], REPO).args).toContain("--dangerously-skip-permissions");
+  });
+});
+
+describe("the model a run is given", () => {
+  test("every CLI takes `--model`, and no model means the CLI's own default", () => {
+    // Checked against each CLI's own --help rather than assumed: claude,
+    // copilot, agy, codex and opencode all spell it the same way.
+    for (const agent of CANONICAL_AGENTS) {
+      const withModel = ADAPTERS[agent].job("p", ["read"], "/repo", "some-model").args;
+      expect(withModel, `${agent} job`).toContain("--model");
+      expect(withModel[withModel.indexOf("--model") + 1], `${agent} job model`).toBe("some-model");
+
+      const drafted = ADAPTERS[agent].draft("p", "/repo", "some-model").args;
+      expect(drafted, `${agent} draft`).toContain("--model");
+
+      expect(ADAPTERS[agent].job("p", ["read"], "/repo").args, `${agent} default`).not.toContain("--model");
+    }
+  });
+
+  test("codex and opencode keep their subcommand first, where the CLI expects it", () => {
+    // `--model` before `exec` is not a codex invocation, it is an error.
+    expect(ADAPTERS.codex.job("p", ["read"], "/repo", "gpt-5-mini").args[0]).toBe("exec");
+    expect(ADAPTERS.opencode.job("p", ["read"], "/repo", "big-pickle").args[0]).toBe("run");
   });
 });

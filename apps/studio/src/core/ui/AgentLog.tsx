@@ -23,7 +23,16 @@ const MODE_LABELS: Record<LogMode, string> = {
   raw: "raw text",
 };
 
-type Block = { markdown: boolean; text: string; repeats: number };
+/**
+ * A run of consecutive tool calls, or one piece of output.
+ *
+ * Calls are grouped because that is how they happen — an agent looks at six
+ * things before it says anything — and a log that lists them one under another
+ * buries the sentence that follows. Grouped, they are one line until opened.
+ */
+type Block =
+  | { calls: LogLine[]; markdown?: never; text?: never; repeats?: never }
+  | { calls?: never; markdown: boolean; text: string; repeats: number };
 
 /**
  * The same message, however many times it came, is one message.
@@ -50,10 +59,16 @@ export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
   const blocks: Block[] = [];
   const shown = new Map<string, Block>();
   for (const line of lines) {
+    if (line.kind === "tool" && mode !== "raw") {
+      const last = blocks.at(-1);
+      if (last?.calls) last.calls.push(line);
+      else blocks.push({ calls: [line] });
+      continue;
+    }
     const markdown = mode === "raw" ? false : mode === "formatted" || line.kind === "markdown";
-    if (!markdown && line.kind === "text") {
+    if (!markdown && (line.kind === "text" || line.kind === "tool")) {
       const already = shown.get(withoutTimestamp(line.text));
-      if (already) {
+      if (already?.repeats !== undefined) {
         already.repeats += 1;
         continue;
       }
@@ -73,7 +88,27 @@ export function blocksOf(lines: LogLine[], mode: LogMode = "auto"): Block[] {
  * One block, rendered once. Only the newest changes as output arrives, so
  * everything above it must be allowed to stay exactly as it is.
  */
-const LogBlock = memo(function LogBlock({ markdown, text, repeats }: Block) {
+/** A run of calls: how many, and which, once opened. */
+const CallGroup = memo(function CallGroup({ calls }: { calls: LogLine[] }) {
+  return (
+    <details className="my-1">
+      <summary className="cursor-pointer list-none text-neutral-500 transition-colors hover:text-neutral-300">
+        <span className="mr-1 inline-block transition-transform">▸</span>
+        Ran {calls.length} {calls.length === 1 ? "command" : "commands"}
+      </summary>
+      <ul className="mt-1 ml-4 space-y-0.5">
+        {calls.map((call, index) => (
+          <li key={index} className="flex gap-2">
+            <span className="shrink-0 text-primary">{call.text}</span>
+            <span className="min-w-0 truncate text-neutral-500">{call.detail}</span>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+});
+
+const LogBlock = memo(function LogBlock({ markdown, text, repeats }: { markdown: boolean; text: string; repeats: number }) {
   return markdown ? (
     <div className="formatted-preview text-neutral-300">
       <SafeMarkdown>{text}</SafeMarkdown>
@@ -154,9 +189,13 @@ export function AgentLog({ lines, fill = false }: { lines: LogLine[]; fill?: boo
         // cost a subtree diff per line.
         aria-label="agent output"
       >
-        {blocks.map((block, index) => (
-          <LogBlock key={index} markdown={block.markdown} text={block.text} repeats={block.repeats} />
-        ))}
+        {blocks.map((block, index) =>
+          block.calls ? (
+            <CallGroup key={index} calls={block.calls} />
+          ) : (
+            <LogBlock key={index} markdown={block.markdown} text={block.text} repeats={block.repeats} />
+          )
+        )}
       </div>
       {!fill && <PaneResizeHandle axis="y" label="resize agent output" onResize={(delta) => setHeight((current: number) => Math.max(SHORTEST, current + delta))} />}
     </div>

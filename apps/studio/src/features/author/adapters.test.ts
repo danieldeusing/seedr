@@ -65,7 +65,7 @@ describe("adapters", () => {
 
   test("Claude-style streams read as turns; plain agents read as lines", () => {
     const claude = adapterFor("claude");
-    expect(claude.readLine(JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name: "Read", input: { file_path: "a.ts" } }] } }))).toEqual([{ kind: "tool", text: "Read a.ts" }]);
+    expect(claude.readLine(JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name: "Read", input: { file_path: "a.ts" } }] } }))).toEqual([{ kind: "tool", text: "Read", detail: "a.ts" }]);
     expect(claude.readOutcome(outcome({ stdout: JSON.stringify({ type: "result", is_error: false, result: "done" }) }))).toEqual({ ok: true, text: "done", denials: [] });
 
     const codex = adapterFor("codex");
@@ -82,7 +82,7 @@ describe("adapters", () => {
       { kind: "markdown", text: "It printed hello" },
     ]);
     expect(codex.readLine('{"type":"item.started","item":{"type":"command_execution","command":"/bin/zsh -lc \'echo hello\'","status":"in_progress"}}')).toEqual([
-      { kind: "tool", text: "/bin/zsh -lc 'echo hello'" },
+      { kind: "tool", text: "bash", detail: "/bin/zsh -lc 'echo hello'" },
     ]);
     // The envelopes around a turn say nothing a reader needs.
     expect(codex.readLine('{"type":"turn.started"}')).toEqual([]);
@@ -113,7 +113,7 @@ describe("adapters", () => {
     expect(opencode.readLine('{"type":"text","part":{"type":"text","text":"It printed hello."}}')).toEqual([{ kind: "markdown", text: "It printed hello." }]);
     expect(
       opencode.readLine('{"type":"tool_use","part":{"type":"tool","tool":"bash","state":{"status":"completed","input":{"command":"echo hello"},"output":"hello\\n","title":"echo hello"}}}')
-    ).toEqual([{ kind: "tool", text: "bash echo hello" }]);
+    ).toEqual([{ kind: "tool", text: "bash", detail: "echo hello" }]);
     // The step envelopes, and the command's own output, are not shown.
     expect(opencode.readLine('{"type":"step_start","part":{"type":"step-start"}}')).toEqual([]);
     expect(opencode.readLine('{"type":"step_finish","part":{"type":"step-finish","tokens":{"total":12463}}}')).toEqual([]);
@@ -127,7 +127,7 @@ describe("adapters", () => {
     // argument at a time — and none of them belong on screen.
     expect(copilot.readLine('{"type":"assistant.tool_call_delta","data":{"toolName":"bash","inputDelta":"{\\"comm"},"ephemeral":true}')).toEqual([]);
     expect(copilot.readLine('{"type":"assistant.message","data":{"content":"It printed \\"hello\\"."}}')).toEqual([{ kind: "markdown", text: 'It printed "hello".' }]);
-    expect(copilot.readLine('{"type":"tool.execution_start","data":{"toolName":"bash","arguments":{"command":"echo hello"}}}')).toEqual([{ kind: "tool", text: "bash echo hello" }]);
+    expect(copilot.readLine('{"type":"tool.execution_start","data":{"toolName":"bash","arguments":{"command":"echo hello"}}}')).toEqual([{ kind: "tool", text: "bash", detail: "echo hello" }]);
     // The result is the part that fills a screen.
     expect(copilot.readLine('{"type":"tool.execution_complete","data":{"toolName":"bash","result":{"content":"hello"}}}')).toEqual([]);
     // A turn that only asked for a tool says nothing.

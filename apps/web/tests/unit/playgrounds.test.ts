@@ -146,3 +146,43 @@ describe("the other playgrounds mount and react to their controls without markup
     expect(window.__pwned).toBeUndefined();
   });
 });
+
+/*
+ * agent-jobs.html restates what an agent job is allowed to do, and Studio's own
+ * `adapters.ts` is where that is decided. A playground drifting from the code it
+ * explains is the whole reason these four were rewritten, so the one page that
+ * copies a table is held to it.
+ */
+describe("agent-jobs repeats Studio's adapter tables exactly", () => {
+  const studioSource = readFileSync(join(__dirname, "..", "..", "..", "studio", "src", "features", "author", "adapters.ts"), "utf8");
+  const settingsSource = readFileSync(join(__dirname, "..", "..", "..", "studio", "src", "features", "settings", "agentSettings.ts"), "utf8");
+  const playgroundSource = readFileSync(join(playgroundsDir, "agent-jobs.js"), "utf8");
+
+  /** `{ read: ["Read"], … }` out of either file, past the type annotation and whichever quote it uses. */
+  function table(source: string, name: string): Record<string, string[]> {
+    const start = source.indexOf(`const ${name}`);
+    expect(start, `${name} is gone — find where it moved before changing the playground`).toBeGreaterThan(-1);
+    const body = source.slice(start, source.indexOf("};", start));
+    const entries: Record<string, string[]> = {};
+    for (const [, key, list] of body.matchAll(/(\w+)\s*:\s*\[([^\]]*)\]/g)) {
+      entries[key!] = [...list!.matchAll(/['"]([^'"]+)['"]/g)].map((match) => match[1]!);
+    }
+    return entries;
+  }
+
+  it.each(["CLAUDE_TOOLS", "COPILOT_TOOLS"])("%s", (name) => {
+    expect(table(playgroundSource, name)).toEqual(table(studioSource, name));
+  });
+
+  it("names the same programs, so the argv it prints is the one that runs", () => {
+    const programs = [...settingsSource.slice(settingsSource.indexOf("const AGENT_PROGRAMS")).matchAll(/(\w+): "([\w-]+)"/g)].slice(0, 5);
+    expect(programs).toHaveLength(5);
+    for (const [, agent, program] of programs) expect(playgroundSource, `${agent} runs ${program}`).toContain(`program:'${program}'`);
+  });
+
+  it("denies the same command", () => {
+    const denied = /const DENIED_SHELL = "([^"]+)"/.exec(studioSource)?.[1];
+    expect(denied).toBeTruthy();
+    expect(playgroundSource).toContain(`const DENIED_SHELL = '${denied}'`);
+  });
+});

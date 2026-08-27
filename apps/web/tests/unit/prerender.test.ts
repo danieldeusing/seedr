@@ -48,8 +48,11 @@ describe("site-meta", () => {
       expect(route?.description).toContain(`Browse ${expected} `);
       if (expected !== (itemsByType[type] ?? []).length) sawCrossListed = true;
     }
-    // Guards the guard: if no type cross-lists today, the loop proves nothing.
-    expect(sawCrossListed).toBe(true);
+    // Guards the guard: where a wrapper plugin exists the loop must have met it,
+    // since that is the only thing that cross-lists. A fork serving a registry of
+    // its own may have none, and the fixture test above already pins the counting
+    // rule itself, so there is nothing left for this to prove there.
+    if (allItems.some((item) => item.pluginType === "wrapper")) expect(sawCrossListed).toBe(true);
   });
 
   it("mirrors the app's type maps (one source of truth for titles)", () => {

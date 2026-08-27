@@ -3,9 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { BrowserRouter, NavigationType, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { EMPTY_HISTORY, NavigationProvider, historyReducer, useNavigation, type HistoryEntry } from "./NavigationContext";
-import { getItem } from "@/lib/registry";
+import { getItemsByType } from "@/lib/registry";
 
-const PDF = getItem("pdf", "skill")!.name;
+// Any skill will do: this pins the shape of the breadcrumb trail, not one item.
+// Naming a slug tied the file to upstream's own registry, and a fork replaces
+// that wholesale — `seedr.config.json` points the app at a directory of its own.
+const SKILL = getItemsByType("skill")[0]!;
+const SKILL_PATH = `/skills/${SKILL.slug}`;
 
 /** Exposes the navigation state as text and the router's navigate() as buttons. */
 function Probe() {
@@ -27,7 +31,7 @@ function Probe() {
         })}
       </output>
       <button onClick={() => navigate("/skills")}>push-skills</button>
-      <button onClick={() => navigate("/skills/pdf")}>push-pdf</button>
+      <button onClick={() => navigate(SKILL_PATH)}>push-skill</button>
       <button onClick={() => navigate("/hooks")}>push-hooks</button>
       <button onClick={() => navigate("/skills?q=pdf", { replace: true })}>replace-query</button>
       <button onClick={() => setSearchParams({ tool: "claude" }, { replace: true })}>set-params</button>
@@ -85,9 +89,9 @@ describe("NavigationProvider (browser history is the only history)", () => {
     const user = userEvent.setup();
     renderApp();
     await user.click(screen.getByText("push-skills"));
-    await user.click(screen.getByText("push-pdf"));
-    expect(readState()).toMatchObject({ path: "/skills/pdf", index: 2, count: 3, back: true, forward: false });
-    expect(readState().crumbs).toEqual(["Home", "Skills", PDF]);
+    await user.click(screen.getByText("push-skill"));
+    expect(readState()).toMatchObject({ path: SKILL_PATH, index: 2, count: 3, back: true, forward: false });
+    expect(readState().crumbs).toEqual(["Home", "Skills", SKILL.name]);
 
     await browserBack();
     await waitFor(() => expect(readState()).toMatchObject({ path: "/skills", index: 1, count: 3, back: true, forward: true }));
@@ -103,7 +107,7 @@ describe("NavigationProvider (browser history is the only history)", () => {
     const user = userEvent.setup();
     renderApp();
     await user.click(screen.getByText("push-skills"));
-    await user.click(screen.getByText("push-pdf"));
+    await user.click(screen.getByText("push-skill"));
 
     await act(async () => {
       await user.click(screen.getByText("seedr-back"));
@@ -116,8 +120,8 @@ describe("NavigationProvider (browser history is the only history)", () => {
       await user.click(screen.getByText("seedr-forward"));
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    await waitFor(() => expect(readState()).toMatchObject({ path: "/skills/pdf", index: 2, count: 3, forward: false }));
-    expect(window.location.pathname).toBe("/skills/pdf");
+    await waitFor(() => expect(readState()).toMatchObject({ path: SKILL_PATH, index: 2, count: 3, forward: false }));
+    expect(window.location.pathname).toBe(SKILL_PATH);
 
     // browser Back after Seedr Forward lands on the same entry either way
     await browserBack();
@@ -137,7 +141,7 @@ describe("NavigationProvider (browser history is the only history)", () => {
     expect(readState()).toMatchObject({ path: "/skills?tool=claude", index: 1, count: 2 });
 
     // the replaced URL is what browser Back returns to later
-    await user.click(screen.getByText("push-pdf"));
+    await user.click(screen.getByText("push-skill"));
     await browserBack();
     await waitFor(() => expect(readState()).toMatchObject({ path: "/skills?tool=claude", index: 1, count: 3 }));
   });
@@ -146,7 +150,7 @@ describe("NavigationProvider (browser history is the only history)", () => {
     const user = userEvent.setup();
     renderApp();
     await user.click(screen.getByText("push-skills"));
-    await user.click(screen.getByText("push-pdf"));
+    await user.click(screen.getByText("push-skill"));
     await browserBack();
     await browserBack();
     await waitFor(() => expect(readState()).toMatchObject({ path: "/", index: 0, count: 3 }));
@@ -160,10 +164,10 @@ describe("NavigationProvider (browser history is the only history)", () => {
     const user = userEvent.setup();
     renderApp();
     await user.click(screen.getByText("push-skills"));
-    await user.click(screen.getByText("push-pdf"));
+    await user.click(screen.getByText("push-skill"));
     await user.click(screen.getByText("crumb-skills"));
     expect(readState()).toMatchObject({ path: "/skills", index: 3, count: 4 });
-    expect(readState().entries).toEqual(["Home", "Home>Skills", `Home>Skills>${PDF}`, "Home>Skills"]);
+    expect(readState().entries).toEqual(["Home", "Home>Skills", `Home>Skills>${SKILL.name}`, "Home>Skills"]);
 
     await act(async () => {
       await user.click(screen.getByText("history-0"));
@@ -175,13 +179,13 @@ describe("NavigationProvider (browser history is the only history)", () => {
   it("slots in entries it never saw (created before a reload) by their browser index", async () => {
     // a session that navigated before this page instance existed
     window.history.replaceState({ usr: null, key: "a", idx: 4 }, "", "/hooks");
-    window.history.pushState({ usr: null, key: "b", idx: 5 }, "", "/skills/pdf");
+    window.history.pushState({ usr: null, key: "b", idx: 5 }, "", SKILL_PATH);
     renderApp();
-    expect(readState()).toMatchObject({ path: "/skills/pdf", index: 0, count: 1, back: false });
+    expect(readState()).toMatchObject({ path: SKILL_PATH, index: 0, count: 1, back: false });
 
     await browserBack();
     await waitFor(() => expect(readState()).toMatchObject({ path: "/hooks", index: 0, count: 2, back: false, forward: true }));
-    expect(readState().entries).toEqual(["Home>Hooks", `Home>Skills>${PDF}`]);
+    expect(readState().entries).toEqual(["Home>Hooks", `Home>Skills>${SKILL.name}`]);
   });
 });
 

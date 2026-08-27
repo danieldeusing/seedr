@@ -256,6 +256,21 @@ export function jobPrompt(form: AddLocalForm, tooling: BorrowedTooling = null): 
 }
 
 /**
+ * The slug a source names itself: its own directory, or its file name without the
+ * extension. Only used where the source *is* one capability — see `takeSource`.
+ */
+const slugFromPath = (path: string): string => {
+  const segments = path.split(/[\\/]/).filter(Boolean);
+  return (segments[segments.length - 1] ?? "")
+    .replace(/\.[^.]+$/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^[^a-z0-9]+/, "");
+};
+
+const titleFromSlug = (slug: string): string => slug.split(/[-_.]/).filter(Boolean).map((w) => w[0]!.toUpperCase() + w.slice(1)).join(" ");
+
+/**
  * What the picked content looks like, when that disagrees with the selected type.
  * Null when they agree, or when nothing about the content says either way — a
  * folder of loose markdown is not evidence of anything.
@@ -421,11 +436,17 @@ export const useAuthor = create<AuthorState>((set, get) => ({
   takeSource(file) {
     const folder = get().pendingSource;
     if (!folder) return;
-    // Only the path. The slug and the name are not guessed from the folder: a
-    // container like `.claude/skills` gave the slug `skills`, which names nothing,
-    // and a guess in a field you must get right reads as an answer.
     const path = file === null ? folder : `${folder}/${file}`;
-    set({ form: { ...get().form, sourcePath: path }, sourceChoices: [] });
+    const { form } = get();
+    // The slug and the name are filled in only where the source names one
+    // capability: a folder carrying the type's marker, or a file picked out of a
+    // folder that holds several. Taking a container whole names nothing —
+    // `.claude/skills` gave the slug `skills` — and a guess in a field you must
+    // get right reads as an answer.
+    const namesOne = file !== null || isOneCapability(get().sourceFiles, form.type);
+    const slug = namesOne ? form.slug || slugFromPath(path) : form.slug;
+    const name = namesOne ? form.name || titleFromSlug(slug) : form.name;
+    set({ form: { ...form, sourcePath: path, slug, name }, sourceChoices: [] });
   },
 
   async prepare() {

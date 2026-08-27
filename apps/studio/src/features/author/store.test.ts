@@ -69,9 +69,8 @@ describe("useAuthor", () => {
 
     expect(asked).toEqual(["folder"]);
     expect(useAuthor.getState().sourceChoices).toEqual([]);
-    // The path, and only the path: `.claude/skills` gave the slug `skills`, which
-    // names nothing, so nothing is guessed from a folder name any more.
-    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/fill-pdf_forms", slug: "", name: "" });
+    // It carries SKILL.md, so it names one capability and names it well.
+    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/fill-pdf_forms", slug: "fill-pdf_forms", name: "Fill Pdf Forms" });
   });
 
   test("a folder of several capabilities asks which one, and takes that file", async () => {
@@ -92,7 +91,8 @@ describe("useAuthor", () => {
 
     useAuthor.getState().takeSource("configr-design.md");
 
-    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/configr-design.md", slug: "", name: "" });
+    // A file picked out of a folder of several names itself too.
+    expect(useAuthor.getState().form).toMatchObject({ sourcePath: "/Users/me/.claude/skills/configr-design.md", slug: "configr-design", name: "Configr Design" });
     expect(useAuthor.getState().sourceChoices).toEqual([]);
   });
 
@@ -104,6 +104,8 @@ describe("useAuthor", () => {
     useAuthor.getState().takeSource(null);
 
     expect(useAuthor.getState().form.sourcePath).toBe("/Users/me/rules");
+    // Taking a container whole names nothing: `rules` is the folder, not the item.
+    expect(useAuthor.getState().form).toMatchObject({ slug: "", name: "" });
   });
 
   test("a plugin folder is one capability, marked by its plugin.json and not by any plugin.md", async () => {

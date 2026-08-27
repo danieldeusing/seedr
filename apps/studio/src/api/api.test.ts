@@ -28,10 +28,10 @@ describe("IPC serialisation", () => {
   });
 
   test("repo commands", async () => {
-    onCommand("pick_repo", () => ({ root: "/r", name: "r", isDefault: false, hasOps: true }));
+    onCommand("pick_repo", () => ({ root: "/r", name: "r", isDefault: false, hasOps: true, registryDir: "registry" }));
     onCommand("get_repo", () => null);
 
-    expect(await pickRepo()).toEqual({ root: "/r", name: "r", isDefault: false, hasOps: true });
+    expect(await pickRepo()).toEqual({ root: "/r", name: "r", isDefault: false, hasOps: true, registryDir: "registry" });
     expect(await getRepo()).toBeNull();
   });
 

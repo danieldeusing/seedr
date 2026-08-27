@@ -27,7 +27,7 @@ function skillRepo(): Record<string, string | null> {
 
 async function item(slug: string): Promise<StudioItem> {
   mockFs(skillRepo());
-  const { items } = await loadRegistry(fs);
+  const { items } = await loadRegistry(fs, "registry");
   return items.find((i) => i.slug === slug)!;
 }
 
@@ -46,7 +46,7 @@ beforeEach(() => {
   useTest.getState().reset();
   // Detail's actions are gated on the open checkout having the operations CLI,
   // which is what makes them able to change anything.
-  useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true } });
+  useStudio.setState({ repo: { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" } });
 });
 
 describe("judge", () => {

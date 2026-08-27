@@ -18,7 +18,7 @@ beforeEach(() => {
 describe("remove", () => {
   test("official items are refused before any process runs", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     const pdf = items.find((i) => i.slug === "pdf")!;
     expect(removalRefusal(pdf)).toMatch(/official items cannot be removed/);
     await useMutations.getState().remove(pdf);
@@ -27,7 +27,7 @@ describe("remove", () => {
 
   test("captures the hash when armed, then runs the remove transaction with it", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     const playwright = items.find((i) => i.slug === "playwright")!;
     const requests: RunRequest[] = [];
     onCommand("run_process", (args) => {
@@ -47,7 +47,7 @@ describe("remove", () => {
 
   test("a refused transaction is shown and the phase returns to idle", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     const playwright = items.find((i) => i.slug === "playwright")!;
     onCommand("run_process", (args) => {
       const request = args?.request as RunRequest;
@@ -64,7 +64,7 @@ describe("remove", () => {
 describe("RemoveButton", () => {
   test("arms on the first press, runs on confirm, and can be disarmed", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     const playwright = items.find((i) => i.slug === "playwright")!;
     const requests: RunRequest[] = [];
     onCommand("run_process", (args) => {
@@ -87,7 +87,7 @@ describe("RemoveButton", () => {
 
   test("is disabled, with the reason in the hover and the accessible name", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     render(<RemoveButton item={items.find((i) => i.slug === "pdf")!} />);
     const bin = screen.getByRole("button", { name: /remove pdf — official items cannot be removed/ });
     expect(bin).toBeDisabled();

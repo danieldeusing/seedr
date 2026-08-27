@@ -18,18 +18,18 @@ export interface RegistrySnapshot {
   problems: string[];
 }
 
-export const itemDirRel = (type: ComponentType, slug: string): string => `registry/${typeDirName(type)}/${slug}`;
+export const itemDirRel = (registryDir: string, type: ComponentType, slug: string): string => `${registryDir}/${typeDirName(type)}/${slug}`;
 
 /**
  * Read every item off disk through the host's scoped filesystem and validate it
  * with the same validator compile and the commit gate use. Invalid items are
  * listed with their errors rather than dropped — a maintainer needs to see them.
  */
-export async function loadRegistry(fs: FsApi): Promise<RegistrySnapshot> {
+export async function loadRegistry(fs: FsApi, registryDir: string): Promise<RegistrySnapshot> {
   const items: StudioItem[] = [];
   const problems: string[] = [];
   for (const type of ALL_TYPES) {
-    const typeDir = `registry/${typeDirName(type)}`;
+    const typeDir = `${registryDir}/${typeDirName(type)}`;
     if (!(await fs.pathExists(typeDir))) continue;
     const entries = (await fs.listDir(typeDir)).filter((e) => e.kind === "directory").sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {

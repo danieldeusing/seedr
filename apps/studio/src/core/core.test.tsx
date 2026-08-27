@@ -136,7 +136,7 @@ describe("RepoBadge", () => {
   });
 
   test("says nothing while Studio is on the default checkout", () => {
-    useStudio.setState({ repo: { root: "/Users/me/seedr", name: "seedr", isDefault: true, hasOps: true } });
+    useStudio.setState({ repo: { root: "/Users/me/seedr", name: "seedr", isDefault: true, hasOps: true, registryDir: "registry" } });
     render(<AppHeader />);
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
@@ -144,7 +144,7 @@ describe("RepoBadge", () => {
 
   test("anywhere else it warns and names the folder and its remote, and offers no way to agree", async () => {
     onCommand("read_text", () => CONFIG);
-    useStudio.setState({ repo: { root: FORK, name: "seedr-fork", isDefault: false, hasOps: true } });
+    useStudio.setState({ repo: { root: FORK, name: "seedr-fork", isDefault: false, hasOps: true, registryDir: "registry" } });
 
     render(<AppHeader />);
 

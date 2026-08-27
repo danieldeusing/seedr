@@ -7,7 +7,7 @@ import { countByType, itemDirRel, loadFileTree, loadRegistry } from "./registry"
 describe("loadRegistry", () => {
   test("lists every item by (type, slug) with its validation state, and surfaces unreadable files", async () => {
     mockFs(registryFiles());
-    const { items, problems } = await loadRegistry(fs);
+    const { items, problems } = await loadRegistry(fs, "registry");
 
     expect(items.map((i) => `${i.type}/${i.slug}`)).toEqual(["skill/broken", "skill/pdf", "mcp/playwright"]);
     expect(items.find((i) => i.slug === "pdf")?.errors).toEqual([]);
@@ -18,19 +18,19 @@ describe("loadRegistry", () => {
 
   test("an empty registry is empty, not an error", async () => {
     mockFs({ registry: null });
-    expect(await loadRegistry(fs)).toEqual({ items: [], problems: [] });
+    expect(await loadRegistry(fs, "registry")).toEqual({ items: [], problems: [] });
   });
 
   test("skips type directories that do not exist and directories without item.json", async () => {
     mockFs({ registry: null, "registry/skills": null, "registry/skills/stray-dir": null });
-    expect((await loadRegistry(fs)).items).toEqual([]);
+    expect((await loadRegistry(fs, "registry")).items).toEqual([]);
   });
 });
 
 describe("loadFileTree", () => {
   test("nests directories first and hides item.json", async () => {
     mockFs(registryFiles());
-    expect(await loadFileTree(fs, itemDirRel("mcp", "playwright"))).toEqual([
+    expect(await loadFileTree(fs, itemDirRel("registry", "mcp", "playwright"))).toEqual([
       { name: "docs", type: "directory", children: [{ name: "notes.md", type: "file" }] },
       { name: "mcp.md", type: "file" },
     ]);
@@ -40,12 +40,15 @@ describe("loadFileTree", () => {
 describe("countByType", () => {
   test("counts every type, including the empty ones", async () => {
     mockFs(registryFiles());
-    const { items } = await loadRegistry(fs);
+    const { items } = await loadRegistry(fs, "registry");
     expect(countByType(items)).toEqual({ skill: 2, plugin: 0, hook: 0, agent: 0, mcp: 1, settings: 0, command: 0 });
   });
 
   test("itemDirRel uses the one type-directory rule", () => {
-    expect(itemDirRel("mcp", "x")).toBe("registry/mcp/x");
-    expect(itemDirRel("skill", "x")).toBe("registry/skills/x");
+    expect(itemDirRel("registry", "mcp", "x")).toBe("registry/mcp/x");
+    expect(itemDirRel("registry", "skill", "x")).toBe("registry/skills/x");
+    // A fork names its own directory in seedr.config.json, and it replaces
+    // `registry/` rather than adding to it.
+    expect(itemDirRel("registry-internal", "skill", "x")).toBe("registry-internal/skills/x");
   });
 });

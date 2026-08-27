@@ -170,7 +170,7 @@ describe("AgentSelect", () => {
 });
 
 describe("default checkout settings", () => {
-  const OPEN = { root: "/Users/me/Work/seedr", name: "seedr", isDefault: true, hasOps: true };
+  const OPEN = { root: "/Users/me/Work/seedr", name: "seedr", isDefault: true, hasOps: true, registryDir: "registry" };
 
   test("starts at what the host recorded and records a folder that is picked", async () => {
     hostWithAgents();

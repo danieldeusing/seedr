@@ -118,6 +118,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<ComponentType>>(new Set());
   const rowStyle = useRowStyle((s) => s.style);
+  const sourceCheckError = useStudio((store) => store.sourceCheckError);
   const setRowStyle = useRowStyle((s) => s.setStyle);
 
   // Every type is listed, empty ones included: a registry with no agents is a
@@ -171,6 +172,12 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
         <Input value={query} onChange={setQuery} placeholder="search capabilities…" ariaLabel="search capabilities" search variant="filled" />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        {sourceCheckError && (
+          <section className="mb-4 border-l-2 border-l-amber-500 py-1 pl-2.5 text-sm" role="alert">
+            <p className="font-medium text-amber-400">Source marks unavailable</p>
+            <p className="mt-1 text-neutral-500">{sourceCheckError}</p>
+          </section>
+        )}
         {problems.length > 0 && (
           <section className="mb-4 border-l-2 border-l-red-500 py-1 pl-2.5 text-sm" role="alert">
             <p className="font-medium text-red-400">{problems.length} unreadable item file(s)</p>

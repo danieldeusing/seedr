@@ -109,3 +109,16 @@ describe("items that have parted from their source folder", () => {
     expect(screen.queryByLabelText(/unchanged/i)).toBeNull();
   });
 });
+
+  test("says why the marks are missing rather than showing an empty column", async () => {
+    // A checkout whose CLI predates the batch command answers "unknown type",
+    // and swallowing that looked exactly like nothing being out of sync.
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    useStudio.setState({ items, sourceStates: {}, sourceCheckError: 'registry-op: unknown type ""' });
+
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    expect(screen.getByText("Source marks unavailable")).toBeInTheDocument();
+    expect(screen.getByText(/unknown type/)).toBeInTheDocument();
+  });

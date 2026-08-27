@@ -5,6 +5,10 @@ export interface ItemRecord {
   name: string;
   description: string;
   updatedAt?: string;
+  /** A wrapper plugin is listed under the capability it wraps as well as under
+      plugins — `itemsInCategory` reads both of these to do it. */
+  pluginType?: string;
+  wrapper?: string;
 }
 export type Route = RouteMeta & { lastmod?: string };
 export function readRegistry(dir?: string): Record<string, ItemRecord[]>;

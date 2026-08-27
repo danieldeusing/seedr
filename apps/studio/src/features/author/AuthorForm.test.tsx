@@ -35,10 +35,9 @@ describe("AuthorForm", () => {
     expect(screen.getByLabelText("author")).toHaveValue("Acme");
 
     await userEvent.click(screen.getByRole("button", { name: "choose source" }));
-    // The slug and the name are not guessed from the folder — they are typed.
-    expect(screen.getByLabelText("slug")).toHaveValue("");
-    await userEvent.type(screen.getByLabelText("slug"), "pdf");
-    await userEvent.type(screen.getByLabelText("name"), "PDF");
+    // It carries SKILL.md, so the folder names the capability and fills both in.
+    expect(screen.getByLabelText("slug")).toHaveValue("pdf");
+    expect(screen.getByLabelText("name")).toHaveValue("Pdf");
 
     // The descriptions are the agent's to write — the form does not ask for them.
     expect(screen.queryByLabelText("description")).not.toBeInTheDocument();
@@ -127,8 +126,6 @@ describe("AuthorForm — where the capability comes from", () => {
     render(<AuthorForm onAdded={() => {}} />);
     await screen.findByText("2.1.226");
     await userEvent.click(screen.getByRole("button", { name: "choose source" }));
-    await userEvent.type(screen.getByLabelText("slug"), "pdf");
-    await userEvent.type(screen.getByLabelText("name"), "PDF");
 
     expect(screen.getByText(/The agent writes the description and the TL;DR/)).toBeInTheDocument();
     expect(screen.queryByText(/is missing 'description'/)).not.toBeInTheDocument();

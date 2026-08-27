@@ -3,10 +3,11 @@ import { dirname, resolve, sep } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
 import { storageAgents } from "../agents.js";
 import { isFirstParty } from "../sourceTypes.js";
-import { itemStateHash } from "../hash.js";
+import { contentDigestOfDir, itemStateHash } from "../hash.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
 import { assertLabelDefined, fileTree, readItem } from "../read.js";
 import { omit } from "../util.js";
+import { bumpPatch } from "../version.js";
 import { formatErrors, validateItem } from "../validate.js";
 import { today } from "./addLocal.js";
 import type { OpResult, UpdateOp } from "./types.js";
@@ -69,10 +70,15 @@ export function update(registryDir: string, op: UpdateOp): OpResult {
   if (errors.length > 0) throw new Error(`Item would be invalid: ${formatErrors(errors)}`);
   assertLabelDefined(registryDir, next.label);
 
+  const digestBefore = contentDigestOfDir(dir);
   for (const edit of edits) {
     mkdirSync(dirname(edit.target), { recursive: true });
     writeFileSync(edit.target, edit.content);
   }
+  // The version follows the installable content, so a rename or a reworded
+  // description leaves it alone. An explicit version in the patch wins: that is
+  // someone deciding this is a minor or a major, which no rule can infer.
+  if (op.patch.version === undefined && contentDigestOfDir(dir) !== digestBefore) next.version = bumpPatch(current.version);
   // Written in the B1 storage vocabulary (STORAGE_ALIASES): deduplicated with
   // aliases resolved, but `antigravity` stays stored as `gemini` until the
   // published CLI understands it. The raw list was validated above, so an

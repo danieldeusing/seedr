@@ -4,6 +4,7 @@ import type { RegistryItem } from "@seedr/shared";
 import { canonicalAgent, storageAgents } from "../agents.js";
 import { itemDir, itemJsonPath, repoRootOf } from "../fsPaths.js";
 import { rememberLocalSource } from "../localSources.js";
+import { INITIAL_VERSION } from "../version.js";
 import { assertLabelDefined, fileTree, itemExists } from "../read.js";
 import { assertStructurallyValid, formatErrors, validateItem } from "../validate.js";
 import { copyDereferenced, removeIgnoredFiles } from "./copy.js";
@@ -40,6 +41,7 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
     longDescription: op.longDescription,
     compatibility: storageAgents(op.compatibility),
     sourceType: "seedr",
+    version: INITIAL_VERSION,
     author: op.author,
     ...(op.externalUrl ? { externalUrl: op.externalUrl } : {}),
     ...(op.targetScope ? { targetScope: op.targetScope } : {}),

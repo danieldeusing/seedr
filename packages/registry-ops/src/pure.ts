@@ -11,5 +11,6 @@ export * from "./labels.js";
 export * from "./validate.js";
 export * from "./ops/types.js";
 export * from "./sourceShape.js";
+export * from "./version.js";
 export * from "./sourceState.js";
 export { parseOp } from "./ops/parse.js";

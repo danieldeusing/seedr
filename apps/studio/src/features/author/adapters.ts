@@ -252,6 +252,18 @@ function readPlainOutcome(outcome: RunOutcome): { ok: boolean; text: string; den
 }
 
 /**
+ * A line the agent's own runtime logged, rather than anything it did.
+ *
+ * The CLIs write these on stderr in tracing's format — an ISO timestamp, a
+ * level, a target — and a broken MCP server produces a pair on every model
+ * call. Naming them lets the log gather them out of the way instead of leaving
+ * them between the agent's sentences.
+ */
+const RUNTIME_ERROR = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z?\s+ERROR\b/;
+
+const printed = (text: string): AgentJobEvent[] => line(RUNTIME_ERROR.test(text.trim()) ? "error" : "text", text);
+
+/**
  * codex's JSONL, from running it: `{"type":"item.completed","item":{"type":
  * "agent_message","text":…}}` for what it says, `command_execution` for what it
  * runs, and `thread.started`/`turn.*` around the outside.
@@ -265,7 +277,7 @@ function readPlainOutcome(outcome: RunOutcome): { ok: boolean; text: string; den
  */
 function readCodexLine(text: string): AgentJobEvent[] {
   const event = parseJson(text);
-  if (!event) return line("text", text);
+  if (!event) return printed(text);
   const item = event.item as { type?: string; command?: string; status?: string; text?: string } | undefined;
   if (event.type === "item.started" && item?.type === "command_execution") {
     // codex runs everything through a login shell; the shell is the tool.
@@ -293,7 +305,7 @@ function readCodexOutcome(outcome: RunOutcome): { ok: boolean; text: string; den
  */
 function readOpencodeLine(text: string): AgentJobEvent[] {
   const event = parseJson(text);
-  if (!event) return line("text", text);
+  if (!event) return printed(text);
   const part = event.part as { type?: string; text?: string; tool?: string; state?: { title?: string; input?: unknown } } | undefined;
   if (event.type === "text") return line("markdown", part?.text ?? "");
   if (event.type === "tool_use") {
@@ -311,7 +323,7 @@ function readOpencodeLine(text: string): AgentJobEvent[] {
  */
 function readCopilotLine(text: string): AgentJobEvent[] {
   const event = parseJson(text);
-  if (!event) return line("text", text);
+  if (!event) return printed(text);
   if (event.ephemeral === true) return [];
   const data = event.data as { content?: string; toolName?: string; arguments?: unknown } | undefined;
   if (event.type === "assistant.message") return line("markdown", data?.content ?? "");

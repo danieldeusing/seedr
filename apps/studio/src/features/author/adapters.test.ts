@@ -87,8 +87,12 @@ describe("adapters", () => {
     // The envelopes around a turn say nothing a reader needs.
     expect(codex.readLine('{"type":"turn.started"}')).toEqual([]);
     expect(codex.readLine('{"type":"thread.started","thread_id":"x"}')).toEqual([]);
-    // Its stderr is not JSON, and a broken MCP server writes real failures there.
-    expect(codex.readLine("ERROR rmcp::transport::worker: worker quit")).toEqual([{ kind: "text", text: "ERROR rmcp::transport::worker: worker quit" }]);
+    // Its stderr is not JSON, and a broken MCP server writes real failures
+    // there. Tracing's format is what names them, so the log can gather them.
+    const traced = "2026-08-27T01:51:31.217654Z ERROR rmcp::transport::worker: worker quit";
+    expect(codex.readLine(traced)).toEqual([{ kind: "error", text: traced }]);
+    // Anything else it prints is just output.
+    expect(codex.readLine("Reading additional input from stdin...")).toEqual([{ kind: "text", text: "Reading additional input from stdin..." }]);
 
     // `--json` is asked for only where the reader expects it.
     expect(codex.job("p", ["edit"], REPO).args).toContain("--json");

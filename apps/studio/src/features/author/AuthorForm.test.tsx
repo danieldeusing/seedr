@@ -49,6 +49,11 @@ describe("AuthorForm", () => {
     expect(await screen.findByText(/Added skill\/pdf at abc1234/)).toBeInTheDocument();
     expect(screen.getByText("registry/skills/manifest.json")).toBeInTheDocument();
     expect(onAdded).toHaveBeenCalledWith("skill", "pdf");
+
+    // The finished view keeps the log; the way on is one button, and it clears.
+    await userEvent.click(screen.getByRole("button", { name: "add another" }));
+    expect(screen.queryByText(/Added skill\/pdf/)).toBeNull();
+    expect(screen.getByLabelText("slug")).toHaveValue("");
   });
 
   test("keeps the submit disabled and names the problems until the form is valid", async () => {

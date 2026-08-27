@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, TYPE_MARKERS } from "@seedr/registry-ops/pure";
-import { Ban, Check, FolderOpen, TriangleAlert } from "lucide-react";
+import { Ban, Check, FolderOpen, Plus, TriangleAlert } from "lucide-react";
 import { AgentLog } from "@/core/ui/AgentLog";
 import { FormActions } from "@/core/ui/FormActions";
 import { IconButton } from "@/core/ui/IconButton";
@@ -117,14 +117,10 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         )}
         <p className="mt-4 text-muted-foreground">Review with git status and commit when you are happy. It is selected in the explorer behind this dialog.</p>
         <JobLog fill />
-        <div className="mt-4 flex">
-          <button
-            type="button"
-            onClick={reset}
-            className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300"
-          >
-            add another
-          </button>
+        {/* Bottom right, where this dialog's other confirm sits: the log above it
+            grows, and a button that follows the log wanders up the page. */}
+        <div className="mt-auto flex justify-end pt-4">
+          <IconButton icon={Plus} ariaLabel="add another" tip="Add another capability" accentColor="violet" onClick={reset} />
         </div>
       </section>
     );

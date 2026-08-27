@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import { fs } from "@/api/fs";
@@ -6,6 +6,7 @@ import { invoke, mockFs, onCommand } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
 import { Detail } from "./Detail";
 import { loadRegistry } from "./registry";
+import { useStudio } from "./store";
 
 describe("Detail", () => {
   test("shows metadata, the file tree, the first file's preview, and opens it with the default app", async () => {
@@ -55,6 +56,32 @@ describe("Detail", () => {
     render(<Detail item={items.find((i) => i.slug === "playwright")!} />);
     await userEvent.click(await screen.findByRole("button", { name: "mcp.md" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("too large");
+  });
+
+  test("re-reads the previewed file when the registry changes under it", async () => {
+    const files = registryFiles();
+    mockFs(files);
+    let onDisk = "before";
+    // Only the previewed file moves; item.json still has to load, or there is
+    // no item to render.
+    onCommand("read_text", (args) => {
+      const rel = String(args?.rel);
+      return rel.endsWith(".json") ? (files[rel] ?? "") : onDisk;
+    });
+    const { items } = await loadRegistry(fs);
+
+    render(<Detail item={items.find((i) => i.slug === "playwright")!} />);
+    expect(await screen.findByTestId("monaco-preview")).toHaveTextContent("before");
+
+    // The path did not change; the contents did. Without the revision the
+    // preview kept showing what it read first, and a registry reset made from
+    // outside looked like the app ignoring it.
+    onDisk = "after";
+    act(() => {
+      useStudio.setState({ revision: useStudio.getState().revision + 1 });
+    });
+
+    expect(await screen.findByTestId("monaco-preview")).toHaveTextContent("after");
   });
 
   test("each pane hides behind its own control and comes back from its strip", async () => {

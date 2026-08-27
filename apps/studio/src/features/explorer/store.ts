@@ -46,6 +46,12 @@ interface StudioState {
   /** Record a checkout as the default. Resolves to an error, or null. */
   makeRepoDefault(path: string): Promise<string | null>;
   refresh(): Promise<void>;
+  /**
+   * Bumped on every reload. A file's path does not change when its contents do,
+   * so anything holding a path — the preview, above all — has no other way to
+   * know that what it read is now stale.
+   */
+  revision: number;
   select(selection: Selection | null): void;
 }
 
@@ -66,6 +72,7 @@ export const useStudio = create<StudioState>((set, get) => ({
   loading: false,
   error: null,
   repoError: null,
+  revision: 0,
   toolingRepo: null,
   selected: null,
 
@@ -121,7 +128,7 @@ export const useStudio = create<StudioState>((set, get) => ({
       const { items, problems } = await loadRegistry(fs);
       const { selected } = get();
       const stillThere = selected && items.some((i) => i.type === selected.type && i.slug === selected.slug);
-      set({ items, problems, loading: false, selected: stillThere ? selected : null });
+      set({ items, problems, loading: false, selected: stillThere ? selected : null, revision: get().revision + 1 });
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
     }

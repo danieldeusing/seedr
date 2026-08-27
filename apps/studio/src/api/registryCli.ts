@@ -1,4 +1,4 @@
-import type { OpResult, RegistryOp } from "@seedr/registry-ops/pure";
+import type { OpResult, RegistryOp, SourceStatus } from "@seedr/registry-ops/pure";
 import { runProcess, type RunOutcome } from "./agent";
 
 /**
@@ -100,6 +100,17 @@ export async function runRegistryOp(op: RegistryOp, taskId = `op-${op.kind}-${op
 export async function itemHash(type: string, slug: string, run: typeof runProcess = runProcess): Promise<string> {
   const outcome = await run({ taskId: `registry-hash-${type}-${slug}`, program: "npx", ...cli("hash", type, slug), cwd: "", timeoutMs: 60_000 });
   return parseJsonStdout<{ hash: string }>(outcome, `hash ${type}/${slug}`).hash;
+}
+
+/**
+ * Where an item stands against the folder it was copied from.
+ *
+ * Asked of the CLI rather than read here: the folder is outside the checkout,
+ * and the host's filesystem bridge refuses every path that is.
+ */
+export async function sourceStatusOf(type: string, slug: string, run: typeof runProcess = runProcess): Promise<SourceStatus> {
+  const outcome = await run({ taskId: `registry-source-${type}-${slug}`, program: "npx", ...cli("source-status", type, slug), cwd: "", timeoutMs: 60_000 });
+  return parseJsonStdout<SourceStatus>(outcome, `source-status ${type}/${slug}`);
 }
 
 export async function repoIdentity(run: typeof runProcess = runProcess): Promise<RepoIdentity> {

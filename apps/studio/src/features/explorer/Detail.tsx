@@ -10,6 +10,7 @@ import { SafeMarkdown } from "@/core/ui/SafeMarkdown";
 import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
+import { SourcePanel } from "./SourcePanel";
 import { NO_OPS, useCanMutate } from "./repoCapability";
 import { testRefusal } from "@/features/test/testStore";
 import { FlaskConical, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Pencil } from "lucide-react";
@@ -177,6 +178,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <MetaFields item={item.item} />
+          <SourcePanel item={item} />
           {item.item.longDescription && (
             <section className="mt-6">
               <p className="prompt text-xs">cat "tl;dr.md"</p>

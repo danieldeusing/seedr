@@ -609,8 +609,8 @@ step stops working — permanently.
 > the fork drifted **89 commits behind**.
 >
 > The stale code was not the damage. Stale code just sits there. The damage was the stale
-> *instructions*: the fork's frozen copy of `.claude/skills/` still held an `add-toolr` skill
-> telling a coding agent to write `sourceType: "toolr"` — a value this repo had since replaced
+> *instructions*: the fork's frozen copy of `.claude/skills/` still held the pre-rename add
+> skill, telling a coding agent to write a `sourceType` this repo had since replaced
 > with `seedr`. An agent read it and did as it was told, and the item it produced failed
 > validation, because `packages/registry-ops/src/validate.ts` accepts only the three values in
 > `CANONICAL_SOURCE_TYPES` (`official`, `seedr`, `community`). A stale copy of code is dead

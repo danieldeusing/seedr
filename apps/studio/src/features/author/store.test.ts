@@ -369,7 +369,7 @@ describe("what an agent says it did", () => {
     // Written directly instead of through the operation, so it never met the
     // validator the operation runs. This is what a stale add skill produces.
     onCommand("read_text", () =>
-      JSON.stringify({ slug: "handwritten", name: "Handwritten", type: "skill", description: "d", longDescription: "l", compatibility: ["claude"], sourceType: "toolr", author: { name: "A" } })
+      JSON.stringify({ slug: "handwritten", name: "Handwritten", type: "skill", description: "d", longDescription: "l", compatibility: ["claude"], sourceType: "vendor", author: { name: "A" } })
     );
 
     await useAuthor.getState().apply();

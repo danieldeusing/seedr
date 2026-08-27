@@ -13,7 +13,7 @@ import { gitIgnored } from "./gitIgnore.js";
  */
 
 /** Every file under `path`, relative and sorted, minus what git ignores there. */
-function sourceFiles(path: string): string[] {
+export function sourceFilePaths(path: string): string[] {
   const found: string[] = [];
   const walk = (current: string) => {
     for (const entry of readdirSync(current, { withFileTypes: true })) {
@@ -41,7 +41,7 @@ export function sourceDigest(path: string): string | null {
   if (!existsSync(path)) return null;
   const isDir = statSync(path).isDirectory();
   const entries = isDir
-    ? sourceFiles(path).map((file) => ({ path: file, bytes: readFileSync(join(path, file)) }))
+    ? sourceFilePaths(path).map((file) => ({ path: file, bytes: readFileSync(join(path, file)) }))
     : [{ path: basename(path), bytes: readFileSync(path) }];
   if (entries.length === 0) return null;
   const digest = createHash("sha256");

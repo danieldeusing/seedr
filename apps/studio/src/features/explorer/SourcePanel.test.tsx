@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RunRequest } from "@/api/agent";
@@ -154,5 +154,34 @@ describe("noticing that the folder moved on", () => {
     await userEvent.click(screen.getByRole("button", { name: "check the source again" }));
 
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("source has changes"));
+  });
+});
+
+describe("seeing what actually differs", () => {
+  test("shows the diff between the folder and the copy, coloured", async () => {
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      const answer = request.args.includes("source-diff")
+        ? { diff: "diff --git SKILL.md\n--- source/SKILL.md\n+++ registry/SKILL.md\n@@ -1 +1 @@\n-CHANGE 2nd\n+CHANGE\n" }
+        : { items: [{ type: "skill", slug: "origin-skill", state: "behind", path: SOURCE }] };
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify(answer), stderr: "", durationMs: 1 };
+    });
+
+    render(<SourcePanel item={ITEM} />);
+    await userEvent.click(await screen.findByRole("button", { name: "show the difference" }));
+
+    const view = await screen.findByTestId("source-diff");
+    expect(view).toHaveTextContent("-CHANGE 2nd");
+    expect(view).toHaveTextContent("+CHANGE");
+    // Added and removed lines are inked apart, not left as one grey wall.
+    expect(within(view).getByText(/^\+CHANGE$/).className).toMatch(/text-success/);
+    expect(within(view).getByText(/^-CHANGE 2nd$/).className).toMatch(/text-destructive/);
+  });
+
+  test("is not offered when the two are in sync", async () => {
+    host("current");
+    render(<SourcePanel item={ITEM} />);
+    await screen.findByRole("status");
+    expect(screen.queryByRole("button", { name: "show the difference" })).toBeNull();
   });
 });

@@ -21,7 +21,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, readLocalSources, resolveRegistryDir, runRegistryTransaction, sourceStatus, typeDirName, validateItem } from "@seedr/registry-ops";
+import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, readLocalSources, resolveRegistryDir, runRegistryTransaction, sourceDiff, sourceStatus, typeDirName, validateItem } from "@seedr/registry-ops";
 import type { ComponentType } from "@seedr/shared";
 
 /**
@@ -102,6 +102,15 @@ async function main(argv: string[]): Promise<void> {
       const type = requireType(rest[0]);
       if (!rest[1]) fail("source-status needs <type> <slug>, or nothing for every recorded item");
       out({ type, slug: rest[1], ...sourceStatus(repoRoot, registryDir, type, rest[1]) });
+      return;
+    }
+    case "source-diff": {
+      // What changed between the folder an item was copied from and the copy
+      // here, as a unified diff. Read-only, and here for the same reason
+      // `source-status` is: the folder is outside the checkout.
+      const type = requireType(rest[0]);
+      if (!rest[1]) fail("source-diff needs <type> <slug>");
+      out({ type, slug: rest[1], diff: sourceDiff(repoRoot, registryDir, type, rest[1]) });
       return;
     }
     case "validate": {

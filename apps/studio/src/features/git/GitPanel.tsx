@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { RotateCw } from "lucide-react";
+import { DiffText } from "@/core/ui/DiffText";
 import { IconButton } from "@/core/ui/IconButton";
 import { fs } from "@/api/fs";
 import { gitDiff, gitSummary, type GitSummary } from "@/api/git";
@@ -7,27 +8,6 @@ import { PublishPanel } from "./PublishPanel";
 
 type Summary = { kind: "loading" } | { kind: "ready"; summary: GitSummary } | { kind: "error"; message: string };
 
-/** Unified-diff ink: additions succeed, removals are destructive, hunk heads point. */
-function diffLineClass(line: string): string | undefined {
-  if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("diff --git") || line.startsWith("index ")) return "text-muted-foreground";
-  if (line.startsWith("@@")) return "text-primary";
-  if (line.startsWith("+")) return "text-success";
-  if (line.startsWith("-")) return "text-destructive";
-  return undefined;
-}
-
-function DiffText({ text }: { text: string }) {
-  return (
-    <>
-      {text.split("\n").map((line, index) => (
-        <span key={index} className={diffLineClass(line)}>
-          {line}
-          {"\n"}
-        </span>
-      ))}
-    </>
-  );
-}
 
 /**
  * The worktree, and what to do with it: what a commit would contain, and — on

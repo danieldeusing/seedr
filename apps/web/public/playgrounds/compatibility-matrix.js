@@ -4,7 +4,7 @@
 
 const TYPES = {
   skill:    { label:'Skill',    color:'#f472b6', structure:'directory', dir:'skills',   mainFile:'SKILL.md',   desc:'Markdown-based instructions with optional scripts and references' },
-  command:  { label:'Command',  color:'#fbbf24', structure:'directory', dir:'commands', mainFile:'command.md', desc:'Slash commands with markdown body and optional scripts. Configured for Claude Code, but no install handler is registered for this type yet, and the registry holds no command items' },
+  command:  { label:'Command',  color:'#fbbf24', structure:'directory', dir:'commands', mainFile:'command.md', desc:'A slash command: one markdown file installed as <slug>.md, which is the name the agent invokes it by' },
   agent:    { label:'Agent',    color:'#60a5fa', structure:'file',      dir:'agents',   mainFile:'{slug}.md',  desc:'Single markdown file defining an agent persona and capabilities' },
   hook:     { label:'Hook',     color:'#c084fc', structure:'json-merge',dir:'hooks',    mergeTarget:'settings.json', desc:'Shell script + JSON config merged into settings.json hooks field' },
   mcp:      { label:'MCP',      color:'#14b8a6', structure:'json-merge',dir:null,       desc:'Server configuration merged into the MCP config file of each supported agent' },

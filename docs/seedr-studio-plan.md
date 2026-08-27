@@ -51,8 +51,8 @@
 >   and the sync writing only agent ids the published CLI understands.
 > - Still deliberately absent, recorded here: §6.6's committed policy file and per-user
 >   preference store, and §6.7's first-run screen — Studio starts at the folder picker
->   and `SEEDR_STUDIO_REPO` covers the dev loop. `command`-type authoring is not offered
->   (the CLI has no handler for it, trap 12). Installs made under `.gemini/` by CLI
+>   and `SEEDR_STUDIO_REPO` covers the dev loop. (`command`-type authoring **is** offered
+>   as of 2026-08-27, once the CLI grew a handler for it — trap 12.) Installs made under `.gemini/` by CLI
 >   ≤0.1.87 are not managed by the B1 CLI — remove them with that CLI or by hand.
 > - The "real session sees every skill" acceptance was demonstrated inside the implementing
 >   session (harness re-scan of all skills, subagent launched through the link); a *fresh*
@@ -825,7 +825,9 @@ pnpm --filter @seedr/studio test
 10. **The compile hook does not fire on Bash `cp`/`rm`**, only on `Edit|Write|MultiEdit`.
     Always run `compile` explicitly and check `git status`.
 11. **`(type, slug)`, never slug alone.** `sync.ts` still keys some sets by slug.
-12. **`command` type has no install handler** — do not offer a type the tester cannot exercise.
+12. ~~**`command` type has no install handler**~~ — closed 2026-08-27: `commandHandler`
+    installs `<agent commands dir>/<slug>.md`, and Studio offers the type again. The trap
+    behind it stands: do not offer a type the tester cannot exercise.
 13. **A Tauri app does not inherit the shell's `PATH`** — enrich it or agents are "not found".
 14. **`.claude/settings.local.json` is gitignored**, so its allowlist does not exist on a
     fresh clone.

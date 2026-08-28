@@ -52,7 +52,12 @@ export function GitPanel() {
       {/* Why this opened, when it opened itself. Without it the dialog appears
           unbidden and the removal that is waiting on it is invisible. */}
       {blocked && (
-        <p className="border-b border-border bg-amber-500/10 px-6 py-2 text-amber-300" role="status">
+        // Red while it blocks, green once it does not: the same line reporting a
+        // refusal and then a readiness should not look the same in both.
+        <p
+          className={`border-b border-border px-6 py-2 ${clean ? "bg-green-500/10 text-green-400" : "bg-destructive/10 text-destructive"}`}
+          role="status"
+        >
           {clean
             ? `Worktree clean — closing this finishes removing ${blocked.type}/${blocked.slug}.`
             : `Removing ${blocked.type}/${blocked.slug} needs a clean worktree. Commit or discard the changes below, then close this.`}

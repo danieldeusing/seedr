@@ -1,6 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { fs } from "@/api/fs";
 import { mockFs, onCommand } from "@/test/mockIpc";
@@ -17,14 +17,13 @@ beforeEach(() => {
 });
 
 describe("a refusal for a dirty worktree", () => {
-  test("names the paths and offers git, rather than sending you to find out", async () => {
+  test("says what was refused, and marks the removal as one git can unblock", async () => {
     // The refusal is not fussiness: a rollback is `git checkout` plus
     // `git clean -fdqx` over the registry directory, so uncommitted work there
     // would be destroyed by an operation that failed.
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs, "registry");
     const item = items.find((i) => i.slug === "playwright")!;
-    const onGitStatus = vi.fn();
 
     onCommand("run_process", (args) => {
       const request = args?.request as RunRequest;
@@ -38,15 +37,14 @@ describe("a refusal for a dirty worktree", () => {
       return { taskId: request.taskId, status: "failed", exitCode: 1, stdout: "", stderr: "registry-op: The worktree has uncommitted changes; commit or stash them first", durationMs: 1 };
     });
 
-    render(<Detail item={item} onGitStatus={onGitStatus} />);
+    render(<Detail item={item} />);
     await userEvent.click(await screen.findByRole("button", { name: `remove ${item.slug}` }));
     await userEvent.click(await screen.findByRole("button", { name: `confirm remove ${item.type}/${item.slug}` }));
 
-    expect(await screen.findByText("registry/skills/pdf/SKILL.md")).toBeInTheDocument();
-    expect(screen.getByText("scratch-notes.txt")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "open git" }));
-    expect(onGitStatus).toHaveBeenCalled();
+    expect(await screen.findByRole("alert")).toHaveTextContent("The worktree has uncommitted changes");
+    // Marked as blocked, which is what opens the git dialog — the paths and the
+    // commit live there, from git, rather than being copied onto this page.
+    expect(useMutations.getState().blocked).toBe(item);
   });
 
   test("any other failure is left as its own sentence, with no path list", async () => {
@@ -55,10 +53,9 @@ describe("a refusal for a dirty worktree", () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs, "registry");
     render(<Detail item={items.find((i) => i.slug === "pdf")!} />);
-    act(() => useMutations.setState({ error: "registry-op: something else went wrong", blockedBy: [] }));
+    act(() => useMutations.setState({ error: "registry-op: something else went wrong", blocked: null }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("something else went wrong");
-    expect(screen.queryByRole("button", { name: "open git" })).toBeNull();
   });
 });
 
@@ -77,7 +74,7 @@ describe("where a failure is shown", () => {
     expect(alert).toHaveTextContent("The worktree has uncommitted changes");
     // The row holds the controls in a span; the message is not inside it.
     expect(alert.closest("span")).toBeNull();
-    expect(alert.querySelector("p")).not.toBeNull();
+    expect(alert.tagName).toBe("P");
   });
 });
 
@@ -185,19 +182,19 @@ describe("finishing a removal a dirty worktree blocked", () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs, "registry");
     const item = items.find((i) => i.slug === "playwright")!;
-    dirtyHost([" M scratch.txt\0", ""]);
+    dirtyHost([""]);
 
     await useMutations.getState().arm(item);
     await useMutations.getState().remove(item);
     expect(useMutations.getState().blocked).toBe(item);
 
-    await useMutations.getState().resumeBlocked();
+    await useMutations.getState().settleBlocked();
 
     expect(useMutations.getState().phase).toBe("done");
     expect(useMutations.getState().blocked).toBeNull();
   });
 
-  test("a worktree still dirty leaves it blocked rather than retrying into the same wall", async () => {
+  test("a worktree still dirty forgets it, so the removal can be started again", async () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs, "registry");
     const item = items.find((i) => i.slug === "playwright")!;
@@ -205,11 +202,14 @@ describe("finishing a removal a dirty worktree blocked", () => {
 
     await useMutations.getState().arm(item);
     await useMutations.getState().remove(item);
-    await useMutations.getState().resumeBlocked();
+    await useMutations.getState().settleBlocked();
 
-    // Closing git without committing must change nothing.
+    // Closing git without committing returns the item to a plain, unarmed
+    // state rather than leaving a refusal to be cleared by hand.
     expect(useMutations.getState().phase).toBe("idle");
-    expect(useMutations.getState().blocked).toBe(item);
+    expect(useMutations.getState().blocked).toBeNull();
+    expect(useMutations.getState().error).toBeNull();
+    expect(useMutations.getState().armed).toBeNull();
   });
 
   test("a failure that is not about the worktree leaves nothing to resume", async () => {

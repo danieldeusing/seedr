@@ -265,4 +265,21 @@ describe("where the dialog puts its controls", () => {
     // into left- and right-aligned.
     expect(agentSelect.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  test("the rule is there before a run, and stays above the output during one", async () => {
+    // Put on the log it vanished with the log; put under the log it separated
+    // the output from the form that started it.
+    const { container } = render(<AuthorForm onAdded={() => {}} />);
+    const region = (await screen.findByLabelText("coding agent")).closest("div.mt-auto");
+
+    expect(region?.className, "the rule is on the region, not on the log").toContain("border-t");
+    expect(container.querySelector("[class*='agent output']")).toBeNull();
+
+    act(() => useAuthor.setState({ log: [{ kind: "system", text: "session started" }] }));
+
+    // Same single rule, and the log now sits inside it — above the controls.
+    const log = await screen.findByText("session started");
+    expect(region!.contains(log), "the log is inside the ruled region").toBe(true);
+    expect(container.querySelectorAll("div.mt-auto.border-t")).toHaveLength(1);
+  });
 });

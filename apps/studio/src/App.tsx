@@ -117,7 +117,7 @@ export function App() {
       </div>
 
       {dialog === "author" && (
-        <Modal title="registry-op run --op add-local" onClose={close} size="full">
+        <Modal title="registry-op run --op add-local" onClose={close} size="tall">
           <AuthorForm onAdded={onAdded} />
         </Modal>
       )}
@@ -139,7 +139,7 @@ export function App() {
         </Modal>
       )}
       {dialog === "update" && current && (
-        <Modal title={`edit ${itemKey}`} onClose={close} size="full">
+        <Modal title={`edit ${itemKey}`} onClose={close} size="tall">
           <UpdateForm key={itemKey} item={current} onDone={close} />
         </Modal>
       )}

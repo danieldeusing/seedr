@@ -23,7 +23,14 @@ interface UpdateFormProps {
 /** Subscribed on its own, so the form is not re-rendered per streamed line. */
 function JobLog() {
   const log = useUpdate((state) => state.log);
-  return <AgentLog lines={log} />;
+  // See the add dialog: the rule belongs to the log, not to the form.
+  if (log.length === 0) return null;
+  return (
+    <>
+      <div className="mt-4 border-t border-neutral-700" />
+      <AgentLog lines={log} />
+    </>
+  );
 }
 
 export function UpdateForm({ item, onDone }: UpdateFormProps) {
@@ -198,7 +205,6 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           Draft rejected: {draftErrors.join("; ")}
         </p>
       )}
-      <div className="mt-4 border-t border-neutral-700" />
       <JobLog />
       {/* One footer, as in the add dialog: who will run it on the left, the run
           itself on the right, with the agent's output above rather than between

@@ -54,7 +54,15 @@ interface AuthorFormProps {
  */
 function JobLog({ fill = false }: { fill?: boolean }) {
   const log = useAuthor((state) => state.log);
-  return <AgentLog lines={log} fill={fill} />;
+  // The rule and the log arrive together: AgentLog renders nothing until a run
+  // writes something, and a rule on its own separates the form from an absence.
+  if (log.length === 0) return null;
+  return (
+    <>
+      <div className="mt-4 border-t border-neutral-700" />
+      <AgentLog lines={log} fill={fill} />
+    </>
+  );
 }
 
 const choiceButton = "cursor-pointer border border-violet-500/30 px-2 py-0.5 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300";
@@ -359,7 +367,6 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         </p>
       )}
       {error && <SignedOutNotice error={error} />}
-      <div className="mt-4 border-t border-neutral-700" />
       <JobLog />
       {askingAboutMismatch && sourceMismatch && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-label="add it anyway">

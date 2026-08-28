@@ -362,3 +362,27 @@ describe("AgentLog", () => {
   });
 
 });
+
+describe("how tall a dialog claims to be", () => {
+  test("`tall` grows with its content; `full` holds the height whatever is in it", () => {
+    // The add dialog reserved most of a screen for an agent log that had not
+    // started, so the form floated at the top of an empty panel.
+    const { container: tall } = render(
+      <Modal title="add" onClose={() => undefined} size="tall">
+        <p>short form</p>
+      </Modal>,
+    );
+    const tallPanel = tall.querySelector("[class*='max-w-[1440px]']");
+    expect(tallPanel?.className).toContain("max-h-[90vh]");
+    expect(tallPanel?.className).not.toMatch(/(^|\s)h-\[90vh\]/);
+
+    // The workspace panes still want the room: git's two-pane status and the
+    // settings nav are laid out against a known height.
+    const { container: full } = render(
+      <Modal title="git" onClose={() => undefined} size="full">
+        <p>panes</p>
+      </Modal>,
+    );
+    expect(full.querySelector("[class*='max-w-[1440px]']")?.className).toMatch(/(^|\s)h-\[90vh\]/);
+  });
+});

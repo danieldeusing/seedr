@@ -112,7 +112,7 @@ describe("coding agents settings", () => {
 
 describe("pre-prompts settings", () => {
   test("each type suggests something that fits it, and none of them suggests the skill's", async () => {
-    render(<SettingsPanel onClose={() => undefined} />);
+    render(<SettingsPanel />);
     await userEvent.click(screen.getByRole("button", { name: /pre-prompts/ }));
 
     // The visible label is only "add"/"update" — seven cards repeat it, so the

@@ -10,7 +10,7 @@ import { useStudio } from "./store";
 import { loadRegistry } from "./registry";
 
 const SEARCH = "search capabilities";
-const controls = { onAddCapability: () => {}, onGitStatus: () => {}, onSettings: () => {}, onSwitchRepo: () => {} };
+const controls = { onAddCapability: () => {}, onGitStatus: () => {}, onSettings: () => {} };
 
 beforeEach(() => {
   useRowStyle.setState({ style: "icons" });

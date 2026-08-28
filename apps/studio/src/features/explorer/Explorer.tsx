@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, isFirstParty, typeDirName } from "@seedr/registry-ops/pure";
+import { RepoMenu } from "./RepoMenu";
 import { useStudio } from "./store";
-import { ArrowDownToLine, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderInput, FolderX, GitBranch, GitCompareArrows, Pencil, PencilLine, Plus, Rows3, Settings } from "lucide-react";
+import { ArrowDownToLine, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderX, GitBranch, GitCompareArrows, Pencil, PencilLine, Plus, Rows3, Settings } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { Input } from "@/core/ui/Input";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
@@ -21,7 +22,6 @@ interface ExplorerProps {
   onAddCapability(): void;
   onGitStatus(): void;
   onSettings(): void;
-  onSwitchRepo(): void;
 }
 
 const sameKey = (a: Selection | null, type: ComponentType, slug: string) => a?.type === type && a.slug === slug;
@@ -158,7 +158,7 @@ const matches = (item: StudioItem, query: string): boolean => {
  * every group at once, and per row the `rw-`/`r--` ownership mode plus the
  * agent matrix — which coding agents the capability is for.
  */
-export function Explorer({ items, problems, selected, onSelect, onAddCapability, onGitStatus, onSettings, onSwitchRepo }: ExplorerProps) {
+export function Explorer({ items, problems, selected, onSelect, onAddCapability, onGitStatus, onSettings }: ExplorerProps) {
   const counts = countByType(items);
   const hasOps = useCanMutate();
   const [query, setQuery] = useState("");
@@ -335,7 +335,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
         </span>
         <IconButton icon={Settings} ariaLabel="settings" tip="Coding agents Studio can run" onClick={onSettings} />
         <span className="flex-1" />
-        <IconButton icon={FolderInput} ariaLabel="switch repo" tip="Point Studio at another seedr checkout — e.g. a private fork" onClick={onSwitchRepo} />
+        <RepoMenu />
       </div>
     </nav>
   );

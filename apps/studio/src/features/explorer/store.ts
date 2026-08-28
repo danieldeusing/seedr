@@ -2,7 +2,8 @@ import { create } from "zustand";
 import type { ComponentType } from "@seedr/shared";
 import type { SourceStatus } from "@seedr/registry-ops/pure";
 import { fs } from "@/api/fs";
-import { defaultRepo, getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
+import { forgetRepo, rememberRepo } from "./repoHistory";
+import { defaultRepo, getRepo, openRepoAt, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
 import { allSourceStatuses, setOpsCheckout } from "@/api/registryCli";
 import { gitRemoteState, gitSummary, type RemoteState } from "@/api/git";
 import { useAuthorSettings } from "@/features/settings/authorSettings";
@@ -101,6 +102,8 @@ interface StudioState {
   /** Restore the host's selected repo on start, then load and watch it. */
   init(): Promise<void>;
   chooseRepo(): Promise<void>;
+  /** Open a checkout already known by path — the switch menu's history. */
+  openRepo(path: string): Promise<void>;
   clearRepoError(): void;
   /** Record a checkout as the default. Resolves to an error, or null. */
   makeRepoDefault(path: string): Promise<string | null>;
@@ -130,7 +133,22 @@ async function watch(refresh: () => Promise<void>): Promise<void> {
   });
 }
 
-export const useStudio = create<StudioState>((set, get) => ({
+export const useStudio = create<StudioState>((set, get) => {
+  /**
+   * Everything that must happen once a checkout is settled on, however it was
+   * chosen. Both entry points share it so a folder opened from the menu is not
+   * quietly missing the watcher or the remote check that a picked one gets.
+   */
+  const adopt = async (repo: RepoInfo): Promise<void> => {
+    openCheckout(repo);
+    rememberRepo(repo.root);
+    set({ repo, selected: null, repoError: null, remote: null, toolingRepo: await borrowedTooling(repo) });
+    await useStudio.getState().refresh();
+    void useStudio.getState().checkRemote(true);
+    await watch(useStudio.getState().refresh);
+  };
+
+  return {
   repo: null,
   sourceStates: {},
   sourceCheckError: null,
@@ -154,6 +172,9 @@ export const useStudio = create<StudioState>((set, get) => ({
       const repo = await getRepo();
       if (!repo) return;
       openCheckout(repo);
+      // The checkout restored on start belongs in the history too — otherwise
+      // the one you use most is the one the menu never lists.
+      rememberRepo(repo.root);
       set({ repo, toolingRepo: await borrowedTooling(repo) });
       await get().refresh();
       void get().checkRemote(true);
@@ -171,11 +192,7 @@ export const useStudio = create<StudioState>((set, get) => ({
     try {
       const repo = await pickRepo();
       if (!repo) return;
-      openCheckout(repo);
-      set({ repo, selected: null, repoError: null, remote: null, toolingRepo: await borrowedTooling(repo) });
-      await get().refresh();
-      void get().checkRemote(true);
-      await watch(get().refresh);
+      await adopt(repo);
     } catch (error) {
       // Kept apart from `error`: the registry watcher refreshes on its own and
       // clears what it reported, and a folder it was never pointed at is not
@@ -230,6 +247,17 @@ export const useStudio = create<StudioState>((set, get) => ({
     set({ uncommitted: summary?.changes.length ?? 0 });
   },
 
+  async openRepo(path) {
+    try {
+      await adopt(await openRepoAt(path));
+    } catch (error) {
+      // A remembered path can be renamed, moved, or stop being a checkout. It is
+      // dropped rather than left in the menu to fail again the same way.
+      forgetRepo(path);
+      set({ repoError: (error as Error).message });
+    }
+  },
+
   async checkRemote(force = false) {
     // Deliberately NOT part of `refresh()`. The watcher calls that on every file
     // event, and this one reaches the network: riding along would turn a burst
@@ -268,7 +296,8 @@ export const useStudio = create<StudioState>((set, get) => ({
   select(selected) {
     set({ selected });
   },
-}));
+  };
+});
 
 export const selectedItem = (state: StudioState): StudioItem | null =>
   state.selected ? (state.items.find((i) => i.type === state.selected?.type && i.slug === state.selected?.slug) ?? null) : null;

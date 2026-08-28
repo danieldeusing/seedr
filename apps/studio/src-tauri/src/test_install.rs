@@ -12,6 +12,7 @@ use std::time::{Duration, SystemTime};
 use serde::{Deserialize, Serialize};
 
 use crate::executor::{self, OutputEvent, Registry, RunOutcome, RunRequest};
+use crate::registry_dir_name;
 use crate::source::{self, SourceFiles};
 
 #[derive(Deserialize, Debug)]
@@ -132,7 +133,14 @@ pub fn run(
             // The CLI resolves its local registry from its own checkout, which
             // is the wrong one whenever the tooling is borrowed. This is the
             // override it already honours.
-            env: vec![("SEEDR_REGISTRY_DIR".to_string(), root.join("registry").display().to_string())],
+            //
+            // The directory is the one this checkout actually uses, not the
+            // literal `registry`: a fork keeps its items in `registry-internal`,
+            // which REPLACES `registry/` rather than adding to it. Hardcoding
+            // the name pointed the CLI at upstream's items and every fork-only
+            // item failed to install as "not found" — the same mistake that
+            // once sent a fork's label edits into upstream's registry.
+            env: vec![("SEEDR_REGISTRY_DIR".to_string(), root.join(registry_dir_name(root)?).display().to_string())],
             in_default_repo: false,
             keep_stdin: false,
             timeout_ms: request.timeout_ms,
@@ -148,6 +156,25 @@ pub fn run(
 mod tests {
     use super::*;
     use crate::executor::RunStatus;
+
+    /// A fork keeps its items in `registry-internal`, which REPLACES `registry/`
+    /// rather than adding to it. The CLI honours SEEDR_REGISTRY_DIR over its own
+    /// resolution, so handing it the literal `registry` pointed it at upstream's
+    /// items and every fork-only item failed to install as "not found".
+    #[test]
+    fn the_registry_override_names_the_directory_this_checkout_uses() {
+        let dir = std::env::temp_dir().join(format!("seedr-ti-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        // No config: the default, and the override must still be right.
+        assert_eq!(registry_dir_name(&dir).unwrap(), "registry");
+
+        fs::write(dir.join("seedr.config.json"), r#"{"registryDir":"registry-internal"}"#).unwrap();
+        assert_eq!(registry_dir_name(&dir).unwrap(), "registry-internal");
+
+        let _ = fs::remove_dir_all(&dir);
+    }
 
     fn checkout() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..").join("..")

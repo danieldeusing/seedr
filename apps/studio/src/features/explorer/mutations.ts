@@ -30,10 +30,23 @@ interface MutationState {
    * out" into "these three files".
    */
   blockedBy: string[];
+  /**
+   * The removal a dirty worktree got in the way of, kept so it can be finished
+   * once the worktree is clean.
+   *
+   * The user already armed and confirmed it; being sent to git to commit
+   * something unrelated should not cost them that decision, or leave them
+   * wondering whether the removal still needs doing. `armed` survives alongside
+   * it, so the hash captured before the refusal is the one that is presented —
+   * committing does not change the item's files, so it is still valid.
+   */
+  blocked: StudioItem | null;
   outcome: RegistryOpOutcome | null;
   /** The state hash captured when the user armed the button, keyed to that item. */
   armed: { type: string; slug: string; expectedHash: string } | null;
   arm(item: StudioItem): Promise<void>;
+  /** Finish a removal a dirty worktree blocked, if the worktree is clean now. */
+  resumeBlocked(): Promise<void>;
   remove(item: StudioItem): Promise<void>;
   reset(): void;
 }
@@ -55,13 +68,14 @@ export const useMutations = create<MutationState>((set, get) => ({
   phase: "idle",
   error: null,
   blockedBy: [],
+  blocked: null,
   outcome: null,
   armed: null,
 
   async arm(item) {
     // The hash is read the moment the user arms the remove: an item that changes
     // on disk between arming and confirming is refused by the transaction.
-    set({ armed: null, error: null, blockedBy: [] });
+    set({ armed: null, error: null, blockedBy: [], blocked: null });
     try {
       set({ armed: { type: item.type, slug: item.slug, expectedHash: await itemHash(item.type, item.slug) } });
     } catch (error) {
@@ -80,7 +94,7 @@ export const useMutations = create<MutationState>((set, get) => ({
       set({ error: "arm the remove first" });
       return;
     }
-    set({ phase: "removing", error: null, outcome: null, blockedBy: [] });
+    set({ phase: "removing", error: null, outcome: null, blockedBy: [], blocked: null });
     try {
       const op: RemoveOp = { v: 1, kind: "remove", type: item.type, slug: item.slug, sourceType: item.item.sourceType ?? "seedr", expectedHash: armed.expectedHash };
       const outcome = await runRegistryOp(parseOp(op));
@@ -89,12 +103,23 @@ export const useMutations = create<MutationState>((set, get) => ({
       const message = (error as Error).message;
       // Asked for only when that is the refusal — a git call on every failure
       // would spend a process to answer a question nobody asked.
-      const blockedBy = message.includes(DIRTY_WORKTREE) ? await dirtyPaths() : [];
-      set({ phase: "idle", error: message, blockedBy });
+      const dirty = message.includes(DIRTY_WORKTREE);
+      const blockedBy = dirty ? await dirtyPaths() : [];
+      set({ phase: "idle", error: message, blockedBy, blocked: dirty ? item : null });
     }
   },
 
+  async resumeBlocked() {
+    const item = get().blocked;
+    // Only when the worktree is actually clean now: closing git without
+    // committing must leave the removal refused rather than retry it into the
+    // same wall.
+    if (!item || (await dirtyPaths()).length > 0) return;
+    set({ blocked: null, blockedBy: [], error: null });
+    await get().remove(item);
+  },
+
   reset() {
-    set({ phase: "idle", error: null, outcome: null, armed: null, blockedBy: [] });
+    set({ phase: "idle", error: null, outcome: null, armed: null, blockedBy: [], blocked: null });
   },
 }));

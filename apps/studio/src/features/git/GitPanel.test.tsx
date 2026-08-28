@@ -61,3 +61,15 @@ describe("GitPanel", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("not a git repository");
   });
 });
+
+describe("porcelain records that are not records", () => {
+  test("the executor's trailing newline is not a fourth changed file", () => {
+    // Every captured line gets a "\n" appended, and -z output is one line, so
+    // the final empty record arrives as "\n": truthy, and sliced to "".
+    expect(parsePorcelain(" M a.md\0 M b.md\0 M c.md\0\n")).toEqual([
+      { status: " M", path: "a.md" },
+      { status: " M", path: "b.md" },
+      { status: " M", path: "c.md" },
+    ]);
+  });
+});

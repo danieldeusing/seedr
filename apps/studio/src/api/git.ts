@@ -29,7 +29,13 @@ function check(outcome: RunOutcome, what: string): string {
  * source path — which is dropped; the first is already the destination.
  */
 export function parsePorcelain(text: string): ChangedPath[] {
-  const records = text.split("\0").filter(Boolean);
+  // A record is `XY<space><path>`, so anything shorter than four characters is
+  // not one. `filter(Boolean)` was not enough: the executor appends a newline to
+  // every line it captures, and `-z` output is all one line, so the trailing
+  // empty record arrived as "\n" — truthy, and sliced to an empty path. That is
+  // the phantom fourth entry in a three-file worktree, and the reason the git
+  // button counted one change more than there were.
+  const records = text.split("\0").filter((record) => record.length > 3);
   const changes: ChangedPath[] = [];
   for (let i = 0; i < records.length; i++) {
     const record = records[i] as string;

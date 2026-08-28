@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useMutations } from "@/features/explorer/mutations";
 import { RotateCw } from "lucide-react";
 import { DiffText } from "@/core/ui/DiffText";
 import { IconButton } from "@/core/ui/IconButton";
@@ -18,6 +19,8 @@ export function GitPanel() {
   const [selected, setSelected] = useState<string | null>(null);
   const [diff, setDiff] = useState<string | null>(null);
   const [view, setView] = useState<"status" | "publish">("status");
+  const blocked = useMutations((store) => store.blocked);
+  const clean = state.kind === "ready" && state.summary.changes.length === 0;
 
   const refresh = useCallback(async () => {
     setState({ kind: "loading" });
@@ -46,6 +49,15 @@ export function GitPanel() {
 
   return (
     <section className="flex h-full min-h-0 flex-col text-xs">
+      {/* Why this opened, when it opened itself. Without it the dialog appears
+          unbidden and the removal that is waiting on it is invisible. */}
+      {blocked && (
+        <p className="border-b border-border bg-amber-500/10 px-6 py-2 text-amber-300" role="status">
+          {clean
+            ? `Worktree clean — closing this finishes removing ${blocked.type}/${blocked.slug}.`
+            : `Removing ${blocked.type}/${blocked.slug} needs a clean worktree. Commit or discard the changes below, then close this.`}
+        </p>
+      )}
       <header className="flex items-center gap-4 border-b border-border px-6 py-3">
         <p className="prompt">git status</p>
         {state.kind === "ready" && (

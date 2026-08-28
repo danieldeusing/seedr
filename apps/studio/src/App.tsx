@@ -11,6 +11,7 @@ import { Detail } from "./features/explorer/Detail";
 import { Explorer } from "./features/explorer/Explorer";
 import { selectedItem, useStudio } from "./features/explorer/store";
 import { GitPanel } from "./features/git/GitPanel";
+import { useMutations } from "./features/explorer/mutations";
 import { Onboarding } from "./features/onboarding/Onboarding";
 import { useAgentSettings } from "./features/settings/agentSettings";
 import { SignInBanner } from "./features/settings/SignInBanner";
@@ -27,6 +28,20 @@ type DialogKind = null | "author" | "git" | "update" | "test" | "settings";
 
 export function App() {
   const [dialog, setDialog] = useState<DialogKind>(null);
+  const blocked = useMutations((state) => state.blocked);
+  const resumeBlocked = useMutations((state) => state.resumeBlocked);
+
+  /**
+   * A removal refused for a dirty worktree opens git, where the changes and the
+   * commit already live. Closing it finishes the removal if the worktree is
+   * clean by then — the user armed and confirmed it before being sent here, and
+   * making them confirm the same deletion twice because something unrelated was
+   * uncommitted is a worse answer than continuing. `resumeBlocked` checks the
+   * worktree itself, so closing git without committing changes nothing.
+   */
+  useEffect(() => {
+    if (blocked) setDialog("git");
+  }, [blocked]);
   const [sidebarWidth, setSidebarWidth] = useRememberedSize("studio-sidebar-width", 288);
   const repo = useStudio((s) => s.repo);
   const items = useStudio((s) => s.items);
@@ -106,7 +121,14 @@ export function App() {
         </Modal>
       )}
       {dialog === "git" && (
-        <Modal title="git" onClose={close} size="full">
+        <Modal
+          title="git"
+          onClose={() => {
+            close();
+            void resumeBlocked();
+          }}
+          size="full"
+        >
           <GitPanel />
         </Modal>
       )}

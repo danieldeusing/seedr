@@ -6,6 +6,7 @@ import { IconButton } from "@/core/ui/IconButton";
 import { fs } from "@/api/fs";
 import { gitDiff, gitSummary, type GitSummary } from "@/api/git";
 import { PublishPanel } from "./PublishPanel";
+import { usePublish } from "./publishStore";
 
 type Summary = { kind: "loading" } | { kind: "ready"; summary: GitSummary } | { kind: "error"; message: string };
 
@@ -36,6 +37,20 @@ export function GitPanel() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  /**
+   * A finished publish moved the worktree, so re-read it.
+   *
+   * Without this the header still counted the files that were just committed and
+   * the banner still said the worktree was dirty — while the same screen said
+   * "Pushed to main". The banner is the instruction to close this dialog and
+   * finish the removal, so leaving it red after the thing it asked for was done
+   * is the one piece of staleness here that misleads rather than merely lags.
+   */
+  const published = usePublish((store) => store.phase === "done" && store.verdict?.kind === "published");
+  useEffect(() => {
+    if (published) void refresh();
+  }, [published, refresh]);
 
   const show = async (change: { status: string; path: string }) => {
     setSelected(change.path);

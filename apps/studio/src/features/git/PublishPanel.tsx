@@ -35,7 +35,7 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
   const setAgent = useAgentSettings((state) => state.setPreferred);
   const [error, setError] = useState<string | null>(null);
   const { phase, verdict, error: jobError } = usePublish();
-  const { run, cancel, reset } = usePublish.getState();
+  const { run, cancel } = usePublish.getState();
 
   useEffect(() => {
     void gitBranches()
@@ -65,9 +65,6 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
         )}
         {verdict.kind === "unclear" && <pre className="mt-4 whitespace-pre-wrap text-muted-foreground">{verdict.text}</pre>}
         <JobLog />
-        <button type="button" onClick={reset} className="doc-link doc-link--forward mt-4 cursor-pointer text-sm">
-          back to publish
-        </button>
       </section>
     );
   }

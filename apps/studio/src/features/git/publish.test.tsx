@@ -94,6 +94,24 @@ describe("PublishPanel", () => {
     expect(job?.stdin).toContain("then bring it to: prod");
   });
 
+  test("a finished publish re-reads the worktree, so the header stops counting what it committed", async () => {
+    // The banner that tells you to close this dialog is driven by the same
+    // count, so a stale one told you to commit changes that were already pushed.
+    let statusCalls = 0;
+    host(JSON.stringify({ type: "result", is_error: false, result: "PUBLISHED main" }), (request) => {
+      if (request.program === "git" && request.args.includes("status")) statusCalls++;
+    });
+    render(<GitPanel />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "publish" }));
+    await userEvent.click(await screen.findByRole("button", { name: "commit and push" }));
+    await userEvent.click(await screen.findByRole("button", { name: /commit and push to main/ }));
+
+    await waitFor(() => expect(screen.getByText("Pushed to main.")).toBeInTheDocument());
+    // Once on mount, and again once the publish finished.
+    await waitFor(() => expect(statusCalls).toBeGreaterThan(1));
+  });
+
   test("a clean worktree offers nothing to push", async () => {
     const ok = (taskId: string, stdout: string) => ({ taskId, status: "ok", exitCode: 0, stdout, stderr: "", durationMs: 1 });
     onCommand("run_process", (args) => {

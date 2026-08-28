@@ -29,6 +29,7 @@ function JobLog() {
 export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const form = useUpdate((s) => s.form);
   const probe = useUpdate((s) => s.probe);
+  const reprobe = useUpdate((s) => s.reprobe);
   const phase = useUpdate((s) => s.phase);
   const draftErrors = useUpdate((s) => s.draftErrors);
   const error = useUpdate((s) => s.error);
@@ -57,6 +58,11 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const input = "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
   const formRef = useRef<HTMLFormElement>(null);
   const agent = useAgentSettings((state) => state.preferred);
+  // The button is gated on `probe.available`; leaving it describing the agent
+  // chosen when the dialog opened would enable it for a CLI that is not there.
+  useEffect(() => {
+    void reprobe();
+  }, [agent, reprobe]);
   const setAgent = useAgentSettings((state) => state.setPreferred);
   const problemFor = (field: string) => problems.filter((p) => p.field === field);
 

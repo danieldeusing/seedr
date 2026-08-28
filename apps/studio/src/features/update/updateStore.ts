@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
+import type { CanonicalCodingAgent, CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { CANONICAL_AGENTS, canonicalAgents, isFirstParty, parseOp, validateItem, type UpdateOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess } from "@/api/agent";
 import { batchedLog, type LogLine } from "@/core/logLines";
@@ -45,6 +45,10 @@ interface UpdateState {
   expectedHash: string | null;
   form: UpdateForm;
   probe: AdapterProbe | null;
+  /** Which agent `probe` describes — see the author store for why. */
+  probedAgent: CanonicalCodingAgent | null;
+  /** Re-probe if the preferred agent is no longer the one `probe` describes. */
+  reprobe(): Promise<void>;
   phase: "idle" | "applying" | "running" | "done";
   draftErrors: string[];
   error: string | null;
@@ -149,15 +153,24 @@ export const useUpdate = create<UpdateState>((set, get) => ({
   expectedHash: null,
   form: formFor({ type: "skill" as ComponentType, slug: "", dir: "", item: { slug: "", name: "", type: "skill", description: "", compatibility: [] }, errors: [] }),
   probe: null,
+  probedAgent: null,
   phase: "idle",
   draftErrors: [],
   error: null,
   outcome: null,
   log: [],
 
+  async reprobe() {
+    const agent = useAgentSettings.getState().preferred;
+    if (get().probedAgent === agent) return;
+    set({ probe: null, probedAgent: agent });
+    set({ probe: await probeAgent(agent) });
+  },
+
   async start(item) {
     set({ target: item, expectedHash: null, form: formFor(item), phase: "idle", draftErrors: [], error: updateRefusal(item), outcome: null, log: [] });
-    if (!get().probe) set({ probe: await probeAgent(useAgentSettings.getState().preferred) });
+    const preferred = useAgentSettings.getState().preferred;
+    if (!get().probe || get().probedAgent !== preferred) set({ probe: await probeAgent(preferred), probedAgent: preferred });
     if (updateRefusal(item)) return;
     try {
       set({ expectedHash: await itemHash(item.type, item.slug) });

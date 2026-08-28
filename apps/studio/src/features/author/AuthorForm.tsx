@@ -62,6 +62,7 @@ const choiceButton = "cursor-pointer border border-violet-500/30 px-2 py-0.5 tex
 export function AuthorForm({ onAdded }: AuthorFormProps) {
   const form = useAuthor((s) => s.form);
   const probe = useAuthor((s) => s.probe);
+  const reprobe = useAuthor((s) => s.reprobe);
   const phase = useAuthor((s) => s.phase);
   const draftErrors = useAuthor((s) => s.draftErrors);
   const cancelled = useAuthor((s) => s.cancelled);
@@ -89,6 +90,12 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const byAgent = form.sourceKind !== "folder";
   const formRef = useRef<HTMLFormElement>(null);
   const agent = useAgentSettings((state) => state.preferred);
+  // The version and the availability check describe ONE agent. Switching agent
+  // has to ask the new one — `reprobe` returns immediately when it is already
+  // the probed one, so opening the dialog does not probe twice.
+  useEffect(() => {
+    void reprobe();
+  }, [agent, reprobe]);
   const setAgent = useAgentSettings((state) => state.setPreferred);
   /** For a repository, what the agent works out from the source unless overridden. */
   const derivedPlaceholder = form.sourceKind === "repo" ? "derived from the source" : "";

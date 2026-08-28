@@ -102,3 +102,29 @@ describe("which model a job runs on", () => {
     expect(modelFor("claude", "add")).toBe("claude-opus-5");
   });
 });
+
+describe("how often a CLI is actually asked", () => {
+  test("a stored catalogue survives a reload and is not asked for again", async () => {
+    // Reload = a fresh store reading localStorage. Asking each CLI on every
+    // start would spawn five processes to learn what has not changed.
+    const run = vi.fn(async () => ok("| Claude Opus 5 | `claude-opus-5` | 1M |"));
+    await useModels.getState().probe("claude", run);
+    expect(run).toHaveBeenCalledTimes(1);
+
+    useModels.setState({ byAgent: {} });
+    useModels.setState({ byAgent: JSON.parse(localStorage.getItem("studio-model-catalogue") ?? "{}") });
+
+    expect(modelsFor("claude").models).toEqual(["claude-opus-5"]);
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  test("a CLI that did not answer is remembered as such, and not retried on its own", async () => {
+    // Otherwise a missing binary spawns a failing process every time a dialog
+    // opens. The reason is kept so the picker can say why it has no list.
+    const run = vi.fn(async () => ({ taskId: "t", status: "ok" as const, exitCode: 1, stdout: "", stderr: "not found", durationMs: 1 }));
+    await useModels.getState().probe("codex", run);
+
+    expect(modelsFor("codex")).toMatchObject({ models: [], error: "not found" });
+    expect(useModels.getState().byAgent.codex).toBeDefined();
+  });
+});

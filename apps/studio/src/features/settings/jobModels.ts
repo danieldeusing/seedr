@@ -24,6 +24,12 @@ export const MODEL_JOBS: { job: ModelJob; label: string; hint: string }[] = [
 
 const STORAGE_KEY = "studio-job-models";
 const keyOf = (agent: string, job: ModelJob) => `${agent}/${job}`;
+/**
+ * Effort is stored beside the model under its own key rather than as a second
+ * map, so one write persists both and a repo carries one object. The suffix is
+ * `#effort` because `/` already separates agent from job.
+ */
+const effortKeyOf = (agent: string, job: ModelJob) => `${agent}/${job}#effort`;
 
 const load = (root: string): Record<string, string> => {
   try {
@@ -39,6 +45,7 @@ interface JobModelState {
   root: string;
   forRepo(root: string): void;
   set(agent: CanonicalCodingAgent, job: ModelJob, model: string): void;
+  setEffort(agent: CanonicalCodingAgent, job: ModelJob, effort: string): void;
 }
 
 export const useJobModels = create<JobModelState>((set, get) => ({
@@ -51,6 +58,17 @@ export const useJobModels = create<JobModelState>((set, get) => ({
     const chosen = { ...get().chosen };
     if (model) chosen[keyOf(agent, job)] = model;
     else delete chosen[keyOf(agent, job)];
+    // A model change can strand an effort the new model does not accept —
+    // codex offers `ultra` on two of seven — so the level is dropped and picked
+    // again rather than sent to a CLI that will refuse it.
+    delete chosen[effortKeyOf(agent, job)];
+    writeRepoScoped(STORAGE_KEY, get().root, JSON.stringify(chosen));
+    set({ chosen });
+  },
+  setEffort(agent, job, effort) {
+    const chosen = { ...get().chosen };
+    if (effort) chosen[effortKeyOf(agent, job)] = effort;
+    else delete chosen[effortKeyOf(agent, job)];
     writeRepoScoped(STORAGE_KEY, get().root, JSON.stringify(chosen));
     set({ chosen });
   },
@@ -58,3 +76,8 @@ export const useJobModels = create<JobModelState>((set, get) => ({
 
 /** The model for one job, or "" for the CLI's default. Read outside React too. */
 export const modelFor = (agent: CanonicalCodingAgent, job: ModelJob): string => useJobModels.getState().chosen[keyOf(agent, job)] ?? "";
+
+/** The reasoning effort for one job, or "" for the CLI's default. */
+export const effortFor = (agent: CanonicalCodingAgent, job: ModelJob): string => useJobModels.getState().chosen[effortKeyOf(agent, job)] ?? "";
+
+export { effortKeyOf };

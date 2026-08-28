@@ -4,7 +4,7 @@ import type { CanonicalCodingAgent } from "@seedr/shared";
 import { IconButton } from "@/core/ui/IconButton";
 import { Select } from "@/core/ui/Select";
 import { useJobModels, type ModelJob } from "./jobModels";
-import { useModels } from "./models";
+import { effortsFor, useModels } from "./models";
 
 /**
  * Which model this job runs on, beside the agent that will run it.
@@ -27,7 +27,9 @@ export function ModelSelect({ job, agent, disabled = false }: { job: ModelJob; a
   const probing = useModels((state) => state.probing);
   const probe = useModels((state) => state.probe);
   const chosen = useJobModels((state) => state.chosen[`${agent}/${job}`] ?? "");
+  const chosenEffort = useJobModels((state) => state.chosen[`${agent}/${job}#effort`] ?? "");
   const setJobModel = useJobModels((state) => state.set);
+  const setEffort = useJobModels((state) => state.setEffort);
 
   useEffect(() => {
     // Only when nothing is known about this agent yet. A catalogue that came
@@ -37,6 +39,7 @@ export function ModelSelect({ job, agent, disabled = false }: { job: ModelJob; a
   }, [agent, catalogue, probe]);
 
   const models = catalogue?.models ?? [];
+  const efforts = effortsFor(agent, chosen);
   const busy = probing === agent;
 
   return (
@@ -54,6 +57,18 @@ export function ModelSelect({ job, agent, disabled = false }: { job: ModelJob; a
           value={chosen}
           options={[{ value: "", label: "default model" }, ...models.map((model) => ({ value: model, label: model }))]}
           onChange={(model) => setJobModel(agent, job, model)}
+          disabled={disabled || busy}
+        />
+      )}
+      {/* Only where the CLI has one, and only levels the chosen model accepts:
+          codex's differ model by model, so a fixed list would offer `gpt-5.4` an
+          `ultra` it refuses. An agent without the flag shows no dropdown. */}
+      {efforts.length > 0 && (
+        <Select
+          ariaLabel={`effort for this ${job}`}
+          value={chosenEffort}
+          options={[{ value: "", label: "default effort" }, ...efforts.map((effort) => ({ value: effort, label: effort }))]}
+          onChange={(effort) => setEffort(agent, job, effort)}
           disabled={disabled || busy}
         />
       )}

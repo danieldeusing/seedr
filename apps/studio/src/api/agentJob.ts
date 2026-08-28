@@ -121,6 +121,8 @@ export function jobResult(outcome: RunOutcome): AgentJobResult {
 export interface AgentJobRequest {
   /** The model this job runs on, or omitted for the CLI's own default. */
   model?: string;
+  /** The reasoning effort, or omitted for the CLI's own default. */
+  effort?: string;
   taskId: string;
   prompt: string;
   /** Exactly what this job may do, e.g. `read`, `shell:git`. Each adapter spells these in its own CLI's tool names. */
@@ -142,11 +144,11 @@ export function agentJobArgs(capabilities: JobCapability[]): string[] {
  * same for all of them.
  */
 export async function runAgentJob(
-  { taskId, prompt, capabilities, model, agent = useAgentSettings.getState().preferred, timeoutMs = AGENT_JOB_TIMEOUT_MS, onEvent }: AgentJobRequest,
+  { taskId, prompt, capabilities, model, effort, agent = useAgentSettings.getState().preferred, timeoutMs = AGENT_JOB_TIMEOUT_MS, onEvent }: AgentJobRequest,
   run: typeof runProcess = runProcess
 ): Promise<AgentJobResult> {
   const adapter = adapterFor(agent);
-  const invocation = adapter.job(prompt, capabilities, openRepoRoot(), model);
+  const invocation = adapter.job(prompt, capabilities, openRepoRoot(), { model, effort });
   const unlisten = onEvent ? await onProcessOutput(taskId, ({ line }) => adapter.readLine(line).forEach(onEvent)) : null;
   try {
     const outcome = await run({ taskId, program: adapter.program, args: invocation.args, ...(invocation.stdin ? { stdin: invocation.stdin } : {}), cwd: "", timeoutMs });

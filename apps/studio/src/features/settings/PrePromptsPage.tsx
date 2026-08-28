@@ -3,9 +3,51 @@ import { ALL_TYPES } from "@seedr/registry-ops/pure";
 import { PromptField } from "@/core/ui/PromptField";
 import { usePrePrompts, type PrePromptJob } from "./prePrompts";
 
-const PLACEHOLDER: Record<PrePromptJob, string> = {
-  add: "e.g. use the skill-creator skill; when finished, run skill-optimizer",
-  update: "e.g. keep the SKILL.md frontmatter intact and re-run skill-optimizer afterwards",
+/**
+ * What to say for each type, as a starting point rather than a default: these
+ * are placeholders, so an empty field sends nothing and the agent is told only
+ * what someone chose to tell it.
+ *
+ * Per type because a single line cannot serve seven of them. Every type used to
+ * show the skill's — "use the skill-creator skill; when finished, run
+ * skill-optimizer" — which is wrong advice under `plugin`, `mcp` and `settings`,
+ * and reads as an instruction rather than an example nobody adapted.
+ *
+ * Each names what that type actually installs, which is the part an agent gets
+ * wrong: a command is `<slug>.md` and becomes `/<slug>`, a hook is a shell
+ * script plus its wiring, settings are deep-merged and leave no trace to find
+ * afterwards. The skill and agent lines are Daniel's own, which is what they
+ * were written from.
+ */
+const PLACEHOLDER: Record<ComponentType, Record<PrePromptJob, string>> = {
+  skill: {
+    add: "e.g. Call the Skill tool with `skill-creator` to create the new skill. Call the Skill tool with `skill-optimizer` afterwards to verify and optimise it.",
+    update: "e.g. Keep the SKILL.md frontmatter intact, and call the Skill tool with `skill-optimizer` afterwards to verify and optimise the skill.",
+  },
+  agent: {
+    add: "e.g. Call the Skill tool with `agent-creator` to create the new agent. Keep the frontmatter description specific enough that it is chosen for the right work.",
+    update: "e.g. Keep the frontmatter name and tools list intact; describe when the agent should be chosen, not only what it does.",
+  },
+  plugin: {
+    add: "e.g. Keep `.claude-plugin/plugin.json` valid and list every command, agent and skill the plugin ships — the entry is metadata only, so the manifest is what people see.",
+    update: "e.g. Re-read the upstream repository before editing: a plugin entry describes someone else's code, so it must not drift from what is actually published there.",
+  },
+  hook: {
+    add: "e.g. Write the shell script and say which event fires it (PreToolUse, PostToolUse) and with what matcher. Exit 0 to allow, non-zero to block, and say which on stderr.",
+    update: "e.g. Keep the event and matcher unchanged unless asked; a hook that starts firing on different tools is a different hook.",
+  },
+  mcp: {
+    add: "e.g. Describe the server in `.mcp.json` vocabulary — command, args, env. Name the environment variables, never a key or token itself.",
+    update: "e.g. Keep the server name stable — it is what installed configs reference. Re-check the upstream package before changing the command or its args.",
+  },
+  settings: {
+    add: "e.g. Include only the keys this item means to set. Settings are deep-merged into settings.json and leave no per-item trace, so anything extra is silently inherited by every install.",
+    update: "e.g. Removing a key here does not remove it from anyone who already installed it — say so in the description rather than assuming a clean replacement.",
+  },
+  command: {
+    add: "e.g. The file is `<slug>.md` and becomes `/<slug>`, so name it for what it does. Say in the frontmatter description when to reach for it.",
+    update: "e.g. Keep the slug — renaming it changes the command people type. Frontmatter description and argument-hint stay in step with the body.",
+  },
 };
 
 const JOB_TIP: Record<PrePromptJob, string> = {
@@ -29,7 +71,7 @@ function TypeCard({ type }: { type: ComponentType }) {
             {job}
           </label>
           <div className="field-val">
-            <PromptField id={`preprompt-${type}-${job}`} className={textarea} value={prompts[job]} placeholder={PLACEHOLDER[job]} onChange={(text) => setPrompt(type, job, text)} />
+            <PromptField id={`preprompt-${type}-${job}`} className={textarea} value={prompts[job]} placeholder={PLACEHOLDER[type][job]} onChange={(text) => setPrompt(type, job, text)} />
           </div>
         </div>
       ))}

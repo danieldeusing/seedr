@@ -160,3 +160,72 @@ describe("RemoveButton", () => {
     expect(bin.closest("[data-tip]")).toHaveAttribute("data-tip", expect.stringContaining("daily sync would restore"));
   });
 });
+
+describe("finishing a removal a dirty worktree blocked", () => {
+  const dirtyHost = (statusByCall: string[]) => {
+    let call = 0;
+    const requests: RunRequest[] = [];
+    onCommand("run_process", (args) => {
+      const request = args?.request as RunRequest;
+      requests.push(request);
+      if (request.args.includes("hash")) return ok(request, JSON.stringify({ hash: "48761aa0e888b3ae" }));
+      if (request.program === "git" && request.args.includes("status")) return ok(request, statusByCall[Math.min(call++, statusByCall.length - 1)] ?? "");
+      if (request.program === "git") return ok(request, "main\n");
+      if (requests.filter((r) => r.program === "npx" && r.args.includes("run")).length === 1) {
+        return { taskId: request.taskId, status: "failed", exitCode: 1, stdout: "", stderr: "registry-op: The worktree has uncommitted changes", durationMs: 1 };
+      }
+      return ok(request, JSON.stringify({ ok: true, kind: "remove", type: "mcp", slug: "playwright", item: null, changedPaths: [], headBefore: "abc" }));
+    });
+    return requests;
+  };
+
+  test("a clean worktree lets the removal finish, without arming it again", async () => {
+    // The user already armed and confirmed; being sent to git to commit
+    // something unrelated should not cost them that decision.
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    const item = items.find((i) => i.slug === "playwright")!;
+    dirtyHost([" M scratch.txt\0", ""]);
+
+    await useMutations.getState().arm(item);
+    await useMutations.getState().remove(item);
+    expect(useMutations.getState().blocked).toBe(item);
+
+    await useMutations.getState().resumeBlocked();
+
+    expect(useMutations.getState().phase).toBe("done");
+    expect(useMutations.getState().blocked).toBeNull();
+  });
+
+  test("a worktree still dirty leaves it blocked rather than retrying into the same wall", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    const item = items.find((i) => i.slug === "playwright")!;
+    dirtyHost([" M scratch.txt\0"]);
+
+    await useMutations.getState().arm(item);
+    await useMutations.getState().remove(item);
+    await useMutations.getState().resumeBlocked();
+
+    // Closing git without committing must change nothing.
+    expect(useMutations.getState().phase).toBe("idle");
+    expect(useMutations.getState().blocked).toBe(item);
+  });
+
+  test("a failure that is not about the worktree leaves nothing to resume", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    const item = items.find((i) => i.slug === "playwright")!;
+    onCommand("run_process", (args) => {
+      const request = args?.request as RunRequest;
+      if (request.args.includes("hash")) return ok(request, JSON.stringify({ hash: "48761aa0e888b3ae" }));
+      return { taskId: request.taskId, status: "failed", exitCode: 1, stdout: "", stderr: "registry-op: the item changed on disk", durationMs: 1 };
+    });
+
+    await useMutations.getState().arm(item);
+    await useMutations.getState().remove(item);
+
+    expect(useMutations.getState().blocked).toBeNull();
+    expect(useMutations.getState().error).toContain("changed on disk");
+  });
+});

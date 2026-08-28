@@ -92,7 +92,7 @@ export function App() {
           <SignInBanner />
           <div className="min-h-0 flex-1">
             {current ? (
-              <Detail key={itemKey} item={current} onEdit={() => setDialog("update")} onTest={() => setDialog("test")} />
+              <Detail key={itemKey} item={current} onEdit={() => setDialog("update")} onTest={() => setDialog("test")} onGitStatus={() => setDialog("git")} />
             ) : (
               <p className="p-6 text-xs text-muted-foreground">Select an item, or add a capability.</p>
             )}

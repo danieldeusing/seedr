@@ -34,7 +34,7 @@ export function RemoteBadge() {
 
   if (checking && !remote) {
     return (
-      <span className="ml-auto flex shrink-0 items-center gap-1.5 text-muted-foreground">
+      <span className="relative z-10 ml-auto flex shrink-0 items-center gap-1.5 bg-neutral-960 pl-3 text-muted-foreground">
         <RotateCw className="size-3.5 animate-spin" aria-hidden="true" />
         <span>checking origin…</span>
       </span>
@@ -45,7 +45,7 @@ export function RemoteBadge() {
   return (
     <button
       type="button"
-      className="ml-auto flex shrink-0 cursor-pointer items-center gap-2 hover:opacity-80"
+      className="relative z-10 ml-auto flex shrink-0 cursor-pointer items-center gap-2 bg-neutral-960 pl-3 hover:opacity-80"
       onClick={ask}
       disabled={checking}
       data-tip={remote.fetched ? `Compared against ${remote.upstream}. Click to fetch again.` : "Click to try the remote again"}

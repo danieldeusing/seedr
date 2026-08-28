@@ -47,6 +47,44 @@ describe("Detail", () => {
     expect(await screen.findByText(/metadata only/)).toBeInTheDocument();
   });
 
+  test("a synced item lists the files it ships, rather than claiming it has none", async () => {
+    // 91 of this registry's 111 items are stored as metadata: the CLI fetches
+    // their content at install time. Their item.json still carries the tree read
+    // from upstream, so "no content files" was false about the majority of them.
+    mockFs({
+      ...registryFiles(),
+      "registry/plugins": null,
+      "registry/plugins/superpowers": null,
+      "registry/plugins/superpowers/item.json": JSON.stringify({
+        slug: "superpowers",
+        name: "Superpowers",
+        type: "plugin",
+        sourceType: "community",
+        description: "A skills library.",
+        longDescription: "x ".repeat(40),
+        compatibility: ["claude"],
+        author: { name: "Jesse Vincent" },
+        externalUrl: "https://github.com/obra/superpowers",
+        contents: { files: [{ name: "skills", type: "directory", children: [{ name: "brainstorming.md", type: "file" }] }] },
+      }),
+    });
+    const { items } = await loadRegistry(fs, "registry");
+    render(<Detail item={items.find((i) => i.slug === "superpowers")!} />);
+
+    expect(await screen.findByText(/these files live in the upstream repository/i)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "skills" })).toBeInTheDocument();
+    expect(screen.queryByText("metadata only — no content files")).toBeNull();
+  });
+
+  test("an item with no files anywhere still says so", async () => {
+    // The other side: a genuinely empty entry must not pretend to ship files.
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    render(<Detail item={items.find((i) => i.slug === "broken")!} />);
+
+    expect(await screen.findByText(/metadata only/)).toBeInTheDocument();
+  });
+
   test("a file the host refuses to read shows the refusal", async () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs, "registry");

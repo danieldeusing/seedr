@@ -42,17 +42,20 @@ const { CopilotClient } = require(${JSON.stringify(COPILOT_SDK)});
 (async () => {
   const client = new CopilotClient();
   let out = { models: [] };
+  let code = 0;
   try {
     await client.start();
     const res = await client.rpc.models.list();
     out = { models: (res.models || []).map((m) => m.id) };
   } catch (e) {
     out = { models: [], error: String((e && e.message) || e) };
+    code = 1;
   } finally {
     try { await client.stop(); } catch (e) { try { client.forceStop(); } catch (e2) {} }
   }
+  if (out.error) console.error(out.error);
   console.log(JSON.stringify(out));
-  process.exit(0);
+  process.exit(code);
 })();
 `;
 
@@ -81,7 +84,11 @@ try {
   }));
   console.log(JSON.stringify({ models }));
 } catch (e) {
-  console.log(JSON.stringify({ models: [], error: String((e && e.message) || e) }));
+  // Fail loudly. Printing {models: []} and exiting 0 would reach probe() as a
+  // SUCCESSFUL run that found no models, so the picker would offer "default
+  // model" with no reason and nothing would say codex could not be reached.
+  console.error(String((e && e.stack) || (e && e.message) || e));
+  process.exit(1);
 }
 process.exit(0);
 `;

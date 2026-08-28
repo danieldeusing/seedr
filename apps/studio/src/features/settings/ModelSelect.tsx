@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { RotateCw } from "lucide-react";
 import type { CanonicalCodingAgent } from "@seedr/shared";
+import { AGENT_LABELS } from "@seedr/registry-ops/pure";
 import { IconButton } from "@/core/ui/IconButton";
 import { Select } from "@/core/ui/Select";
 import { useJobModels, type ModelJob } from "./jobModels";
@@ -48,8 +49,14 @@ export function ModelSelect({ job, agent, disabled = false }: { job: ModelJob; a
           beside it rather than announcing progress, and a second live region
           competed with each form's own status line. */}
       {models.length === 0 ? (
-        <span className="truncate text-sm text-neutral-500">
-          {busy ? "asking for models…" : catalogue?.error ? "default model — the CLI did not answer" : "default model"}
+        <span
+          className="truncate text-sm text-neutral-500"
+          // The reason, not just the fact. Settings used to show it in full;
+          // with that page gone, "the CLI did not answer" was the whole story
+          // the user got, and diagnosing meant guessing.
+          data-tip={catalogue?.error ? `${AGENT_LABELS[agent]} did not answer: ${catalogue.error}` : undefined}
+        >
+          {busy ? "asking for models…" : catalogue?.error ? "default model — the CLI did not answer (hover)" : "default model"}
         </span>
       ) : (
         <Select

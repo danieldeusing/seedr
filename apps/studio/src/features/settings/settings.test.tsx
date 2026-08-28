@@ -111,6 +111,37 @@ describe("coding agents settings", () => {
 });
 
 describe("pre-prompts settings", () => {
+  test("each type suggests something that fits it, and none of them suggests the skill's", async () => {
+    render(<SettingsPanel onClose={() => undefined} />);
+    await userEvent.click(screen.getByRole("button", { name: /pre-prompts/ }));
+
+    // The visible label is only "add"/"update" — seven cards repeat it, so the
+    // field is addressed by the id that carries its type.
+    const hintFor = (type: string, job: string) => (document.getElementById(`preprompt-${type}-${job}`) as HTMLTextAreaElement).placeholder;
+
+    // Every type showed the skill's line before, which is wrong advice under
+    // half of them: a plugin entry is metadata, settings are deep-merged.
+    expect(hintFor("plugin", "add")).toContain(".claude-plugin/plugin.json");
+    expect(hintFor("hook", "add")).toContain("PreToolUse");
+    expect(hintFor("mcp", "add")).toContain(".mcp.json");
+    expect(hintFor("settings", "add")).toContain("deep-merged");
+    expect(hintFor("command", "add")).toContain("/<slug>");
+    expect(hintFor("skill", "add")).toContain("skill-creator");
+    expect(hintFor("agent", "add")).toContain("agent-creator");
+
+    for (const type of ["plugin", "hook", "mcp", "settings", "command"]) {
+      expect(hintFor(type, "add")).not.toContain("skill-creator");
+      expect(hintFor(type, "update")).not.toContain("skill-optimizer");
+    }
+  });
+
+  test("a hint is only a hint — an untouched field sends nothing", () => {
+    // Placeholders, not defaults: the agent is told what someone chose to tell
+    // it, and an empty field is silence rather than an example leaking into it.
+    expect(prePromptFor("plugin", "add")).toBe("");
+    expect(prePromptFor("skill", "add")).toBe("");
+  });
+
   test("a per-type pre-prompt is persisted and readable outside React", async () => {
     hostWithAgents();
     render(<SettingsPanel />);

@@ -8,7 +8,6 @@ import { removalRefusal, useMutations } from "./mutations";
 export function RemoveButton({ item }: { item: StudioItem }) {
   const [armed, setArmed] = useState(false);
   const phase = useMutations((s) => s.phase);
-  const error = useMutations((s) => s.error);
   const arm = useMutations((s) => s.arm);
   const remove = useMutations((s) => s.remove);
   const reset = useMutations((s) => s.reset);
@@ -59,11 +58,6 @@ export function RemoveButton({ item }: { item: StudioItem }) {
             void arm(item);
           }}
         />
-      )}
-      {error && (
-        <span className="text-destructive" role="alert">
-          {error}
-        </span>
       )}
     </span>
   );

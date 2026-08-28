@@ -10,6 +10,7 @@ import { SafeMarkdown } from "@/core/ui/SafeMarkdown";
 import { loadFileTree, type StudioItem } from "./registry";
 import { FileExplorer } from "./FileExplorer";
 import { RemoveButton } from "./RemoveButton";
+import { useMutations } from "./mutations";
 import { SourcePanel } from "./SourcePanel";
 import { NO_OPS, useCanMutate } from "./repoCapability";
 import { testRefusal } from "@/features/test/testStore";
@@ -120,6 +121,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
    * outside the app looked like the app ignoring it.
    */
   const revision = useStudio((state) => state.revision);
+  const mutationError = useMutations((state) => state.error);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,6 +183,15 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
             <RemoveButton item={item} />
           </span>
         </div>
+        {/* Below the row, not inside it. A failure here is a sentence — "the
+            worktree has uncommitted changes; commit or stash them first" — and
+            beside the buttons it stretched the header and pushed them about.
+            Same line as the validation errors, which are the same kind of news. */}
+        {mutationError && (
+          <p className="mt-2 text-xs text-destructive" role="alert">
+            {mutationError}
+          </p>
+        )}
         {item.errors.length > 0 && (
           <p className="mt-2 text-xs text-destructive" role="alert">
             Invalid: {formatErrors(item.errors)}

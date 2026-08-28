@@ -138,7 +138,24 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
     };
   }, [item.dir, revision]);
 
-  const fetchContent = useCallback((relativePath: string) => fs.readText(`${item.dir}/${relativePath}`), [item.dir, revision]);
+  /**
+   * A synced item keeps no files here — the CLI fetches them from `externalUrl`
+   * at install time — but its `item.json` carries the file tree that was read
+   * from the upstream repository when it was added. That tree is 91 of this
+   * registry's 111 items, and showing nothing for them said "no content files"
+   * about items whose file list we know perfectly well.
+   */
+  const upstreamTree = item.item.contents?.files ?? [];
+
+  const fetchContent = useCallback(
+    (relativePath: string) =>
+      tree && tree.length === 0
+        ? // Listed, not stored: there is nothing on disk to read, and saying so
+          // is better than a file-not-found from a path that was never here.
+          Promise.resolve(`${relativePath}\n\nThis file lives in the upstream repository, not in this registry — the entry is metadata, and the CLI fetches the content at install time.`)
+        : fs.readText(`${item.dir}/${relativePath}`),
+    [item.dir, revision, tree]
+  );
 
   return (
     <article className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -220,6 +237,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
           <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-4">
           <ContentBody
             tree={tree}
+            upstreamTree={upstreamTree}
             treeError={treeError}
             slug={item.slug}
             onFetchContent={fetchContent}
@@ -235,14 +253,16 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
 
 interface ContentBodyProps {
   tree: FileTreeNode[] | null;
+  /** The file list recorded from the upstream repo, for an item stored as metadata. */
+  upstreamTree: FileTreeNode[];
   treeError: string | null;
   slug: string;
   onFetchContent(relativePath: string): Promise<string>;
   onOpenFile(relativePath: string): void;
 }
 
-/** The content zone's four states: error, loading, metadata-only, or the explorer. */
-function ContentBody({ tree, treeError, slug, onFetchContent, onOpenFile }: ContentBodyProps) {
+/** The content zone: error, loading, the files here, the files upstream, or none. */
+function ContentBody({ tree, upstreamTree, treeError, slug, onFetchContent, onOpenFile }: ContentBodyProps) {
   if (treeError) {
     return (
       <p className="text-sm text-red-400" role="alert">
@@ -251,6 +271,18 @@ function ContentBody({ tree, treeError, slug, onFetchContent, onOpenFile }: Cont
     );
   }
   if (tree === null) return <p className="text-sm text-neutral-500">loading…</p>;
+  if (tree.length === 0 && upstreamTree.length > 0) {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <p className="shrink-0 pb-2 text-sm text-neutral-500">
+          Stored as metadata — these files live in the upstream repository, and the CLI fetches them at install time.
+        </p>
+        <div className="min-h-0 flex-1">
+          <FileExplorer files={upstreamTree} rootName={slug} onFetchContent={onFetchContent} onOpenFile={onOpenFile} />
+        </div>
+      </div>
+    );
+  }
   if (tree.length === 0) return <p className="text-sm text-neutral-500">metadata only — no content files</p>;
   return <FileExplorer files={tree} rootName={slug} onFetchContent={onFetchContent} onOpenFile={onOpenFile} />;
 }

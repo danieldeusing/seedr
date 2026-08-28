@@ -196,3 +196,24 @@ describe("the probe follows the chosen agent", () => {
     expect(useAuthor.getState().probe?.version).not.toBe("2.1.226");
   });
 });
+
+describe("a probe that fails says why", () => {
+  test("a non-zero exit records the CLI's own words, not an empty list", async () => {
+    // The failure mode this guards: a child that prints {models: []} and exits
+    // 0 reaches probe() as a SUCCESSFUL run finding nothing, so the picker
+    // offers "default model" and nothing anywhere says the CLI was unreachable.
+    const run = vi.fn(async () => ({ taskId: "t", status: "ok" as const, exitCode: 1, stdout: "", stderr: "Error: spawn codex ENOENT", durationMs: 1 }));
+    await useModels.getState().probe("codex", run);
+
+    expect(modelsFor("codex").models).toEqual([]);
+    expect(modelsFor("codex").error).toContain("ENOENT");
+  });
+
+  test("an empty list with a zero exit is not silently an error", async () => {
+    // The other side of it: a CLI that genuinely offers nothing is not broken,
+    // and must not be reported as if it were.
+    await useModels.getState().probe("codex", vi.fn(async () => ok(JSON.stringify({ models: [] }))));
+
+    expect(modelsFor("codex")).toMatchObject({ models: [], error: null });
+  });
+});

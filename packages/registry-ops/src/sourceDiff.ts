@@ -8,7 +8,15 @@ import { localSourceOf } from "./localSources.js";
 import { sourceFilePaths } from "./localSource.js";
 
 /**
- * A unified diff between the folder an item was copied from and the copy here.
+ * A unified diff showing what re-copying the source would do to this item.
+ *
+ * THE SOURCE IS THE NEW SIDE, and that is the whole point of the direction.
+ * The folder is what this item is copied FROM, so a change made there is a
+ * change waiting to be made here — it reads green, as something to apply, and
+ * the stale copy it replaces reads red. Run the other way round the same edit
+ * appears as a red deletion of the newer text, which says the opposite of what
+ * is about to happen. The one button next to this diff copies source over
+ * registry; this shows that operation and not its inverse.
  *
  * `git diff --no-index` does the work: it diffs two arbitrary paths, git is
  * already required, and the output is the format everything else already knows
@@ -35,11 +43,12 @@ export function sourceDiff(repoRoot: string, registryDir: string, type: Componen
   const NOTHING = "/dev/null";
   const chunks: string[] = [];
   for (const relative of paths) {
-    const before = sourceIsFile ? entry.path : join(entry.path, relative);
-    const after = join(dir, relative);
+    const sourceFile = sourceIsFile ? entry.path : join(entry.path, relative);
+    const registryFile = join(dir, relative);
+    // Registry first, source second: git's second path is the "new" one.
     const diff = spawnSync(
       "git",
-      ["diff", "--no-index", "--src-prefix=source/", "--dst-prefix=registry/", "--", existsSync(before) ? before : NOTHING, existsSync(after) ? after : NOTHING],
+      ["diff", "--no-index", "--src-prefix=registry/", "--dst-prefix=source/", "--", existsSync(registryFile) ? registryFile : NOTHING, existsSync(sourceFile) ? sourceFile : NOTHING],
       { encoding: "utf8", maxBuffer: 8 * 1024 * 1024 }
     );
     // 0 = identical, 1 = differs. Anything else is git failing to answer, and
@@ -61,8 +70,8 @@ function named(diff: string, relative: string): string {
     .split("\n")
     .map((line) => {
       if (line.startsWith("diff --git ")) return `diff --git ${relative}`;
-      if (line.startsWith("--- ")) return line.includes("/dev/null") ? line : `--- source/${relative}`;
-      if (line.startsWith("+++ ")) return line.includes("/dev/null") ? line : `+++ registry/${relative}`;
+      if (line.startsWith("--- ")) return line.includes("/dev/null") ? line : `--- registry/${relative}`;
+      if (line.startsWith("+++ ")) return line.includes("/dev/null") ? line : `+++ source/${relative}`;
       return line;
     })
     .join("\n");

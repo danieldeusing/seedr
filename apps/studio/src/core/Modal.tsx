@@ -5,8 +5,12 @@ import { IconButton } from "./ui/IconButton";
 interface ModalProps {
   title: string;
   onClose(): void;
-  /** lg for forms, xl for wider ones, full for the workspace-sized panes. */
-  size?: "lg" | "xl" | "full";
+  /**
+   * lg for forms, xl for wider ones, full for the workspace-sized panes, and
+   * `tall` for a wide panel that is only as tall as it needs to be — a form that
+   * grows a log while it runs, and should not reserve the room beforehand.
+   */
+  size?: "lg" | "xl" | "full" | "tall";
   children: ReactNode;
 }
 
@@ -17,6 +21,9 @@ const SIZE_CLASSES: Record<NonNullable<ModalProps["size"]>, string> = {
   lg: "max-w-2xl w-full mx-4 max-h-[90vh]",
   xl: "max-w-4xl w-full mx-4 max-h-[90vh]",
   full: "w-[80vw] max-w-[1440px] h-[90vh]",
+  // `max-h`, not `h`: full's fixed height left the add dialog holding most of a
+  // screen of nothing until an agent started writing into it.
+  tall: "w-[80vw] max-w-[1440px] max-h-[90vh]",
 };
 
 /**

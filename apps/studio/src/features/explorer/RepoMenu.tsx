@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FolderInput } from "lucide-react";
+import { ChevronUp, FolderInput } from "lucide-react";
 import { defaultRepo, type RepoInfo } from "@/api/repo";
 import { useStudio } from "./store";
 import { readHistory, repoLabel } from "./repoHistory";
@@ -41,9 +41,12 @@ export function RepoMenu() {
       <summary
         aria-label="switch repo"
         data-tip="Point Studio at another seedr checkout — e.g. a private fork"
-        className="flex h-7 w-9 cursor-pointer list-none items-center justify-center border border-neutral-500/30 text-neutral-400 transition-colors hover:border-neutral-500/40 hover:bg-neutral-500/20 hover:text-neutral-300"
+        className="flex h-7 w-9 cursor-pointer list-none items-center justify-center gap-0.5 border border-neutral-500/30 text-neutral-400 transition-colors hover:border-neutral-500/40 hover:bg-neutral-500/20 hover:text-neutral-300"
       >
         <FolderInput className="size-3.5" aria-hidden="true" />
+        {/* Same chevron as the theme and row-style menus beside it: three
+            controls in one strip, and only this one gave no sign it opened. */}
+        <ChevronUp className="size-3" aria-hidden="true" />
       </summary>
       <div className="absolute right-0 bottom-full z-[9999] mb-2 min-w-56 overflow-hidden border border-neutral-600 bg-[var(--popover)] py-1 whitespace-nowrap shadow-xl" role="menu" aria-label="checkouts">
         <button

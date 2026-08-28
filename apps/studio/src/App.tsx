@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { closeDropdownsOnOutsidePress } from "@/core/lib/dropdowns";
 import type { ComponentType } from "@seedr/shared";
 import { AppHeader } from "./core/AppHeader";
 import { ExternalLinkDialog } from "./core/ExternalLinkDialog";
@@ -39,6 +40,8 @@ export function App() {
   const chooseRepo = useStudio((s) => s.chooseRepo);
   const select = useStudio((s) => s.select);
   const initAgents = useAgentSettings((s) => s.init);
+
+  useEffect(closeDropdownsOnOutsidePress, []);
 
   useEffect(() => {
     void init();

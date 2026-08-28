@@ -248,3 +248,21 @@ describe("AuthorForm — content that does not match the type", () => {
     await waitFor(() => expect(ops.some((op) => op.stdin?.includes("add-local"))).toBe(true));
   });
 });
+
+describe("where the dialog puts its controls", () => {
+  test("agent, model and submit share one footer — choices left, the run right", async () => {
+    // They were a whole dialog apart with the agent's log between them, so the
+    // longer a run went on the further the choices drifted from the button.
+    render(<AuthorForm onAdded={() => {}} />);
+
+    const agentSelect = await screen.findByLabelText("coding agent");
+    const submit = screen.getByRole("button", { name: /add to registry|hand it to the agent/ });
+    const footer = agentSelect.closest("div.mt-auto");
+
+    expect(footer, "the agent select sits in the pinned footer").not.toBeNull();
+    expect(footer!.contains(submit), "and so does the submit").toBe(true);
+    // Left before right in document order, which the spacer between them turns
+    // into left- and right-aligned.
+    expect(agentSelect.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});

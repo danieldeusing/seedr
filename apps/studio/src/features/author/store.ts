@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
+import type { CanonicalCodingAgent, CodingAgent, ComponentType, ScopeType } from "@seedr/shared";
 import { ALL_TYPES, CANONICAL_AGENTS, isOneCapability, looksLikeType, parseOp, typeDirName, validateItem, type AddLocalOp, type ValidationError } from "@seedr/registry-ops/pure";
 import { cancelProcess, onProcessOutput, pickPath } from "@/api/agent";
 import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
@@ -61,6 +61,15 @@ export type AddResult =
 interface AuthorState {
   form: AddLocalForm;
   probe: AdapterProbe | null;
+  /**
+   * Which agent `probe` describes. Without it the version and the availability
+   * check went on describing whichever agent was preferred when the dialog
+   * opened, so switching agent showed the previous one's version — and, worse in
+   * the edit dialog, gated the button on the wrong CLI being installed.
+   */
+  probedAgent: CanonicalCodingAgent | null;
+  /** Re-probe if the preferred agent is no longer the one `probe` describes. */
+  reprobe(): Promise<void>;
   /** Settings' author, or what the checkout's remote says — the prefill to restore. */
   defaultAuthor: { name: string; url: string };
   phase: Phase;
@@ -371,6 +380,7 @@ export function formProblems(form: AddLocalForm): ValidationError[] {
 export const useAuthor = create<AuthorState>((set, get) => ({
   form: emptyForm(),
   probe: null,
+  probedAgent: null,
   defaultAuthor: { name: "", url: "" },
   phase: "idle",
   draftErrors: [],
@@ -450,10 +460,19 @@ export const useAuthor = create<AuthorState>((set, get) => ({
     set({ form: { ...form, sourcePath: path, slug, name }, sourceChoices: [] });
   },
 
+  async reprobe() {
+    const agent = useAgentSettings.getState().preferred;
+    // Costs a process, so only when the answer would be about a different CLI.
+    if (get().probedAgent === agent) return;
+    set({ probe: null, probedAgent: agent });
+    set({ probe: await probeAgent(agent) });
+  },
+
   async prepare() {
     set({ phase: "probing", error: null });
     try {
-      const [probe, identity] = await Promise.all([probeAgent(useAgentSettings.getState().preferred), repoIdentity().catch(() => null)]);
+      const probedAgent = useAgentSettings.getState().preferred;
+      const [probe, identity] = await Promise.all([probeAgent(probedAgent), repoIdentity().catch(() => null)]);
       // Settings wins over the checkout: a fork's remote is not who authored this.
       const configured = configuredAuthor();
       const defaultAuthor = {
@@ -464,6 +483,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
       const derived = form.sourceKind === "repo";
       set({
         probe,
+        probedAgent,
         defaultAuthor,
         phase: "idle",
         form: {

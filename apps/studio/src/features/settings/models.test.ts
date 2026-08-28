@@ -166,3 +166,33 @@ describe("which efforts may be offered", () => {
     expect(effortsFor("codex", "")).toEqual(["low", "high"]);
   });
 });
+
+describe("the probe follows the chosen agent", () => {
+  test("switching agent re-probes, and asking again for the same one does not", async () => {
+    // The version shown beside the picker described whichever agent was
+    // preferred when the dialog opened, so switching to Antigravity kept
+    // showing Claude Code's 2.1.226.
+    const { useAuthor } = await import("@/features/author/store");
+    const { useAgentSettings } = await import("./agentSettings");
+    const { onCommand } = await import("@/test/mockIpc");
+    // Each CLI answers its own version; the point is which one gets asked.
+    onCommand("run_process", (args) => {
+      const request = args?.request as { taskId: string; program: string };
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: `${request.program} 9.9.9\n`, stderr: "", durationMs: 1 };
+    });
+
+    useAuthor.setState({ probe: { available: true, version: "2.1.226", diagnostic: "" }, probedAgent: "claude" });
+    useAgentSettings.setState({ preferred: "claude" });
+
+    await useAuthor.getState().reprobe();
+    expect(useAuthor.getState().probedAgent).toBe("claude");
+    expect(useAuthor.getState().probe?.version).toBe("2.1.226");
+
+    useAgentSettings.setState({ preferred: "antigravity" });
+    await useAuthor.getState().reprobe();
+
+    // Whatever the probe answers, it must no longer be Claude Code's.
+    expect(useAuthor.getState().probedAgent).toBe("antigravity");
+    expect(useAuthor.getState().probe?.version).not.toBe("2.1.226");
+  });
+});

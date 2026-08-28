@@ -166,6 +166,11 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
   const rowStyle = useRowStyle((s) => s.style);
   const sourceCheckError = useStudio((store) => store.sourceCheckError);
   const uncommitted = useStudio((store) => store.uncommitted);
+  // Only a fetch that got through can say this; `behind` is 0 both when the
+  // checkout is current and when it never managed to ask, and those must not
+  // look alike. The title bar carries the unreachable case in words.
+  const remote = useStudio((store) => store.remote);
+  const behind = remote?.fetched ? remote.behind : 0;
   const setRowStyle = useRowStyle((s) => s.setStyle);
 
   // Every type is listed, empty ones included: a registry with no agents is a
@@ -309,12 +314,22 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
           <IconButton
             icon={GitBranch}
             ariaLabel="git"
-            tip={uncommitted > 0 ? `${uncommitted} uncommitted path(s) — every registry operation refuses until they are committed` : "Branch, changes, and publishing them"}
+            tip={[
+              behind > 0 ? `${behind} commit(s) on ${remote?.upstream ?? "the remote"} not pulled yet — this list is out of date` : "",
+              uncommitted > 0 ? `${uncommitted} uncommitted path(s) — every registry operation refuses until they are committed` : "",
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Branch, changes, and publishing them"}
             onClick={onGitStatus}
           />
           {uncommitted > 0 && (
             <span className="count-badge" aria-label={`${uncommitted} uncommitted paths`}>
               {uncommitted > 99 ? "99+" : uncommitted}
+            </span>
+          )}
+          {behind > 0 && (
+            <span className="behind-badge" aria-label={`${behind} commits to pull`}>
+              {behind > 99 ? "99+" : behind}
             </span>
           )}
         </span>

@@ -164,4 +164,41 @@ describe("the git button's count", () => {
 
     expect(screen.queryByLabelText(/uncommitted paths/)).toBeNull();
   });
+
+  test("marks the other corner when the remote has commits this checkout has not pulled", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    useStudio.setState({ items, uncommitted: 0, remote: { upstream: "origin/main", behind: 4, ahead: 0, fetched: true, fetchError: null } });
+
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    expect(screen.getByLabelText("4 commits to pull")).toHaveTextContent("4");
+    expect(screen.getByRole("button", { name: "git" }).getAttribute("data-tip")).toMatch(/not pulled yet — this list is out of date/);
+  });
+
+  test("both marks sit on the same button without displacing each other", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    useStudio.setState({ items, uncommitted: 3, remote: { upstream: "origin/main", behind: 4, ahead: 0, fetched: true, fetchError: null } });
+
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    // "Have I saved" and "am I current" are different questions and get
+    // different corners, rather than one mark meaning whichever came last.
+    expect(screen.getByLabelText("3 uncommitted paths")).toBeInTheDocument();
+    expect(screen.getByLabelText("4 commits to pull")).toBeInTheDocument();
+  });
+
+  test("a fetch that never got through does NOT mark the button clean", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    useStudio.setState({ items, uncommitted: 0, remote: { upstream: "origin/main", behind: 0, ahead: 0, fetched: false, fetchError: "offline" } });
+
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    // behind is 0 here because nothing was asked, not because it is current.
+    // The badge stays off and the title bar carries the reason in words —
+    // a red 0 would be wrong and a silent green tick would be a lie.
+    expect(screen.queryByLabelText(/commits to pull/)).toBeNull();
+  });
 });

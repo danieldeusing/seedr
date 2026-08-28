@@ -157,18 +157,25 @@ export function SourcePanel({ item }: { item: StudioItem }) {
           )}
         </div>
       </div>
+      {/* `text-xs` like the git panel's diff: this dialog is a sibling of the
+          panel's own box, not inside it, so without it the diff inherits the app
+          default and reads a size larger than every other diff in Studio. */}
       {diff !== null && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-label="source difference">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center text-xs" role="dialog" aria-modal="true" aria-label="source difference">
           <div className="absolute inset-0 bg-[var(--dialog-backdrop)] backdrop-blur-sm" onClick={() => setDiff(null)} />
-          <div className="relative mx-4 flex max-h-[80vh] w-full max-w-4xl flex-col border border-neutral-700 bg-neutral-980 shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-neutral-960 px-6 py-4">
+          {/* Sized to the diff, not to a fixed column: `w-fit` lets a short one stay
+              small and a wide one grow, and 90vw is where growing stops and the
+              pre below scrolls instead. A fixed width clipped long lines while
+              leaving half the dialog empty for a two-line change. */}
+          <div className="relative mx-4 flex max-h-[85vh] w-fit max-w-[90vw] min-w-[28rem] flex-col border border-neutral-700 bg-neutral-980 shadow-2xl">
+            <div className="flex items-center gap-6 border-b border-neutral-960 px-6 py-4">
               <FileDiff className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <h3 className="text-lg font-semibold text-white">
+              <h3 className="text-sm font-semibold text-white">
                 {item.type}/{item.slug}
               </h3>
               <span className="ml-auto text-muted-foreground">source → registry</span>
             </div>
-            <pre className="min-h-0 flex-1 overflow-auto p-4 leading-relaxed" data-testid="source-diff">
+            <pre className="min-h-0 w-max min-w-full flex-1 overflow-auto p-4 leading-relaxed" data-testid="source-diff">
               {diff === "" ? "reading…" : diff.trim() === "" ? "The files are identical." : <DiffText text={diff} />}
             </pre>
             <div className="flex justify-end border-t border-neutral-960 px-6 py-3">

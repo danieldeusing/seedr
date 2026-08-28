@@ -81,3 +81,57 @@ export async function gitDiff(path: string, run: typeof runProcess = runProcess)
   const outcome = await run({ taskId: `git-diff-${path}`, program: "git", args: ["diff", "--no-color", "HEAD", "--", path], cwd: "", timeoutMs: 30_000 });
   return check(outcome, "git diff");
 }
+
+/**
+ * Where this checkout stands against the branch it tracks.
+ *
+ * THE FETCH IS THE POINT. `git status` compares HEAD against the remote-tracking
+ * ref in this checkout, which is only as fresh as the last fetch — so without
+ * one it will report "up to date" however long ago another machine pushed. That
+ * is the failure this is here to prevent, not a detail of it: Studio is run on
+ * more than one host against the same registry, and a stale checkout shows a
+ * capability list that is confidently wrong.
+ *
+ * Which branch is compared against is git's own answer, not a name written here.
+ * `@{upstream}` is whatever the current branch tracks — `origin/main` in one
+ * checkout, `origin/prod` in another — so this needs no per-repository rule and
+ * cannot disagree with what a pull would actually do.
+ *
+ * `fetched: false` is not the same as up to date, and callers must not round it
+ * to one. A laptop with no network gets an honest "could not reach the remote".
+ */
+export interface RemoteState {
+  /** The tracking branch, e.g. `origin/main`; null when the branch has none. */
+  upstream: string | null;
+  /** Commits the upstream has that this checkout does not — what a pull brings. */
+  behind: number;
+  /** Commits made here that the upstream does not have. */
+  ahead: number;
+  /** Whether the numbers rest on a fetch that actually reached the remote. */
+  fetched: boolean;
+  /** Why it did not, when it did not. */
+  fetchError: string | null;
+}
+
+export async function gitRemoteState(run: typeof runProcess = runProcess): Promise<RemoteState> {
+  const git = (taskId: string, args: string[], timeoutMs = 30_000) => run({ taskId, program: "git", args, cwd: "", timeoutMs });
+
+  const upstreamOutcome = await git("git-upstream", ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"]);
+  // A branch with no upstream is a normal state, not a failure: a local-only
+  // branch has nothing to be behind.
+  if (upstreamOutcome.status !== "ok" || upstreamOutcome.exitCode !== 0) {
+    return { upstream: null, behind: 0, ahead: 0, fetched: false, fetchError: null };
+  }
+  const upstream = upstreamOutcome.stdout.trim();
+
+  // Longer than the other git calls because this one is on the network, and
+  // --quiet because the progress goes to stderr and is not read.
+  const fetch = await git("git-fetch", ["fetch", "--quiet"], 120_000);
+  const fetched = fetch.status === "ok" && fetch.exitCode === 0;
+  const fetchError = fetched ? null : fetch.stderr.trim() || fetch.stdout.trim() || `git fetch exited ${fetch.exitCode}`;
+
+  // left = in the upstream only (behind), right = here only (ahead).
+  const counts = await git("git-tracking", ["rev-list", "--left-right", "--count", `${upstream}...HEAD`]);
+  const [behind = "0", ahead = "0"] = check(counts, "git rev-list").trim().split(/\s+/);
+  return { upstream, behind: Number(behind) || 0, ahead: Number(ahead) || 0, fetched, fetchError };
+}

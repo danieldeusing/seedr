@@ -1,4 +1,5 @@
 import { RepoBadge } from "./RepoBadge";
+import { RemoteBadge } from "./RemoteBadge";
 
 /**
  * Clearance for the macOS traffic lights, which AppKit draws over our top-left:
@@ -21,8 +22,9 @@ export function AppHeader() {
   return (
     <header
       data-tauri-drag-region
-      // Pixel height on purpose: the fluid root font size scales rem chrome on
-      // wide screens, and the title bar must stay level with the traffic lights.
+      // Pixel height on purpose: this strip IS the macOS title bar, and it has
+      // to stay level with the traffic lights AppKit draws over it, which are
+      // points and do not move with anything of ours.
       className={`relative flex h-[36px] flex-shrink-0 items-center border-b border-neutral-700 bg-neutral-960 pr-3 ${hasOverlayTitleBar() ? TRAFFIC_LIGHT_GUTTER : "pl-3"}`}
     >
       <span className="estate-brand text-md pointer-events-none">
@@ -30,6 +32,7 @@ export function AppHeader() {
         <span className="estate-brand-cursor" aria-hidden="true" />
       </span>
       <RepoBadge />
+      <RemoteBadge />
     </header>
   );
 }

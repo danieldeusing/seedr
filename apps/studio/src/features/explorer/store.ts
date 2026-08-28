@@ -4,7 +4,7 @@ import type { SourceStatus } from "@seedr/registry-ops/pure";
 import { fs } from "@/api/fs";
 import { defaultRepo, getRepo, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
 import { allSourceStatuses, setOpsCheckout } from "@/api/registryCli";
-import { gitSummary } from "@/api/git";
+import { gitRemoteState, gitSummary, type RemoteState } from "@/api/git";
 import { useAuthorSettings } from "@/features/settings/authorSettings";
 import { usePrePrompts } from "@/features/settings/prePrompts";
 import { useJobModels } from "@/features/settings/jobModels";
@@ -26,6 +26,13 @@ import { useJobModels } from "@/features/settings/jobModels";
  * straight back, and a long window would answer that one with stale news.
  */
 const CHECK_FRESH_MS = 2_000;
+/**
+ * A fetch is a network round trip, and the question it answers — has another
+ * host pushed — does not change second to second. Long enough that returning to
+ * the window does not fetch every time, short enough that a session left open
+ * across an afternoon notices.
+ */
+const REMOTE_FRESH_MS = 5 * 60_000;
 
 const openCheckout = (repo: RepoInfo): void => {
   setOpsCheckout({ root: repo.root, hasOps: repo.hasOps });
@@ -72,6 +79,16 @@ interface StudioState {
    * finding that out by pressing a button and reading a failure is late.
    */
   uncommitted: number;
+  /**
+   * Where the checkout stands against the branch it tracks, or null before the
+   * first look. Studio runs on more than one host against the same registry, so
+   * a checkout that is behind is showing a capability list that is out of date —
+   * and nothing else in this app would say so.
+   */
+  remote: RemoteState | null;
+  remoteChecking: boolean;
+  /** When the last look finished, for the throttle in `checkRemote`. */
+  remoteCheckedAt: number;
   items: StudioItem[];
   problems: string[];
   loading: boolean;
@@ -92,6 +109,8 @@ interface StudioState {
   checkSources(force?: boolean): Promise<void>;
   /** Re-count the worktree's uncommitted paths. */
   countUncommitted(): Promise<void>;
+  /** Fetch, and re-read how far ahead or behind the tracking branch this is. */
+  checkRemote(force?: boolean): Promise<void>;
   /**
    * Bumped on every reload. A file's path does not change when its contents do,
    * so anything holding a path — the preview, above all — has no other way to
@@ -118,6 +137,9 @@ export const useStudio = create<StudioState>((set, get) => ({
   sourceCheckedAt: 0,
   sourceChecking: false,
   uncommitted: 0,
+  remote: null,
+  remoteChecking: false,
+  remoteCheckedAt: 0,
   items: [],
   problems: [],
   loading: false,
@@ -134,6 +156,7 @@ export const useStudio = create<StudioState>((set, get) => ({
       openCheckout(repo);
       set({ repo, toolingRepo: await borrowedTooling(repo) });
       await get().refresh();
+      void get().checkRemote(true);
       await watch(get().refresh);
     } catch (error) {
       set({ error: (error as Error).message });
@@ -149,8 +172,9 @@ export const useStudio = create<StudioState>((set, get) => ({
       const repo = await pickRepo();
       if (!repo) return;
       openCheckout(repo);
-      set({ repo, selected: null, repoError: null, toolingRepo: await borrowedTooling(repo) });
+      set({ repo, selected: null, repoError: null, remote: null, toolingRepo: await borrowedTooling(repo) });
       await get().refresh();
+      void get().checkRemote(true);
       await watch(get().refresh);
     } catch (error) {
       // Kept apart from `error`: the registry watcher refreshes on its own and
@@ -204,6 +228,25 @@ export const useStudio = create<StudioState>((set, get) => ({
     // uncommitted, and the operations will say so in their own words.
     const summary = await gitSummary().catch(() => null);
     set({ uncommitted: summary?.changes.length ?? 0 });
+  },
+
+  async checkRemote(force = false) {
+    // Deliberately NOT part of `refresh()`. The watcher calls that on every file
+    // event, and this one reaches the network: riding along would turn a burst
+    // of saves into a burst of fetches. It runs when the app opens a checkout,
+    // and when asked.
+    if (!get().repo || get().remoteChecking) return;
+    if (!force && Date.now() - get().remoteCheckedAt < REMOTE_FRESH_MS) return;
+    set({ remoteChecking: true });
+    try {
+      set({ remote: await gitRemoteState() });
+    } catch {
+      // A checkout with no git at all is not an error here — it simply has no
+      // upstream, which is what a null remote already says.
+      set({ remote: null });
+    } finally {
+      set({ remoteChecking: false, remoteCheckedAt: Date.now() });
+    }
   },
 
   async refresh() {

@@ -22,7 +22,17 @@ interface DetailProps {
   onTest?(): void;
 }
 
-const FIELDS = ["name", "type", "slug", "version", "sourceType", "description", "compatibility", "author", "externalUrl", "targetScope", "pluginType", "updatedAt", "contentHash"] as const;
+/*
+ * No `contentHash`, and no `contentDigest` either. Both are derived, and for a
+ * first-party item neither is written into `item.json`: `pnpm compile` computes
+ * them into the manifest, because the files and the manifest travel in the same
+ * commit and there is nothing to verify a download against. Studio reads
+ * `item.json`, so the row was a permanent em dash on every item it manages —
+ * only synced items carry the fields, and Studio does not edit those.
+ * `contentHash` is additionally legacy: `contentDigest` replaced it, and it
+ * survives only so older published CLI builds keep working.
+ */
+const FIELDS = ["name", "type", "slug", "version", "sourceType", "description", "compatibility", "author", "externalUrl", "targetScope", "pluginType", "updatedAt"] as const;
 
 function renderValue(value: unknown): string {
   if (value === undefined || value === null) return "—";

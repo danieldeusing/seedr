@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { FileDiff, FolderSearch, RefreshCw, RotateCw, Unlink } from "lucide-react";
+import { Check, FileDiff, FolderSearch, Loader2, RotateCw, Unlink } from "lucide-react";
 import { isFirstParty, type SourceStatus } from "@seedr/registry-ops/pure";
 import { itemHash, runRegistryOp, sourceDiffOf } from "@/api/registryCli";
 import { DiffText } from "@/core/ui/DiffText";
@@ -110,7 +110,27 @@ export function SourcePanel({ item }: { item: StudioItem }) {
           </p>
         )}
 
+        {/* Leaving the link is the one destructive choice here, so it sits alone
+            on the left, away from the three that only read or re-copy. */}
         <div className="mt-3 flex items-center gap-2">
+          {confirmingAdopt ? (
+            <>
+              <span className="text-amber-300">Studio keeps this item and stops checking the folder. Confirm?</span>
+              <IconButton icon={Unlink} ariaLabel="confirm adopting the item" tip="Adopt it" accentColor="red" active onClick={() => void run("adopt-source")} disabled={busy} spin={busy} />
+              <button type="button" className="cursor-pointer text-muted-foreground hover:text-primary" onClick={() => setConfirmingAdopt(false)}>
+                keep the link
+              </button>
+            </>
+          ) : (
+            <IconButton icon={Unlink} ariaLabel="adopt this item" tip="Stop tracking the folder — Studio manages this item from now on" onClick={() => setConfirmingAdopt(true)} disabled={busy} />
+          )}
+
+          <span className="flex-1" />
+
+          {/* Asked for, not pushed: the folder is outside the checkout and the
+              host refuses every path that is, so nothing can watch it. Regaining
+              focus re-checks on its own — this forces one inside that window. */}
+          <IconButton icon={RotateCw} ariaLabel="check the source again" tip="Look at the folder again — nothing can watch a folder outside the checkout" onClick={look} disabled={busy} />
           {(state === "behind" || state === "edited" || state === "diverged") && (
             <IconButton
               icon={FileDiff}
@@ -126,16 +146,11 @@ export function SourcePanel({ item }: { item: StudioItem }) {
               disabled={busy}
             />
           )}
-          <IconButton
-            icon={RotateCw}
-            ariaLabel="check the source again"
-            tip="Look at the folder again"
-            onClick={look}
-            disabled={busy}
-          />
           {(state === "behind" || state === "diverged") && (
             <IconButton
-              icon={RefreshCw}
+              /* A check that spins reads as nonsense, so while the copy runs it
+                 is a spinner and becomes the check again when it is done. */
+              icon={busy ? Loader2 : Check}
               ariaLabel="copy the changes across"
               tip={state === "diverged" ? "Copy the source across, losing the edits made here" : "Copy the source's content across again, replacing this item's files"}
               accentColor={state === "diverged" ? "red" : "violet"}
@@ -143,17 +158,6 @@ export function SourcePanel({ item }: { item: StudioItem }) {
               disabled={busy}
               spin={busy}
             />
-          )}
-          {confirmingAdopt ? (
-            <>
-              <span className="text-amber-300">Studio keeps this item and stops checking the folder. Confirm?</span>
-              <IconButton icon={Unlink} ariaLabel="confirm adopting the item" tip="Adopt it" accentColor="red" active onClick={() => void run("adopt-source")} disabled={busy} spin={busy} />
-              <button type="button" className="cursor-pointer text-muted-foreground hover:text-primary" onClick={() => setConfirmingAdopt(false)}>
-                keep the link
-              </button>
-            </>
-          ) : (
-            <IconButton icon={Unlink} ariaLabel="adopt this item" tip="Stop tracking the folder — Studio manages this item from now on" onClick={() => setConfirmingAdopt(true)} disabled={busy} />
           )}
         </div>
       </div>
@@ -173,7 +177,10 @@ export function SourcePanel({ item }: { item: StudioItem }) {
               <h3 className="text-sm font-semibold text-white">
                 {item.type}/{item.slug}
               </h3>
-              <span className="ml-auto text-muted-foreground">source → registry</span>
+              {/* Says what the colours mean, rather than naming a direction that
+                  reads backwards next to git's own `--- registry` / `+++ source`
+                  headers. Green is what re-copying would bring in. */}
+              <span className="ml-auto text-muted-foreground">green = what the source would write here</span>
             </div>
             <pre className="min-h-0 w-max min-w-full flex-1 overflow-auto p-4 leading-relaxed" data-testid="source-diff">
               {diff === "" ? "reading…" : diff.trim() === "" ? "The files are identical." : <DiffText text={diff} />}

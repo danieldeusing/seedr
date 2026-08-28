@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test } from "vitest";
 import type { RunRequest } from "@/api/agent";
@@ -7,12 +7,32 @@ import { mockFs, onCommand } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
 import { removalRefusal, useMutations } from "./mutations";
 import { loadRegistry } from "./registry";
+import { Detail } from "./Detail";
 import { RemoveButton } from "./RemoveButton";
 
 const ok = (request: RunRequest, stdout: string) => ({ taskId: request.taskId, status: "ok", exitCode: 0, stdout, stderr: "", durationMs: 1 });
 
 beforeEach(() => {
   useMutations.getState().reset();
+});
+
+describe("where a failure is shown", () => {
+  test("on its own line under the buttons, not inside their row", async () => {
+    // The message is a sentence — "commit or stash them first" — and beside the
+    // buttons it stretched the header and pushed them around.
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    render(<Detail item={items.find((i) => i.slug === "pdf")!} />);
+    // After render: RemoveButton clears the store on mount, so a fresh item
+    // never inherits the previous one's failure.
+    act(() => useMutations.setState({ error: "registry-op: The worktree has uncommitted changes" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The worktree has uncommitted changes");
+    // The row holds controls; the message is not one of its children.
+    expect(alert.closest("span")).toBeNull();
+    expect(alert.tagName).toBe("P");
+  });
 });
 
 describe("remove", () => {

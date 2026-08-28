@@ -193,7 +193,18 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       </div>
       <Problems errors={problemFor("longDescription")} />
 
-      <div className="mt-4 flex items-center gap-2 border-t border-neutral-700 pt-3">
+      {draftErrors.length > 0 && (
+        <p className="mt-3 text-destructive" role="alert">
+          Draft rejected: {draftErrors.join("; ")}
+        </p>
+      )}
+      <div className="mt-4 border-t border-neutral-700" />
+      <JobLog />
+      {/* One footer, as in the add dialog: who will run it on the left, the run
+          itself on the right, with the agent's output above rather than between
+          them. `mt-auto` pins it to the bottom, so a short form leaves the gap
+          above the footer rather than below it. */}
+      <div className="mt-auto flex items-center gap-2 pt-3">
         <div className="flex min-w-0 items-center gap-2">
           <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="update" ariaLabel="coding agent" disabled={busy || !!refusal} />
           <ModelSelect job="update" agent={agent} disabled={busy || !!refusal} />
@@ -218,20 +229,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
                       : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
           </span>
         </div>
-      </div>
-      {draftErrors.length > 0 && (
-        <p className="mt-3 text-destructive" role="alert">
-          Draft rejected: {draftErrors.join("; ")}
-        </p>
-      )}
-      <JobLog />
-      {/* Below the log, not beside the status: the log grows and is resizable,
-          so buttons above it drift further from the output they act on. */}
-      {/* `mt-auto` pins this to the bottom of the dialog: the form is a full-height
-          flex column, so a short form leaves the gap above the buttons rather
-          than below them. Moving them under the log had left the submit floating
-          in the middle of an otherwise empty dialog. */}
-      <div className="mt-auto flex items-center justify-end gap-2 pt-3">
+        <span className="flex-1" />
         {phase === "done" ? (
           <button
             type="button"

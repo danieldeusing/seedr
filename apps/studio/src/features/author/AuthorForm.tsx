@@ -353,34 +353,13 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       </div>
       <Problems errors={[...problemFor("description"), ...problemFor("longDescription")]} />
 
-      <div className="mt-4 flex items-center gap-2 border-t border-neutral-700 pt-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="coding agent" disabled={busy} />
-          <ModelSelect job="add" agent={agent} disabled={busy} />
-          <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
-            {phase === "drafting"
-              ? "drafting…"
-              : phase === "running"
-                ? "the agent is working…"
-                : phase === "applying"
-                  ? "applying…"
-                  : cancelled
-                    ? "stopped — nothing was added"
-                    : probe === null
-                      ? "probing…"
-                      : probe.available
-                        ? probe.version
-                        : probe.diagnostic}
-          </span>
-        </div>
-      </div>
-
       {draftErrors.length > 0 && (
         <p className="mt-3 text-destructive" role="alert">
           Draft rejected: {draftErrors.join("; ")}
         </p>
       )}
       {error && <SignedOutNotice error={error} />}
+      <div className="mt-4 border-t border-neutral-700" />
       <JobLog />
       {askingAboutMismatch && sourceMismatch && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-label="add it anyway">
@@ -414,13 +393,35 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           </div>
         </div>
       )}
-      {/* Below the log, not beside the status: the log grows and is resizable,
-          so buttons above it drift further from the output they act on. */}
-      {/* `mt-auto` pins this to the bottom of the dialog: the form is a full-height
-          flex column, so a short form leaves the gap above the buttons rather
-          than below them. Moving them under the log had left the submit floating
-          in the middle of an otherwise empty dialog. */}
-      <div className="mt-auto flex items-center justify-end gap-2 pt-3">
+      {/* One footer: who will run it on the left, the run itself on the right.
+          The choices and the button that acts on them were a whole dialog apart,
+          with the agent's output in between — so the log grew and pushed them
+          further from each other the longer a run went on.
+
+          `mt-auto` pins it to the bottom: the form is a full-height flex column,
+          so a short form leaves the gap above the footer rather than below it,
+          and the log above keeps its own space. */}
+      <div className="mt-auto flex items-center gap-2 pt-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="coding agent" disabled={busy} />
+          <ModelSelect job="add" agent={agent} disabled={busy} />
+          <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
+            {phase === "drafting"
+              ? "drafting…"
+              : phase === "running"
+                ? "the agent is working…"
+                : phase === "applying"
+                  ? "applying…"
+                  : cancelled
+                    ? "stopped — nothing was added"
+                    : probe === null
+                      ? "probing…"
+                      : probe.available
+                        ? probe.version
+                        : probe.diagnostic}
+          </span>
+        </div>
+        <span className="flex-1" />
         {(phase === "drafting" || phase === "running") && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
         <IconButton
           icon={Check}

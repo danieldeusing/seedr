@@ -93,7 +93,7 @@ fn scoped(root: &Path, rel: &str) -> Result<PathBuf, String> {
 /// its rule: one directory name, starting with `registry`. That prefix is the
 /// traversal guard here as well as a naming convention, so a config naming
 /// anything else is refused rather than quietly ignored.
-fn registry_dir_name(root: &Path) -> Result<String, String> {
+pub(crate) fn registry_dir_name(root: &Path) -> Result<String, String> {
     let config = root.join("seedr.config.json");
     if !config.is_file() {
         return Ok("registry".to_string());

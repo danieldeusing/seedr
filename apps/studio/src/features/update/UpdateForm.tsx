@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { ScopeType } from "@seedr/shared";
-import { AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES } from "@seedr/registry-ops/pure";
+import {
+  AGENT_LABELS,
+  CANONICAL_AGENTS,
+  KNOWN_SCOPES,
+} from "@seedr/registry-ops/pure";
 import type { StudioItem } from "@/features/explorer/registry";
 import { Ban, Check } from "lucide-react";
 import { AgentLog } from "@/core/ui/AgentLog";
@@ -10,7 +14,10 @@ import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { ModelSelect } from "@/features/settings/ModelSelect";
 import { LabelRow } from "@/features/settings/LabelRow";
-import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
+import {
+  DRAFT_CERTIFIED,
+  useAgentSettings,
+} from "@/features/settings/agentSettings";
 import { SignedOutNotice } from "@/features/settings/SignedOutNotice";
 import { formProblems, toPatch, updateRefusal, useUpdate } from "./updateStore";
 
@@ -23,14 +30,7 @@ interface UpdateFormProps {
 /** Subscribed on its own, so the form is not re-rendered per streamed line. */
 function JobLog() {
   const log = useUpdate((state) => state.log);
-  // See the add dialog: the rule belongs to the log, not to the form.
-  if (log.length === 0) return null;
-  return (
-    <>
-      <div className="mt-4 border-t border-neutral-700" />
-      <AgentLog lines={log} />
-    </>
-  );
+  return <AgentLog lines={log} />;
 }
 
 export function UpdateForm({ item, onDone }: UpdateFormProps) {
@@ -42,12 +42,14 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   const error = useUpdate((s) => s.error);
   const outcome = useUpdate((s) => s.outcome);
   const target = useUpdate((s) => s.target);
-  const { start, setField, toggleAgent, apply, cancel, reset } = useUpdate.getState();
+  const { start, setField, toggleAgent, apply, cancel, reset } =
+    useUpdate.getState();
 
   useEffect(() => {
     // The watcher rebuilds every StudioItem object on any registry event; the form
     // (and its open-time hash guard) restarts only when a different item is opened.
-    if (target?.type !== item.type || target?.slug !== item.slug) void start(item);
+    if (target?.type !== item.type || target?.slug !== item.slug)
+      void start(item);
   }, [item, target, start]);
 
   const close = () => {
@@ -62,7 +64,8 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
   // A prompt turns this from a metadata patch into a change to the capability.
   const asked = form.prompt.trim().length > 0;
   // the design system styles text inputs, selects and textareas itself
-  const input = "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  const input =
+    "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
   const formRef = useRef<HTMLFormElement>(null);
   const agent = useAgentSettings((state) => state.preferred);
   // The button is gated on `probe.available`; leaving it describing the agent
@@ -71,7 +74,8 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
     void reprobe();
   }, [agent, reprobe]);
   const setAgent = useAgentSettings((state) => state.setPreferred);
-  const problemFor = (field: string) => problems.filter((p) => p.field === field);
+  const problemFor = (field: string) =>
+    problems.filter((p) => p.field === field);
 
   return (
     <form
@@ -92,7 +96,11 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       )}
 
       <div className="field-row mt-4">
-        <label className="lbl" htmlFor="update-pre-prompt" data-tip="The standing context for this type, from settings → pre-prompts. Sent ahead of the prompt below; edit it here to change it for this run only.">
+        <label
+          className="lbl"
+          htmlFor="update-pre-prompt"
+          data-tip="The standing context for this type, from settings → pre-prompts. Sent ahead of the prompt below; edit it here to change it for this run only."
+        >
           pre-prompt
         </label>
         <div className="field-val">
@@ -108,7 +116,11 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       </div>
 
       <div className="field-row">
-        <label className="lbl" htmlFor="update-prompt" data-tip="What this run should change about the capability. Leave it empty to apply only the metadata below.">
+        <label
+          className="lbl"
+          htmlFor="update-prompt"
+          data-tip="What this run should change about the capability. Leave it empty to apply only the metadata below."
+        >
           prompt
         </label>
         <div className="field-val">
@@ -125,22 +137,43 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
 
       {asked && (
         <div className="field-row">
-          <span className="lbl" data-tip="Off when you have written the description yourself and want it kept exactly as it is.">metadata</span>
+          <span
+            className="lbl"
+            data-tip="Off when you have written the description yourself and want it kept exactly as it is."
+          >
+            metadata
+          </span>
           <div className="field-val">
             <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-neutral-300">
-              <input type="checkbox" className="accent-violet-500" checked={form.refreshMeta} onChange={() => setField("refreshMeta", !form.refreshMeta)} disabled={busy || !!refusal} /> let the agent rewrite the
-              description and tl;dr to match
+              <input
+                type="checkbox"
+                className="accent-violet-500"
+                checked={form.refreshMeta}
+                onChange={() => setField("refreshMeta", !form.refreshMeta)}
+                disabled={busy || !!refusal}
+              />{" "}
+              let the agent rewrite the description and tl;dr to match
             </label>
           </div>
         </div>
       )}
 
       <div className="field-row">
-        <label className="lbl" htmlFor="update-name" data-tip="The display name, shown in the explorer and on the web.">
+        <label
+          className="lbl"
+          htmlFor="update-name"
+          data-tip="The display name, shown in the explorer and on the web."
+        >
           name
         </label>
         <div className="field-val">
-          <input id="update-name" className={input} value={form.name} onChange={(e) => setField("name", e.target.value)} disabled={busy || !!refusal} />
+          <input
+            id="update-name"
+            className={input}
+            value={form.name}
+            onChange={(e) => setField("name", e.target.value)}
+            disabled={busy || !!refusal}
+          />
         </div>
       </div>
       <Problems errors={problemFor("name")} />
@@ -149,13 +182,26 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           checkboxes out of the value column and wrapped names mid-word. Same
           table-style row as every other field: label column, value column. */}
       <div className="field-row" role="group" aria-label="agents">
-        <span className="lbl" data-tip="The coding agents this capability supports. Installing it for an agent it does not list is refused.">
+        <span
+          className="lbl"
+          data-tip="The coding agents this capability supports. Installing it for an agent it does not list is refused."
+        >
           agents
         </span>
         <div className="field-val">
           {CANONICAL_AGENTS.map((agent) => (
-            <label key={agent} className="flex cursor-pointer items-center gap-1.5 text-neutral-300 whitespace-nowrap">
-              <input type="checkbox" className="accent-violet-500" checked={form.compatibility.includes(agent)} onChange={() => toggleAgent(agent)} disabled={busy || !!refusal} /> {AGENT_LABELS[agent]}
+            <label
+              key={agent}
+              className="flex cursor-pointer items-center gap-1.5 text-neutral-300 whitespace-nowrap"
+            >
+              <input
+                type="checkbox"
+                className="accent-violet-500"
+                checked={form.compatibility.includes(agent)}
+                onChange={() => toggleAgent(agent)}
+                disabled={busy || !!refusal}
+              />{" "}
+              {AGENT_LABELS[agent]}
             </label>
           ))}
         </div>
@@ -163,7 +209,11 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       <Problems errors={problemFor("compatibility")} />
 
       <div className="field-row">
-        <label className="lbl" htmlFor="update-scope" data-tip="Where the CLI installs it by default — the project, or the user's home.">
+        <label
+          className="lbl"
+          htmlFor="update-scope"
+          data-tip="Where the CLI installs it by default — the project, or the user's home."
+        >
           scope
         </label>
         <div className="field-val">
@@ -171,31 +221,59 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
             id="update-scope"
             ariaLabel="scope"
             value={form.targetScope}
-            options={[{ value: "" as const, label: "no default scope" }, ...KNOWN_SCOPES.map((scope) => ({ value: scope, label: scope }))]}
+            options={[
+              { value: "" as const, label: "no default scope" },
+              ...KNOWN_SCOPES.map((scope) => ({ value: scope, label: scope })),
+            ]}
             onChange={(scope) => setField("targetScope", scope)}
             disabled={busy || !!refusal}
           />
         </div>
       </div>
 
-      <LabelRow value={form.label} onChange={(label) => setField("label", label)} disabled={busy || !!refusal} id="update-label" />
+      <LabelRow
+        value={form.label}
+        onChange={(label) => setField("label", label)}
+        disabled={busy || !!refusal}
+        id="update-label"
+      />
 
       <div className="field-row">
-        <label className="lbl" htmlFor="update-description" data-tip="One sentence: what it does. Shown in every list.">
+        <label
+          className="lbl"
+          htmlFor="update-description"
+          data-tip="One sentence: what it does. Shown in every list."
+        >
           description
         </label>
         <div className="field-val">
-          <input id="update-description" className={input} value={form.description} onChange={(e) => setField("description", e.target.value)} disabled={busy || !!refusal} />
+          <input
+            id="update-description"
+            className={input}
+            value={form.description}
+            onChange={(e) => setField("description", e.target.value)}
+            disabled={busy || !!refusal}
+          />
         </div>
       </div>
       <Problems errors={problemFor("description")} />
 
       <div className="field-row">
-        <label className="lbl" htmlFor="update-long" data-tip="The TL;DR on the detail page — what is inside, how much, what makes it different. At least 30 words.">
+        <label
+          className="lbl"
+          htmlFor="update-long"
+          data-tip="The TL;DR on the detail page — what is inside, how much, what makes it different. At least 30 words."
+        >
           tl;dr
         </label>
         <div className="field-val">
-          <textarea id="update-long" className={`${input} min-h-24`} value={form.longDescription} onChange={(e) => setField("longDescription", e.target.value)} disabled={busy || !!refusal} />
+          <textarea
+            id="update-long"
+            className={`${input} min-h-24`}
+            value={form.longDescription}
+            onChange={(e) => setField("longDescription", e.target.value)}
+            disabled={busy || !!refusal}
+          />
         </div>
       </div>
       <Problems errors={problemFor("longDescription")} />
@@ -205,75 +283,110 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
           Draft rejected: {draftErrors.join("; ")}
         </p>
       )}
-      <JobLog />
-      {/* One footer, as in the add dialog: who will run it on the left, the run
-          itself on the right, with the agent's output above rather than between
-          them. `mt-auto` pins it to the bottom, so a short form leaves the gap
-          above the footer rather than below it. */}
-      <div className="mt-auto flex items-center gap-2 pt-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="update" ariaLabel="coding agent" disabled={busy || !!refusal} />
-          <ModelSelect job="update" agent={agent} disabled={busy || !!refusal} />
-          <span
-            className={`min-w-0 truncate text-sm ${phase === "done" ? "text-success" : error && !refusal ? "text-destructive" : "text-neutral-500"}`}
-            role="status"
-          >
-            {phase === "done"
-              ? outcome
-                ? `updated — ${outcome.changedPaths.length} file${outcome.changedPaths.length === 1 ? "" : "s"} changed at ${outcome.headBefore.slice(0, 7)}`
-                : "the agent is done — review it with git status before committing"
-              : error && !refusal
-                ? error
-                : phase === "running"
-                  ? "the agent is working…"
-                  : phase === "applying"
-                ? "applying…"
-                : asked
-                    ? `the agent changes the ${item.type}${changed.length > 0 ? `, and ${changed.length} field${changed.length === 1 ? "" : "s"} with it` : ""}`
-                    : changed.length === 0
-                      ? "nothing changed yet"
-                      : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
-          </span>
-        </div>
-        <span className="flex-1" />
-        {phase === "done" ? (
-          <button
-            type="button"
-            onClick={close}
-            className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300"
-          >
-            back to the item
-          </button>
-        ) : (
-          <>
-            {/* No cancel button: the dialog's own close, top right, is the way
-                out, and two of them side by side asked the same question twice. */}
-            {phase === "running" && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
-            <IconButton
-              icon={Check}
-              ariaLabel={asked ? "hand it to the agent" : `apply ${changed.length} change${changed.length === 1 ? "" : "s"}`}
-              tip={asked ? "hand it to the agent" : "apply the changes"}
-              accentColor="violet"
-              onClick={() => formRef.current?.requestSubmit()}
-              disabled={busy || !!refusal || (!asked && changed.length === 0) || problems.length > 0 || (asked && !probe?.available)}
-              spin={busy}
+      {/* As in the add dialog: one rule above everything the run produces, there
+          whether or not anything has been produced, with the log and the footer
+          row inside it. */}
+      <div className="mt-auto border-t border-neutral-700 pt-3">
+        <JobLog />
+        <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <AgentSelect
+              value={agent}
+              onChange={setAgent}
+              certified={DRAFT_CERTIFIED}
+              job="update"
+              ariaLabel="coding agent"
+              disabled={busy || !!refusal}
             />
-          </>
-        )}
+            <ModelSelect
+              job="update"
+              agent={agent}
+              disabled={busy || !!refusal}
+            />
+            <span
+              className={`min-w-0 truncate text-sm ${phase === "done" ? "text-success" : error && !refusal ? "text-destructive" : "text-neutral-500"}`}
+              role="status"
+            >
+              {phase === "done"
+                ? outcome
+                  ? `updated — ${outcome.changedPaths.length} file${outcome.changedPaths.length === 1 ? "" : "s"} changed at ${outcome.headBefore.slice(0, 7)}`
+                  : "the agent is done — review it with git status before committing"
+                : error && !refusal
+                  ? error
+                  : phase === "running"
+                    ? "the agent is working…"
+                    : phase === "applying"
+                      ? "applying…"
+                      : asked
+                        ? `the agent changes the ${item.type}${changed.length > 0 ? `, and ${changed.length} field${changed.length === 1 ? "" : "s"} with it` : ""}`
+                        : changed.length === 0
+                          ? "nothing changed yet"
+                          : `${changed.length} change${changed.length === 1 ? "" : "s"} to apply`}
+            </span>
+          </div>
+          <span className="flex-1" />
+          {phase === "done" ? (
+            <button
+              type="button"
+              onClick={close}
+              className="cursor-pointer border border-violet-500/30 px-3 py-1 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300"
+            >
+              back to the item
+            </button>
+          ) : (
+            <>
+              {/* No cancel button: the dialog's own close, top right, is the way
+                out, and two of them side by side asked the same question twice. */}
+              {phase === "running" && (
+                <IconButton
+                  icon={Ban}
+                  ariaLabel="cancel the run"
+                  tip="cancel the run"
+                  onClick={() => void cancel()}
+                />
+              )}
+              <IconButton
+                icon={Check}
+                ariaLabel={
+                  asked
+                    ? "hand it to the agent"
+                    : `apply ${changed.length} change${changed.length === 1 ? "" : "s"}`
+                }
+                tip={asked ? "hand it to the agent" : "apply the changes"}
+                accentColor="violet"
+                onClick={() => formRef.current?.requestSubmit()}
+                disabled={
+                  busy ||
+                  !!refusal ||
+                  (!asked && changed.length === 0) ||
+                  problems.length > 0 ||
+                  (asked && !probe?.available)
+                }
+                spin={busy}
+              />
+            </>
+          )}
+        </div>
       </div>
       {error && !refusal && <SignedOutNotice error={error} />}
     </form>
   );
 }
 
-function Problems({ errors }: { errors: { field: string; message: string }[] }) {
+function Problems({
+  errors,
+}: {
+  errors: { field: string; message: string }[];
+}) {
   if (errors.length === 0) return null;
   // An empty label cell puts the message exactly on the value column — the
   // field is evident from the row above, so the "field:" prefix goes.
   return (
     <div className="field-row">
       <span className="lbl" />
-      <p className="field-val text-sm text-red-400">{errors.map((error) => error.message).join("; ")}</p>
+      <p className="field-val text-sm text-red-400">
+        {errors.map((error) => error.message).join("; ")}
+      </p>
     </div>
   );
 }

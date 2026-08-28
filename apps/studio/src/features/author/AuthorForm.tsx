@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType, ScopeType } from "@seedr/shared";
-import { ALL_TYPES, AGENT_LABELS, CANONICAL_AGENTS, KNOWN_SCOPES, TYPE_MARKERS } from "@seedr/registry-ops/pure";
+import {
+  ALL_TYPES,
+  AGENT_LABELS,
+  CANONICAL_AGENTS,
+  KNOWN_SCOPES,
+  TYPE_MARKERS,
+} from "@seedr/registry-ops/pure";
 import { Ban, Check, FolderOpen, Plus, TriangleAlert } from "lucide-react";
 import { AgentLog } from "@/core/ui/AgentLog";
 import { FormActions } from "@/core/ui/FormActions";
@@ -10,7 +16,10 @@ import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
 import { ModelSelect } from "@/features/settings/ModelSelect";
 import { LabelRow } from "@/features/settings/LabelRow";
-import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
+import {
+  DRAFT_CERTIFIED,
+  useAgentSettings,
+} from "@/features/settings/agentSettings";
 import { SignedOutNotice } from "@/features/settings/SignedOutNotice";
 import { formProblems, useAuthor, type SourceKind } from "./store";
 
@@ -25,16 +34,22 @@ const SOURCE_KINDS: { value: SourceKind; label: string }[] = [
 /** What each label means, in one line — hover explains the vocabulary. */
 const TIPS = {
   from: "Where the content comes from: a folder copied into this registry as our own item, a repository recorded as a community item the CLI fetches at install time, or a capability the agent writes from your prompt.",
-  source: "The folder holding the capability — the skill directory, the hook script. Its contents are copied in whole.",
-  repository: "The GitHub repository holding the capability. Nothing is copied: the item records the URL and the CLI fetches from it at install time.",
-  prePrompt: "The standing context for this type, from settings → pre-prompts. It is sent ahead of the prompt below; edit it here to change it for this run only.",
+  source:
+    "The folder holding the capability — the skill directory, the hook script. Its contents are copied in whole.",
+  repository:
+    "The GitHub repository holding the capability. Nothing is copied: the item records the URL and the CLI fetches from it at install time.",
+  prePrompt:
+    "The standing context for this type, from settings → pre-prompts. It is sent ahead of the prompt below; edit it here to change it for this run only.",
   prompt: "What this run should do. Type / for a skill.",
   type: "Which kind of capability this is. It decides the registry folder and the install handler.",
   slug: "The item's id: lowercase, no spaces. It is the directory name, and what `seedr add` takes.",
   name: "The display name, shown in the explorer and on the web.",
-  agents: "The coding agents this capability supports. Installing it for an agent it does not list is refused.",
-  scope: "Where the CLI installs it by default — the project, or the user's home.",
-  author: "Who made it. Prefilled from settings → author; for a repository it comes from the source, unless you say otherwise here.",
+  agents:
+    "The coding agents this capability supports. Installing it for an agent it does not list is refused.",
+  scope:
+    "Where the CLI installs it by default — the project, or the user's home.",
+  author:
+    "Who made it. Prefilled from settings → author; for a repository it comes from the source, unless you say otherwise here.",
 };
 
 interface AuthorFormProps {
@@ -54,18 +69,11 @@ interface AuthorFormProps {
  */
 function JobLog({ fill = false }: { fill?: boolean }) {
   const log = useAuthor((state) => state.log);
-  // The rule and the log arrive together: AgentLog renders nothing until a run
-  // writes something, and a rule on its own separates the form from an absence.
-  if (log.length === 0) return null;
-  return (
-    <>
-      <div className="mt-4 border-t border-neutral-700" />
-      <AgentLog lines={log} fill={fill} />
-    </>
-  );
+  return <AgentLog lines={log} fill={fill} />;
 }
 
-const choiceButton = "cursor-pointer border border-violet-500/30 px-2 py-0.5 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300";
+const choiceButton =
+  "cursor-pointer border border-violet-500/30 px-2 py-0.5 text-neutral-200 transition-colors hover:border-violet-500 hover:text-violet-300";
 
 export function AuthorForm({ onAdded }: AuthorFormProps) {
   const form = useAuthor((s) => s.form);
@@ -76,7 +84,18 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   const cancelled = useAuthor((s) => s.cancelled);
   const result = useAuthor((s) => s.result);
   const error = useAuthor((s) => s.error);
-  const { setField, setType, setSourceKind, toggleAgent, chooseSource, takeSource, prepare, apply, cancel, reset } = useAuthor.getState();
+  const {
+    setField,
+    setType,
+    setSourceKind,
+    toggleAgent,
+    chooseSource,
+    takeSource,
+    prepare,
+    apply,
+    cancel,
+    reset,
+  } = useAuthor.getState();
   const sourceChoices = useAuthor((state) => state.sourceChoices);
   const sourceMismatch = useAuthor((state) => state.sourceMismatch);
   const [askingAboutMismatch, setAskingAboutMismatch] = useState(false);
@@ -92,8 +111,13 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   }, [phase, result, onAdded]);
 
   const problems = useMemo(() => formProblems(form), [form]);
-  const problemFor = (field: string) => problems.filter((p) => p.field === field);
-  const busy = phase === "probing" || phase === "drafting" || phase === "applying" || phase === "running";
+  const problemFor = (field: string) =>
+    problems.filter((p) => p.field === field);
+  const busy =
+    phase === "probing" ||
+    phase === "drafting" ||
+    phase === "applying" ||
+    phase === "running";
   /** A repository or a prompt is carried out by the agent, not by the transaction. */
   const byAgent = form.sourceKind !== "folder";
   const formRef = useRef<HTMLFormElement>(null);
@@ -106,18 +130,27 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
   }, [agent, reprobe]);
   const setAgent = useAgentSettings((state) => state.setPreferred);
   /** For a repository, what the agent works out from the source unless overridden. */
-  const derivedPlaceholder = form.sourceKind === "repo" ? "derived from the source" : "";
+  const derivedPlaceholder =
+    form.sourceKind === "repo" ? "derived from the source" : "";
   const input =
     "w-full border border-violet-500/30 bg-transparent px-2 py-1 text-sm text-neutral-200 placeholder-neutral-500 transition-colors focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
   if (phase === "done" && result) {
     return (
-      <section className="flex min-h-0 flex-1 flex-col p-6 text-xs" aria-live="polite">
-        <p className="prompt">{result.kind === "op" ? "registry-op run --op add-local" : "agent job"}</p>
+      <section
+        className="flex min-h-0 flex-1 flex-col p-6 text-xs"
+        aria-live="polite"
+      >
+        <p className="prompt">
+          {result.kind === "op"
+            ? "registry-op run --op add-local"
+            : "agent job"}
+        </p>
         {result.kind === "op" ? (
           <>
             <p className="mt-4 text-primary">
-              Added {result.type}/{result.slug} at {result.headBefore.slice(0, 7)}.
+              Added {result.type}/{result.slug} at{" "}
+              {result.headBefore.slice(0, 7)}.
             </p>
             <ul className="mt-2 text-muted-foreground">
               {result.changedPaths.map((path) => (
@@ -129,14 +162,27 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           // The agent's closing message is not shown a second time here: every
           // line it printed, that one included, is already in the log below.
           // Printing both put the same transcript on the screen twice.
-          <p className="mt-4 text-primary">{result.added ? `Added ${result.added.type}/${result.added.slug}.` : "The job finished without naming what it added."}</p>
+          <p className="mt-4 text-primary">
+            {result.added
+              ? `Added ${result.added.type}/${result.added.slug}.`
+              : "The job finished without naming what it added."}
+          </p>
         )}
-        <p className="mt-4 text-muted-foreground">Review with git status and commit when you are happy. It is selected in the explorer behind this dialog.</p>
+        <p className="mt-4 text-muted-foreground">
+          Review with git status and commit when you are happy. It is selected
+          in the explorer behind this dialog.
+        </p>
         <JobLog fill />
         {/* Bottom right, where this dialog's other confirm sits: the log above it
             grows, and a button that follows the log wanders up the page. */}
         <div className="mt-auto flex justify-end pt-4">
-          <IconButton icon={Plus} ariaLabel="add another" tip="Add another capability" accentColor="violet" onClick={reset} />
+          <IconButton
+            icon={Plus}
+            ariaLabel="add another"
+            tip="Add another capability"
+            accentColor="violet"
+            onClick={reset}
+          />
         </div>
       </section>
     );
@@ -157,14 +203,26 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         void apply();
       }}
     >
-      <p className="prompt">{form.sourceKind === "folder" ? "add-local" : form.sourceKind === "repo" ? "add-community" : "add-seedr"}</p>
+      <p className="prompt">
+        {form.sourceKind === "folder"
+          ? "add-local"
+          : form.sourceKind === "repo"
+            ? "add-community"
+            : "add-seedr"}
+      </p>
 
       <div className="field-row mt-4">
         <span className="lbl" data-tip={TIPS.from}>
           from
         </span>
         <div className="field-val">
-          <Select<SourceKind> ariaLabel="source kind" value={form.sourceKind} options={SOURCE_KINDS} onChange={setSourceKind} disabled={busy} />
+          <Select<SourceKind>
+            ariaLabel="source kind"
+            value={form.sourceKind}
+            options={SOURCE_KINDS}
+            onChange={setSourceKind}
+            disabled={busy}
+          />
         </div>
       </div>
 
@@ -173,7 +231,18 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           type
         </label>
         <div className="field-val">
-          <Select id="author-type" ariaLabel="type" value={form.type} options={AUTHORABLE_TYPES.map((type) => ({ value: type, label: type }))} onChange={setType} disabled={busy} invalid={!!sourceMismatch} />
+          <Select
+            id="author-type"
+            ariaLabel="type"
+            value={form.type}
+            options={AUTHORABLE_TYPES.map((type) => ({
+              value: type,
+              label: type,
+            }))}
+            onChange={setType}
+            disabled={busy}
+            invalid={!!sourceMismatch}
+          />
         </div>
       </div>
 
@@ -184,8 +253,16 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
               source
             </span>
             <div className="field-val">
-              <code className="truncate text-muted-foreground">{form.sourcePath || "nothing chosen"}</code>
-              <IconButton icon={FolderOpen} ariaLabel="choose source" tip="Pick the folder to copy — Studio asks which part of it if the folder holds several capabilities" onClick={() => void chooseSource()} disabled={busy} />
+              <code className="truncate text-muted-foreground">
+                {form.sourcePath || "nothing chosen"}
+              </code>
+              <IconButton
+                icon={FolderOpen}
+                ariaLabel="choose source"
+                tip="Pick the folder to copy — Studio asks which part of it if the folder holds several capabilities"
+                onClick={() => void chooseSource()}
+                disabled={busy}
+              />
             </div>
           </div>
           {sourceChoices.length > 0 && (
@@ -197,11 +274,20 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
                 which part
               </span>
               <div className="field-val">
-                <button type="button" className={choiceButton} onClick={() => takeSource(null)}>
+                <button
+                  type="button"
+                  className={choiceButton}
+                  onClick={() => takeSource(null)}
+                >
                   the whole folder
                 </button>
                 {sourceChoices.map((file) => (
-                  <button key={file} type="button" className={choiceButton} onClick={() => takeSource(file)}>
+                  <button
+                    key={file}
+                    type="button"
+                    className={choiceButton}
+                    onClick={() => takeSource(file)}
+                  >
                     {file}
                   </button>
                 ))}
@@ -212,8 +298,12 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
             <div className="field-row">
               <span className="lbl" />
               <p className="field-val text-destructive" role="alert">
-                <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
-                That content looks like a {sourceMismatch}, but the type says {form.type}. Change the type, or pick different content.
+                <TriangleAlert
+                  className="size-3.5 shrink-0"
+                  aria-hidden="true"
+                />
+                That content looks like a {sourceMismatch}, but the type says{" "}
+                {form.type}. Change the type, or pick different content.
               </p>
             </div>
           )}
@@ -224,11 +314,22 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       {form.sourceKind === "repo" && (
         <>
           <div className="field-row">
-            <label className="lbl" htmlFor="author-repo" data-tip={TIPS.repository}>
+            <label
+              className="lbl"
+              htmlFor="author-repo"
+              data-tip={TIPS.repository}
+            >
               repository
             </label>
             <div className="field-val">
-              <input id="author-repo" className={input} value={form.repoUrl} onChange={(e) => setField("repoUrl", e.target.value)} placeholder="https://github.com/owner/repo" disabled={busy} />
+              <input
+                id="author-repo"
+                className={input}
+                value={form.repoUrl}
+                onChange={(e) => setField("repoUrl", e.target.value)}
+                placeholder="https://github.com/owner/repo"
+                disabled={busy}
+              />
             </div>
           </div>
           <Problems errors={problemFor("repoUrl")} />
@@ -236,7 +337,11 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       )}
 
       <div className="field-row">
-        <label className="lbl" htmlFor="author-pre-prompt" data-tip={TIPS.prePrompt}>
+        <label
+          className="lbl"
+          htmlFor="author-pre-prompt"
+          data-tip={TIPS.prePrompt}
+        >
           pre-prompt
         </label>
         <div className="field-val">
@@ -261,7 +366,11 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
             className={`${input} min-h-16`}
             value={form.prompt}
             onChange={(value) => setField("prompt", value)}
-            placeholder={byAgent ? "what the agent should know — type / for a skill" : "extra context for drafting the descriptions"}
+            placeholder={
+              byAgent
+                ? "what the agent should know — type / for a skill"
+                : "extra context for drafting the descriptions"
+            }
             disabled={busy}
           />
         </div>
@@ -271,7 +380,10 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
       {byAgent && (
         <div className="field-row">
           <span className="lbl" />
-          <p className="field-val text-muted-foreground">The fields below are hints — the agent derives whatever you leave empty.</p>
+          <p className="field-val text-muted-foreground">
+            The fields below are hints — the agent derives whatever you leave
+            empty.
+          </p>
         </div>
       )}
 
@@ -280,7 +392,14 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           slug
         </label>
         <div className="field-val">
-          <input id="author-slug" className={input} value={form.slug} onChange={(e) => setField("slug", e.target.value)} placeholder={byAgent ? "derived from the source" : ""} disabled={busy} />
+          <input
+            id="author-slug"
+            className={input}
+            value={form.slug}
+            onChange={(e) => setField("slug", e.target.value)}
+            placeholder={byAgent ? "derived from the source" : ""}
+            disabled={busy}
+          />
         </div>
       </div>
       <Problems errors={problemFor("slug")} />
@@ -290,7 +409,14 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           name
         </label>
         <div className="field-val">
-          <input id="author-name" className={input} value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder={byAgent ? "derived from the source" : ""} disabled={busy} />
+          <input
+            id="author-name"
+            className={input}
+            value={form.name}
+            onChange={(e) => setField("name", e.target.value)}
+            placeholder={byAgent ? "derived from the source" : ""}
+            disabled={busy}
+          />
         </div>
       </div>
       <Problems errors={problemFor("name")} />
@@ -304,8 +430,18 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         </span>
         <div className="field-val">
           {CANONICAL_AGENTS.map((canonical) => (
-            <label key={canonical} className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-neutral-300">
-              <input type="checkbox" className="accent-violet-500" checked={form.compatibility.includes(canonical)} onChange={() => toggleAgent(canonical)} disabled={busy} /> {AGENT_LABELS[canonical]}
+            <label
+              key={canonical}
+              className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-neutral-300"
+            >
+              <input
+                type="checkbox"
+                className="accent-violet-500"
+                checked={form.compatibility.includes(canonical)}
+                onChange={() => toggleAgent(canonical)}
+                disabled={busy}
+              />{" "}
+              {AGENT_LABELS[canonical]}
             </label>
           ))}
         </div>
@@ -321,14 +457,22 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
             id="author-scope"
             ariaLabel="scope"
             value={form.targetScope}
-            options={[{ value: "" as const, label: "no default scope" }, ...KNOWN_SCOPES.map((scope) => ({ value: scope, label: scope }))]}
+            options={[
+              { value: "" as const, label: "no default scope" },
+              ...KNOWN_SCOPES.map((scope) => ({ value: scope, label: scope })),
+            ]}
             onChange={(scope) => setField("targetScope", scope)}
             disabled={busy}
           />
         </div>
       </div>
 
-      <LabelRow value={form.label} onChange={(label) => setField("label", label)} disabled={busy} id="author-label" />
+      <LabelRow
+        value={form.label}
+        onChange={(label) => setField("label", label)}
+        disabled={busy}
+        id="author-label"
+      />
 
       <div className="field-row">
         <label className="lbl" htmlFor="author-author" data-tip={TIPS.author}>
@@ -353,13 +497,23 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           />
         </div>
       </div>
-      <Problems errors={[...problemFor("author"), ...problemFor("author.url")]} />
+      <Problems
+        errors={[...problemFor("author"), ...problemFor("author.url")]}
+      />
 
       <div className="field-row">
         <span className="lbl" />
-        <p className="field-val text-muted-foreground">The agent writes the description and the TL;DR from the content itself — edit them afterwards on the item.</p>
+        <p className="field-val text-muted-foreground">
+          The agent writes the description and the TL;DR from the content itself
+          — edit them afterwards on the item.
+        </p>
       </div>
-      <Problems errors={[...problemFor("description"), ...problemFor("longDescription")]} />
+      <Problems
+        errors={[
+          ...problemFor("description"),
+          ...problemFor("longDescription"),
+        ]}
+      />
 
       {draftErrors.length > 0 && (
         <p className="mt-3 text-destructive" role="alert">
@@ -367,22 +521,41 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
         </p>
       )}
       {error && <SignedOutNotice error={error} />}
-      <JobLog />
       {askingAboutMismatch && sourceMismatch && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-label="add it anyway">
-          <div className="absolute inset-0 bg-[var(--dialog-backdrop)] backdrop-blur-sm" onClick={() => setAskingAboutMismatch(false)} />
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="add it anyway"
+        >
+          <div
+            className="absolute inset-0 bg-[var(--dialog-backdrop)] backdrop-blur-sm"
+            onClick={() => setAskingAboutMismatch(false)}
+          />
           <div className="relative mx-4 w-full max-w-md border border-neutral-700 bg-neutral-980 shadow-2xl">
             <div className="flex items-center gap-2 border-b border-neutral-960 px-6 py-4">
-              <TriangleAlert className="size-4 shrink-0 text-destructive" aria-hidden="true" />
-              <h3 className="text-lg font-semibold text-white">Add it as a {form.type} anyway?</h3>
+              <TriangleAlert
+                className="size-4 shrink-0 text-destructive"
+                aria-hidden="true"
+              />
+              <h3 className="text-lg font-semibold text-white">
+                Add it as a {form.type} anyway?
+              </h3>
             </div>
             <div className="px-6 py-4">
               <p className="text-neutral-300">
-                The content at <code className="break-all text-primary">{form.sourcePath}</code> looks like a {sourceMismatch}: it carries{" "}
-                {TYPE_MARKERS[sourceMismatch].join(" or ")}, not {TYPE_MARKERS[form.type].join(" or ")}.
+                The content at{" "}
+                <code className="break-all text-primary">
+                  {form.sourcePath}
+                </code>{" "}
+                looks like a {sourceMismatch}: it carries{" "}
+                {TYPE_MARKERS[sourceMismatch].join(" or ")}, not{" "}
+                {TYPE_MARKERS[form.type].join(" or ")}.
               </p>
               <p className="mt-2 text-muted-foreground">
-                That is read from file names alone, so it can be wrong — a {form.type} that happens to look like a {sourceMismatch} is yours to add.
+                That is read from file names alone, so it can be wrong — a{" "}
+                {form.type} that happens to look like a {sourceMismatch} is
+                yours to add.
               </p>
               <FormActions
                 border={false}
@@ -400,58 +573,82 @@ export function AuthorForm({ onAdded }: AuthorFormProps) {
           </div>
         </div>
       )}
-      {/* One footer: who will run it on the left, the run itself on the right.
-          The choices and the button that acts on them were a whole dialog apart,
-          with the agent's output in between — so the log grew and pushed them
-          further from each other the longer a run went on.
+      {/* One rule, above everything the run produces, and present whether or not
+          anything has been produced. On the log it disappeared with the log;
+          under the log it separated the output from the form that started it.
 
-          `mt-auto` pins it to the bottom: the form is a full-height flex column,
-          so a short form leaves the gap above the footer rather than below it,
-          and the log above keeps its own space. */}
-      <div className="mt-auto flex items-center gap-2 pt-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="draft" ariaLabel="coding agent" disabled={busy} />
-          <ModelSelect job="add" agent={agent} disabled={busy} />
-          <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
-            {phase === "drafting"
-              ? "drafting…"
-              : phase === "running"
-                ? "the agent is working…"
-                : phase === "applying"
-                  ? "applying…"
-                  : cancelled
-                    ? "stopped — nothing was added"
-                    : probe === null
-                      ? "probing…"
-                      : probe.available
-                        ? probe.version
-                        : probe.diagnostic}
-          </span>
+          `mt-auto` pins the region to the bottom: the form is a full-height flex
+          column, so a short form leaves its gap above this rather than below. */}
+      <div className="mt-auto border-t border-neutral-700 pt-3">
+        <JobLog />
+        <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <AgentSelect
+              value={agent}
+              onChange={setAgent}
+              certified={DRAFT_CERTIFIED}
+              job="draft"
+              ariaLabel="coding agent"
+              disabled={busy}
+            />
+            <ModelSelect job="add" agent={agent} disabled={busy} />
+            <span
+              className="min-w-0 truncate text-sm text-neutral-500"
+              role="status"
+            >
+              {phase === "drafting"
+                ? "drafting…"
+                : phase === "running"
+                  ? "the agent is working…"
+                  : phase === "applying"
+                    ? "applying…"
+                    : cancelled
+                      ? "stopped — nothing was added"
+                      : probe === null
+                        ? "probing…"
+                        : probe.available
+                          ? probe.version
+                          : probe.diagnostic}
+            </span>
+          </div>
+          <span className="flex-1" />
+          {(phase === "drafting" || phase === "running") && (
+            <IconButton
+              icon={Ban}
+              ariaLabel="cancel the run"
+              tip="cancel the run"
+              onClick={() => void cancel()}
+            />
+          )}
+          <IconButton
+            icon={Check}
+            ariaLabel={byAgent ? "hand it to the agent" : "add to registry"}
+            tip={byAgent ? "hand it to the agent" : "add to registry"}
+            accentColor="violet"
+            onClick={() => formRef.current?.requestSubmit()}
+            disabled={busy || problems.length > 0}
+            spin={phase === "applying" || phase === "running"}
+          />
         </div>
-        <span className="flex-1" />
-        {(phase === "drafting" || phase === "running") && <IconButton icon={Ban} ariaLabel="cancel the run" tip="cancel the run" onClick={() => void cancel()} />}
-        <IconButton
-          icon={Check}
-          ariaLabel={byAgent ? "hand it to the agent" : "add to registry"}
-          tip={byAgent ? "hand it to the agent" : "add to registry"}
-          accentColor="violet"
-          onClick={() => formRef.current?.requestSubmit()}
-          disabled={busy || problems.length > 0}
-          spin={phase === "applying" || phase === "running"}
-        />
       </div>
     </form>
   );
 }
 
-function Problems({ errors }: { errors: { field: string; message: string }[] }) {
+function Problems({
+  errors,
+}: {
+  errors: { field: string; message: string }[];
+}) {
   if (errors.length === 0) return null;
   // An empty label cell puts the message exactly on the value column — the
   // field is evident from the row above, so the "field:" prefix goes.
   return (
     <div className="field-row">
       <span className="lbl" />
-      <p className="field-val text-sm text-red-400">{errors.map((error) => error.message).join("; ")}</p>
+      <p className="field-val text-sm text-red-400">
+        {errors.map((error) => error.message).join("; ")}
+      </p>
     </div>
   );
 }

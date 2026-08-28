@@ -20,17 +20,6 @@ interface MutationState {
   phase: "idle" | "removing" | "done";
   error: string | null;
   /**
-   * Which paths are dirty, when that is why the operation was refused.
-   *
-   * The refusal is not fussiness and the message cannot say why in one line: a
-   * rollback is `git checkout` plus `git clean -fdqx` over the registry
-   * directory, so uncommitted work there would be destroyed by an operation
-   * that failed — and the verify step asserts only the item's own paths
-   * changed, which pre-existing edits break. Naming them turns "go and find
-   * out" into "these three files".
-   */
-  blockedBy: string[];
-  /**
    * The removal a dirty worktree got in the way of, kept so it can be finished
    * once the worktree is clean.
    *
@@ -45,8 +34,15 @@ interface MutationState {
   /** The state hash captured when the user armed the button, keyed to that item. */
   armed: { type: string; slug: string; expectedHash: string } | null;
   arm(item: StudioItem): Promise<void>;
-  /** Finish a removal a dirty worktree blocked, if the worktree is clean now. */
-  resumeBlocked(): Promise<void>;
+  /**
+   * Settle a removal a dirty worktree blocked, when the git dialog closes.
+   *
+   * Clean worktree: finish it — the user armed and confirmed before being sent
+   * to commit something unrelated. Still dirty: forget the whole thing, so
+   * closing without acting returns to a plain item with an unarmed button
+   * rather than to a stale refusal the user has to clear by hand.
+   */
+  settleBlocked(): Promise<void>;
   remove(item: StudioItem): Promise<void>;
   reset(): void;
 }
@@ -67,7 +63,6 @@ const dirtyPaths = async (): Promise<string[]> => {
 export const useMutations = create<MutationState>((set, get) => ({
   phase: "idle",
   error: null,
-  blockedBy: [],
   blocked: null,
   outcome: null,
   armed: null,
@@ -75,7 +70,7 @@ export const useMutations = create<MutationState>((set, get) => ({
   async arm(item) {
     // The hash is read the moment the user arms the remove: an item that changes
     // on disk between arming and confirming is refused by the transaction.
-    set({ armed: null, error: null, blockedBy: [], blocked: null });
+    set({ armed: null, error: null, blocked: null });
     try {
       set({ armed: { type: item.type, slug: item.slug, expectedHash: await itemHash(item.type, item.slug) } });
     } catch (error) {
@@ -94,7 +89,7 @@ export const useMutations = create<MutationState>((set, get) => ({
       set({ error: "arm the remove first" });
       return;
     }
-    set({ phase: "removing", error: null, outcome: null, blockedBy: [], blocked: null });
+    set({ phase: "removing", error: null, outcome: null, blocked: null });
     try {
       const op: RemoveOp = { v: 1, kind: "remove", type: item.type, slug: item.slug, sourceType: item.item.sourceType ?? "seedr", expectedHash: armed.expectedHash };
       const outcome = await runRegistryOp(parseOp(op));
@@ -103,23 +98,24 @@ export const useMutations = create<MutationState>((set, get) => ({
       const message = (error as Error).message;
       // Asked for only when that is the refusal — a git call on every failure
       // would spend a process to answer a question nobody asked.
-      const dirty = message.includes(DIRTY_WORKTREE);
-      const blockedBy = dirty ? await dirtyPaths() : [];
-      set({ phase: "idle", error: message, blockedBy, blocked: dirty ? item : null });
+      set({ phase: "idle", error: message, blocked: message.includes(DIRTY_WORKTREE) ? item : null });
     }
   },
 
-  async resumeBlocked() {
+  async settleBlocked() {
     const item = get().blocked;
-    // Only when the worktree is actually clean now: closing git without
-    // committing must leave the removal refused rather than retry it into the
-    // same wall.
-    if (!item || (await dirtyPaths()).length > 0) return;
-    set({ blocked: null, blockedBy: [], error: null });
+    if (!item) return;
+    // Asked of git, not assumed from what the dialog last showed: the commit
+    // happened in another process and the store has no other way to know.
+    if ((await dirtyPaths()).length > 0) {
+      get().reset();
+      return;
+    }
+    set({ blocked: null, error: null });
     await get().remove(item);
   },
 
   reset() {
-    set({ phase: "idle", error: null, outcome: null, armed: null, blockedBy: [], blocked: null });
+    set({ phase: "idle", error: null, outcome: null, armed: null, blocked: null });
   },
 }));

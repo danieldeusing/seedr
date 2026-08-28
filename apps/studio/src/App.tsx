@@ -29,15 +29,16 @@ type DialogKind = null | "author" | "git" | "update" | "test" | "settings";
 export function App() {
   const [dialog, setDialog] = useState<DialogKind>(null);
   const blocked = useMutations((state) => state.blocked);
-  const resumeBlocked = useMutations((state) => state.resumeBlocked);
+  const settleBlocked = useMutations((state) => state.settleBlocked);
 
   /**
    * A removal refused for a dirty worktree opens git, where the changes and the
    * commit already live. Closing it finishes the removal if the worktree is
    * clean by then — the user armed and confirmed it before being sent here, and
    * making them confirm the same deletion twice because something unrelated was
-   * uncommitted is a worse answer than continuing. `resumeBlocked` checks the
-   * worktree itself, so closing git without committing changes nothing.
+   * uncommitted is a worse answer than continuing. Closing without committing
+   * forgets it instead, so the item is back to a plain unarmed button rather
+   * than showing a refusal that has to be cleared by hand.
    */
   useEffect(() => {
     if (blocked) setDialog("git");
@@ -107,7 +108,7 @@ export function App() {
           <SignInBanner />
           <div className="min-h-0 flex-1">
             {current ? (
-              <Detail key={itemKey} item={current} onEdit={() => setDialog("update")} onTest={() => setDialog("test")} onGitStatus={() => setDialog("git")} />
+              <Detail key={itemKey} item={current} onEdit={() => setDialog("update")} onTest={() => setDialog("test")} />
             ) : (
               <p className="p-6 text-xs text-muted-foreground">Select an item, or add a capability.</p>
             )}
@@ -125,7 +126,7 @@ export function App() {
           title="git"
           onClose={() => {
             close();
-            void resumeBlocked();
+            void settleBlocked();
           }}
           size="full"
         >

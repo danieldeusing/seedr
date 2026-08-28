@@ -30,6 +30,14 @@ interface MutationState {
    * committing does not change the item's files, so it is still valid.
    */
   blocked: StudioItem | null;
+  /**
+   * Bumped by every `reset`, so a component holding its own arming state can
+   * follow one. The button arms optimistically — the press must show before the
+   * hash comes back — so it cannot simply mirror `armed`, which is null for the
+   * moment in between. Counting the resets says "start over" without saying
+   * anything about that moment.
+   */
+  resets: number;
   outcome: RegistryOpOutcome | null;
   /** The state hash captured when the user armed the button, keyed to that item. */
   armed: { type: string; slug: string; expectedHash: string } | null;
@@ -64,6 +72,7 @@ export const useMutations = create<MutationState>((set, get) => ({
   phase: "idle",
   error: null,
   blocked: null,
+  resets: 0,
   outcome: null,
   armed: null,
 
@@ -116,6 +125,6 @@ export const useMutations = create<MutationState>((set, get) => ({
   },
 
   reset() {
-    set({ phase: "idle", error: null, outcome: null, armed: null, blocked: null });
+    set({ phase: "idle", error: null, outcome: null, armed: null, blocked: null, resets: get().resets + 1 });
   },
 }));

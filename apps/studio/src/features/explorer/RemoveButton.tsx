@@ -11,12 +11,21 @@ export function RemoveButton({ item }: { item: StudioItem }) {
   const arm = useMutations((s) => s.arm);
   const remove = useMutations((s) => s.remove);
   const reset = useMutations((s) => s.reset);
+  const resets = useMutations((s) => s.resets);
   const refusal = removalRefusal(item);
 
   useEffect(() => {
     setArmed(false);
     reset();
   }, [item.type, item.slug, reset]);
+
+  // Anything that resets the store disarms the button too — closing the git
+  // dialog without committing, above all. Otherwise the store forgot the
+  // removal while the confirm and cancel stayed on screen, offering a second
+  // step to something that was no longer under way.
+  useEffect(() => {
+    setArmed(false);
+  }, [resets]);
 
   if (refusal) {
     // The reason lives in the hover (estate rule: data-tip, no inline furniture);

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { CanonicalCodingAgent } from "@seedr/shared";
 import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import { runProcess } from "@/api/agent";
-import { AGENT_PROGRAMS } from "./agentSettings";
+import { AGENT_PROGRAMS, useAgentSettings } from "./agentSettings";
 
 /**
  * Which models each coding agent can actually be given, asked of the agent
@@ -17,7 +17,11 @@ import { AGENT_PROGRAMS } from "./agentSettings";
  * Each CLI answers differently, and none of them agree:
  *
  * - `claude models`          a markdown table; the id is the backticked column
- * - `codex debug models`     JSON; `visibility: "hide"` entries are internal
+ * - `codex debug models`     JSON, but 354 KB of it for nine models — the
+ *                            executor caps output and splices in an ellipsis
+ *                            marker, so the JSON arrived unparseable. Reduced
+ *                            in a node child, like copilot, so what crosses the
+ *                            IPC boundary is the slugs and nothing else.
  * - `agy models`             tab-separated, id first, after a progress line
  * - `opencode models`        one id per line
  * - copilot                  no subcommand exists. The CLI bundles the SDK its
@@ -52,22 +56,54 @@ const { CopilotClient } = require(${JSON.stringify(COPILOT_SDK)});
 })();
 `;
 
+/**
+ * `codex debug models` prints the whole catalogue — every model's description
+ * and reasoning levels — which is 354 KB for the nine models it knows. That is
+ * far past the executor's output cap, and a capped stream arrives with an
+ * ellipsis marker spliced into the middle of it, so parsing it as JSON failed on
+ * the marker rather than on anything codex did wrong. Reading it in a child and
+ * printing only the slugs keeps the answer at a couple of hundred bytes.
+ *
+ * `maxBuffer` is raised for the same reason the cap exists: the whole catalogue
+ * has to fit somewhere, and here it is a short-lived child that exits with it.
+ */
+const codexProbe = (bin: string) => `
+const { execFileSync } = require("node:child_process");
+try {
+  const raw = execFileSync(${JSON.stringify(bin)}, ["debug", "models"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  // Projection only, no policy: which models to offer is decided in read(),
+  // where the suite can reach it. This child exists to drop the descriptions
+  // and reasoning levels that make the answer 354 KB, nothing more.
+  const models = (JSON.parse(raw).models || []).map((m) => ({ slug: m.slug, visibility: m.visibility }));
+  console.log(JSON.stringify({ models }));
+} catch (e) {
+  console.log(JSON.stringify({ models: [], error: String((e && e.message) || e) }));
+}
+process.exit(0);
+`;
+
 interface Probe {
   program: string;
-  args: string[];
+  /**
+   * Resolved when the probe runs, not when this module loads. The codex one
+   * has to read the program override itself: the host substitutes an override
+   * for the program it is given, and it is given `node` here, so a codex
+   * pointed at by hand would otherwise be quietly ignored.
+   */
+  args(): string[];
   read(stdout: string): string[];
 }
 
 const PROBES: Record<CanonicalCodingAgent, Probe> = {
   claude: {
     program: AGENT_PROGRAMS.claude,
-    args: ["models"],
+    args: () => ["models"],
     // | Claude Opus 5 | `claude-opus-5` | 1M | … — the id is the backticked cell.
     read: (out) => [...out.matchAll(/\|\s*`([^`]+)`\s*\|/g)].map((match) => match[1]!),
   },
   copilot: {
     program: "node",
-    args: ["-e", COPILOT_PROBE],
+    args: () => ["-e", COPILOT_PROBE],
     read: (out) => {
       const parsed: unknown = JSON.parse(out.trim().split("\n").at(-1) ?? "{}");
       return (parsed as { models?: string[] }).models ?? [];
@@ -75,7 +111,7 @@ const PROBES: Record<CanonicalCodingAgent, Probe> = {
   },
   antigravity: {
     program: AGENT_PROGRAMS.antigravity,
-    args: ["models"],
+    args: () => ["models"],
     // "Fetching available models..." then `<id>\t<display name>` per line.
     read: (out) =>
       out
@@ -84,10 +120,10 @@ const PROBES: Record<CanonicalCodingAgent, Probe> = {
         .filter((id) => id.length > 0 && !id.includes(" ")),
   },
   codex: {
-    program: AGENT_PROGRAMS.codex,
-    args: ["debug", "models"],
+    program: "node",
+    args: () => ["-e", codexProbe(useAgentSettings.getState().overrides.codex || AGENT_PROGRAMS.codex)],
     read: (out) => {
-      const parsed: unknown = JSON.parse(out.trim());
+      const parsed: unknown = JSON.parse(out.trim().split("\n").at(-1) ?? "{}");
       const models = (parsed as { models?: { slug?: string; visibility?: string }[] }).models ?? [];
       // `hide` entries are the CLI's own internal models, not offered to a user.
       return models.filter((model) => model.visibility !== "hide" && model.slug).map((model) => model.slug!);
@@ -95,7 +131,7 @@ const PROBES: Record<CanonicalCodingAgent, Probe> = {
   },
   opencode: {
     program: AGENT_PROGRAMS.opencode,
-    args: ["models"],
+    args: () => ["models"],
     read: (out) => out.split(/\s+/).map((id) => id.trim()).filter(Boolean),
   },
 };
@@ -138,7 +174,7 @@ export const useModels = create<ModelsState>((set, get) => ({
     set({ probing: agent });
     let answer: ModelCatalogue;
     try {
-      const outcome = await run({ taskId: `models-${agent}`, program: probe.program, args: probe.args, cwd: "", timeoutMs: 60_000 });
+      const outcome = await run({ taskId: `models-${agent}`, program: probe.program, args: probe.args(), cwd: "", timeoutMs: 60_000 });
       answer =
         outcome.status === "ok" && outcome.exitCode === 0
           ? { models: probe.read(outcome.stdout), error: null, probedAt: new Date().toISOString().slice(0, 10) }

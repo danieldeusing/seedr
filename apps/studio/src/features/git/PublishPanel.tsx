@@ -4,6 +4,7 @@ import { gitBranches, type BranchInfo, type GitSummary } from "@/api/git";
 import { AgentLog } from "@/core/ui/AgentLog";
 import { IconButton } from "@/core/ui/IconButton";
 import { AgentSelect } from "@/features/settings/AgentSelect";
+import { ModelSelect } from "@/features/settings/ModelSelect";
 import { GIT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
 import { SignedOutNotice } from "@/features/settings/SignedOutNotice";
 import { usePublish } from "./publishStore";
@@ -127,6 +128,7 @@ export function PublishPanel({ summary }: { summary: GitSummary }) {
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
           <AgentSelect value={agent} onChange={setAgent} certified={GIT_CERTIFIED} job="git" ariaLabel="coding agent" disabled={busy} />
+          <ModelSelect job="publish" agent={agent} disabled={busy} />
           <span className="min-w-0 truncate text-sm text-neutral-500" role="status">
             {busy ? "the agent is working…" : nothingToCommit ? "nothing to commit" : `${summary.changes.length} changed path(s) from ${summary.branch}`}
           </span>

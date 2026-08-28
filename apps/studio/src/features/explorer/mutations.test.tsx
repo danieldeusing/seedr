@@ -229,3 +229,32 @@ describe("finishing a removal a dirty worktree blocked", () => {
     expect(useMutations.getState().error).toContain("changed on disk");
   });
 });
+
+describe("the button after the git dialog closes", () => {
+  test("goes back to the bin, not the confirm and cancel it was left on", async () => {
+    // The store forgot the removal but the button kept its own arming state, so
+    // the confirm and cancel stayed on screen offering a second step to
+    // something no longer under way.
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    const item = items.find((i) => i.slug === "playwright")!;
+    onCommand("run_process", (args) => {
+      const request = args?.request as RunRequest;
+      if (request.args.includes("hash")) return ok(request, JSON.stringify({ hash: "48761aa0e888b3ae" }));
+      if (request.program === "git") return ok(request, " M scratch.txt\0");
+      return { taskId: request.taskId, status: "failed", exitCode: 1, stdout: "", stderr: "registry-op: The worktree has uncommitted changes", durationMs: 1 };
+    });
+
+    render(<RemoveButton item={item} />);
+    await userEvent.click(screen.getByRole("button", { name: `remove ${item.slug}` }));
+    await userEvent.click(await screen.findByRole("button", { name: `confirm remove ${item.type}/${item.slug}` }));
+
+    // Closing git with the worktree still dirty.
+    await act(async () => {
+      await useMutations.getState().settleBlocked();
+    });
+
+    expect(await screen.findByRole("button", { name: `remove ${item.slug}` })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: `confirm remove ${item.type}/${item.slug}` })).toBeNull();
+  });
+});

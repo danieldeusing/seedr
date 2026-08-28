@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { gitSummary } from "@/api/git";
 import { parseOp, type RemoveOp } from "@seedr/registry-ops/pure";
 import { itemHash, runRegistryOp, type RegistryOpOutcome } from "@/api/registryCli";
 import type { StudioItem } from "./registry";
@@ -8,9 +9,27 @@ import type { StudioItem } from "./registry";
  * transaction refuses to delete anything that changed since, or any official
  * item — the daily sync would restore it (plan §6.1).
  */
+/**
+ * The transaction's own words for a worktree it will not touch. Matched rather
+ * than re-worded, so the two stay in step: if `tx.ts` changes the sentence, the
+ * paths simply stop being listed instead of the wrong advice being given.
+ */
+const DIRTY_WORKTREE = "The worktree has uncommitted changes";
+
 interface MutationState {
   phase: "idle" | "removing" | "done";
   error: string | null;
+  /**
+   * Which paths are dirty, when that is why the operation was refused.
+   *
+   * The refusal is not fussiness and the message cannot say why in one line: a
+   * rollback is `git checkout` plus `git clean -fdqx` over the registry
+   * directory, so uncommitted work there would be destroyed by an operation
+   * that failed — and the verify step asserts only the item's own paths
+   * changed, which pre-existing edits break. Naming them turns "go and find
+   * out" into "these three files".
+   */
+  blockedBy: string[];
   outcome: RegistryOpOutcome | null;
   /** The state hash captured when the user armed the button, keyed to that item. */
   armed: { type: string; slug: string; expectedHash: string } | null;
@@ -22,16 +41,27 @@ interface MutationState {
 export const removalRefusal = (item: StudioItem): string | null =>
   item.item.sourceType === "official" ? "official items cannot be removed — the daily sync would restore them" : null;
 
+/** The worktree's changed paths, or none if git cannot say. */
+const dirtyPaths = async (): Promise<string[]> => {
+  try {
+    return (await gitSummary()).changes.map((change) => change.path);
+  } catch {
+    // The operation's own message still stands; this only adds detail to it.
+    return [];
+  }
+};
+
 export const useMutations = create<MutationState>((set, get) => ({
   phase: "idle",
   error: null,
+  blockedBy: [],
   outcome: null,
   armed: null,
 
   async arm(item) {
     // The hash is read the moment the user arms the remove: an item that changes
     // on disk between arming and confirming is refused by the transaction.
-    set({ armed: null, error: null });
+    set({ armed: null, error: null, blockedBy: [] });
     try {
       set({ armed: { type: item.type, slug: item.slug, expectedHash: await itemHash(item.type, item.slug) } });
     } catch (error) {
@@ -50,17 +80,21 @@ export const useMutations = create<MutationState>((set, get) => ({
       set({ error: "arm the remove first" });
       return;
     }
-    set({ phase: "removing", error: null, outcome: null });
+    set({ phase: "removing", error: null, outcome: null, blockedBy: [] });
     try {
       const op: RemoveOp = { v: 1, kind: "remove", type: item.type, slug: item.slug, sourceType: item.item.sourceType ?? "seedr", expectedHash: armed.expectedHash };
       const outcome = await runRegistryOp(parseOp(op));
       set({ phase: "done", outcome, armed: null });
     } catch (error) {
-      set({ phase: "idle", error: (error as Error).message });
+      const message = (error as Error).message;
+      // Asked for only when that is the refusal — a git call on every failure
+      // would spend a process to answer a question nobody asked.
+      const blockedBy = message.includes(DIRTY_WORKTREE) ? await dirtyPaths() : [];
+      set({ phase: "idle", error: message, blockedBy });
     }
   },
 
   reset() {
-    set({ phase: "idle", error: null, outcome: null, armed: null });
+    set({ phase: "idle", error: null, outcome: null, armed: null, blockedBy: [] });
   },
 }));

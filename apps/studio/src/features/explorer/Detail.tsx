@@ -21,6 +21,8 @@ interface DetailProps {
   item: StudioItem;
   onEdit?(): void;
   onTest?(): void;
+  /** Open the git dialog — offered when a mutation was refused for a dirty worktree. */
+  onGitStatus?(): void;
 }
 
 /*
@@ -92,7 +94,7 @@ function MetaFields({ item }: { item: StudioItem["item"] }) {
 /** Below this pane width the meta column stacks on top of the files. */
 const STACK_BELOW_PX = 860;
 
-export function Detail({ item, onEdit, onTest }: DetailProps) {
+export function Detail({ item, onEdit, onTest, onGitStatus }: DetailProps) {
   const hasOps = useCanMutate();
   const [tree, setTree] = useState<FileTreeNode[] | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
@@ -122,6 +124,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
    */
   const revision = useStudio((state) => state.revision);
   const mutationError = useMutations((state) => state.error);
+  const blockedBy = useMutations((state) => state.blockedBy);
 
   useEffect(() => {
     let cancelled = false;
@@ -188,9 +191,30 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
             beside the buttons it stretched the header and pushed them about.
             Same line as the validation errors, which are the same kind of news. */}
         {mutationError && (
-          <p className="mt-2 text-xs text-destructive" role="alert">
-            {mutationError}
-          </p>
+          <div className="mt-2 text-xs" role="alert">
+            <p className="text-destructive">{mutationError}</p>
+            {blockedBy.length > 0 && (
+              <div className="mt-1 text-muted-foreground">
+                {/* The paths, because "commit or stash them first" without saying
+                    WHICH is an instruction to go and find out. Nothing is
+                    committed or stashed here: git is opened, and the choice of
+                    what to do with these files stays the user's. */}
+                <ul className="ml-4 list-disc">
+                  {blockedBy.slice(0, 8).map((path) => (
+                    <li key={path} className="break-all">
+                      {path}
+                    </li>
+                  ))}
+                  {blockedBy.length > 8 && <li>and {blockedBy.length - 8} more</li>}
+                </ul>
+                {onGitStatus && (
+                  <button type="button" className="mt-1 cursor-pointer text-primary underline-offset-2 hover:underline" onClick={onGitStatus}>
+                    open git
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
         {item.errors.length > 0 && (
           <p className="mt-2 text-xs text-destructive" role="alert">

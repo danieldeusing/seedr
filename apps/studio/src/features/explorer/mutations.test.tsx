@@ -1,6 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { fs } from "@/api/fs";
 import { mockFs, onCommand } from "@/test/mockIpc";
@@ -16,6 +16,52 @@ beforeEach(() => {
   useMutations.getState().reset();
 });
 
+describe("a refusal for a dirty worktree", () => {
+  test("names the paths and offers git, rather than sending you to find out", async () => {
+    // The refusal is not fussiness: a rollback is `git checkout` plus
+    // `git clean -fdqx` over the registry directory, so uncommitted work there
+    // would be destroyed by an operation that failed.
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    const item = items.find((i) => i.slug === "playwright")!;
+    const onGitStatus = vi.fn();
+
+    onCommand("run_process", (args) => {
+      const request = args?.request as RunRequest;
+      // Arming reads the hash and must succeed; the transaction is what refuses;
+      // git is then asked what is dirty.
+      if (request.args.includes("hash")) return ok(request, JSON.stringify({ type: "mcp", slug: "playwright", hash: "48761aa0e888b3ae" }));
+      if (request.program === "git" && request.args.includes("status")) return ok(request, " M registry/skills/pdf/SKILL.md\0?? scratch-notes.txt\0");
+      if (request.program === "git") return ok(request, "main\n");
+      // status "failed", not "ok" with a non-zero exit: that is how the host
+      // reports a CLI that did not succeed, and it is what carries stderr through.
+      return { taskId: request.taskId, status: "failed", exitCode: 1, stdout: "", stderr: "registry-op: The worktree has uncommitted changes; commit or stash them first", durationMs: 1 };
+    });
+
+    render(<Detail item={item} onGitStatus={onGitStatus} />);
+    await userEvent.click(await screen.findByRole("button", { name: `remove ${item.slug}` }));
+    await userEvent.click(await screen.findByRole("button", { name: `confirm remove ${item.type}/${item.slug}` }));
+
+    expect(await screen.findByText("registry/skills/pdf/SKILL.md")).toBeInTheDocument();
+    expect(screen.getByText("scratch-notes.txt")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "open git" }));
+    expect(onGitStatus).toHaveBeenCalled();
+  });
+
+  test("any other failure is left as its own sentence, with no path list", async () => {
+    // Only the dirty-worktree refusal has paths to name; asking git after every
+    // failure would spend a process to answer a question nobody asked.
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    render(<Detail item={items.find((i) => i.slug === "pdf")!} />);
+    act(() => useMutations.setState({ error: "registry-op: something else went wrong", blockedBy: [] }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("something else went wrong");
+    expect(screen.queryByRole("button", { name: "open git" })).toBeNull();
+  });
+});
+
 describe("where a failure is shown", () => {
   test("on its own line under the buttons, not inside their row", async () => {
     // The message is a sentence — "commit or stash them first" — and beside the
@@ -29,9 +75,9 @@ describe("where a failure is shown", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("The worktree has uncommitted changes");
-    // The row holds controls; the message is not one of its children.
+    // The row holds the controls in a span; the message is not inside it.
     expect(alert.closest("span")).toBeNull();
-    expect(alert.tagName).toBe("P");
+    expect(alert.querySelector("p")).not.toBeNull();
   });
 });
 

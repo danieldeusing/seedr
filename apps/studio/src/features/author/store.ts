@@ -6,7 +6,7 @@ import { runAgentJob, type AgentJobResult } from "@/api/agentJob";
 import type { JobCapability } from "./adapters";
 import { configuredAuthor } from "@/features/settings/authorSettings";
 import { useAgentSettings } from "@/features/settings/agentSettings";
-import { modelFor } from "@/features/settings/jobModels";
+import { effortFor, modelFor } from "@/features/settings/jobModels";
 import { prePromptFor } from "@/features/settings/prePrompts";
 import { repoIdentity, runRegistryOp } from "@/api/registryCli";
 import { fs } from "@/api/fs";
@@ -553,6 +553,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
         prompt: jobPrompt(form, borrowedTooling()),
         capabilities: ADD_JOB_CAPABILITIES,
         model: modelFor(useAgentSettings.getState().preferred, "add"),
+          effort: effortFor(useAgentSettings.getState().preferred, "add"),
         onEvent: collectLog(set, () => get().log),
       });
       if (outcome.cancelled) {

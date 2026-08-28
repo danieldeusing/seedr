@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RunOutcome } from "@/api/agent";
-import { modelsFor, useModels } from "./models";
+import { effortsFor, modelsFor, useModels } from "./models";
 import { modelFor, useJobModels } from "./jobModels";
 
 const ok = (stdout: string): RunOutcome => ({ taskId: "t", status: "ok", exitCode: 0, stdout, stderr: "", durationMs: 1 });
@@ -126,5 +126,43 @@ describe("how often a CLI is actually asked", () => {
 
     expect(modelsFor("codex")).toMatchObject({ models: [], error: "not found" });
     expect(useModels.getState().byAgent.codex).toBeDefined();
+  });
+});
+
+describe("which efforts may be offered", () => {
+  test("each CLI's own list, and none at all for the one without the flag", () => {
+    // Read off each --help: claude stops at max, copilot starts below low,
+    // antigravity has three, opencode has no such flag.
+    expect(effortsFor("claude", "")).toEqual(["low", "medium", "high", "xhigh", "max"]);
+    expect(effortsFor("copilot", "")).toContain("minimal");
+    expect(effortsFor("antigravity", "")).toEqual(["low", "medium", "high"]);
+    expect(effortsFor("opencode", "")).toEqual([]);
+  });
+
+  test("codex asks the model, because its levels differ model by model", async () => {
+    const out = JSON.stringify({
+      models: [
+        { slug: "gpt-5.6-sol", efforts: ["low", "medium", "high", "xhigh", "max", "ultra"] },
+        { slug: "gpt-5.4", efforts: ["low", "medium", "high", "xhigh"] },
+      ],
+    });
+    await useModels.getState().probe("codex", vi.fn(async () => ok(out)));
+
+    expect(effortsFor("codex", "gpt-5.6-sol")).toContain("ultra");
+    // Offering `ultra` here would be offering a level this model refuses.
+    expect(effortsFor("codex", "gpt-5.4")).not.toContain("ultra");
+  });
+
+  test("with no codex model named, only the levels every model accepts", async () => {
+    const out = JSON.stringify({
+      models: [
+        { slug: "gpt-5.6-sol", efforts: ["low", "high", "ultra"] },
+        { slug: "gpt-5.4", efforts: ["low", "high"] },
+      ],
+    });
+    await useModels.getState().probe("codex", vi.fn(async () => ok(out)));
+
+    // Whichever model the CLI picks for itself, the level is one it takes.
+    expect(effortsFor("codex", "")).toEqual(["low", "high"]);
   });
 });

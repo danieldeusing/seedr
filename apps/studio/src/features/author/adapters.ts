@@ -86,9 +86,9 @@ export interface AgentAdapter {
    * absolute path — required, not optional, because an agent that ignores it
    * works on the wrong repository and says nothing about it.
    */
-  draft(prompt: string, cwd: string, model?: string): AgentInvocation;
+  draft(prompt: string, cwd: string, tuning?: Tuning): AgentInvocation;
   /** One prompt that may do the named things inside the checkout at `cwd`. */
-  job(prompt: string, capabilities: JobCapability[], cwd: string, model?: string): AgentInvocation;
+  job(prompt: string, capabilities: JobCapability[], cwd: string, tuning?: Tuning): AgentInvocation;
   /** True when this CLI can be told to answer against a JSON schema. */
   schemaEnforced: boolean;
   /** One line of the agent's output, as something a person can read. */
@@ -98,12 +98,42 @@ export interface AgentAdapter {
 }
 
 /**
- * `--model <id>`, or nothing. Every one of the five takes that spelling —
- * checked against each CLI's own `--help`, not assumed — so this is the one
- * place it is written. Empty means the CLI's default, which is what an
- * unconfigured job should get.
+ * What a run may be tuned with. One object rather than two trailing optional
+ * strings: `(prompt, capabilities, cwd, model, effort)` is five positional
+ * arguments ending in two of the same type, which transposes silently.
  */
-const withModel = (model: string | undefined, args: string[]): string[] => (model ? ["--model", model, ...args] : args);
+export interface Tuning {
+  model?: string;
+  effort?: string;
+}
+
+/**
+ * `--model <id>` and `--effort <level>`, or neither.
+ *
+ * All five take `--model`; three of them take `--effort` — read off each CLI's
+ * own `--help` and verified by running it, not assumed. opencode has no effort
+ * flag, and codex carries it as configuration instead (`tuned` below). Empty
+ * means the CLI's own default, which is what an unconfigured job should get.
+ */
+const tuned = (tuning: Tuning | undefined, args: string[]): string[] => [
+  ...(tuning?.model ? ["--model", tuning.model] : []),
+  ...(tuning?.effort ? ["--effort", tuning.effort] : []),
+  ...args,
+];
+
+/**
+ * codex has no `--effort`. It carries reasoning effort as configuration —
+ * `model_reasoning_effort`, the same key its own `config.toml` uses — so it
+ * travels as a `-c` override scoped to this run.
+ */
+const tunedCodex = (tuning: Tuning | undefined, args: string[]): string[] => [
+  ...(tuning?.model ? ["--model", tuning.model] : []),
+  ...(tuning?.effort ? ["-c", `model_reasoning_effort=${tuning.effort}`] : []),
+  ...args,
+];
+
+/** opencode takes a model and nothing else. */
+const tunedModelOnly = (tuning: Tuning | undefined, args: string[]): string[] => [...(tuning?.model ? ["--model", tuning.model] : []), ...args];
 
 const line = (kind: AgentJobEvent["kind"], value: string): AgentJobEvent[] => (value.trim() ? [{ kind, text: value.trim() }] : []);
 
@@ -354,9 +384,9 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // `--tools ""` removes every tool; `--max-turns 1` additionally bounds the run.
   claude: {
     program: AGENT_PROGRAMS.claude,
-    draft: (prompt, _cwd, model) => ({ args: withModel(model, ["-p", "--output-format", "json", "--json-schema", JSON.stringify(DRAFT_SCHEMA), "--tools", "", "--max-turns", "1"]), stdin: prompt }),
-    job: (prompt, capabilities, _cwd, model) => ({
-      args: withModel(model, [
+    draft: (prompt, _cwd, tuning) => ({ args: tuned(tuning, ["-p", "--output-format", "json", "--json-schema", JSON.stringify(DRAFT_SCHEMA), "--tools", "", "--max-turns", "1"]), stdin: prompt }),
+    job: (prompt, capabilities, _cwd, tuning) => ({
+      args: tuned(tuning, [
         "-p",
         "--output-format",
         "stream-json",
@@ -379,15 +409,15 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // takes the same text path as the other plain agents.
   antigravity: {
     program: AGENT_PROGRAMS.antigravity,
-    draft: (prompt, _cwd, model) => ({ args: withModel(model, [`--print=${prompt}`, "--output-format", "json", "--disable-slash-commands"]) }),
+    draft: (prompt, _cwd, tuning) => ({ args: tuned(tuning, [`--print=${prompt}`, "--output-format", "json", "--disable-slash-commands"]) }),
     // `--mode accept-edits` covers edits and not commands: agy auto-denies any
     // command in print mode and says so — "headless mode cannot prompt". Its own
     // remedy is an allow-rule in its settings or this flag, and Studio will not
     // write into another tool's configuration. The cost is real and worth
     // knowing: agy has no deny-list, so for this one agent `git` is held off by
     // the prompt alone rather than by the CLI.
-    job: (prompt, capabilities, _cwd, model) => ({
-      args: withModel(model, [`--print=${prompt}`, "--output-format", "stream-json", ...(writesFiles(capabilities) ? ["--dangerously-skip-permissions"] : ["--mode", "plan"])]),
+    job: (prompt, capabilities, _cwd, tuning) => ({
+      args: tuned(tuning, [`--print=${prompt}`, "--output-format", "stream-json", ...(writesFiles(capabilities) ? ["--dangerously-skip-permissions"] : ["--mode", "plan"])]),
     }),
     schemaEnforced: false,
     readLine: readAgyLine,
@@ -398,14 +428,14 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // no --allow-tool it can still answer, which is what a draft needs.
   copilot: {
     program: AGENT_PROGRAMS.copilot,
-    draft: (prompt, _cwd, model) => ({ args: withModel(model, ["--no-color", "--log-level", "none", "-p", prompt]) }),
+    draft: (prompt, _cwd, tuning) => ({ args: tuned(tuning, ["--no-color", "--log-level", "none", "-p", prompt]) }),
     // Copilot's allowlist is a minefield of names it does not use consistently:
     // it lists `bash` and permits `shell`, lists `create` and refuses it under
     // that name. Its own help calls --allow-all-tools "required for
     // non-interactive mode", so an open-shell job takes that and states the one
     // boundary explicitly; a job with named capabilities still spells them.
-    job: (prompt, capabilities, _cwd, model) => ({
-      args: withModel(model, [
+    job: (prompt, capabilities, _cwd, tuning) => ({
+      args: tuned(tuning, [
         "--no-color",
         "--log-level",
         "none",
@@ -431,11 +461,11 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
   // job that has to change files.
   codex: {
     program: AGENT_PROGRAMS.codex,
-    draft: (prompt, _cwd, model) => ({ args: ["exec", ...withModel(model, ["--color", "never", "-s", "read-only", "-"])], stdin: prompt }),
+    draft: (prompt, _cwd, tuning) => ({ args: ["exec", ...tunedCodex(tuning, ["--color", "never", "-s", "read-only", "-"])], stdin: prompt }),
     // `--json` only for a job: a draft's answer is read out of plain text, and
     // the JSONL envelopes would be the first JSON objects the parser found.
-    job: (prompt, capabilities, _cwd, model) => ({
-      args: ["exec", ...withModel(model, ["--json", "--color", "never", "-s", writesFiles(capabilities) ? "workspace-write" : "read-only", "-"])],
+    job: (prompt, capabilities, _cwd, tuning) => ({
+      args: ["exec", ...tunedCodex(tuning, ["--json", "--color", "never", "-s", writesFiles(capabilities) ? "workspace-write" : "read-only", "-"])],
       stdin: prompt,
     }),
     schemaEnforced: false,
@@ -452,7 +482,7 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
     // checkout, `pnpm compile` included, leaving the clone it was pointed at
     // untouched. Its session is keyed to a project it resolves for itself, and
     // --dir is the only thing that moves it.
-    draft: (prompt, cwd, model) => ({ args: ["run", ...withModel(model, [...runDir(cwd), prompt])] }),
+    draft: (prompt, cwd, tuning) => ({ args: ["run", ...tunedModelOnly(tuning, [...runDir(cwd), prompt])] }),
     // `--auto` is opencode's headless grant, the same decision already made for
     // every other agent here. Without it a job dies on its own scratch files:
     // written inside the checkout they leave the worktree dirty and the
@@ -461,7 +491,7 @@ export const ADAPTERS: Record<CanonicalCodingAgent, AgentAdapter> = {
     // auto-rejecting". There is nobody to ask in a `-p` run, so it must be
     // settled up front.
     // `--format json` only on a job: a draft's answer is read out of plain text.
-    job: (prompt, _capabilities, cwd, model) => ({ args: ["run", ...withModel(model, ["--auto", "--format", "json", ...runDir(cwd), prompt])] }),
+    job: (prompt, _capabilities, cwd, tuning) => ({ args: ["run", ...tunedModelOnly(tuning, ["--auto", "--format", "json", ...runDir(cwd), prompt])] }),
     schemaEnforced: false,
     readLine: readOpencodeLine,
     readOutcome: (outcome) =>

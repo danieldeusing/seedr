@@ -74,7 +74,11 @@ try {
   // Projection only, no policy: which models to offer is decided in read(),
   // where the suite can reach it. This child exists to drop the descriptions
   // and reasoning levels that make the answer 354 KB, nothing more.
-  const models = (JSON.parse(raw).models || []).map((m) => ({ slug: m.slug, visibility: m.visibility }));
+  const models = (JSON.parse(raw).models || []).map((m) => ({
+    slug: m.slug,
+    visibility: m.visibility,
+    efforts: (m.supported_reasoning_levels || []).map((l) => l.effort).filter(Boolean),
+  }));
   console.log(JSON.stringify({ models }));
 } catch (e) {
   console.log(JSON.stringify({ models: [], error: String((e && e.message) || e) }));
@@ -92,7 +96,21 @@ interface Probe {
    */
   args(): string[];
   read(stdout: string): string[];
+  /**
+   * Which reasoning efforts each model accepts, where that is a property of the
+   * model rather than of the CLI. Only codex answers this: its levels differ
+   * model by model — `ultra` exists on two of the seven and `max` on three — so
+   * a single list per agent would offer `gpt-5.4` an effort it refuses.
+   */
+  readEfforts?(stdout: string): Record<string, string[]>;
 }
+
+/** The visible entries of a codex probe. `hide` are the CLI's own internal models. */
+const codexModels = (out: string): { slug?: string; visibility?: string; efforts?: string[] }[] => {
+  const parsed: unknown = JSON.parse(out.trim().split("\n").at(-1) ?? "{}");
+  const models = (parsed as { models?: { slug?: string; visibility?: string; efforts?: string[] }[] }).models ?? [];
+  return models.filter((model) => model.visibility !== "hide" && model.slug);
+};
 
 const PROBES: Record<CanonicalCodingAgent, Probe> = {
   claude: {
@@ -122,12 +140,8 @@ const PROBES: Record<CanonicalCodingAgent, Probe> = {
   codex: {
     program: "node",
     args: () => ["-e", codexProbe(useAgentSettings.getState().overrides.codex || AGENT_PROGRAMS.codex)],
-    read: (out) => {
-      const parsed: unknown = JSON.parse(out.trim().split("\n").at(-1) ?? "{}");
-      const models = (parsed as { models?: { slug?: string; visibility?: string }[] }).models ?? [];
-      // `hide` entries are the CLI's own internal models, not offered to a user.
-      return models.filter((model) => model.visibility !== "hide" && model.slug).map((model) => model.slug!);
-    },
+    read: (out) => codexModels(out).map((model) => model.slug!),
+    readEfforts: (out) => Object.fromEntries(codexModels(out).map((model) => [model.slug!, model.efforts ?? []])),
   },
   opencode: {
     program: AGENT_PROGRAMS.opencode,
@@ -138,6 +152,8 @@ const PROBES: Record<CanonicalCodingAgent, Probe> = {
 
 export interface ModelCatalogue {
   models: string[];
+  /** Per model, where the CLI says efforts belong to the model — codex only. */
+  efforts?: Record<string, string[]>;
   /** Why the list is empty, when it is. Never an empty list with no reason. */
   error: string | null;
   /** ISO date of the answer, so a stale catalogue can say how stale. */
@@ -177,7 +193,7 @@ export const useModels = create<ModelsState>((set, get) => ({
       const outcome = await run({ taskId: `models-${agent}`, program: probe.program, args: probe.args(), cwd: "", timeoutMs: 60_000 });
       answer =
         outcome.status === "ok" && outcome.exitCode === 0
-          ? { models: probe.read(outcome.stdout), error: null, probedAt: new Date().toISOString().slice(0, 10) }
+          ? { models: probe.read(outcome.stdout), ...(probe.readEfforts ? { efforts: probe.readEfforts(outcome.stdout) } : {}), error: null, probedAt: new Date().toISOString().slice(0, 10) }
           : { models: [], error: outcome.stderr.trim() || `${probe.program} exited ${outcome.exitCode}`, probedAt: null };
     } catch (error) {
       answer = { models: [], error: (error as Error).message, probedAt: null };
@@ -199,3 +215,39 @@ export const useModels = create<ModelsState>((set, get) => ({
 
 /** What this agent can be given, for code outside React. */
 export const modelsFor = (agent: CanonicalCodingAgent): ModelCatalogue => useModels.getState().byAgent[agent] ?? EMPTY;
+
+/**
+ * The reasoning efforts each CLI accepts, in its own vocabulary.
+ *
+ * Read off each `--help` and verified by running it, because they do not agree
+ * and no two lists are the same length: claude stops at `max`, copilot starts
+ * below `low` with `none` and `minimal`, antigravity has only three.
+ * opencode has no such flag at all and is absent here rather than given an
+ * empty list that would render a dropdown with nothing in it.
+ *
+ * codex is absent for the opposite reason: its levels are a property of the
+ * MODEL, not the CLI, and come from the catalogue — see `effortsFor`.
+ */
+const FIXED_EFFORTS: Partial<Record<CanonicalCodingAgent, string[]>> = {
+  claude: ["low", "medium", "high", "xhigh", "max"],
+  copilot: ["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+  antigravity: ["low", "medium", "high"],
+};
+
+/**
+ * What may be offered for this agent, given the model chosen — `[]` means no
+ * effort dropdown at all.
+ *
+ * With no model named, codex falls back to the efforts every one of its models
+ * accepts. Whichever model the CLI then picks by itself, the level is one it
+ * takes; offering the union instead would let a run fail on a level that only
+ * two of seven models have.
+ */
+export function effortsFor(agent: CanonicalCodingAgent, model: string): string[] {
+  if (agent !== "codex") return FIXED_EFFORTS[agent] ?? [];
+  const efforts = modelsFor(agent).efforts ?? {};
+  if (model) return efforts[model] ?? [];
+  const lists = Object.values(efforts);
+  if (lists.length === 0) return [];
+  return (lists[0] ?? []).filter((effort) => lists.every((list) => list.includes(effort)));
+}

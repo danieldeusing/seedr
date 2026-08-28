@@ -266,20 +266,43 @@ describe("the model a run is given", () => {
     // Checked against each CLI's own --help rather than assumed: claude,
     // copilot, agy, codex and opencode all spell it the same way.
     for (const agent of CANONICAL_AGENTS) {
-      const withModel = ADAPTERS[agent].job("p", ["read"], "/repo", "some-model").args;
+      const withModel = ADAPTERS[agent].job("p", ["read"], "/repo", { model: "some-model" }).args;
       expect(withModel, `${agent} job`).toContain("--model");
       expect(withModel[withModel.indexOf("--model") + 1], `${agent} job model`).toBe("some-model");
 
-      const drafted = ADAPTERS[agent].draft("p", "/repo", "some-model").args;
+      const drafted = ADAPTERS[agent].draft("p", "/repo", { model: "some-model" }).args;
       expect(drafted, `${agent} draft`).toContain("--model");
 
       expect(ADAPTERS[agent].job("p", ["read"], "/repo").args, `${agent} default`).not.toContain("--model");
     }
   });
 
+  test("effort is spelled the way each CLI spells it, and codex does not spell it at all", () => {
+    // Read off each --help and verified by running it. Three take `--effort`;
+    // codex carries it as the config key its own config.toml uses; opencode has
+    // no such flag and must not be handed one.
+    for (const agent of ["claude", "copilot", "antigravity"] as const) {
+      const args = ADAPTERS[agent].job("p", ["read"], "/repo", { effort: "high" }).args;
+      expect(args, `${agent}`).toContain("--effort");
+      expect(args[args.indexOf("--effort") + 1], `${agent} level`).toBe("high");
+    }
+
+    const codex = ADAPTERS.codex.job("p", ["read"], "/repo", { effort: "ultra" }).args;
+    expect(codex).not.toContain("--effort");
+    expect(codex).toContain("model_reasoning_effort=ultra");
+    expect(codex[0], "codex subcommand stays first").toBe("exec");
+
+    expect(ADAPTERS.opencode.job("p", ["read"], "/repo", { effort: "high" }).args).not.toContain("--effort");
+
+    // No effort configured means the CLI's own default, not a flag with "".
+    for (const agent of CANONICAL_AGENTS) {
+      expect(ADAPTERS[agent].job("p", ["read"], "/repo").args, `${agent} default`).not.toContain("--effort");
+    }
+  });
+
   test("codex and opencode keep their subcommand first, where the CLI expects it", () => {
     // `--model` before `exec` is not a codex invocation, it is an error.
-    expect(ADAPTERS.codex.job("p", ["read"], "/repo", "gpt-5-mini").args[0]).toBe("exec");
-    expect(ADAPTERS.opencode.job("p", ["read"], "/repo", "big-pickle").args[0]).toBe("run");
+    expect(ADAPTERS.codex.job("p", ["read"], "/repo", { model: "gpt-5-mini" }).args[0]).toBe("exec");
+    expect(ADAPTERS.opencode.job("p", ["read"], "/repo", { model: "big-pickle" }).args[0]).toBe("run");
   });
 });

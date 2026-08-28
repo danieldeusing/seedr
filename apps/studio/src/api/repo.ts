@@ -37,3 +37,10 @@ export const defaultRepo = (): Promise<RepoInfo | null> => invoke<RepoInfo | nul
 /** Records a checkout as the default; answers with the open one, whose isDefault may have changed. */
 export const setDefaultRepo = (path: string): Promise<RepoInfo> => invoke<RepoInfo>("set_default_repo", { path });
 
+/**
+ * Open a checkout by path — the switch-repo menu's history and default entries.
+ * The host puts it through the same check as a picked folder, so a path that has
+ * been renamed or is no longer a checkout is refused rather than half-opened.
+ */
+export const openRepoAt = (path: string): Promise<RepoInfo> => invoke<RepoInfo>("open_repo_at", { path });
+

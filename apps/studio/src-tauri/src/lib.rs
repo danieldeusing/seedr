@@ -217,6 +217,29 @@ async fn pick_repo(app: AppHandle, repo: State<'_, Repo>) -> Result<Option<RepoI
     Ok(Some(info))
 }
 
+/// Open a checkout named by path rather than by the native picker — the history
+/// in the switch-repo menu, and the recorded default.
+///
+/// `repo_info` is the same gate `pick_repo` puts its own result through, so a
+/// path that is no longer a seedr checkout is refused here exactly as a picked
+/// folder would be: a remembered path can go stale, be renamed, or be a
+/// different project by the time it is chosen again.
+///
+/// This does NOT widen what Studio can reach. The filesystem bridge stays scoped
+/// to whichever checkout is open, and every path still crosses it relative to
+/// that root; this only changes which checkout that is, which the picker could
+/// already do.
+#[tauri::command]
+fn open_repo_at(path: String, repo: State<Repo>) -> Result<RepoInfo, String> {
+    let chosen = PathBuf::from(path);
+    let info = repo_info(&chosen)?;
+    if let Some(file) = remembered_repo_file() {
+        write_repo_path(&file, &chosen);
+    }
+    *repo.0.lock().map_err(|e| e.to_string())? = Some(chosen);
+    Ok(info)
+}
+
 /// Re-baseline: the open checkout becomes the one every other is measured
 /// against. Deliberate, because it is what silences the alert.
 #[tauri::command]
@@ -596,6 +619,7 @@ pub fn run() {
             pick_repo,
             get_repo,
             set_default_repo,
+            open_repo_at,
             default_repo,
             list_dir,
             read_text,

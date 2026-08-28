@@ -80,7 +80,6 @@ export function App() {
             onAddCapability={() => setDialog("author")}
             onGitStatus={() => setDialog("git")}
             onSettings={() => setDialog("settings")}
-            onSwitchRepo={() => void chooseRepo()}
           />
         </aside>
         <PaneResizeHandle label="resize sidebar" onResize={(delta) => setSidebarWidth((width) => Math.max(200, Math.min(600, width + delta)))} />

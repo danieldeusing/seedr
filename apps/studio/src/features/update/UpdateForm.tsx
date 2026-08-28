@@ -8,6 +8,7 @@ import { IconButton } from "@/core/ui/IconButton";
 import { PromptField } from "@/core/ui/PromptField";
 import { Select } from "@/core/ui/Select";
 import { AgentSelect } from "@/features/settings/AgentSelect";
+import { ModelSelect } from "@/features/settings/ModelSelect";
 import { LabelRow } from "@/features/settings/LabelRow";
 import { DRAFT_CERTIFIED, useAgentSettings } from "@/features/settings/agentSettings";
 import { SignedOutNotice } from "@/features/settings/SignedOutNotice";
@@ -189,6 +190,7 @@ export function UpdateForm({ item, onDone }: UpdateFormProps) {
       <div className="mt-4 flex items-center gap-2 border-t border-neutral-700 pt-3">
         <div className="flex min-w-0 items-center gap-2">
           <AgentSelect value={agent} onChange={setAgent} certified={DRAFT_CERTIFIED} job="update" ariaLabel="coding agent" disabled={busy || !!refusal} />
+          <ModelSelect job="update" agent={agent} disabled={busy || !!refusal} />
           <span
             className={`min-w-0 truncate text-sm ${phase === "done" ? "text-success" : error && !refusal ? "text-destructive" : "text-neutral-500"}`}
             role="status"

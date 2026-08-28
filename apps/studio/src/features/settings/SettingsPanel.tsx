@@ -1,17 +1,15 @@
 import { useState } from "react";
-import { Cpu, FolderGit2, MessageSquareText, Tag, Terminal, UserRound, type LucideIcon } from "lucide-react";
+import { FolderGit2, MessageSquareText, Tag, Terminal, UserRound, type LucideIcon } from "lucide-react";
 import { AuthorPage } from "./AuthorPage";
 import { CheckoutPage } from "./CheckoutPage";
 import { LabelsPage } from "./LabelsPage";
 import { CodingAgentsPage } from "./CodingAgentsPage";
-import { ModelsPage } from "./ModelsPage";
 import { PrePromptsPage } from "./PrePromptsPage";
 
-type Page = "agents" | "models" | "pre-prompts" | "author" | "labels" | "checkout";
+type Page = "agents" | "pre-prompts" | "author" | "labels" | "checkout";
 
 const PAGES: { id: Page; label: string; icon: LucideIcon; tip: string }[] = [
   { id: "agents", label: "coding agents", icon: Terminal, tip: "The agent CLIs Studio can run, and where they are" },
-  { id: "models", label: "models", icon: Cpu, tip: "Which model each job runs on — asked of each CLI, never a list written here" },
   { id: "pre-prompts", label: "pre-prompts", icon: MessageSquareText, tip: "Standing context per capability type, for adds and edits" },
   { id: "author", label: "author", icon: UserRound, tip: "Who the items you add are credited to" },
   { id: "labels", label: "labels", icon: Tag, tip: "What an item is for, when one registry serves several projects" },
@@ -43,7 +41,6 @@ export function SettingsPanel() {
       </nav>
       <div className="min-w-0 flex-1 overflow-y-auto p-4">
         {page === "agents" && <CodingAgentsPage />}
-        {page === "models" && <ModelsPage />}
         {page === "pre-prompts" && <PrePromptsPage />}
         {page === "author" && <AuthorPage />}
         {page === "labels" && <LabelsPage />}

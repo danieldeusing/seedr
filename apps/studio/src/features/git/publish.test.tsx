@@ -79,13 +79,17 @@ describe("PublishPanel", () => {
     expect(await screen.findByText(/This push starts prod → deploy.yml/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "commit and push" }));
-    expect(requests.some((request) => request.program === "claude")).toBe(false);
+    // A publish job carries its prompt on stdin. The model picker also runs
+    // `claude models` to fill its list, so "did claude run at all" no longer
+    // separates the job from the question about it.
+    const publishJob = () => requests.find((request) => request.program === "claude" && request.stdin);
+    expect(publishJob()).toBeUndefined();
     expect(screen.getByText(/Commit on main and push to main, prod/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "commit and push to main, prod" }));
 
     await waitFor(() => expect(screen.getByText("Pushed to main, prod.")).toBeInTheDocument());
-    const job = requests.find((request) => request.program === "claude");
+    const job = publishJob();
     expect(job?.args.at(-1)).toBe("Read,Write,Edit,Glob,Grep,Bash(git:*)");
     expect(job?.stdin).toContain("then bring it to: prod");
   });

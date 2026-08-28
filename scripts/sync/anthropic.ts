@@ -182,8 +182,21 @@ export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBu
   // `strict` only decides which side is the authority when both declare them.
   const pluginJson = parseJsonEntry<PluginJson>(content, PLUGIN_JSON);
 
-  const sourceType: SourceType =
-    sourceTypeOverride ?? (pinned.kind === "marketplace-path" && pinned.path.startsWith("plugins/") ? "official" : "community");
+  // Whose REPOSITORY the content is in, not which folder of it.
+  //
+  // This read `path.startsWith("plugins/")`, so the 15 plugins Anthropic keeps
+  // in `external_plugins/` — github, linear, terraform, playwright — were
+  // labelled "Community contribution" in a marketplace Anthropic publishes.
+  // Nothing ever said external_plugins were community; the directory test was
+  // written for the ones under plugins/ and everything else fell through the
+  // default. Asking which repository the content was pinned to answers the
+  // question the badge actually asks — who published this — and cannot be
+  // fooled by a directory nobody anticipated.
+  //
+  // An entry whose source points at somebody else's repository is still
+  // community, which is the case this has to keep getting right: being listed
+  // in the official marketplace is not the same as being published by Anthropic.
+  const sourceType: SourceType = sourceTypeOverride ?? (pinned.repo === PLUGINS_REPO ? "official" : "community");
   const classification = classifyPlugin(content, {
     pluginJson,
     lspServers: entry.lspServers,

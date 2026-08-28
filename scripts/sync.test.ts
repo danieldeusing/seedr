@@ -148,9 +148,12 @@ describe("runSync", () => {
       });
       expect(readItem(world.registryDir, "plugins", "clangd-lsp").package).toBeUndefined();
 
-      // external_plugins path stays community, author from the entry
+      // Anthropic's repository, so official however the marketplace files it —
+      // `external_plugins/` is still Anthropic publishing it. The declared author
+      // is kept: who wrote the tool and who published the plugin are different
+      // questions, and only the second one is what `sourceType` answers.
       expect(readItem(world.registryDir, "plugins", "asana")).toMatchObject({
-        sourceType: "community",
+        sourceType: "official",
         author: { name: "Asana" },
         pluginType: "wrapper",
         wrapper: "mcp",

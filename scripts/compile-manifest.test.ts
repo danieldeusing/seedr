@@ -17,7 +17,7 @@ describe("compileManifest", () => {
   afterEach(() => rmSync(registryDir, { recursive: true, force: true }));
 
   it("keeps the public helpers", () => {
-    expect(ALL_TYPES).toEqual(["skill", "plugin", "hook", "agent", "mcp", "settings", "command"]);
+    expect(ALL_TYPES).toEqual(["skill", "plugin", "hook", "agent", "mcp", "settings", "command", "rule"]);
     expect(typeDirName("mcp")).toBe("mcp");
     expect(typeDirName("settings")).toBe("settings");
     expect(typeDirName("skill")).toBe("skills");

@@ -21,6 +21,7 @@ export const TYPE_MARKERS: Record<ComponentType, readonly string[]> = {
   mcp: ["mcp.md", ".mcp.json"],
   settings: ["settings.json", "settings.md"],
   command: ["command.md"],
+  rule: ["rule.md"],
 };
 
 /** Path segments that name a type, deepest match winning — the skill's own table. */
@@ -33,6 +34,7 @@ const PATH_SEGMENTS: [string, ComponentType][] = [
   ["/mcp/", "mcp"],
   ["/settings/", "settings"],
   ["/commands/", "command"],
+  ["/rules/", "rule"],
 ];
 
 /**

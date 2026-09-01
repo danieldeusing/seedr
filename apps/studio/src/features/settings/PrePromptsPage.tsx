@@ -20,6 +20,10 @@ import { usePrePrompts, type PrePromptJob } from "./prePrompts";
  * were written from.
  */
 const PLACEHOLDER: Record<ComponentType, Record<PrePromptJob, string>> = {
+  rule: {
+    add: "e.g. Keep it to one standing instruction, short enough to read on every turn. It becomes a file under `.claude/rules` for Claude, `.github/instructions` for Copilot, and a marked section in AGENTS.md for Codex and OpenCode.",
+    update: "e.g. Keep the rule to a single instruction; if it has grown into several, split it rather than lengthening it.",
+  },
   skill: {
     add: "e.g. Call the Skill tool with `skill-creator` to create the new skill. Call the Skill tool with `skill-optimizer` afterwards to verify and optimise it.",
     update: "e.g. Keep the SKILL.md frontmatter intact, and call the Skill tool with `skill-optimizer` afterwards to verify and optimise the skill.",

@@ -41,7 +41,7 @@ describe("countByType", () => {
   test("counts every type, including the empty ones", async () => {
     mockFs(registryFiles());
     const { items } = await loadRegistry(fs, "registry");
-    expect(countByType(items)).toEqual({ skill: 2, plugin: 0, hook: 0, agent: 0, mcp: 1, settings: 0, command: 0 });
+    expect(countByType(items)).toEqual({ skill: 2, plugin: 0, hook: 0, agent: 0, mcp: 1, settings: 0, command: 0, rule: 0 });
   });
 
   test("itemDirRel uses the one type-directory rule", () => {

@@ -105,7 +105,7 @@ describe("compile", () => {
   test("writes per-type manifests and the index, stripping longDescription and plugin contents", () => {
     const registry = makeRegistry();
     const { counts } = compileRegistry(registry);
-    expect(counts).toEqual({ skill: 2, plugin: 1, hook: 0, agent: 0, mcp: 1, settings: 0, command: 0 });
+    expect(counts).toEqual({ skill: 2, plugin: 1, hook: 0, agent: 0, mcp: 1, settings: 0, command: 0, rule: 0 });
 
     const index = readIndex(registry);
     expect(index.version).toBe("2.0.0");

@@ -32,6 +32,7 @@ const TYPE_COLORS: Record<ComponentType, (s: string) => string> = {
   command: chalk.hex("#f59e0b"),
   settings: chalk.hex("#f97316"),
   mcp: chalk.hex("#2dd4bf"),
+  rule: chalk.hex("#84cc16"),
 };
 
 export interface ListOptions {

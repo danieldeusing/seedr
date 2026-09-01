@@ -26,6 +26,7 @@ const typeDescriptions: Record<ComponentType, string> = {
   command: "CLI shortcuts and aliases",
   settings: "Configuration presets",
   mcp: "Model Context Protocol servers",
+  rule: "Standing instructions the agent always reads",
 };
 
 const displayTypes: ComponentType[] = [

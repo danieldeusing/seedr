@@ -24,6 +24,11 @@ export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> 
   plugin: ["claude", "copilot", "antigravity", "codex", "opencode"],
   settings: ["claude"],
   mcp: ["claude", "codex", "opencode"],
+  // Every agent reads standing instructions; only the surface differs. Three
+  // take a markdown file in a rules directory, and Codex and OpenCode take a
+  // marked section in AGENTS.md because neither has a prose rules directory —
+  // Codex's `rules/` is Starlark sandbox policy. See `ruleTargets.ts`.
+  rule: ["claude", "copilot", "antigravity", "codex", "opencode"],
 };
 
 /**

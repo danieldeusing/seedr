@@ -6,6 +6,16 @@ import type { CodingAgent, ComponentType } from "@seedr/shared";
 
 const home = homedir();
 
+/**
+ * Claude Code's user configuration root. `~/.claude` is the convention, not the
+ * rule: `$CLAUDE_CONFIG_DIR` relocates it, and containers, multi-account setups
+ * and the Agent SDK all set it. Writing to `~/.claude` on such a machine
+ * reports success and installs into a tree Claude Code never reads.
+ *
+ * Read once at module load, which is when a CLI run's environment is fixed.
+ */
+export const claudeUserRoot = (): string => process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
+
 const SKILL_DIRECTORY: ContentTypeConfig = {
   path: "skills",
 };
@@ -34,7 +44,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     name: "Claude Code",
     shortName: "claude",
     projectRoot: ".claude",
-    userRoot: join(home, ".claude"),
+    userRoot: claudeUserRoot(),
     contentTypes: {
       skill: SKILL_DIRECTORY,
       command: {
@@ -148,7 +158,7 @@ export function getSettingsPath(
     case "project":
       return join(cwd, ".claude/settings.json");
     case "user":
-      return join(home, ".claude/settings.json");
+      return join(claudeUserRoot(), "settings.json");
     case "local":
       return join(cwd, ".claude/settings.local.json");
   }
@@ -184,7 +194,7 @@ export function getMcpConfigPath(
   const isUser = scope === "user";
   switch (canonicalAgent(agent) ?? agent) {
     case "claude":
-      return isUser ? join(home, ".claude.json") : join(cwd, ".mcp.json");
+      return isUser ? join(process.env.CLAUDE_CONFIG_DIR || home, ".claude.json") : join(cwd, ".mcp.json");
     case "codex":
       return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
     case "opencode":

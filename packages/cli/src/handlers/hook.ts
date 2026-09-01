@@ -387,6 +387,7 @@ export async function planHook(
  */
 export const hookHandler: ContentHandler = {
   type: "hook",
+  honoursMethod: false,
 
   async install(
     item: RegistryItem,

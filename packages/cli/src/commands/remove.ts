@@ -12,6 +12,7 @@ import { getHandler } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
 import { isValidSlug, MAX_SLUG_LENGTH, SLUG_PATTERN } from "../utils/slug.js";
 import { validateScope, validateType, TYPE_LIST } from "../utils/validate-options.js";
+import { isTypeSupported, describeIncompatibility } from "../config/compatibility.js";
 
 // Ensure handlers are registered
 import "../handlers/index.js";
@@ -54,6 +55,17 @@ async function removeFromAgents(
 
   let successCount = 0;
   for (const agent of agents) {
+    // "Not found" and "could never have been there" are different answers, and
+    // reporting the second as the first sends people looking for an install
+    // that was never possible. The exit code is unchanged: removal stays
+    // idempotent, and naming an agent explicitly must not change the verdict.
+    if (!isTypeSupported(type, agent)) {
+      ora().start().info(
+        chalk.gray(`Skipped ${CODING_AGENTS[agent].name}: ${describeIncompatibility(type, agent)}`)
+      );
+      continue;
+    }
+
     const spinner = ora(`Removing from ${CODING_AGENTS[agent].name}...`).start();
 
     const removed = await handler.uninstall(slug, agent, scope, cwd);

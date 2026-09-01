@@ -362,7 +362,13 @@ export async function runAdd(name: string | undefined, options: AddOptions, cwd:
 
   const method = await chooseMethod(options, item, agents, scope, cwd);
   if (method === CANCELLED) return 0;
-  ui.step(`Method: ${ui.brand(method)}`);
+  // Say so rather than echoing a method the handler will discard: content that
+  // is merged into a configuration file has nothing to link.
+  if (method === "symlink" && handler.honoursMethod === false) {
+    ui.step(`Method: ${ui.brand("copy")} (${item.type} content cannot be symlinked)`);
+  } else {
+    ui.step(`Method: ${ui.brand(method)}`);
+  }
 
   // The plan is a read-only description; nothing is written before the install call.
   if (options.dryRun) {

@@ -23,6 +23,15 @@ export interface ContentHandler {
   readonly type: ComponentType;
 
   /**
+   * Whether `--method symlink` means anything for this type. Content that is
+   * merged into a configuration file, or handed to another tool's installer,
+   * has nothing to link: the flag is validated and echoed, so a handler that
+   * ignores it has to say so rather than let the user believe it took effect.
+   * Absent means the handler honours the method.
+   */
+  readonly honoursMethod?: boolean;
+
+  /**
    * Install content for the specified agents.
    *
    * When `force` is false, an existing destination must not be overwritten —

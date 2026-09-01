@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { CodingAgent, InstallScope } from "../types.js";
 import { canonicalAgent } from "@seedr/registry-ops/pure";
-import { CODING_AGENTS } from "../config/agents.js";
+import { claudeUserRoot, CODING_AGENTS } from "../config/agents.js";
 import { isTypeSupported } from "../config/compatibility.js";
 
 const home = homedir();
@@ -46,7 +46,7 @@ const markdownFile = (slug: string): string => `${slug}.md`;
  */
 const claudeTarget: RuleTarget = {
   kind: "file",
-  dir: (scope, cwd) => join(scope === "user" ? join(home, ".claude") : join(cwd, ".claude"), "rules"),
+  dir: (scope, cwd) => join(scope === "user" ? claudeUserRoot() : join(cwd, ".claude"), "rules"),
   fileName: markdownFile,
   keepsFrontmatter: true,
 };

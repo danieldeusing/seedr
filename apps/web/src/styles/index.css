@@ -254,3 +254,32 @@ input[type="text"][data-search] {
   padding-left: 2rem;
   padding-right: 2rem;
 }
+
+/* A TABLE IN A CARD IS NOT A TABLE IN A TEXT COLUMN.
+ *
+ * The design system zeroes the first and last cell's inline padding
+ * (`tr > *:first-child { padding-inline-start: 0 }`) so a table lines up with the prose
+ * around it and reads as part of the page rather than a floating box. That is right on a
+ * cockpit doc page. Every table on this one is inside a bordered card, so the same rule
+ * puts the first column hard against the border and the last against the opposite one -
+ * which is exactly what it looks like: missing padding.
+ *
+ * The cells are NOT missing a declaration - the CLI table's every cell says `px-4`. The
+ * zeroing rule simply outranks it, for the reason in the last paragraph.
+ *
+ * 1rem is that `px-4`, so the edge columns line up with the columns between them rather
+ * than merely not touching. [data-term-out] is the card body itself, so this covers the
+ * hand-built CLI table and any markdown table alike, and cannot reach a table that is
+ * genuinely sitting in a text column - which must keep the design system's behaviour.
+ *
+ * THIS HAS TO BE UNLAYERED, and that is the whole reason it is here rather than a Tailwind
+ * variant on the container. `@danieldeusing/design/tailwind.css` is imported unlayered (see
+ * the note above it), and an unlayered rule beats ANY rule in `@layer utilities` whatever
+ * its specificity - so `[&_th:first-child]:ps-3` generates correct CSS that never applies.
+ * It was tried; the class is in the bundle and the computed value stayed 0px. */
+[data-term-out] table :is(th, td):first-child {
+  padding-inline-start: 1rem;
+}
+[data-term-out] table :is(th, td):last-child {
+  padding-inline-end: 1rem;
+}

@@ -9,7 +9,7 @@ import * as ui from "../utils/ui.js";
 import { getHandler } from "../handlers/registry.js";
 import type { ContentHandler, InstallResult, PlannedChange } from "../handlers/types.js";
 import { handleCommandError } from "../utils/errors.js";
-import { validateScope, validateMethod, validateType } from "../utils/validate-options.js";
+import { validateScope, validateMethod, validateType, TYPE_LIST } from "../utils/validate-options.js";
 import { trackInstalls, TELEMETRY_HELP_TEXT } from "../utils/analytics.js";
 import { ALL_AGENTS, CODING_AGENTS } from "../config/agents.js";
 import { describeIncompatibility, filterCompatibleAgents, isTypeSupported } from "../config/compatibility.js";
@@ -392,7 +392,7 @@ export async function runAdd(name: string | undefined, options: AddOptions, cwd:
 export const addCommand = new Command("add")
   .description("Install a skill, agent, hook, or other configuration")
   .argument("[name]", "Name of the item to install")
-  .option("-t, --type <type>", "Content type: skill, agent, hook, mcp, plugin, settings")
+  .option("-t, --type <type>", `Content type: ${TYPE_LIST}`)
   .option(
     "-a, --agents <agents>",
     "Comma-separated coding agents or 'all' (claude,copilot,antigravity,codex,opencode; 'gemini' is a deprecated alias of antigravity). " +

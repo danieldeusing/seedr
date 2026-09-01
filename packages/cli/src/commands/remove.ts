@@ -11,7 +11,7 @@ import { parseAgentsArgStrict } from "../utils/detection.js";
 import { getHandler } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
 import { isValidSlug, MAX_SLUG_LENGTH, SLUG_PATTERN } from "../utils/slug.js";
-import { validateScope, validateType } from "../utils/validate-options.js";
+import { validateScope, validateType, TYPE_LIST } from "../utils/validate-options.js";
 
 // Ensure handlers are registered
 import "../handlers/index.js";
@@ -165,7 +165,7 @@ export const removeCommand = new Command("remove")
   .alias("rm")
   .description("Remove an installed item (skill, plugin, agent, hook, mcp)")
   .argument("<name>", "Name/slug of the item to remove")
-  .option("-t, --type <type>", "Content type: skill, agent, hook, mcp, plugin, settings")
+  .option("-t, --type <type>", `Content type: ${TYPE_LIST}`)
   .option(
     "-a, --agents <agents>",
     "Comma-separated coding agents or 'all'"

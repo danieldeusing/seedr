@@ -1,17 +1,20 @@
 import type { ComponentType } from "@seedr/shared";
+import { ALL_TYPES } from "@seedr/registry-ops/pure";
 import type { InstallScope, InstallMethod } from "../types.js";
 
 const SCOPES: InstallScope[] = ["project", "user", "local"];
 const METHODS: InstallMethod[] = ["symlink", "copy"];
-const TYPES: ComponentType[] = [
-  "skill",
-  "hook",
-  "agent",
-  "plugin",
-  "command",
-  "settings",
-  "mcp",
-];
+
+/**
+ * Derived, never listed by hand. A second copy of this list silently rejected
+ * a type the registry, the handlers and the compiler all already knew about —
+ * the CLI refused `--type rule` while every unit test passed, because the tests
+ * call handlers directly and never cross this gate.
+ */
+const TYPES: readonly ComponentType[] = ALL_TYPES;
+
+/** For help strings, so they cannot drift from what is actually installable. */
+export const TYPE_LIST = TYPES.join(", ");
 
 /**
  * Validate a CLI option value against its allowed literals. Returns an error

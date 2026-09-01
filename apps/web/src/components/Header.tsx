@@ -28,8 +28,12 @@ export function Header() {
   } = useNavigation();
 
   return (
-    <header className="h-12 border-b border-border bg-card px-4">
-      <div className="flex h-full items-center gap-2">
+    <header className="h-12 border-b border-border bg-card">
+      {/* The bar spans the viewport - the border and background are full-bleed - but its
+          CONTENTS sit in the same centred column as the page, so the brand starts on the
+          same x as the first card. Without this the chrome stays at 16px while the column
+          centres, and the gap grows with the display: 80px at 1600, 560px at 2560. */}
+      <div className="mx-auto flex h-full w-full max-w-[var(--content-w)] items-center gap-2 px-4">
         {/* Left: Logo (takes remaining space) */}
         <div className="flex shrink-0 items-center sm:flex-1">
           <Link to="/" className="group flex items-center">

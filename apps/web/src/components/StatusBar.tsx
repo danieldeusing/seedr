@@ -71,7 +71,7 @@ export function StatusBar() {
   return (
     <footer className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card text-[11px]" data-testid="status-bar">
       {/* wraps onto two rows on phones: the path collapses first, the controls never clip */}
-      <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-1">
+      <div className="mx-auto flex min-h-8 w-full max-w-[var(--content-w)] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-1">
         <span className="min-w-0 flex-1 basis-full truncate text-muted-foreground sm:basis-auto" data-testid="status-path">
           <span className="text-primary">[seedr]</span> visitor@registry:
           <span className="text-foreground">{`~/.agents${pathname === "/" ? "" : pathname}`}</span>

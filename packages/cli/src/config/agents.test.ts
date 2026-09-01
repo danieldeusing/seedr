@@ -30,11 +30,16 @@ describe("agents", () => {
       expect(ALL_AGENTS).not.toContain("gemini");
     });
 
-    it("installs Antigravity skills into the agent-neutral .agents tree", () => {
+    // Project and user scope are different trees for Antigravity: `.agents/` is
+    // its project root, but the personal tier is `~/.gemini/config`. The vendor
+    // documentation states `~/.agents` does not exist for it, so a user-scope
+    // install there would write where nothing reads.
+    it("installs Antigravity project skills into .agents and user skills under ~/.gemini/config", () => {
       const antigravity = CODING_AGENTS.antigravity;
       expect(antigravity.name).toBe("Google Antigravity");
       expect(antigravity.projectRoot).toBe(".agents");
-      expect(antigravity.userRoot).toBe("/home/testuser/.agents");
+      expect(antigravity.userRoot).toBe("/home/testuser/.gemini/config");
+      expect(antigravity.userRoot).not.toBe("/home/testuser/.agents");
       expect(Object.keys(antigravity.contentTypes)).toEqual(["skill"]);
     });
 

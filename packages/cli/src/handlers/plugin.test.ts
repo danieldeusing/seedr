@@ -696,10 +696,49 @@ describe("plugin handler", () => {
 
       expect(results[0]).toEqual({ agent: "opencode", success: true, path: "" });
       const config = readJsonFile(OPENCODE_PROJECT_CONFIG);
-      expect(config.plugin).toEqual(["my-plugin@git+https://github.com/owner/my-plugin.git"]);
+      // The plugin's OWN repository, pinned — not the marketplace it is indexed in.
+      expect(config.plugin).toEqual([`my-plugin@git+https://github.com/owner/my-plugin.git#${SHA}`]);
       expect(config.$schema).toBe("https://opencode.ai/config.json");
       // OpenCode resolves the module itself, so seedr writes no plugin tree.
       expect(vol.existsSync(CACHE_DIR)).toBe(false);
+    });
+
+    // Most marketplace entries point at a monorepo. Handing OpenCode that root
+    // installs a different module entirely under this plugin's name.
+    it("uses the plugin's own repository for OpenCode, never the marketplace it was indexed in", async () => {
+      const { fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+      const { installPlugin } = await import("./plugin.js");
+
+      const item = pluginItem({
+        marketplaceRef: { url: "https://github.com/anthropics/claude-plugins-official", sha: SHA },
+        pluginSource: { kind: "url", url: "https://github.com/obra/real-plugin.git", sha: SHA },
+      } as Partial<RegistryItem>);
+
+      await installPlugin(item, ["opencode"], "project", "copy", true, PROJECT);
+
+      const config = readJsonFile(OPENCODE_PROJECT_CONFIG);
+      expect(config.plugin[0]).toContain("obra/real-plugin");
+      expect(config.plugin[0]).not.toContain("claude-plugins-official");
+    });
+
+    // An npm-style git spec has no subpath, so a plugin that lives in a
+    // subdirectory cannot be expressed at all — the repository root is a
+    // different module, and installing it silently would be the worse answer.
+    it("refuses an OpenCode install for a plugin that lives in a subdirectory", async () => {
+      const { fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+      const { installPlugin } = await import("./plugin.js");
+
+      const item = pluginItem({
+        pluginSource: { kind: "marketplace-path", path: "plugins/my-plugin", url: "https://github.com/owner/mono.git", sha: SHA },
+      } as Partial<RegistryItem>);
+
+      const results = await installPlugin(item, ["opencode"], "project", "copy", true, PROJECT);
+
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toMatch(/cannot name a subdirectory/);
+      expect(vol.existsSync(OPENCODE_PROJECT_CONFIG)).toBe(false);
     });
 
     it("records an Antigravity import and copies the tree under ~/.gemini", async () => {

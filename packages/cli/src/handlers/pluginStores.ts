@@ -491,11 +491,30 @@ export function openCodeConfigPath(scope: InstallScope, cwd: string): string {
 
 /**
  * OpenCode resolves the module itself, so the entry is a spec rather than a
- * path: an npm name, or `name@git+<url>` for a repository.
+ * path: an npm name, or `name@git+<url>#<sha>` for a repository.
+ *
+ * The repository has to be the one holding the plugin's own content
+ * (`pluginSource.url`), never the marketplace it was indexed in — most
+ * marketplace entries point at a monorepo, and handing OpenCode that root
+ * installs something else entirely under this plugin's name.
  */
 export function toOpenCodePluginSpec(item: RegistryItem, name: string): string {
-  const repo = marketplaceRepo(item) ?? githubRepoOf(item.externalUrl);
-  return repo ? `${name}@git+https://github.com/${repo}.git` : name;
+  const source = item.pluginSource;
+
+  // A plugin living in a subdirectory cannot be expressed as a git spec — the
+  // npm-style syntax OpenCode resolves has no subpath — and the repository root
+  // is a different module. Refusing is the honest answer; writing the root is
+  // the bug this replaced.
+  if (source?.path) {
+    throw new Error(
+      `OpenCode cannot install "${name}": its content is the subdirectory "${source.path}" of ${source.url ?? "its repository"}, and an OpenCode plugin spec cannot name a subdirectory`
+    );
+  }
+
+  const repo = githubRepoOf(source?.url) ?? githubRepoOf(item.externalUrl);
+  if (!repo) return name;
+  const pinned = source?.sha ?? item.sourceRevision;
+  return `${name}@git+https://github.com/${repo}.git${pinned ? `#${pinned}` : ""}`;
 }
 
 function specName(spec: string): string {

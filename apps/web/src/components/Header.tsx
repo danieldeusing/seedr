@@ -81,7 +81,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <span className="ml-2 min-w-0 truncate text-[12px] sm:ml-10">
+            <span className="ml-2 min-w-0 truncate text-[0.75rem] sm:ml-10">
               <span className="text-muted-foreground">visitor@registry:</span>
               <span className="text-primary">~</span>
               <span className="text-muted-foreground">/</span>

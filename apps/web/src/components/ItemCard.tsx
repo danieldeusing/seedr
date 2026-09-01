@@ -38,7 +38,7 @@ function PackageBadges({ counts }: { counts: Record<string, number> }) {
             <TooltipTrigger asChild>
               <span role="img" className="flex items-center gap-0.5" aria-label={`${item.count} ${item.label}`}>
                 <Icon className={`w-3 h-3 ${colorClass}`} aria-hidden />
-                <span className="text-[11px] text-subtext" aria-hidden>{item.count}</span>
+                <span className="text-[0.6875rem] text-subtext" aria-hidden>{item.count}</span>
               </span>
             </TooltipTrigger>
             <TooltipContent side="top">{`${item.count} ${item.label}`}</TooltipContent>
@@ -135,7 +135,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
           {item.name}
         </Link>
       </h3>
-      {authorName && <p className="mb-3 text-[11px] text-text-dim">by {authorName}</p>}
+      {authorName && <p className="mb-3 text-[0.6875rem] text-text-dim">by {authorName}</p>}
       <p className="mb-5 flex-grow text-justify text-xs text-subtext line-clamp-3">{item.description}</p>
 
       <div className="flex items-center justify-between gap-2">
@@ -153,7 +153,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
         </div>
         {(item.package || item.wrapper) && <PackageBadges counts={item.package ?? { [item.wrapper!]: 1 }} />}
         {item.updatedAt && (
-          <FilterControl label="Sort by last update" onClick={onDateClick} className="items-center gap-1 text-[11px] text-text-dim">
+          <FilterControl label="Sort by last update" onClick={onDateClick} className="items-center gap-1 text-[0.6875rem] text-text-dim">
             <Clock className="h-3 w-3" aria-hidden />
             <span>{formatRelativeTime(item.updatedAt)}</span>
           </FilterControl>

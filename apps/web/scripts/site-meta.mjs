@@ -15,6 +15,7 @@ export const TYPE_PATHS = {
   command: "commands",
   settings: "settings",
   mcp: "mcps",
+  rule: "rules",
 };
 
 export const TYPE_LABELS = {
@@ -25,6 +26,7 @@ export const TYPE_LABELS = {
   command: "Command",
   settings: "Settings",
   mcp: "MCP Server",
+  rule: "Rule",
 };
 
 export const TYPE_LABELS_PLURAL = {
@@ -35,6 +37,7 @@ export const TYPE_LABELS_PLURAL = {
   command: "Commands",
   settings: "Settings",
   mcp: "MCP Servers",
+  rule: "Rules",
 };
 
 const MAX_DESCRIPTION = 160;

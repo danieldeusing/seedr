@@ -12,6 +12,7 @@ import agentsData from "@registry/agents/manifest.json";
 import mcpData from "@registry/mcp/manifest.json";
 import settingsData from "@registry/settings/manifest.json";
 import commandsData from "@registry/commands/manifest.json";
+import rulesData from "@registry/rules/manifest.json";
 
 // Dev-only test item for testing media previews (served from apps/web/dev-samples
 // by the vite dev middleware; kept out of public/ so it isn't deployed)
@@ -50,6 +51,7 @@ const allItems: RegistryItem[] = (
     ...mcpData.items,
     ...settingsData.items,
     ...commandsData.items,
+    ...rulesData.items,
   ] as RegistryItem[]
 ).map((item) => ({
   ...item,
@@ -133,7 +135,7 @@ export async function getFileTree(slug: string, type?: ComponentType): Promise<F
 // Computed once at module level since manifest data is static (bundled at build time)
 const typeCounts: Record<ComponentType, number> = (() => {
   const counts: Record<ComponentType, number> = {
-    skill: 0, hook: 0, agent: 0, plugin: 0, command: 0, settings: 0, mcp: 0,
+    skill: 0, hook: 0, agent: 0, plugin: 0, command: 0, settings: 0, mcp: 0, rule: 0,
   };
   for (const item of manifest.items) {
     counts[item.type]++;

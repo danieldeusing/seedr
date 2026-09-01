@@ -4,7 +4,7 @@ import { ALL_TYPES, isComponentType, isValidSlug, itemKey, typeDirName } from ".
 
 describe("typeDirName", () => {
   test("pluralises every type except mcp and settings", () => {
-    expect(ALL_TYPES.map(typeDirName)).toEqual(["skills", "plugins", "hooks", "agents", "mcp", "settings", "commands"]);
+    expect(ALL_TYPES.map(typeDirName)).toEqual(["skills", "plugins", "hooks", "agents", "mcp", "settings", "commands", "rules"]);
   });
 });
 

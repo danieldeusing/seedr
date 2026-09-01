@@ -19,6 +19,7 @@ export { hookHandler, installHook, uninstallHook, getInstalledHooks } from "./ho
 export { mcpHandler, installMcp, uninstallMcp, getInstalledMcpServers } from "./mcp.js";
 export { settingsHandler, installSettings } from "./settings.js";
 export { pluginHandler, installPlugin, uninstallPlugin, getInstalledPlugins } from "./plugin.js";
+export { ruleHandler, installRule, uninstallRule, getInstalledRules } from "./rule.js";
 
 // Register all handlers
 import { registerHandler } from "./registry.js";
@@ -29,6 +30,7 @@ import { hookHandler } from "./hook.js";
 import { mcpHandler } from "./mcp.js";
 import { settingsHandler } from "./settings.js";
 import { pluginHandler } from "./plugin.js";
+import { ruleHandler } from "./rule.js";
 
 registerHandler(skillHandler);
 registerHandler(agentHandler);
@@ -37,3 +39,4 @@ registerHandler(hookHandler);
 registerHandler(mcpHandler);
 registerHandler(settingsHandler);
 registerHandler(pluginHandler);
+registerHandler(ruleHandler);

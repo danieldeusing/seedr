@@ -6,8 +6,9 @@ import type { CanonicalCodingAgent, CodingAgent, ComponentType } from "@seedr/sh
  * Skills are cross-platform. A format is listed only once it has been verified
  * against the real tool — never guessed at:
  *
- * - MCP servers: verified against primary documentation for Claude, Codex and
- *   OpenCode. Copilot's and Antigravity's could not be, so they are refused.
+ * - MCP servers: Claude, Codex and OpenCode from primary documentation;
+ *   Copilot from `copilot mcp --help` plus a populated `~/.copilot/mcp-config.json`.
+ *   Antigravity's schema has never been observed, so it stays refused.
  * - Plugins: every agent here has a native plugin system, and each store's
  *   on-disk format was verified by installing into an isolated HOME and
  *   diffing the result (see `pluginStores.ts` for the per-agent layouts).
@@ -23,7 +24,7 @@ export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> 
   hook: ["claude"],
   plugin: ["claude", "copilot", "antigravity", "codex", "opencode"],
   settings: ["claude"],
-  mcp: ["claude", "codex", "opencode"],
+  mcp: ["claude", "codex", "opencode", "copilot"],
   // Every agent reads standing instructions; only the surface differs. Three
   // take a markdown file in a rules directory, and Codex and OpenCode take a
   // marked section in AGENTS.md because neither has a prose rules directory —
@@ -60,10 +61,8 @@ export function filterCompatibleAgents(
 
 /** Why a type/agent pair is refused, when there is more to say than "not supported". */
 export const MCP_UNSUPPORTED_REASONS: Partial<Record<CanonicalCodingAgent, string>> = {
-  copilot:
-    "GitHub Copilot's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
   antigravity:
-    "Google Antigravity's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
+    "Google Antigravity's MCP file name is documented but its schema has never been observed — the file is empty on every machine checked — so seedr does not guess at it",
 };
 
 /** A sentence explaining why `agent` cannot take `type` content. */

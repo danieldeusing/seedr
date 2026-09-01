@@ -45,13 +45,17 @@ describe("compatibility", () => {
     });
 
     it("should have MCP compatible with every agent whose format is verified", () => {
-      expect(AGENT_COMPATIBILITY.mcp).toEqual(["claude", "codex", "opencode"]);
+      expect(AGENT_COMPATIBILITY.mcp).toEqual(["claude", "codex", "opencode", "copilot"]);
     });
 
-    it("should exclude copilot from MCP and say why", () => {
-      expect(AGENT_COMPATIBILITY.mcp).not.toContain("copilot");
-      expect(isTypeSupported("mcp", "copilot")).toBe(false);
-      expect(describeIncompatibility("mcp", "copilot")).toMatch(/could not be verified/);
+    // Copilot's MCP format is now verified from `copilot mcp --help` and a
+    // populated ~/.copilot/mcp-config.json. Antigravity's file name is
+    // documented but its schema has never been observed, so it stays refused.
+    it("should exclude antigravity from MCP and say why", () => {
+      expect(AGENT_COMPATIBILITY.mcp).toContain("copilot");
+      expect(AGENT_COMPATIBILITY.mcp).not.toContain("antigravity");
+      expect(isTypeSupported("mcp", "antigravity")).toBe(false);
+      expect(describeIncompatibility("mcp", "antigravity")).toMatch(/schema has never been observed/);
       expect(describeIncompatibility("hook", "gemini")).toBe("antigravity does not support hook content");
     });
   });
@@ -66,7 +70,7 @@ describe("compatibility", () => {
     it("should return false for unsupported type/agent combinations", () => {
       expect(isTypeSupported("agent", "copilot")).toBe(false);
       expect(isTypeSupported("hook", "gemini")).toBe(false);
-      expect(isTypeSupported("mcp", "copilot")).toBe(false);
+      expect(isTypeSupported("mcp", "antigravity")).toBe(false);
     });
 
     it("resolves the deprecated gemini id like antigravity", () => {

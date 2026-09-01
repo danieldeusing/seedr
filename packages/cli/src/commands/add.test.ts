@@ -52,7 +52,7 @@ const MCP: RegistryItem = {
   sourceType: "seedr",
 };
 
-const MCP_MULTI: RegistryItem = { ...MCP, slug: "multi", compatibility: ["claude", "codex", "copilot"] };
+const MCP_MULTI: RegistryItem = { ...MCP, slug: "multi", compatibility: ["claude", "codex", "antigravity"] };
 const HOOK: RegistryItem = { slug: "lint-hook", name: "Lint", type: "hook", description: "lint", compatibility: ["claude"], sourceType: "seedr" };
 // The registry really ships these: `skill-creator` is both a skill and a plugin.
 const DUAL_SKILL: RegistryItem = { slug: "skill-creator", name: "Skill Creator", type: "skill", description: "Create skills", compatibility: ["claude"], sourceType: "seedr" };
@@ -129,14 +129,14 @@ describe("resolveRequestedAgents", () => {
   it("'all' means every compatible agent and never errors on the incompatible rest", async () => {
     const { resolveRequestedAgents } = await import("./add.js");
     expect(resolveRequestedAgents("all", SKILL)).toEqual({ ok: true, agents: ["claude", "copilot", "antigravity"], explicit: true });
-    // copilot is in the item's compatibility but not MCP-capable: dropped silently for 'all'
+    // antigravity is in the item's compatibility but not MCP-capable: dropped silently for 'all'
     expect(resolveRequestedAgents("all", MCP_MULTI)).toEqual({ ok: true, agents: ["claude", "codex"], explicit: true });
   });
 
   it("'all' errors when nothing is compatible", async () => {
     const { resolveRequestedAgents } = await import("./add.js");
-    const onlyCopilot: RegistryItem = { ...MCP, compatibility: ["copilot"] };
-    expect(resolveRequestedAgents("all", onlyCopilot)).toEqual({ ok: false, error: 'No agent supports mcp "playwright"' });
+    const onlyAntigravity: RegistryItem = { ...MCP, compatibility: ["antigravity"] };
+    expect(resolveRequestedAgents("all", onlyAntigravity)).toEqual({ ok: false, error: 'No agent supports mcp "playwright"' });
   });
 
   it("accepts one or several explicitly compatible agents (aliases included, deduplicated)", async () => {
@@ -163,17 +163,17 @@ describe("resolveRequestedAgents", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toMatch(/for antigravity, codex\. Compatible agents: claude/);
-      expect(result.error).toMatch(/antigravity: Google Antigravity's MCP configuration format could not be verified/);
+      expect(result.error).toMatch(/antigravity: Google Antigravity's MCP file name is documented/);
       expect(result.error).toMatch(/codex: the registry lists "playwright" for claude only/);
     }
   });
 
-  it("explains why copilot cannot take MCP servers", async () => {
+  it("explains why antigravity cannot take MCP servers", async () => {
     const { resolveRequestedAgents } = await import("./add.js");
-    const result = resolveRequestedAgents("copilot", MCP_MULTI);
+    const result = resolveRequestedAgents("antigravity", MCP_MULTI);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toMatch(/copilot: GitHub Copilot's MCP configuration format could not be verified/);
+      expect(result.error).toMatch(/antigravity: Google Antigravity's MCP file name is documented/);
     }
   });
 

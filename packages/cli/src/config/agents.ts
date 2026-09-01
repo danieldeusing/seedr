@@ -181,10 +181,13 @@ export function getMcpPath(
  * - claude:   `<cwd>/.mcp.json` / `~/.claude.json`
  * - codex:    `<cwd>/.codex/config.toml` / `~/.codex/config.toml`
  * - opencode: `<cwd>/opencode.json` / `~/.config/opencode/opencode.json`
+ * - copilot:  `<cwd>/.github/mcp.json` / `~/.copilot/mcp-config.json`
  *
- * Copilot and Antigravity have no verified MCP configuration format and are
- * not listed (`undefined` means "no known configuration file"); the deprecated
- * `gemini` id resolves to antigravity before it ever reaches this table.
+ * Antigravity is still not listed. Its file name is documented
+ * (`~/.gemini/config/mcp_config.json`) but the shipped manual omits the
+ * workspace path, and the file is empty on every machine checked, so the
+ * schema has never been observed. The deprecated `gemini` id resolves to
+ * antigravity before it ever reaches this table.
  */
 export function getMcpConfigPath(
   agent: CodingAgent,
@@ -199,6 +202,13 @@ export function getMcpConfigPath(
       return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
     case "opencode":
       return isUser ? join(home, ".config", "opencode", "opencode.json") : join(cwd, "opencode.json");
+    case "copilot":
+      // `copilot mcp --help` names three sources: `~/.copilot/mcp-config.json`
+      // for the user, and `.mcp.json` OR `.github/mcp.json` for the workspace.
+      // `.github/mcp.json` is the one that does not collide with Claude's
+      // `.mcp.json` — sharing that file would make a Copilot uninstall delete
+      // Claude's server entry.
+      return isUser ? join(home, ".copilot", "mcp-config.json") : join(cwd, ".github", "mcp.json");
     default:
       // copilot and antigravity: the mcp handler refuses these before ever
       // resolving a path (MCP_UNSUPPORTED_REASONS in config/compatibility.ts).

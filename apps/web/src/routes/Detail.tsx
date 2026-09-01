@@ -196,7 +196,7 @@ export function Detail() {
       }
       integration={item.pluginType === "integration"}
       compatibleTools={item.compatibility}
-      maxWidth="max-w-6xl"
+      maxWidth="max-w-[var(--content-w)]"
     >
       {/* Install command */}
       <div data-term>

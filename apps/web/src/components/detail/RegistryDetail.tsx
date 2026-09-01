@@ -20,7 +20,7 @@ function DetailLabel({ label }: { label: DetailLabelData }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge variant="outline" className={cn("cursor-help gap-1 font-medium", label.className)}>
+        <Badge variant="outline" className={cn("gap-1 font-medium", label.className)}>
           {label.icon}
           {label.text}
         </Badge>
@@ -141,7 +141,7 @@ export function RegistryDetail({
   longDescription,
   integration,
   compatibleTools,
-  maxWidth = "max-w-6xl",
+  maxWidth = "max-w-[var(--content-w)]",
   children,
 }: RegistryDetailProps) {
   return (

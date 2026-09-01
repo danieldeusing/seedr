@@ -39,7 +39,7 @@ export function Header() {
         </div>
 
         {/* Center: breadcrumb path + history nav */}
-        <nav aria-label="Breadcrumb and history" className="flex min-w-0 flex-1 items-center gap-1 sm:w-full sm:max-w-6xl sm:px-4">
+        <nav aria-label="Breadcrumb and history" className="flex min-w-0 flex-1 items-center gap-1 sm:w-full sm:max-w-[var(--content-w)] sm:px-4">
             <Button
               variant="ghost"
               size="icon-xs"

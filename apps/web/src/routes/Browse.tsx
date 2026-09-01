@@ -211,7 +211,7 @@ function BrowsePage({ componentType }: { componentType: ComponentType }) {
   usePageMeta(categoryMeta(componentType, items.length));
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-[var(--content-w)] px-4 py-8">
       <div className="mb-8">
         <h1 className="mb-2 flex items-center gap-2 text-lg font-bold text-text">
           <TypeIcon type={componentType} size={20} className={typeTextColors[componentType]} />

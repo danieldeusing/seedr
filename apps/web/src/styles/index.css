@@ -61,14 +61,30 @@ html[data-theme="mono"] {
 }
 
 @theme {
-  /* Type scale — 12px floor everywhere; nothing should drop below 12px. */
-  --text-xss: 10px;
+  /* Type scale — the 12px floor, IN REM SO IT SCALES.
+   *
+   * These were px, and px is what made this app look broken on a large display. Since design
+   * 0.29.0 the root font-size is fluid above a 1920px viewport
+   * (`max(1rem, calc(1rem + (100vw - 1920px) / 120))`) and every measurement in the design system
+   * is in rem, so the whole page grows together. A px type scale opts OUT of that: measured at
+   * 3840px against danieldeusing.de, the root reached 32px and the container 2944px on both, while
+   * a paragraph rendered 24px there and 12px HERE. That is the "tiny text marooned in a huge
+   * layout" this page was reported for, and it is a different bug from the container width fixed
+   * beside it — the container was too narrow, this text was too small, and only fixing both makes
+   * the page match its siblings.
+   *
+   * Same sizes at the 1920 baseline, where 1rem is 16px, so nothing changes at or below the width
+   * most screens actually are, and the floor the original comment asked for is preserved exactly
+   * (0.75rem × 16px = 12px). Above 1920 they grow with everything else instead of standing still.
+   * The design system's own --fs-base is 0.75rem for precisely this reason.
+   */
+  --text-xss: 0.625rem;   /* 10px at the 1920px baseline */
   --text-xss--line-height: 1.2;
-  --text-xs: 12px;
+  --text-xs: 0.75rem;     /* 12px — the floor */
   --text-xs--line-height: 1.25;
-  --text-sm: 12px;
+  --text-sm: 0.75rem;     /* 12px — the floor */
   --text-sm--line-height: 1.33;
-  --text-md: 14px;
+  --text-md: 0.875rem;    /* 14px */
   --text-md--line-height: 1.43;
 
   /* Type-specific accent colors */

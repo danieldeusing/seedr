@@ -187,13 +187,43 @@ jobs:
         working-directory: packages/cli
         run: npm publish --access public --provenance
 
-      - name: Carry the version bump to main (best effort)
+      # Land the released version on main too, or main's CLI version goes stale and every
+      # promotion of main into prod conflicts on packages/cli/package.json. That is not
+      # hypothetical: this step existed before and never once worked, so prod reached 0.1.97
+      # while main still said 0.1.89 — eight releases — and the promotion on 2026-09-01 hit
+      # exactly that conflict.
+      #
+      # WHY IT NEVER WORKED: it ran `git rebase origin/main` while checked out on prod. That
+      # does not replay the version bump onto main, it tries to replay EVERY prod commit main
+      # does not have — a hundred-plus of them, including the registry commits the sync job
+      # deliberately rebases onto prod as separate copies. It conflicted every time, hit
+      # `rebase --abort`, emitted a warning nobody was reading, and the drift compounded.
+      #
+      # SET THE VERSION, DO NOT MOVE THE COMMIT. main and prod have diverged by construction,
+      # so no cherry-pick of the bump commit applies cleanly either — its context is prod's
+      # version, which main does not share. Writing the number straight into main's own
+      # package.json cannot conflict, and it states the intent exactly: main should say what npm
+      # published. `--allow-same-version` makes it idempotent if main is already correct.
+      - name: Mirror the released CLI version onto main
         if: steps.changes.outputs.needs_bump == 'true'
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.version }}
         run: |
           git fetch origin main
-          if git rebase origin/main; then
-            git push origin HEAD:main || echo "::warning::could not push the version bump to main; the release source is on prod and tagged cli-v${{ steps.bump.outputs.version }}"
-          else
-            git rebase --abort
-            echo "::warning::version bump did not rebase onto main cleanly; merge prod into main manually"
+          git checkout -B cli-version-mirror origin/main
+          ( cd packages/cli && npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version )
+          if git diff --quiet -- packages/cli/package.json; then
+            echo "main already records $NEW_VERSION — nothing to mirror"
+            exit 0
+          fi
+          git add packages/cli/package.json
+          git commit -m "chore(cli): record release $NEW_VERSION on main [skip ci]"
+          # One retry: main is a busy branch and may have moved between the fetch and the push.
+          if ! git push origin HEAD:main; then
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; true; }
+            git push origin HEAD:main || {
+              echo "::error::could not record $NEW_VERSION on main. The release itself is fine — it is published, tagged cli-v$NEW_VERSION and live on prod — but main now understates the CLI version and the next promotion will conflict on packages/cli/package.json. Fix with: git checkout main && (cd packages/cli && npm version $NEW_VERSION --no-git-tag-version --allow-same-version) && git commit -am 'chore(cli): record release $NEW_VERSION on main' && git push"
+              exit 0
+            }
           fi

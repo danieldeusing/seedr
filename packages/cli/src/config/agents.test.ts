@@ -117,6 +117,26 @@ describe("agents", () => {
       expect(getAgentRoot("opencode", "project", "/project")).toBe("/project/.opencode");
     });
 
+    // Containers, multi-account setups and the Agent SDK all relocate Claude's
+    // user tree. Writing to ~/.claude there reports success and installs where
+    // Claude Code never looks.
+    it("honours $CLAUDE_CONFIG_DIR for Claude user scope", async () => {
+      const previous = process.env.CLAUDE_CONFIG_DIR;
+      process.env.CLAUDE_CONFIG_DIR = "/elsewhere/claude";
+      try {
+        vi.resetModules();
+        const fresh = await import("./agents.js");
+        expect(fresh.getAgentRoot("claude", "user", "/project")).toBe("/elsewhere/claude");
+        expect(fresh.getSettingsPath("user", "/project")).toBe("/elsewhere/claude/settings.json");
+        // Project scope is unaffected — the variable names a user tree.
+        expect(fresh.getAgentRoot("claude", "project", "/project")).toBe("/project/.claude");
+      } finally {
+        if (previous === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+        else process.env.CLAUDE_CONFIG_DIR = previous;
+        vi.resetModules();
+      }
+    });
+
     // Copilot's personal tier is not the project spelling: `~/.copilot/` holds
     // the CLI's own skills, and `~/.github/skills` is read by nothing. Writing
     // there reported success and installed into a directory no tool opens.

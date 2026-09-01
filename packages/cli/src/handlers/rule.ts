@@ -193,6 +193,7 @@ export async function planRule(
 
 export const ruleHandler: ContentHandler = {
   type: "rule",
+  honoursMethod: false,
 
   async install(
     item: RegistryItem,

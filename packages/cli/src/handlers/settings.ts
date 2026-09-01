@@ -212,6 +212,7 @@ export async function planSettings(
  */
 export const settingsHandler: ContentHandler = {
   type: "settings",
+  honoursMethod: false,
 
   async install(
     item: RegistryItem,

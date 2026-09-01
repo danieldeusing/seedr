@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 import type { CodingAgent, InstallScope } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
 import { canonicalAgent } from "@seedr/registry-ops/pure";
-import { getSettingsPath, CODING_AGENTS } from "../config/agents.js";
+import { claudeUserRoot, getSettingsPath, CODING_AGENTS } from "../config/agents.js";
 import { isTypeSupported } from "../config/compatibility.js";
 import { getEffectiveSourceRevision, parseGitHubRepo } from "../config/source.js";
 import { exists, removePathEntry, resolveContained } from "../utils/fs.js";
@@ -133,7 +133,7 @@ function manifestsFor(ownManifest?: string): readonly string[] {
 // Claude Code — ~/.claude/plugins
 // ---------------------------------------------------------------------------
 
-const CLAUDE_PLUGINS_DIR = join(home, ".claude", "plugins");
+const CLAUDE_PLUGINS_DIR = join(claudeUserRoot(), "plugins");
 export const CLAUDE_CACHE_DIR = join(CLAUDE_PLUGINS_DIR, "cache");
 export const CLAUDE_INSTALLED_PATH = join(CLAUDE_PLUGINS_DIR, "installed_plugins.json");
 export const CLAUDE_KNOWN_MARKETPLACES_PATH = join(CLAUDE_PLUGINS_DIR, "known_marketplaces.json");

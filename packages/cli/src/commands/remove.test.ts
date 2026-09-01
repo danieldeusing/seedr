@@ -1,4 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+/** Everything the spinners said, so a per-agent line can be asserted. */
+const spinnerSaid: string[] = [];
+vi.mock("ora", () => ({
+  default: () => {
+    const record = (text?: string) => {
+      if (text) spinnerSaid.push(text);
+      return spinner;
+    };
+    const spinner = {
+      start: record, stop: record, succeed: record,
+      fail: record, warn: record, info: record, text: "",
+    };
+    return spinner;
+  },
+}));
 import { vol } from "memfs";
 import type { RegistryItem } from "@seedr/shared";
 
@@ -79,6 +95,7 @@ describe("validateRemoveRequest", () => {
 
 describe("runRemove", () => {
   beforeEach(() => {
+    spinnerSaid.length = 0;
     vol.reset();
     promptConfirmMock.mockReset();
     promptConfirmMock.mockResolvedValue(true);
@@ -133,6 +150,18 @@ describe("runRemove", () => {
     expect(vol.existsSync(SKILL_DIR)).toBe(false);
     expect(vol.existsSync("/my/project/.github/skills/test-skill/SKILL.md")).toBe(true);
     expect(vi.mocked(console.log)).toHaveBeenCalledWith(expect.stringMatching(/Successfully removed from 1 agent/));
+  });
+
+  // "Not found" and "could never have been there" are different answers, and
+  // reporting the second as the first sends people hunting for an install that
+  // was never possible.
+  it("says a type the agent cannot hold is unsupported, not merely absent", async () => {
+    const { runRemove } = await import("./remove.js");
+
+    expect(await runRemove("some-hook", { type: "hook", yes: true, agents: "codex" }, PROJECT)).toBe(0);
+
+    expect(spinnerSaid.join(" ")).toMatch(/does not support hook content/);
+    expect(spinnerSaid.join(" ")).not.toMatch(/Not found/);
   });
 
   it("asks for confirmation and stops when declined", async () => {

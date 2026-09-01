@@ -390,6 +390,7 @@ export async function planPlugin(
  */
 export const pluginHandler: ContentHandler = {
   type: "plugin",
+  honoursMethod: false,
 
   async install(
     item: RegistryItem,

@@ -374,6 +374,7 @@ export async function planMcp(
  */
 export const mcpHandler: ContentHandler = {
   type: "mcp",
+  honoursMethod: false,
 
   async install(
     item: RegistryItem,

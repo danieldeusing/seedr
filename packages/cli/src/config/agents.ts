@@ -15,8 +15,13 @@ const SKILL_DIRECTORY: ContentTypeConfig = {
 const ANTIGRAVITY: CodingAgentConfig = {
   name: "Google Antigravity",
   shortName: "antigravity",
+  // Project content is the agent-neutral `.agents/` tree, which IS Antigravity's
+  // own project root. The personal tier is not the same spelling: the shipped
+  // CLI reads `~/.gemini/config/skills`, and the vendor documentation states
+  // outright that `~/.agents` does not exist for it. `~/.gemini/skills` is the
+  // predecessor Gemini CLI location and is not written.
   projectRoot: ".agents",
-  userRoot: join(home, ".agents"),
+  userRoot: join(home, ".gemini", "config"),
   contentTypes: { skill: SKILL_DIRECTORY },
 };
 

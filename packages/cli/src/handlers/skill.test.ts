@@ -213,6 +213,41 @@ describe("skill handler", () => {
       expect(await getInstalledSkills("codex", "project", PROJECT)).not.toContain(TEST_SKILL);
     });
 
+    // Agents that read the shared tree leave no per-agent file, so nothing on
+    // disk said who a central copy belonged to: removing it for one agent
+    // deleted the copy every other agent was still reading.
+    it("removing a shared skill for one agent leaves it installed for the others", async () => {
+      const { installSkill, getInstalledSkills, uninstallSkill } = await import("./skill.js");
+
+      await installSkill(skillItem(), ["codex", "opencode"], "project", "symlink", true, PROJECT);
+      expect(vol.existsSync(CENTRAL_SKILL)).toBe(true);
+
+      expect(await uninstallSkill(TEST_SKILL, "codex", "project", PROJECT)).toBe(true);
+
+      // The shared copy survives, and OpenCode still has it.
+      expect(vol.existsSync(CENTRAL_SKILL)).toBe(true);
+      expect(await getInstalledSkills("opencode", "project", PROJECT)).toContain(TEST_SKILL);
+      expect(await getInstalledSkills("codex", "project", PROJECT)).not.toContain(TEST_SKILL);
+
+      // Removing it for the last owner does delete it.
+      expect(await uninstallSkill(TEST_SKILL, "opencode", "project", PROJECT)).toBe(true);
+      expect(vol.existsSync(CENTRAL_SKILL)).toBe(false);
+    });
+
+    // Antigravity's project skills directory IS the shared one, so an
+    // unguarded removal took every other agent's copy with it.
+    it("removing a shared skill for Antigravity leaves it installed for the others", async () => {
+      const { installSkill, getInstalledSkills, uninstallSkill } = await import("./skill.js");
+
+      await installSkill(skillItem(), ["antigravity", "codex"], "project", "symlink", true, PROJECT);
+      expect(vol.existsSync(CENTRAL_SKILL)).toBe(true);
+
+      expect(await uninstallSkill(TEST_SKILL, "antigravity", "project", PROJECT)).toBe(true);
+
+      expect(vol.existsSync(CENTRAL_SKILL)).toBe(true);
+      expect(await getInstalledSkills("codex", "project", PROJECT)).toContain(TEST_SKILL);
+    });
+
     it("rejects an invalid slug before writing anything", async () => {
       const { installSkill } = await import("./skill.js");
       await expect(installSkill(skillItem({ slug: "../escape" }), ["claude"], "project", "copy", true, PROJECT)).rejects.toThrow(/Invalid skill slug/);

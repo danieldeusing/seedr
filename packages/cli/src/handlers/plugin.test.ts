@@ -676,7 +676,9 @@ describe("plugin handler", () => {
       const results = await installPlugin(pluginItem(), ["codex"], "project", "copy", true, PROJECT);
 
       expect(results[0]?.success).toBe(true);
-      expect(results[0]?.path).toBe(`${CODEX_CACHE_DIR}/${MARKETPLACE}/my-plugin`);
+      // Real Codex cache entries are <marketplace>/<name>/<version> — dropping the
+      // version segment writes a tree Codex does not look in.
+      expect(results[0]?.path).toBe(`${CODEX_CACHE_DIR}/${MARKETPLACE}/my-plugin/2.1.0`);
       const toml = vol.readFileSync(CODEX_CONFIG, "utf-8") as string;
       expect(toml).toContain(`[marketplaces.${MARKETPLACE}]`);
       expect(toml).toContain('source_type = "git"');
@@ -720,7 +722,7 @@ describe("plugin handler", () => {
       const results = await installPlugin(pluginItem(), ["codex"], "project", "copy", true, PROJECT);
 
       // .codex-plugin wins over .claude-plugin's 0.0.1-claude.
-      expect(vol.existsSync(`${CODEX_CACHE_DIR}/${MARKETPLACE}/my-plugin`)).toBe(true);
+      expect(vol.existsSync(`${CODEX_CACHE_DIR}/${MARKETPLACE}/my-plugin/9.9.9`)).toBe(true);
       expect(results[0]?.success).toBe(true);
       const toml = vol.readFileSync(CODEX_CONFIG, "utf-8") as string;
       expect(toml).toContain('[plugins."my-plugin@marketplace"]');

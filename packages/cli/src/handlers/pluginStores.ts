@@ -117,7 +117,14 @@ export function splitPluginId(pluginId: string): { name: string; marketplace: st
   return { name: pluginId.slice(0, at), marketplace: pluginId.slice(at + 1) };
 }
 
-/** The agent's own manifest first, the Claude one as the fallback every plugin has. */
+/**
+ * The agent's own manifest first, the Claude one as the fallback every plugin has.
+ *
+ * Only name a per-agent manifest that plugins in the wild actually ship —
+ * `.codex-plugin/plugin.json` is one, and superpowers carries it. Inventing
+ * `.copilot-plugin/` or `.antigravity-plugin/` on the assumption the vendor
+ * will one day use that spelling is the guessing this repo refuses elsewhere.
+ */
 function manifestsFor(ownManifest?: string): readonly string[] {
   return ownManifest ? [ownManifest, CLAUDE_MANIFEST] : [CLAUDE_MANIFEST];
 }
@@ -316,7 +323,7 @@ interface CopilotSettings extends EnabledPluginsFile {
 }
 
 const copilotStore: PluginStore = {
-  manifestPaths: manifestsFor(".copilot-plugin/plugin.json"),
+  manifestPaths: manifestsFor(),
   userGlobal: true,
   cacheRoot: COPILOT_PLUGINS_DIR,
 
@@ -412,7 +419,11 @@ const codexStore: PluginStore = {
   userGlobal: true,
   cacheRoot: CODEX_CACHE_DIR,
 
-  cachePath: (marketplace, name) => resolveContained(CODEX_CACHE_DIR, marketplace, name),
+  // Real cache entries on disk are <marketplace>/<name>/<version> — e.g.
+  // claude-plugins-official/claude-code-setup/1.0.0. Dropping the version
+  // segment writes a tree Codex does not look in.
+  cachePath: (marketplace, name, version) =>
+    resolveContained(CODEX_CACHE_DIR, marketplace, name, version),
 
   async ensureMarketplace(marketplace, item) {
     const repo = marketplaceRepo(item);
@@ -493,7 +504,7 @@ function specName(spec: string): string {
 }
 
 const openCodeStore: PluginStore = {
-  manifestPaths: manifestsFor(".opencode-plugin/plugin.json"),
+  manifestPaths: manifestsFor(),
   userGlobal: false,
   cacheRoot: null,
 
@@ -549,7 +560,7 @@ interface ImportManifest {
 }
 
 const antigravityStore: PluginStore = {
-  manifestPaths: manifestsFor(".antigravity-plugin/plugin.json"),
+  manifestPaths: manifestsFor(),
   userGlobal: true,
   cacheRoot: GEMINI_PLUGINS_DIR,
 

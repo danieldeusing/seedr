@@ -55,8 +55,11 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
   copilot: {
     name: "GitHub Copilot",
     shortName: "copilot",
+    // Project content is `.github/`, but the personal tier is `~/.copilot/` —
+    // the two are not the same spelling. `~/.github/skills` is read by nothing;
+    // `~/.copilot/skills` is what the CLI itself populates.
     projectRoot: ".github",
-    userRoot: join(home, ".github"),
+    userRoot: join(home, ".copilot"),
     contentTypes: { skill: SKILL_DIRECTORY },
   },
   antigravity: ANTIGRAVITY,

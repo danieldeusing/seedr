@@ -111,6 +111,17 @@ describe("agents", () => {
       expect(getAgentRoot("codex", "project", "/project")).toBe("/project/.codex");
       expect(getAgentRoot("opencode", "project", "/project")).toBe("/project/.opencode");
     });
+
+    // Copilot's personal tier is not the project spelling: `~/.copilot/` holds
+    // the CLI's own skills, and `~/.github/skills` is read by nothing. Writing
+    // there reported success and installed into a directory no tool opens.
+    it("uses Copilot's own home for user scope, not the project spelling", () => {
+      expect(getAgentRoot("copilot", "user", "/project")).toBe("/home/testuser/.copilot");
+      expect(getAgentRoot("copilot", "user", "/project")).not.toBe("/home/testuser/.github");
+      expect(getContentPath("copilot", "skill", "user", "/project")).toBe(
+        "/home/testuser/.copilot/skills"
+      );
+    });
   });
 
   describe("getContentPath", () => {

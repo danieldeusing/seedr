@@ -3,19 +3,25 @@ import type { CanonicalCodingAgent, CodingAgent, ComponentType } from "@seedr/sh
 
 /**
  * Maps content types to the coding agents that support them.
- * Skills are cross-platform; MCP servers are written only for agents whose
- * configuration format was verified against primary documentation (Claude,
- * Codex, OpenCode) — Copilot's and Antigravity's could not be, so they are
- * refused rather than guessed at. Everything else is Claude-only.
- * Canonical ids only; inputs are resolved through `canonicalAgent`, so the
- * deprecated `gemini` alias behaves exactly like `antigravity`.
+ * Skills are cross-platform. A format is listed only once it has been verified
+ * against the real tool — never guessed at:
+ *
+ * - MCP servers: verified against primary documentation for Claude, Codex and
+ *   OpenCode. Copilot's and Antigravity's could not be, so they are refused.
+ * - Plugins: every agent here has a native plugin system, and each store's
+ *   on-disk format was verified by installing into an isolated HOME and
+ *   diffing the result (see `pluginStores.ts` for the per-agent layouts).
+ *
+ * Everything else is Claude-only. Canonical ids only; inputs are resolved
+ * through `canonicalAgent`, so the deprecated `gemini` alias behaves exactly
+ * like `antigravity`.
  */
 export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> = {
   skill: ["claude", "copilot", "antigravity", "codex", "opencode"],
   command: ["claude"],
   agent: ["claude"],
   hook: ["claude"],
-  plugin: ["claude"],
+  plugin: ["claude", "copilot", "antigravity", "codex", "opencode"],
   settings: ["claude"],
   mcp: ["claude", "codex", "opencode"],
 };

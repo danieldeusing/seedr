@@ -30,9 +30,18 @@ describe("compatibility", () => {
     it("should have Claude-only types", () => {
       expect(AGENT_COMPATIBILITY.agent).toEqual(["claude"]);
       expect(AGENT_COMPATIBILITY.hook).toEqual(["claude"]);
-      expect(AGENT_COMPATIBILITY.plugin).toEqual(["claude"]);
       expect(AGENT_COMPATIBILITY.settings).toEqual(["claude"]);
       expect(AGENT_COMPATIBILITY.command).toEqual(["claude"]);
+    });
+
+    it("should have plugins compatible with every agent whose store is verified", () => {
+      expect(AGENT_COMPATIBILITY.plugin).toEqual([
+        "claude",
+        "copilot",
+        "antigravity",
+        "codex",
+        "opencode",
+      ]);
     });
 
     it("should have MCP compatible with every agent whose format is verified", () => {
@@ -57,7 +66,7 @@ describe("compatibility", () => {
     it("should return false for unsupported type/agent combinations", () => {
       expect(isTypeSupported("agent", "copilot")).toBe(false);
       expect(isTypeSupported("hook", "gemini")).toBe(false);
-      expect(isTypeSupported("plugin", "codex")).toBe(false);
+      expect(isTypeSupported("mcp", "copilot")).toBe(false);
     });
 
     it("resolves the deprecated gemini id like antigravity", () => {

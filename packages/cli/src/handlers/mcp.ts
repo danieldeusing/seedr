@@ -233,6 +233,9 @@ const ADAPTERS: Partial<Record<CodingAgent, McpAdapter>> = {
   claude: jsonAdapter("claude", MCP_SERVERS_KEY, (config) => ({ ...config })),
   opencode: jsonAdapter("opencode", "mcp", toOpenCodeServer, { $schema: "https://opencode.ai/config.json" }),
   codex: codexAdapter,
+  // Copilot reads the same `mcpServers` map Claude does — verified from
+  // `copilot mcp --help` and from a populated `~/.copilot/mcp-config.json`.
+  copilot: jsonAdapter("copilot", MCP_SERVERS_KEY, (config) => ({ ...config })),
 };
 
 function adapterFor(agent: CodingAgent): McpAdapter {

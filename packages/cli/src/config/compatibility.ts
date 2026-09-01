@@ -1,51 +1,22 @@
-import { canonicalAgent, canonicalAgents } from "@seedr/registry-ops/pure";
+import {
+  AGENT_COMPATIBILITY,
+  canonicalAgent,
+  canonicalAgents,
+} from "@seedr/registry-ops/pure";
 import type { CanonicalCodingAgent, CodingAgent, ComponentType } from "@seedr/shared";
 
 /**
- * Maps content types to the coding agents that support them.
- * Skills are cross-platform. A format is listed only once it has been verified
- * against the real tool — never guessed at:
- *
- * - MCP servers: Claude, Codex and OpenCode from primary documentation;
- *   Copilot from `copilot mcp --help` plus a populated `~/.copilot/mcp-config.json`.
- *   Antigravity's schema has never been observed, so it stays refused.
- * - Plugins: every agent here has a native plugin system, and each store's
- *   on-disk format was verified by installing into an isolated HOME and
- *   diffing the result (see `pluginStores.ts` for the per-agent layouts).
- *
- * Everything else is Claude-only. Canonical ids only; inputs are resolved
- * through `canonicalAgent`, so the deprecated `gemini` alias behaves exactly
- * like `antigravity`.
+ * The capability table itself lives in `@seedr/registry-ops` so the registry,
+ * the compile step and Studio can reconcile items against the same definition.
+ * This module is the CLI's front door onto it, plus the wording the CLI uses
+ * when a pair is refused.
  */
-export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> = {
-  skill: ["claude", "copilot", "antigravity", "codex", "opencode"],
-  command: ["claude"],
-  agent: ["claude"],
-  hook: ["claude"],
-  plugin: ["claude", "copilot", "antigravity", "codex", "opencode"],
-  settings: ["claude"],
-  mcp: ["claude", "codex", "opencode", "copilot"],
-  // Every agent reads standing instructions; only the surface differs. Three
-  // take a markdown file in a rules directory, and Codex and OpenCode take a
-  // marked section in AGENTS.md because neither has a prose rules directory —
-  // Codex's `rules/` is Starlark sandbox policy. See `ruleTargets.ts`.
-  rule: ["claude", "copilot", "antigravity", "codex", "opencode"],
-};
-
-/**
- * Check if a content type is supported by a specific agent.
- */
-export function isTypeSupported(type: ComponentType, agent: CodingAgent): boolean {
-  const canonical = canonicalAgent(agent);
-  return canonical !== null && AGENT_COMPATIBILITY[type].includes(canonical);
-}
-
-/**
- * Get all agents that support a given content type.
- */
-export function getCompatibleAgents(type: ComponentType): CodingAgent[] {
-  return AGENT_COMPATIBILITY[type];
-}
+export {
+  AGENT_COMPATIBILITY,
+  isTypeSupported,
+  getCompatibleAgents,
+  unclaimedAgents,
+} from "@seedr/registry-ops/pure";
 
 /**
  * Filter agents to only those that support the given content type.

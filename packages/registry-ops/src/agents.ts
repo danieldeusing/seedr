@@ -1,4 +1,4 @@
-import type { CanonicalCodingAgent, CodingAgent, LegacyCodingAgent } from "@seedr/shared";
+import type { CanonicalCodingAgent, CodingAgent, ComponentType, LegacyCodingAgent } from "@seedr/shared";
 
 /**
  * The one runtime vocabulary of coding-agent identifiers (plan §5). Everything
@@ -58,3 +58,75 @@ export function canonicalAgents(values: readonly unknown[]): CanonicalCodingAgen
   return CANONICAL_AGENTS.filter((a) => present.has(a));
 }
 
+
+/**
+ * Which agents can hold each content type — the CLI's real capability, not what
+ * an item happens to declare.
+ *
+ * It lives here rather than in the CLI because the registry has to reconcile
+ * every item's own `compatibility` against it. When the two drift, the item
+ * wins and the capability is unreachable: five working plugin stores were
+ * reachable through one catalogue item for exactly that reason.
+ *
+ * A format appears here only once it has been verified against the real tool.
+ * See `docs/verification.md` and the per-agent stores in the CLI.
+ */
+export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> = {
+  skill: ["claude", "copilot", "antigravity", "codex", "opencode"],
+  command: ["claude"],
+  agent: ["claude"],
+  hook: ["claude"],
+  plugin: ["claude", "copilot", "antigravity", "codex", "opencode"],
+  settings: ["claude"],
+  mcp: ["claude", "codex", "opencode", "copilot"],
+  rule: ["claude", "copilot", "antigravity", "codex", "opencode"],
+};
+
+/** Whether one agent can hold one content type. Aliases resolve first. */
+export function isTypeSupported(type: ComponentType, agent: CodingAgent): boolean {
+  const canonical = canonicalAgent(agent);
+  return canonical !== null && AGENT_COMPATIBILITY[type].includes(canonical);
+}
+
+/** Every agent that can hold this content type. */
+export function getCompatibleAgents(type: ComponentType): CanonicalCodingAgent[] {
+  return [...AGENT_COMPATIBILITY[type]];
+}
+
+/**
+ * Agents this particular item can never reach, whatever the capability table
+ * says, because of what the item itself is.
+ *
+ * One rule so far: OpenCode resolves a plugin from a git spec, and an
+ * npm-style spec has no subpath. A plugin whose content is a subdirectory of a
+ * marketplace monorepo therefore cannot be named at all — the repository root
+ * is a different module. Declaring OpenCode for one would be a promise the CLI
+ * has to break at install time.
+ */
+export function structurallyImpossibleAgents(item: {
+  type: ComponentType;
+  pluginSource?: { path?: string };
+}): CanonicalCodingAgent[] {
+  if (item.type === "plugin" && item.pluginSource?.path) return ["opencode"];
+  return [];
+}
+
+/**
+ * Agents the CLI could install this item for, but which the item does not
+ * declare. Non-empty means the item is narrower than the tooling — sometimes
+ * deliberate, often just stale.
+ *
+ * Agents the item structurally cannot reach are not counted: they are a fact
+ * about the item, not a gap in its declaration.
+ */
+export function unclaimedAgents(item: {
+  type: ComponentType;
+  compatibility: readonly string[];
+  pluginSource?: { path?: string };
+}): CanonicalCodingAgent[] {
+  const declared = new Set(canonicalAgents(item.compatibility));
+  const impossible = new Set(structurallyImpossibleAgents(item));
+  return getCompatibleAgents(item.type).filter(
+    (agent) => !declared.has(agent) && !impossible.has(agent)
+  );
+}

@@ -38,7 +38,7 @@ export function Label({ text, accentColor, icon: Icon, tooltip, size = "sm", cla
       <TooltipTrigger asChild>
         <span
           className={cn(
-            "badge cursor-help border",
+            "badge border",
             size === "sm" ? "badge-sm gap-1" : "badge-md gap-1.5",
             colorClasses[accentColor],
             className

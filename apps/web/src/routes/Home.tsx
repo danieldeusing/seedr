@@ -113,7 +113,7 @@ export function Home() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-[var(--content-w)] mx-auto px-4 py-8">
       {/* Hero */}
       <div className="text-center mb-8">
         <Sprout className="w-6 h-6 text-primary mx-auto mb-2" />

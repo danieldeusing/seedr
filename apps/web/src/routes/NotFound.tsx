@@ -6,7 +6,7 @@ import { notFoundMeta } from "../../scripts/site-meta.mjs";
 export function NotFound({ message = "Page not found" }: { message?: string }) {
   usePageMeta(notFoundMeta());
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 text-center">
+    <div className="mx-auto max-w-[var(--content-w)] px-4 py-12 text-center">
       <p className="prompt">cat {window.location.pathname.slice(1) || "index"}</p>
       <h1 className="mt-4 text-lg font-semibold text-foreground">{message}</h1>
       <p className="mt-2 text-subtext">No such file or directory (404)</p>

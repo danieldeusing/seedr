@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { canonicalAgent, canonicalAgents, isLegacyAgent, storageAgents, AGENT_COMPATIBILITY, unclaimedAgents, structurallyImpossibleAgents } from "./agents.js";
+import { canonicalAgent, canonicalAgents, isLegacyAgent, storageAgents, AGENT_COMPATIBILITY, derivePluginCompatibility, unclaimedAgents, type PluginBundle } from "./agents.js";
 import { ALL_TYPES } from "./paths.js";
 
 describe("agent vocabulary", () => {
@@ -32,28 +32,44 @@ describe("agent vocabulary", () => {
 });
 
 describe("reconciling item declarations with the capability table", () => {
-  const plugin = (compatibility: string[], path?: string) => ({
+  const plugin = (compatibility: string[], bundle: PluginBundle = { pluginType: "wrapper", wrapper: "skill" }) => ({
     type: "plugin" as const,
     compatibility,
-    ...(path ? { pluginSource: { path } } : {}),
+    ...bundle,
+  });
+
+  test("a plugin goes wherever every component it bundles can go", () => {
+    expect(derivePluginCompatibility({ pluginType: "wrapper", wrapper: "skill" })).toEqual(["claude", "copilot", "antigravity", "codex"]);
+    expect(derivePluginCompatibility({ pluginType: "wrapper", wrapper: "mcp" })).toEqual(["claude", "copilot", "codex"]);
+    expect(derivePluginCompatibility({ pluginType: "package", package: { skill: 3, mcp: 1 } })).toEqual(["claude", "copilot", "codex"]);
+    expect(derivePluginCompatibility({ pluginType: "package", package: { agent: 2, skill: 1 } })).toEqual(["claude", "copilot"]);
+    expect(derivePluginCompatibility({ pluginType: "package", package: { skill: 3, hook: 1 } })).toEqual(["claude"]);
+    expect(derivePluginCompatibility({ pluginType: "package", package: { command: 4 } })).toEqual(["claude"]);
+  });
+
+  test("an integration has no payload to carry and stays with Claude", () => {
+    expect(derivePluginCompatibility({ pluginType: "integration" })).toEqual(["claude"]);
+    expect(derivePluginCompatibility({})).toEqual(["claude"]);
+  });
+
+  // OpenCode loads a plugin through a JS entry the classification does not
+  // see, so an item says OpenCode by hand and the reconciliation never asks
+  // for it — but it never counts a hand-made declaration against the item either.
+  test("OpenCode is declared by hand, never derived", () => {
+    expect(derivePluginCompatibility({ pluginType: "wrapper", wrapper: "skill" })).not.toContain("opencode");
+    expect(unclaimedAgents(plugin(["claude"]))).not.toContain("opencode");
+    expect(unclaimedAgents(plugin(["claude", "copilot", "antigravity", "codex", "opencode"], { pluginType: "package", package: { skill: 9, hook: 1 } }))).toEqual([]);
   });
 
   test("names the agents an item could reach but does not claim", () => {
-    expect(unclaimedAgents(plugin(["claude"]))).toEqual(["copilot", "antigravity", "codex", "opencode"]);
-    expect(unclaimedAgents(plugin(["claude", "copilot", "antigravity", "codex", "opencode"]))).toEqual([]);
+    expect(unclaimedAgents(plugin(["claude"]))).toEqual(["copilot", "antigravity", "codex"]);
+    expect(unclaimedAgents(plugin(["claude"], { pluginType: "wrapper", wrapper: "mcp" }))).toEqual(["copilot", "codex"]);
+    expect(unclaimedAgents(plugin(["claude", "copilot", "antigravity", "codex"]))).toEqual([]);
+    expect(unclaimedAgents({ type: "skill", compatibility: ["claude"] })).toEqual(["copilot", "antigravity", "codex", "opencode"]);
   });
 
   test("resolves aliases before comparing", () => {
     expect(unclaimedAgents(plugin(["claude", "gemini"]))).not.toContain("antigravity");
-  });
-
-  // OpenCode resolves a plugin from a git spec, which has no subpath, so a
-  // plugin living in a marketplace monorepo's subdirectory cannot be named at
-  // all. That is a fact about the item, not a gap in its declaration.
-  test("does not count an agent the item structurally cannot reach", () => {
-    expect(structurallyImpossibleAgents(plugin(["claude"], "plugins/x"))).toEqual(["opencode"]);
-    expect(unclaimedAgents(plugin(["claude"], "plugins/x"))).not.toContain("opencode");
-    expect(unclaimedAgents(plugin(["claude"]))).toContain("opencode");
   });
 
   test("every type the registry knows about has a compatibility row", () => {

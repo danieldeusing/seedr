@@ -1,7 +1,8 @@
 #!/usr/bin/env npx tsx
 /**
  * Report items whose declared `compatibility` is narrower than what the CLI can
- * actually install for that type.
+ * actually install: every agent for a skill, and for a plugin every agent that
+ * can hold each component it bundles.
  *
  * `add` intersects an item's own array with the capability table, so the item
  * always wins. When the tooling gains an agent and the data does not follow,

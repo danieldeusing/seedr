@@ -1,4 +1,4 @@
-import type { CanonicalCodingAgent, CodingAgent, ComponentType, LegacyCodingAgent } from "@seedr/shared";
+import type { CanonicalCodingAgent, CodingAgent, ComponentType, LegacyCodingAgent, PluginType } from "@seedr/shared";
 
 /**
  * The one runtime vocabulary of coding-agent identifiers (plan §5). Everything
@@ -96,40 +96,43 @@ export function getCompatibleAgents(type: ComponentType): CanonicalCodingAgent[]
   return [...AGENT_COMPATIBILITY[type]];
 }
 
+/** The plugin fields the sync's classification writes: enough to know what a bundle carries. */
+export interface PluginBundle {
+  pluginType?: PluginType;
+  wrapper?: string;
+  package?: Record<string, number>;
+}
+
 /**
- * Agents this particular item can never reach, whatever the capability table
- * says, because of what the item itself is.
+ * Agents that can hold every content type a plugin bundles — what the sync
+ * declares for a new plugin, and what the reconciliation measures against.
  *
- * One rule so far: OpenCode resolves a plugin from a git spec, and an
- * npm-style spec has no subpath. A plugin whose content is a subdirectory of a
- * marketplace monorepo therefore cannot be named at all — the repository root
- * is a different module. Declaring OpenCode for one would be a promise the CLI
- * has to break at install time.
+ * A plugin is only as portable as its least portable component: a bundle of
+ * skills goes wherever skills go, one that also carries an `.mcp.json` only
+ * where MCP servers do, and anything with hooks or commands stays with Claude.
+ * An integration (an LSP server, say) is switched on through Claude's own
+ * settings and has no payload to carry anywhere.
+ *
+ * OpenCode is never derived. It loads a plugin through a JS entry (`main` or
+ * `exports["./server"]`) that the classification does not see, and its git
+ * spec cannot name a subdirectory of a marketplace monorepo at all — so an
+ * item declares OpenCode by hand, as superpowers and compound-engineering do.
  */
-export function structurallyImpossibleAgents(item: {
-  type: ComponentType;
-  pluginSource?: { path?: string };
-}): CanonicalCodingAgent[] {
-  if (item.type === "plugin" && item.pluginSource?.path) return ["opencode"];
-  return [];
+export function derivePluginCompatibility(bundle: PluginBundle): CanonicalCodingAgent[] {
+  const bundled = bundle.wrapper ? [bundle.wrapper] : Object.keys(bundle.package ?? {});
+  if (bundle.pluginType === "integration" || bundled.length === 0) return ["claude"];
+  return CANONICAL_AGENTS.filter(
+    (agent) => agent !== "opencode" && bundled.every((type) => isTypeSupported(type as ComponentType, agent))
+  );
 }
 
 /**
  * Agents the CLI could install this item for, but which the item does not
  * declare. Non-empty means the item is narrower than the tooling — sometimes
  * deliberate, often just stale.
- *
- * Agents the item structurally cannot reach are not counted: they are a fact
- * about the item, not a gap in its declaration.
  */
-export function unclaimedAgents(item: {
-  type: ComponentType;
-  compatibility: readonly string[];
-  pluginSource?: { path?: string };
-}): CanonicalCodingAgent[] {
+export function unclaimedAgents(item: PluginBundle & { type: ComponentType; compatibility: readonly string[] }): CanonicalCodingAgent[] {
   const declared = new Set(canonicalAgents(item.compatibility));
-  const impossible = new Set(structurallyImpossibleAgents(item));
-  return getCompatibleAgents(item.type).filter(
-    (agent) => !declared.has(agent) && !impossible.has(agent)
-  );
+  const reachable = item.type === "plugin" ? derivePluginCompatibility(item) : getCompatibleAgents(item.type);
+  return reachable.filter((agent) => !declared.has(agent));
 }

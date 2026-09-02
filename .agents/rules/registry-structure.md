@@ -104,7 +104,7 @@ render and filter a list.
 | `description` | Yes | One-sentence summary |
 | `longDescription` | Yes | TL;DR for the detail page (see registry-descriptions.md) |
 | `sourceType` | Yes | `seedr`, `community`, or `official` — the vocabulary lives in `packages/registry-ops/src/sourceTypes.ts` |
-| `compatibility` | Yes | Non-empty subset of `claude`, `copilot`, `antigravity`, `codex`, `opencode` (`gemini` is accepted only as a deprecated alias of `antigravity`; never write it) — the vocabulary lives in `packages/registry-ops/src/agents.ts` |
+| `compatibility` | Yes | Non-empty subset of `claude`, `copilot`, `antigravity`, `codex`, `opencode` (`gemini` is accepted only as a deprecated alias of `antigravity`; never write it) — the vocabulary lives in `packages/registry-ops/src/agents.ts`. A synced plugin starts with what `derivePluginCompatibility` derives from its bundle — every agent that can hold each component it carries; OpenCode only ever by hand — and the sync then treats the field as curated, so widening or narrowing it in `item.json` sticks |
 | `author` | Yes | `{ name, url? }` |
 | `externalUrl` | Community | GitHub URL the CLI fetches content from at install time |
 | `label` | No | Slug of one entry in `registry/labels.json`. Absent means unlabelled |

@@ -13,7 +13,7 @@
  * widening that is a product decision.
  */
 
-import { CANONICAL_AGENTS, storageAgents } from "@seedr/registry-ops/pure";
+import { CANONICAL_AGENTS, derivePluginCompatibility, storageAgents } from "@seedr/registry-ops/pure";
 import { validateItem } from "../lib/validate-item.js";
 import { classifyPlugin, collectContent, findEntry, parseJsonEntry, withDeclaredLicense } from "./content.js";
 import type { GitHubClient } from "./github.js";
@@ -212,7 +212,7 @@ export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBu
       name: formatName(entry.name),
       type: "plugin",
       description: entry.description ?? pluginJson?.description ?? "",
-      compatibility: ["claude"],
+      compatibility: storageAgents(derivePluginCompatibility(classification)),
       ...classification,
       sourceType,
       author: pickAuthor(entry, pluginJson, existing, sourceType === "official" ? "Anthropic" : "Community"),

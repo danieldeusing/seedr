@@ -790,6 +790,57 @@ describe("plugin handler", () => {
       expect(vol.existsSync(`${COPILOT_PLUGINS_DIR}/${MARKETPLACE}/my-plugin`)).toBe(false);
     });
 
+    // Install, list, remove — the round trip each non-Claude store owns. Only
+    // Copilot's was covered, and removal is where a store can quietly delete
+    // the wrong thing.
+    it.each([
+      ["codex", CODEX_CACHE_DIR] as const,
+      ["antigravity", GEMINI_PLUGINS_DIR] as const,
+    ])("round-trips install, list and remove for %s", async (agent, cacheRoot) => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin, getInstalledPlugins, uninstallPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(pluginItem(), [agent], "project", "copy", true, PROJECT);
+      expect(results[0]?.success).toBe(true);
+      expect(await getInstalledPlugins(agent, "project", PROJECT)).toContain("my-plugin");
+
+      expect(await uninstallPlugin("my-plugin", agent, "project", PROJECT)).toBe(true);
+      expect(await getInstalledPlugins(agent, "project", PROJECT)).toEqual([]);
+      expect(vol.existsSync(`${cacheRoot}/${MARKETPLACE}/my-plugin`)).toBe(false);
+    });
+
+    it("round-trips install, list and remove for opencode", async () => {
+      const { fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+      const { installPlugin, getInstalledPlugins, uninstallPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["opencode"], "project", "copy", true, PROJECT);
+      expect(await getInstalledPlugins("opencode", "project", PROJECT)).toEqual(["my-plugin"]);
+
+      expect(await uninstallPlugin("my-plugin", "opencode", "project", PROJECT)).toBe(true);
+      expect(readJsonFile(OPENCODE_PROJECT_CONFIG).plugin).toEqual([]);
+    });
+
+    it("reports a plugin that was never installed as not removed", async () => {
+      const { uninstallPlugin } = await import("./plugin.js");
+      for (const agent of ["codex", "opencode", "antigravity", "copilot"] as const) {
+        expect(await uninstallPlugin("absent", agent, "project", PROJECT)).toBe(false);
+      }
+    });
+
+    // OpenCode needs a repository to build a spec from. With neither a plugin
+    // source nor a usable externalUrl there is nothing to resolve, so the bare
+    // name is the only honest answer — npm may still know it.
+    it("falls back to the bare module name when no repository can be resolved", async () => {
+      const { toOpenCodePluginSpec } = await import("./pluginStores.js");
+      expect(toOpenCodePluginSpec({ ...pluginItem(), externalUrl: undefined }, "solo")).toBe("solo");
+    });
+
+    it("refuses an agent that has no plugin store", async () => {
+      const { pluginStoreFor } = await import("./pluginStores.js");
+      expect(() => pluginStoreFor("nonsense" as never)).toThrow(/not supported/);
+    });
+
     it("says out loud when a scope cannot be honoured because the store is user-global", async () => {
       const { fetchItemFile } = await import("../config/registry.js");
       vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "4.0.0" }));

@@ -111,7 +111,9 @@ const TARGETS: Partial<Record<CodingAgent, RuleTarget>> = {
 export function ruleTargetFor(agent: CodingAgent): RuleTarget {
   const target = TARGETS[canonicalAgent(agent) ?? agent];
   if (!target || !isTypeSupported("rule", agent)) {
-    throw new Error(`Rules are not supported for ${CODING_AGENTS[agent].name}`);
+    // `CODING_AGENTS[agent]` is undefined for an id outside the vocabulary, so
+    // naming it directly crashed the guard while it was building its own message.
+    throw new Error(`Rules are not supported for ${CODING_AGENTS[agent]?.name ?? agent}`);
   }
   return target;
 }

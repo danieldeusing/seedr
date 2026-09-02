@@ -34,6 +34,9 @@ merging `prod` into `main` is the mistake this file exists to prevent.
 
 - **`sync.yml`** (daily): checks out `main`, adds registry items, pushes to **both** `main` and
   `prod`, then dispatches a deploy. `main` is the registry's source of truth; `prod` mirrors it.
+  Dispatching it by hand: promote `main` first and let that deploy's version bump land on
+  `main`, then run it — the sync checks out `main`, refuses to promote once `main` has moved
+  under it, and rebases its candidate onto `prod`, so unpromoted code would be replayed there.
 - **`deploy.yml`** (on push to `prod`): deploys, bumps and tags the version on `prod`, then
   carries the bump commit to `main` best-effort.
 

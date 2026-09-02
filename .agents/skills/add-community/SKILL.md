@@ -4,7 +4,7 @@ description: |
   Add a community GitHub repository to the seedr registry.
   Trigger on: "/add-community <github-url>", "add community repo", "register community plugin/skill".
   Accepts a GitHub repo URL, fetches metadata via GitHub API (plugin.json or SKILL.md),
-  detects content type, builds a file tree, asks clarifying questions, and adds the item through
+  detects content type, pins the revision and digests the content, asks clarifying questions, and adds the item through
   the operations CLI (scripts/registry-op.ts) in one transaction. No content copy — uses
   externalUrl for install-time fetching.
 ---
@@ -123,30 +123,48 @@ description: ...
 
 Derive `slug` from the repo name (kebab-cased). For subpath items, use the last path segment.
 
-### 4. Build file tree
+### 4. Pin the revision and collect the content
 
-Fetch the repo's directory structure via GitHub API:
+One command reads the tree at the commit the item will be pinned to and answers with
+everything the operation needs beyond the descriptions — computed by the sync's own code, so
+the daily re-sync agrees with it byte for byte:
+
 ```bash
-gh api repos/{owner}/{repo}/contents/{basePath} --jq '.[].name'
+npx tsx scripts/registry-op.ts pin https://github.com/{owner}/{repo}[/tree/{ref}/{basePath}]
 ```
 
-Recursively build `FileTreeNode[]` (max depth 6). For each entry:
-- If `type == "dir"`, recurse into it and add as `{ name, type: "directory", children: [...] }`
-- If `type == "file"`, add as `{ name, type: "file" }`
+Without a `/tree/…` part it pins the head of the default branch; with one, the ref given (a
+branch, or a full commit sha — see step 5). The JSON carries `sourceRevision`, `contentDigest`,
+`externalUrl` (the `/tree/<sha>/…` form), `updatedAt` (the last commit touching the path),
+`license`, `pluginSource` (plugins) and `contents.files` (the full file tree; nothing is capped
+by hand). Copy them into the operation in step 8 as they are.
 
-For plugins, also parse the tree to populate `PluginContents`:
-- `skills/` directory → list `.md` files as `contents.skills`
-- `agents/` directory → list `.md` files as `contents.agents`
-- `hooks/` directory → if `hooks.json` exists, fetch it and use trigger keys (`SessionStart`, `PreToolUse`, etc.) as `contents.hooks`
-- `commands/` directory → list `.md` files as `contents.commands`
-- `mcp-servers/` or `mcp-configs/` → list as `contents.mcpServers`
+For plugins, read the classification off `contents.files` and `plugin.json`:
+- `skills/` → directories that carry a `SKILL.md`, plus every path the `skills` array in
+  `plugin.json` names (`./skills/engineering/tdd` is the skill `tdd`; the bucket folder above
+  it is not a skill)
+- `agents/` directory → `.md` files
+- `hooks/` directory → if `hooks.json` exists, fetch it and use trigger keys (`SessionStart`, `PreToolUse`, etc.)
+- `commands/` directory → `.md` files
+- `mcp-servers/` or `mcp-configs/` → one per entry
 - Root-level `.mcp.json` → fetch it and extract top-level keys as MCP server names. Handles flat (`{ "name": {...} }`) and wrapped (`{ "mcpServers": { "name": {...} } }`) formats
 
-### 5. Fetch last commit date
+### 5. Check Anthropic's official marketplace
+
+If `anthropics/claude-plugins-official`'s `.claude-plugin/marketplace.json` has an entry whose
+`source.url` is this repository, the official sync owns the item from its next run on — and it
+matches an existing item to an entry **by slug**:
 
 ```bash
-gh api repos/{owner}/{repo}/commits?per_page=1 --jq '.[0].commit.committer.date'
+gh api repos/anthropics/claude-plugins-official/contents/.claude-plugin/marketplace.json --jq '.content' | base64 -d | jq '.plugins[] | select((.source.url? // "") | test("{owner}/{repo}"))'
 ```
+
+When it is listed: use the entry's `name` as the slug (not the repository name), set
+`"marketplace": "claude-plugins-official"` and a `marketplaceRef` of
+`{ "name": "claude-plugins-official", "url": "https://github.com/anthropics/claude-plugins-official.git", "sha": "<marketplace head sha>" }`,
+and run step 4 against `https://github.com/{owner}/{repo}/tree/<the entry's source.sha>` so the
+item describes exactly what `claude plugins install <name>` delivers. The sync then follows the
+marketplace's pin, which lags the repository's head by design — as it does for `superpowers`.
 
 ### 6. Ask clarifying questions
 
@@ -300,16 +318,18 @@ fetches from `externalUrl` at install time.
     "name": "<from plugin.json or repo owner>",
     "url": "<author url or github profile>"
   },
-  "externalUrl": "https://github.com/{owner}/{repo}/tree/{default branch}/{basePath}",
-  "updatedAt": "<last commit date ISO 8601>",
-  "contents": {
-    "files": [<file tree>]
-  }
+  "externalUrl": "<externalUrl from step 4>",
+  "sourceRevision": "<sourceRevision from step 4>",
+  "contentDigest": "<contentDigest from step 4>",
+  "pluginSource": <pluginSource from step 4 — plugins only>,
+  "license": <license from step 4>,
+  "updatedAt": "<updatedAt from step 4>",
+  "contents": <contents from step 4>
 }
 ```
 
 Notes:
-- Use the repository's real default branch in `externalUrl` (`gh api repos/{owner}/{repo} --jq .default_branch`), not `main` by assumption.
+- `externalUrl`, `sourceRevision`, `contentDigest`, `pluginSource`, `license`, `updatedAt` and `contents` are the pin's output verbatim; an operation without the pin is refused, because nothing downstream accepts an unpinned item.
 - Only include `targetScope` if the user chose a specific scope (not "No scope").
 - `contents` only has `files` (the file tree). Extension counts go in `package` instead.
 - Only include `pluginType`-specific fields: `wrapper` for wrappers, `package` for packages. Omit the other.
@@ -318,7 +338,7 @@ Notes:
 **Plugin classification** — after building the file tree, classify the plugin:
 
 Count capability types by scanning root-level and `.claude/` subdirectories:
-- `skills/` → count `.md` files or skill directories
+- `skills/` → directories carrying `SKILL.md`, plus the paths `plugin.json`'s `skills` array names
 - `agents/` → count `.md` files or agent directories
 - `commands/` → count `.md` files or command directories
 - `hooks/` → if `hooks.json` exists, fetch it and count trigger keys. Otherwise count hook scripts
@@ -355,4 +375,3 @@ Print summary from the result JSON:
 - `sourceType` is `"community"`, same as Anthropic's synced community plugins. The sync script (`scripts/sync.ts`) preserves manually-added community items by checking slugs — if a community item's slug doesn't match any freshly synced item, it survives the sync.
 - **Marketplace sub-plugins** are regular community items. Each has its own `externalUrl` pointing to the sub-plugin subdirectory. The community sync refreshes each independently. No special `marketplace` field is needed.
 - GitHub API rate limits: unauthenticated = 60 req/hr, authenticated (gh cli) = 5000 req/hr. Using `gh api` ensures authenticated access.
-- Build file trees with max depth 6 to capture nested plugin structures.

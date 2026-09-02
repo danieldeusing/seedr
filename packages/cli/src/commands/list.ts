@@ -7,7 +7,7 @@ import { ALL_AGENTS, CODING_AGENTS } from "../config/agents.js";
 import { getHandler, getRegisteredTypes } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
 import { parseAgentsArgStrict } from "../utils/detection.js";
-import { validateScope, validateType } from "../utils/validate-options.js";
+import { validateScope, validateType, TYPE_LIST } from "../utils/validate-options.js";
 
 // Ensure handlers are registered
 import "../handlers/index.js";
@@ -32,6 +32,7 @@ const TYPE_COLORS: Record<ComponentType, (s: string) => string> = {
   command: chalk.hex("#f59e0b"),
   settings: chalk.hex("#f97316"),
   mcp: chalk.hex("#2dd4bf"),
+  rule: chalk.hex("#84cc16"),
 };
 
 export interface ListOptions {
@@ -115,7 +116,7 @@ export async function runList(options: ListOptions, cwd: string = process.cwd())
 export const listCommand = new Command("list")
   .alias("ls")
   .description("List available or installed items")
-  .option("-t, --type <type>", "Filter by type (skill, hook, agent, plugin, mcp, settings)")
+  .option("-t, --type <type>", `Filter by type: ${TYPE_LIST}`)
   .option("-i, --installed", "Show only installed items")
   .option("-a, --agents <agents>", "Comma-separated coding agents or 'all' (installed check)", "all")
   .option("--scope <scope>", "Scope for installed check (project, user, local)", "project")

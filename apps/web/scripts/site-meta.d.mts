@@ -4,7 +4,7 @@ export interface RouteMeta {
   description: string;
   index: boolean;
 }
-export type RegistryType = "skill" | "hook" | "agent" | "plugin" | "command" | "settings" | "mcp";
+export type RegistryType = "skill" | "hook" | "agent" | "plugin" | "command" | "settings" | "mcp" | "rule";
 export const SITE_ORIGIN: string;
 export const SITE_NAME: string;
 export const DEFAULT_DESCRIPTION: string;

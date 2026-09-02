@@ -28,21 +28,33 @@ describe("compatibility", () => {
     });
 
     it("should have Claude-only types", () => {
-      expect(AGENT_COMPATIBILITY.agent).toEqual(["claude"]);
       expect(AGENT_COMPATIBILITY.hook).toEqual(["claude"]);
-      expect(AGENT_COMPATIBILITY.plugin).toEqual(["claude"]);
       expect(AGENT_COMPATIBILITY.settings).toEqual(["claude"]);
       expect(AGENT_COMPATIBILITY.command).toEqual(["claude"]);
     });
 
-    it("should have MCP compatible with every agent whose format is verified", () => {
-      expect(AGENT_COMPATIBILITY.mcp).toEqual(["claude", "codex", "opencode"]);
+    it("should have plugins compatible with every agent whose store is verified", () => {
+      expect(AGENT_COMPATIBILITY.plugin).toEqual([
+        "claude",
+        "copilot",
+        "antigravity",
+        "codex",
+        "opencode",
+      ]);
     });
 
-    it("should exclude copilot from MCP and say why", () => {
-      expect(AGENT_COMPATIBILITY.mcp).not.toContain("copilot");
-      expect(isTypeSupported("mcp", "copilot")).toBe(false);
-      expect(describeIncompatibility("mcp", "copilot")).toMatch(/could not be verified/);
+    it("should have MCP compatible with every agent whose format is verified", () => {
+      expect(AGENT_COMPATIBILITY.mcp).toEqual(["claude", "codex", "opencode", "copilot"]);
+    });
+
+    // Copilot's MCP format is now verified from `copilot mcp --help` and a
+    // populated ~/.copilot/mcp-config.json. Antigravity's file name is
+    // documented but its schema has never been observed, so it stays refused.
+    it("should exclude antigravity from MCP and say why", () => {
+      expect(AGENT_COMPATIBILITY.mcp).toContain("copilot");
+      expect(AGENT_COMPATIBILITY.mcp).not.toContain("antigravity");
+      expect(isTypeSupported("mcp", "antigravity")).toBe(false);
+      expect(describeIncompatibility("mcp", "antigravity")).toMatch(/schema has never been observed/);
       expect(describeIncompatibility("hook", "gemini")).toBe("antigravity does not support hook content");
     });
   });
@@ -55,9 +67,9 @@ describe("compatibility", () => {
     });
 
     it("should return false for unsupported type/agent combinations", () => {
-      expect(isTypeSupported("agent", "copilot")).toBe(false);
+      expect(isTypeSupported("settings", "copilot")).toBe(false);
       expect(isTypeSupported("hook", "gemini")).toBe(false);
-      expect(isTypeSupported("plugin", "codex")).toBe(false);
+      expect(isTypeSupported("mcp", "antigravity")).toBe(false);
     });
 
     it("resolves the deprecated gemini id like antigravity", () => {
@@ -76,16 +88,15 @@ describe("compatibility", () => {
       expect(agents).toContain("copilot");
     });
 
-    it("should return only claude for agents", () => {
-      const agents = getCompatibleAgents("agent");
-      expect(agents).toEqual(["claude"]);
+    it("should return claude and copilot for subagents", () => {
+      expect(getCompatibleAgents("agent")).toEqual(["claude", "copilot"]);
     });
   });
 
   describe("filterCompatibleAgents", () => {
     it("should filter agents to only compatible ones", () => {
       const agents = filterCompatibleAgents("agent", ["claude", "copilot", "gemini"]);
-      expect(agents).toEqual(["claude"]);
+      expect(agents).toEqual(["claude", "copilot"]);
     });
 
     it("should return all agents if all are compatible", () => {
@@ -94,7 +105,7 @@ describe("compatibility", () => {
     });
 
     it("should return empty array if no agents are compatible", () => {
-      const agents = filterCompatibleAgents("agent", ["copilot", "gemini"]);
+      const agents = filterCompatibleAgents("hook", ["copilot", "gemini"]);
       expect(agents).toEqual([]);
     });
 

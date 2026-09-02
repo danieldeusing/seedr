@@ -30,11 +30,16 @@ describe("agents", () => {
       expect(ALL_AGENTS).not.toContain("gemini");
     });
 
-    it("installs Antigravity skills into the agent-neutral .agents tree", () => {
+    // Project and user scope are different trees for Antigravity: `.agents/` is
+    // its project root, but the personal tier is `~/.gemini/config`. The vendor
+    // documentation states `~/.agents` does not exist for it, so a user-scope
+    // install there would write where nothing reads.
+    it("installs Antigravity project skills into .agents and user skills under ~/.gemini/config", () => {
       const antigravity = CODING_AGENTS.antigravity;
       expect(antigravity.name).toBe("Google Antigravity");
       expect(antigravity.projectRoot).toBe(".agents");
-      expect(antigravity.userRoot).toBe("/home/testuser/.agents");
+      expect(antigravity.userRoot).toBe("/home/testuser/.gemini/config");
+      expect(antigravity.userRoot).not.toBe("/home/testuser/.agents");
       expect(Object.keys(antigravity.contentTypes)).toEqual(["skill"]);
     });
 
@@ -78,8 +83,14 @@ describe("agents", () => {
     });
 
     it("should return undefined for unsupported type", () => {
-      const config = getContentTypeConfig("copilot", "agent");
-      expect(config).toBeUndefined();
+      expect(getContentTypeConfig("copilot", "hook")).toBeUndefined();
+    });
+
+    // Subagent files are `<name>.agent.md` under `agents/`, carrying the same
+    // name/description frontmatter a Claude subagent does.
+    it("gives Copilot a subagents directory at both scopes", () => {
+      expect(getContentPath("copilot", "agent", "project", "/project")).toBe("/project/.github/agents");
+      expect(getContentPath("copilot", "agent", "user", "/project")).toBe("/home/testuser/.copilot/agents");
     });
 
     it("resolves hooks to the agent root, the handler owns the merge target", () => {
@@ -111,6 +122,37 @@ describe("agents", () => {
       expect(getAgentRoot("codex", "project", "/project")).toBe("/project/.codex");
       expect(getAgentRoot("opencode", "project", "/project")).toBe("/project/.opencode");
     });
+
+    // Containers, multi-account setups and the Agent SDK all relocate Claude's
+    // user tree. Writing to ~/.claude there reports success and installs where
+    // Claude Code never looks.
+    it("honours $CLAUDE_CONFIG_DIR for Claude user scope", async () => {
+      const previous = process.env.CLAUDE_CONFIG_DIR;
+      process.env.CLAUDE_CONFIG_DIR = "/elsewhere/claude";
+      try {
+        vi.resetModules();
+        const fresh = await import("./agents.js");
+        expect(fresh.getAgentRoot("claude", "user", "/project")).toBe("/elsewhere/claude");
+        expect(fresh.getSettingsPath("user", "/project")).toBe("/elsewhere/claude/settings.json");
+        // Project scope is unaffected — the variable names a user tree.
+        expect(fresh.getAgentRoot("claude", "project", "/project")).toBe("/project/.claude");
+      } finally {
+        if (previous === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+        else process.env.CLAUDE_CONFIG_DIR = previous;
+        vi.resetModules();
+      }
+    });
+
+    // Copilot's personal tier is not the project spelling: `~/.copilot/` holds
+    // the CLI's own skills, and `~/.github/skills` is read by nothing. Writing
+    // there reported success and installed into a directory no tool opens.
+    it("uses Copilot's own home for user scope, not the project spelling", () => {
+      expect(getAgentRoot("copilot", "user", "/project")).toBe("/home/testuser/.copilot");
+      expect(getAgentRoot("copilot", "user", "/project")).not.toBe("/home/testuser/.github");
+      expect(getContentPath("copilot", "skill", "user", "/project")).toBe(
+        "/home/testuser/.copilot/skills"
+      );
+    });
   });
 
   describe("getContentPath", () => {
@@ -125,8 +167,7 @@ describe("agents", () => {
     });
 
     it("should return undefined for unsupported content types", () => {
-      const path = getContentPath("copilot", "agent", "project", PROJECT);
-      expect(path).toBeUndefined();
+      expect(getContentPath("copilot", "hook", "project", PROJECT)).toBeUndefined();
     });
 
     it("should return root for types with empty path", () => {

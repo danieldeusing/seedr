@@ -6,6 +6,7 @@ import {
   Settings,
   Server,
   Puzzle,
+  ScrollText,
 } from "lucide-react";
 import type { ComponentType } from "@/lib/types";
 import { typeTextColors } from "@/lib/colors";
@@ -18,6 +19,7 @@ const typeIcons: Record<ComponentType, typeof Sparkles> = {
   command: Terminal,
   settings: Settings,
   mcp: Server,
+  rule: ScrollText,
 };
 
 interface TypeIconProps {

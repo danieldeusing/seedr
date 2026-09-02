@@ -40,6 +40,13 @@ const SHA = "0123456789abcdef0123456789abcdef01234567";
 const ISO_DATE = "2025-01-01T00:00:00.000Z";
 const MARKETPLACE = "marketplace";
 const OFFICIAL = "claude-plugins-official";
+const COPILOT_SETTINGS = `${HOME}/.copilot/settings.json`;
+const COPILOT_PLUGINS_DIR = `${HOME}/.copilot/installed-plugins`;
+const CODEX_CONFIG = `${HOME}/.codex/config.toml`;
+const CODEX_CACHE_DIR = `${HOME}/.codex/plugins/cache`;
+const OPENCODE_PROJECT_CONFIG = `${PROJECT}/opencode.json`;
+const GEMINI_MANIFEST = `${HOME}/.gemini/config/import_manifest.json`;
+const GEMINI_PLUGINS_DIR = `${HOME}/.gemini/config/plugins`;
 
 interface EntryOverrides {
   scope?: "project" | "user" | "local";
@@ -136,11 +143,19 @@ describe("plugin handler", () => {
       expect(cacheTempEntries()).toEqual([]);
     });
 
-    it("fails for non-claude agents without touching the filesystem", async () => {
+    it("installs into Copilot's own store without touching Claude's", async () => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
       const { installPlugin } = await import("./plugin.js");
+
       const results = await installPlugin(pluginItem(), ["copilot"], "project", "copy", true, PROJECT);
-      expect(results[0]?.success).toBe(false);
-      expect(results[0]?.error).toBe("Plugins are only supported for Claude Code");
+
+      const cachePath = `${COPILOT_PLUGINS_DIR}/${MARKETPLACE}/my-plugin`;
+      expect(results[0]).toEqual({ agent: "copilot", success: true, path: cachePath });
+      expect(vol.readFileSync(`${cachePath}/README.md`, "utf-8")).toBe("readme");
+      const settings = readJsonFile(COPILOT_SETTINGS);
+      expect(settings.enabledPlugins["my-plugin@marketplace"]).toBe(true);
+      expect(settings.extraKnownMarketplaces[MARKETPLACE]).toEqual({ source: { source: "github", repo: "owner/my-plugin" } });
+      expect(vol.existsSync(INSTALLED_PATH)).toBe(false);
       expect(vol.existsSync(CACHE_DIR)).toBe(false);
     });
 
@@ -586,11 +601,12 @@ describe("plugin handler", () => {
 
       const plan = await planPlugin(pluginItem(), ["claude"], "project", "copy", PROJECT);
 
+      // Content first, then the marketplace it is filed under, then the records.
       expect(plan).toEqual([
         { agent: "claude", kind: "create", path: `${CACHE_DIR}/${MARKETPLACE}/my-plugin/4.0.0`, detail: "plugin files (digest-verified download)" },
-        { agent: "claude", kind: "create", path: INSTALLED_PATH, detail: 'plugins["my-plugin@marketplace"] entry for project scope' },
         { agent: "claude", kind: "modify", path: KNOWN_MARKETPLACES_PATH, detail: 'marketplace "marketplace"' },
         { agent: "claude", kind: "create", path: `${MARKETPLACES_DIR}/${MARKETPLACE}`, detail: "git clone https://github.com/owner/my-plugin.git" },
+        { agent: "claude", kind: "create", path: INSTALLED_PATH, detail: 'plugins["my-plugin@marketplace"] entry for project scope' },
         { agent: "claude", kind: "create", path: PROJECT_SETTINGS, detail: 'enabledPlugins["my-plugin@marketplace"] = true' },
       ]);
       expect(vol.existsSync(CACHE_DIR)).toBe(false);
@@ -616,11 +632,11 @@ describe("plugin handler", () => {
       ]);
     });
 
-    it("rejects non-claude agents and unsafe identities", async () => {
+    it("rejects unsafe identities for every agent", async () => {
       const { fetchItemFile } = await import("../config/registry.js");
       vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "../evil" }));
       const { planPlugin } = await import("./plugin.js");
-      await expect(planPlugin(pluginItem(), ["copilot"], "project", "copy", PROJECT)).rejects.toThrow(/only supported for Claude Code/);
+      await expect(planPlugin(pluginItem(), ["copilot"], "project", "copy", PROJECT)).rejects.toThrow(/Unsafe plugin name/);
       await expect(planPlugin(pluginItem(), ["claude"], "project", "copy", PROJECT)).rejects.toThrow(/Unsafe plugin name/);
     });
   });
@@ -636,4 +652,205 @@ describe("plugin handler", () => {
       expect(typeof pluginHandler.plan).toBe("function");
     });
   });
+  // Each agent's plugin store has its own on-disk shape. These were verified by
+  // installing a real plugin into an isolated HOME with each CLI and diffing
+  // the result; the assertions below encode what each tool actually wrote.
+  describe("per-agent stores", () => {
+    /** A download carrying the agent's own manifest alongside the Claude one. */
+    async function serveDownloadWith(extraManifest: string, pluginJson: Record<string, unknown>): Promise<void> {
+      const { fetchItemToDestination } = await import("../config/registry.js");
+      vi.mocked(fetchItemToDestination).mockImplementation(async (_item: RegistryItem, dest: string) => {
+        vol.mkdirSync(`${dest}/.claude-plugin`, { recursive: true });
+        vol.writeFileSync(`${dest}/.claude-plugin/plugin.json`, JSON.stringify({ name: "my-plugin", version: "0.0.1-claude" }));
+        vol.mkdirSync(`${dest}/${extraManifest.split("/")[0]}`, { recursive: true });
+        vol.writeFileSync(`${dest}/${extraManifest}`, JSON.stringify(pluginJson));
+        vol.writeFileSync(`${dest}/README.md`, "readme");
+        return { sourceRevision: SHA, contentDigest: "f".repeat(64), files: [extraManifest, "README.md"] };
+      });
+    }
+
+    it("writes Codex marketplace and plugin tables into config.toml", async () => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(pluginItem(), ["codex"], "project", "copy", true, PROJECT);
+
+      expect(results[0]?.success).toBe(true);
+      // Real Codex cache entries are <marketplace>/<name>/<version> — dropping the
+      // version segment writes a tree Codex does not look in.
+      expect(results[0]?.path).toBe(`${CODEX_CACHE_DIR}/${MARKETPLACE}/my-plugin/2.1.0`);
+      const toml = vol.readFileSync(CODEX_CONFIG, "utf-8") as string;
+      expect(toml).toContain(`[marketplaces.${MARKETPLACE}]`);
+      expect(toml).toContain('source_type = "git"');
+      expect(toml).toContain('source = "https://github.com/owner/my-plugin.git"');
+      expect(toml).toContain('[plugins."my-plugin@marketplace"]');
+      expect(toml).toContain("enabled = true");
+    });
+
+    it("appends a git spec to OpenCode's plugin array and stages no tree", async () => {
+      const { installPlugin } = await import("./plugin.js");
+      const { fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+
+      const results = await installPlugin(pluginItem(), ["opencode"], "project", "copy", true, PROJECT);
+
+      expect(results[0]).toEqual({ agent: "opencode", success: true, path: "" });
+      const config = readJsonFile(OPENCODE_PROJECT_CONFIG);
+      // The plugin's OWN repository, pinned — not the marketplace it is indexed in.
+      expect(config.plugin).toEqual([`my-plugin@git+https://github.com/owner/my-plugin.git#${SHA}`]);
+      expect(config.$schema).toBe("https://opencode.ai/config.json");
+      // OpenCode resolves the module itself, so seedr writes no plugin tree.
+      expect(vol.existsSync(CACHE_DIR)).toBe(false);
+    });
+
+    // Most marketplace entries point at a monorepo. Handing OpenCode that root
+    // installs a different module entirely under this plugin's name.
+    it("uses the plugin's own repository for OpenCode, never the marketplace it was indexed in", async () => {
+      const { fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+      const { installPlugin } = await import("./plugin.js");
+
+      const item = pluginItem({
+        marketplaceRef: { url: "https://github.com/anthropics/claude-plugins-official", sha: SHA },
+        pluginSource: { kind: "url", url: "https://github.com/obra/real-plugin.git", sha: SHA },
+      } as Partial<RegistryItem>);
+
+      await installPlugin(item, ["opencode"], "project", "copy", true, PROJECT);
+
+      const config = readJsonFile(OPENCODE_PROJECT_CONFIG);
+      expect(config.plugin[0]).toContain("obra/real-plugin");
+      expect(config.plugin[0]).not.toContain("claude-plugins-official");
+    });
+
+    // An npm-style git spec has no subpath, so a plugin that lives in a
+    // subdirectory cannot be expressed at all — the repository root is a
+    // different module, and installing it silently would be the worse answer.
+    it("refuses an OpenCode install for a plugin that lives in a subdirectory", async () => {
+      const { fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+      const { installPlugin } = await import("./plugin.js");
+
+      const item = pluginItem({
+        pluginSource: { kind: "marketplace-path", path: "plugins/my-plugin", url: "https://github.com/owner/mono.git", sha: SHA },
+      } as Partial<RegistryItem>);
+
+      const results = await installPlugin(item, ["opencode"], "project", "copy", true, PROJECT);
+
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toMatch(/cannot name a subdirectory/);
+      expect(vol.existsSync(OPENCODE_PROJECT_CONFIG)).toBe(false);
+    });
+
+    it("records an Antigravity import and copies the tree under ~/.gemini", async () => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(pluginItem(), ["antigravity"], "project", "copy", true, PROJECT);
+
+      expect(results[0]?.path).toBe(`${GEMINI_PLUGINS_DIR}/my-plugin`);
+      expect(vol.readFileSync(`${GEMINI_PLUGINS_DIR}/my-plugin/README.md`, "utf-8")).toBe("readme");
+      const manifest = readJsonFile(GEMINI_MANIFEST);
+      expect(manifest.imports).toHaveLength(1);
+      expect(manifest.imports[0]).toMatchObject({ name: "my-plugin", source: "seedr" });
+    });
+
+    it("prefers the agent's own manifest when the repository ships one", async () => {
+      await serveDownloadWith(".codex-plugin/plugin.json", { name: "my-plugin", version: "9.9.9" });
+      const { installPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(pluginItem(), ["codex"], "project", "copy", true, PROJECT);
+
+      // .codex-plugin wins over .claude-plugin's 0.0.1-claude.
+      expect(vol.existsSync(`${CODEX_CACHE_DIR}/${MARKETPLACE}/my-plugin/9.9.9`)).toBe(true);
+      expect(results[0]?.success).toBe(true);
+      const toml = vol.readFileSync(CODEX_CONFIG, "utf-8") as string;
+      expect(toml).toContain('[plugins."my-plugin@marketplace"]');
+    });
+
+    it("falls back to the Claude manifest for a plugin that ships only that one", async () => {
+      // Most plugins in the wild never wrote a per-agent manifest; refusing them
+      // everywhere but Claude would defeat the point of multi-agent support.
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(pluginItem(), ["codex", "antigravity"], "project", "copy", true, PROJECT);
+
+      expect(results.map((result) => result.success)).toEqual([true, true]);
+    });
+
+    it("round-trips install and uninstall for a non-Claude store", async () => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin, uninstallPlugin, getInstalledPlugins } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["copilot"], "project", "copy", true, PROJECT);
+      expect(await getInstalledPlugins("copilot", "project", PROJECT)).toEqual(["my-plugin"]);
+
+      expect(await uninstallPlugin("my-plugin", "copilot", "project", PROJECT)).toBe(true);
+      expect(await getInstalledPlugins("copilot", "project", PROJECT)).toEqual([]);
+      expect(vol.existsSync(`${COPILOT_PLUGINS_DIR}/${MARKETPLACE}/my-plugin`)).toBe(false);
+    });
+
+    // Install, list, remove — the round trip each non-Claude store owns. Only
+    // Copilot's was covered, and removal is where a store can quietly delete
+    // the wrong thing.
+    it.each([
+      ["codex", CODEX_CACHE_DIR] as const,
+      ["antigravity", GEMINI_PLUGINS_DIR] as const,
+    ])("round-trips install, list and remove for %s", async (agent, cacheRoot) => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin, getInstalledPlugins, uninstallPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(pluginItem(), [agent], "project", "copy", true, PROJECT);
+      expect(results[0]?.success).toBe(true);
+      expect(await getInstalledPlugins(agent, "project", PROJECT)).toContain("my-plugin");
+
+      expect(await uninstallPlugin("my-plugin", agent, "project", PROJECT)).toBe(true);
+      expect(await getInstalledPlugins(agent, "project", PROJECT)).toEqual([]);
+      expect(vol.existsSync(`${cacheRoot}/${MARKETPLACE}/my-plugin`)).toBe(false);
+    });
+
+    it("round-trips install, list and remove for opencode", async () => {
+      const { fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+      const { installPlugin, getInstalledPlugins, uninstallPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["opencode"], "project", "copy", true, PROJECT);
+      expect(await getInstalledPlugins("opencode", "project", PROJECT)).toEqual(["my-plugin"]);
+
+      expect(await uninstallPlugin("my-plugin", "opencode", "project", PROJECT)).toBe(true);
+      expect(readJsonFile(OPENCODE_PROJECT_CONFIG).plugin).toEqual([]);
+    });
+
+    it("reports a plugin that was never installed as not removed", async () => {
+      const { uninstallPlugin } = await import("./plugin.js");
+      for (const agent of ["codex", "opencode", "antigravity", "copilot"] as const) {
+        expect(await uninstallPlugin("absent", agent, "project", PROJECT)).toBe(false);
+      }
+    });
+
+    // OpenCode needs a repository to build a spec from. With neither a plugin
+    // source nor a usable externalUrl there is nothing to resolve, so the bare
+    // name is the only honest answer — npm may still know it.
+    it("falls back to the bare module name when no repository can be resolved", async () => {
+      const { toOpenCodePluginSpec } = await import("./pluginStores.js");
+      expect(toOpenCodePluginSpec({ ...pluginItem(), externalUrl: undefined }, "solo")).toBe("solo");
+    });
+
+    it("refuses an agent that has no plugin store", async () => {
+      const { pluginStoreFor } = await import("./pluginStores.js");
+      expect(() => pluginStoreFor("nonsense" as never)).toThrow(/not supported/);
+    });
+
+    it("says out loud when a scope cannot be honoured because the store is user-global", async () => {
+      const { fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(fetchItemFile).mockResolvedValue(JSON.stringify({ name: "my-plugin", version: "4.0.0" }));
+      const { planPlugin } = await import("./plugin.js");
+
+      const plan = await planPlugin(pluginItem(), ["codex"], "project", "copy", PROJECT);
+
+      expect(plan.every((change) => change.path.startsWith(HOME))).toBe(true);
+      expect(plan.some((change) => change.detail?.includes("user-global"))).toBe(true);
+    });
+  });
+
 });

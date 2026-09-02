@@ -16,7 +16,8 @@ export type ComponentType =
   | "plugin"
   | "command"
   | "settings"
-  | "mcp";
+  | "mcp"
+  | "rule";
 
 /**
  * Where an item comes from. `seedr` is this registry's own, first-party content.

@@ -6,6 +6,16 @@ import type { CodingAgent, ComponentType } from "@seedr/shared";
 
 const home = homedir();
 
+/**
+ * Claude Code's user configuration root. `~/.claude` is the convention, not the
+ * rule: `$CLAUDE_CONFIG_DIR` relocates it, and containers, multi-account setups
+ * and the Agent SDK all set it. Writing to `~/.claude` on such a machine
+ * reports success and installs into a tree Claude Code never reads.
+ *
+ * Read once at module load, which is when a CLI run's environment is fixed.
+ */
+export const claudeUserRoot = (): string => process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
+
 const SKILL_DIRECTORY: ContentTypeConfig = {
   path: "skills",
 };
@@ -15,8 +25,13 @@ const SKILL_DIRECTORY: ContentTypeConfig = {
 const ANTIGRAVITY: CodingAgentConfig = {
   name: "Google Antigravity",
   shortName: "antigravity",
+  // Project content is the agent-neutral `.agents/` tree, which IS Antigravity's
+  // own project root. The personal tier is not the same spelling: the shipped
+  // CLI reads `~/.gemini/config/skills`, and the vendor documentation states
+  // outright that `~/.agents` does not exist for it. `~/.gemini/skills` is the
+  // predecessor Gemini CLI location and is not written.
   projectRoot: ".agents",
-  userRoot: join(home, ".agents"),
+  userRoot: join(home, ".gemini", "config"),
   contentTypes: { skill: SKILL_DIRECTORY },
 };
 
@@ -29,7 +44,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     name: "Claude Code",
     shortName: "claude",
     projectRoot: ".claude",
-    userRoot: join(home, ".claude"),
+    userRoot: claudeUserRoot(),
     contentTypes: {
       skill: SKILL_DIRECTORY,
       command: {
@@ -55,9 +70,15 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
   copilot: {
     name: "GitHub Copilot",
     shortName: "copilot",
+    // Project content is `.github/`, but the personal tier is `~/.copilot/` —
+    // the two are not the same spelling. `~/.github/skills` is read by nothing;
+    // `~/.copilot/skills` is what the CLI itself populates.
     projectRoot: ".github",
-    userRoot: join(home, ".github"),
-    contentTypes: { skill: SKILL_DIRECTORY },
+    userRoot: join(home, ".copilot"),
+    // Subagents are `<name>.agent.md` under `agents/`, with the same
+    // `name` + `description` frontmatter a Claude subagent carries — confirmed
+    // from files on a real machine.
+    contentTypes: { skill: SKILL_DIRECTORY, agent: { path: "agents" } },
   },
   antigravity: ANTIGRAVITY,
   gemini: ANTIGRAVITY,
@@ -140,7 +161,7 @@ export function getSettingsPath(
     case "project":
       return join(cwd, ".claude/settings.json");
     case "user":
-      return join(home, ".claude/settings.json");
+      return join(claudeUserRoot(), "settings.json");
     case "local":
       return join(cwd, ".claude/settings.local.json");
   }
@@ -163,10 +184,13 @@ export function getMcpPath(
  * - claude:   `<cwd>/.mcp.json` / `~/.claude.json`
  * - codex:    `<cwd>/.codex/config.toml` / `~/.codex/config.toml`
  * - opencode: `<cwd>/opencode.json` / `~/.config/opencode/opencode.json`
+ * - copilot:  `<cwd>/.github/mcp.json` / `~/.copilot/mcp-config.json`
  *
- * Copilot and Antigravity have no verified MCP configuration format and are
- * not listed (`undefined` means "no known configuration file"); the deprecated
- * `gemini` id resolves to antigravity before it ever reaches this table.
+ * Antigravity is still not listed. Its file name is documented
+ * (`~/.gemini/config/mcp_config.json`) but the shipped manual omits the
+ * workspace path, and the file is empty on every machine checked, so the
+ * schema has never been observed. The deprecated `gemini` id resolves to
+ * antigravity before it ever reaches this table.
  */
 export function getMcpConfigPath(
   agent: CodingAgent,
@@ -176,11 +200,18 @@ export function getMcpConfigPath(
   const isUser = scope === "user";
   switch (canonicalAgent(agent) ?? agent) {
     case "claude":
-      return isUser ? join(home, ".claude.json") : join(cwd, ".mcp.json");
+      return isUser ? join(process.env.CLAUDE_CONFIG_DIR || home, ".claude.json") : join(cwd, ".mcp.json");
     case "codex":
       return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
     case "opencode":
       return isUser ? join(home, ".config", "opencode", "opencode.json") : join(cwd, "opencode.json");
+    case "copilot":
+      // `copilot mcp --help` names three sources: `~/.copilot/mcp-config.json`
+      // for the user, and `.mcp.json` OR `.github/mcp.json` for the workspace.
+      // `.github/mcp.json` is the one that does not collide with Claude's
+      // `.mcp.json` — sharing that file would make a Copilot uninstall delete
+      // Claude's server entry.
+      return isUser ? join(home, ".copilot", "mcp-config.json") : join(cwd, ".github", "mcp.json");
     default:
       // copilot and antigravity: the mcp handler refuses these before ever
       // resolving a path (MCP_UNSUPPORTED_REASONS in config/compatibility.ts).

@@ -35,7 +35,7 @@ export function registryDirName(config: unknown): string {
 }
 
 /** Every component type, in the order the manifests list them. */
-export const ALL_TYPES = ["skill", "plugin", "hook", "agent", "mcp", "settings", "command"] as const satisfies readonly ComponentType[];
+export const ALL_TYPES = ["skill", "plugin", "hook", "agent", "mcp", "settings", "command", "rule"] as const satisfies readonly ComponentType[];
 
 const KNOWN_TYPES = new Set<string>(ALL_TYPES);
 

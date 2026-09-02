@@ -11,7 +11,8 @@ import { parseAgentsArgStrict } from "../utils/detection.js";
 import { getHandler } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
 import { isValidSlug, MAX_SLUG_LENGTH, SLUG_PATTERN } from "../utils/slug.js";
-import { validateScope, validateType } from "../utils/validate-options.js";
+import { validateScope, validateType, TYPE_LIST } from "../utils/validate-options.js";
+import { isTypeSupported, describeIncompatibility } from "../config/compatibility.js";
 
 // Ensure handlers are registered
 import "../handlers/index.js";
@@ -54,6 +55,17 @@ async function removeFromAgents(
 
   let successCount = 0;
   for (const agent of agents) {
+    // "Not found" and "could never have been there" are different answers, and
+    // reporting the second as the first sends people looking for an install
+    // that was never possible. The exit code is unchanged: removal stays
+    // idempotent, and naming an agent explicitly must not change the verdict.
+    if (!isTypeSupported(type, agent)) {
+      ora().start().info(
+        chalk.gray(`Skipped ${CODING_AGENTS[agent].name}: ${describeIncompatibility(type, agent)}`)
+      );
+      continue;
+    }
+
     const spinner = ora(`Removing from ${CODING_AGENTS[agent].name}...`).start();
 
     const removed = await handler.uninstall(slug, agent, scope, cwd);
@@ -165,7 +177,7 @@ export const removeCommand = new Command("remove")
   .alias("rm")
   .description("Remove an installed item (skill, plugin, agent, hook, mcp)")
   .argument("<name>", "Name/slug of the item to remove")
-  .option("-t, --type <type>", "Content type: skill, agent, hook, mcp, plugin, settings")
+  .option("-t, --type <type>", `Content type: ${TYPE_LIST}`)
   .option(
     "-a, --agents <agents>",
     "Comma-separated coding agents or 'all'"

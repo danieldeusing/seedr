@@ -1,6 +1,7 @@
-import { relative, dirname } from "node:path";
+import { relative, dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { readdir, symlink } from "node:fs/promises";
+import type { Dirent } from "node:fs";
 import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
@@ -21,13 +22,83 @@ import {
   removePathEntry,
   resolveContained,
 } from "../utils/fs.js";
+import { readJson, writeJson } from "../utils/json.js";
 import { assertValidSlug } from "../utils/slug.js";
 import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
 
 const SLUG_LABEL = "skill slug";
 
-/** Agents that read `.agents/skills/` directly and need no per-agent link. */
-const READS_CENTRAL_DIR: ReadonlySet<CodingAgent> = new Set(["antigravity", "codex", "opencode"]);
+/**
+ * Agents that read the shared `.agents/skills/` tree directly and need no
+ * per-agent link.
+ *
+ * Antigravity is scope-dependent and the others are not. `.agents/` IS
+ * Antigravity's project root, so the central copy is its own directory there;
+ * at user scope it reads `~/.gemini/config/skills` and the vendor
+ * documentation states that `~/.agents` does not exist for it. Codex and
+ * OpenCode read the shared tree at both scopes.
+ */
+function readsCentralDir(agent: CodingAgent, scope: InstallScope): boolean {
+  const canonical = canonicalAgent(agent) ?? agent;
+  if (canonical === "antigravity") return scope !== "user";
+  return canonical === "codex" || canonical === "opencode";
+}
+
+/**
+ * Which agents a shared central copy was installed for.
+ *
+ * Agents that read the shared tree get no per-agent file, so nothing on disk
+ * says who a central copy belongs to. Without that record, removing a skill for
+ * one of them deletes the copy every other agent is still reading. The record
+ * lives beside the skills rather than inside one, so it never appears to an
+ * agent scanning for `<name>/SKILL.md`.
+ */
+const OWNERS_FILE = ".seedr-central-owners.json";
+
+async function readOwners(scope: InstallScope, cwd: string): Promise<Record<string, string[]>> {
+  return readJson<Record<string, string[]>>(join(centralSkillsDir(scope, cwd), OWNERS_FILE));
+}
+
+async function writeOwners(
+  owners: Record<string, string[]>,
+  scope: InstallScope,
+  cwd: string
+): Promise<void> {
+  await writeJson(join(centralSkillsDir(scope, cwd), OWNERS_FILE), owners);
+}
+
+/** Record that `agents` now read the central copy of `slug`. */
+async function addOwners(
+  slug: string,
+  agents: CodingAgent[],
+  scope: InstallScope,
+  cwd: string
+): Promise<void> {
+  if (agents.length === 0) return;
+  const owners = await readOwners(scope, cwd);
+  owners[slug] = [...new Set([...(owners[slug] ?? []), ...agents])];
+  await writeOwners(owners, scope, cwd);
+}
+
+/**
+ * Drop one agent from a central copy's owners. Returns the agents still
+ * reading it — a non-empty result means the copy must stay on disk.
+ */
+async function dropOwner(
+  slug: string,
+  agent: CodingAgent,
+  scope: InstallScope,
+  cwd: string
+): Promise<string[]> {
+  const owners = await readOwners(scope, cwd);
+  const recorded = owners[slug];
+  if (!recorded) return [];
+  const remaining = recorded.filter((owner) => owner !== (canonicalAgent(agent) ?? agent));
+  if (remaining.length > 0) owners[slug] = remaining;
+  else delete owners[slug];
+  await writeOwners(owners, scope, cwd);
+  return remaining;
+}
 
 function getScopeRoot(scope: InstallScope, cwd: string): string {
   return scope === "user" ? homedir() : cwd;
@@ -170,7 +241,7 @@ export async function installSkill(
     // Antigravity, Codex and OpenCode already read .agents/skills/, so skip
     // the symlink when content is installed centrally. For single-agent
     // installs, copy directly to the agent's own directory instead.
-    if (READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent) && central) {
+    if (readsCentralDir(agent, scope) && central) {
       results.push({ agent, success: true, path: central.centralPath });
       continue;
     }
@@ -190,6 +261,19 @@ export async function installSkill(
   // A central copy nobody links to is an orphan; remove it if this install created it.
   if (central?.created && !results.some((result) => result.success)) {
     await removePathEntry(central.centralPath);
+    return results;
+  }
+
+  // Agents that read the shared tree leave no per-agent file, so record them.
+  // Without this, removing the skill for one of them deletes the copy the
+  // others are still reading.
+  if (central) {
+    const centralReaders = agents.filter(
+      (agent) =>
+        readsCentralDir(agent, scope) &&
+        results.some((result) => result.agent === agent && result.success)
+    );
+    await addOwners(item.slug, centralReaders, scope, cwd);
   }
 
   return results;
@@ -202,14 +286,27 @@ export async function uninstallSkill(
   cwd: string = process.cwd()
 ): Promise<boolean> {
   assertValidSlug(slug, SLUG_LABEL);
+  const central = await resolveCentralPath(slug, scope, cwd);
   const destPath = await resolveAgentSkillPath(agent, slug, scope, cwd);
-  // A symlink entry (symlink installs) is unlinked, never followed.
-  if (destPath && (await removePathEntry(destPath))) return true;
 
-  // A symlink install for an agent that reads `.agents/skills` directly writes
-  // only there, so that is the copy to remove when the agent has none of its own.
-  if (READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent)) {
-    return removePathEntry(await resolveCentralPath(slug, scope, cwd));
+  // The shared copy is only this agent's to delete once no other agent reads
+  // it. Antigravity's project skills directory IS the shared one, so a plain
+  // `removePathEntry(destPath)` there would take everyone else's copy with it.
+  if (readsCentralDir(agent, scope) || destPath === central) {
+    const remaining = await dropOwner(slug, agent, scope, cwd);
+    if (remaining.length > 0) {
+      // Still read by another agent: the record is updated, the tree is not.
+      return true;
+    }
+    return removePathEntry(central);
+  }
+
+  // A symlink entry (symlink installs) is unlinked, never followed.
+  if (destPath && (await removePathEntry(destPath))) {
+    // The agent's own entry is gone; it may also have been recorded as a
+    // central reader under a different scope's install. Keep the record honest.
+    await dropOwner(slug, agent, scope, cwd);
+    return true;
   }
   return false;
 }
@@ -224,16 +321,35 @@ export async function getInstalledSkills(
   const dirs = new Set<string>();
   const own = getContentPath(agent, "skill", scope, cwd);
   if (own) dirs.add(own);
-  if (READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent)) dirs.add(centralSkillsDir(scope, cwd));
+  if (readsCentralDir(agent, scope)) dirs.add(centralSkillsDir(scope, cwd));
+
+  // A shared copy can outlive this agent's interest in it: another agent may
+  // still read it. Where the owners record has an entry for a slug it is
+  // authoritative, so a skill removed for this agent stops being reported even
+  // though the directory is still on disk for the others.
+  const owners = await readOwners(scope, cwd);
+  const centralDir = centralSkillsDir(scope, cwd);
+  const canonical = canonicalAgent(agent) ?? agent;
+
+  /**
+   * Slugs never start with a dot, so hidden entries (a leftover staging
+   * directory, the owners record, editor files) are never reported. In the
+   * shared directory the owners record is authoritative where it has an entry,
+   * so a skill removed for this agent stops being reported even though the
+   * directory is still there for the others.
+   */
+  const isInstalledHere = (entry: Dirent, dir: string): boolean => {
+    if (entry.name.startsWith(".")) return false;
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) return false;
+    const recorded = dir === centralDir ? owners[entry.name] : undefined;
+    return !recorded || recorded.includes(canonical);
+  };
 
   const slugs = new Set<string>();
   for (const dir of dirs) {
     if (!(await exists(dir))) continue;
-    // Slugs never start with a dot, so hidden entries (a leftover staging
-    // directory, editor files) are never reported as installed skills.
-    const entries = await readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      if ((entry.isDirectory() || entry.isSymbolicLink()) && !entry.name.startsWith(".")) slugs.add(entry.name);
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      if (isInstalledHere(entry, dir)) slugs.add(entry.name);
     }
   }
   return [...slugs];
@@ -254,7 +370,7 @@ export async function planSkill(
   let centralPath: string | undefined;
   if (method === "symlink") {
     centralPath = await resolveCentralPath(item.slug, scope, cwd);
-    const sharedBy = agents.filter((agent) => READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent));
+    const sharedBy = agents.filter((agent) => readsCentralDir(agent, scope));
     changes.push({
       agent: "shared",
       kind: await kindFor(centralPath),
@@ -264,7 +380,7 @@ export async function planSkill(
   }
 
   for (const agent of agents) {
-    if (centralPath && READS_CENTRAL_DIR.has(canonicalAgent(agent) ?? agent)) continue;
+    if (centralPath && readsCentralDir(agent, scope)) continue;
     const destPath = await resolveAgentSkillPath(agent, item.slug, scope, cwd);
     if (!destPath) throw new Error(`${CODING_AGENTS[agent].name} does not support skills`);
     changes.push({

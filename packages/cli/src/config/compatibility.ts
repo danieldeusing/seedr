@@ -1,39 +1,22 @@
-import { canonicalAgent, canonicalAgents } from "@seedr/registry-ops/pure";
+import {
+  AGENT_COMPATIBILITY,
+  canonicalAgent,
+  canonicalAgents,
+} from "@seedr/registry-ops/pure";
 import type { CanonicalCodingAgent, CodingAgent, ComponentType } from "@seedr/shared";
 
 /**
- * Maps content types to the coding agents that support them.
- * Skills are cross-platform; MCP servers are written only for agents whose
- * configuration format was verified against primary documentation (Claude,
- * Codex, OpenCode) — Copilot's and Antigravity's could not be, so they are
- * refused rather than guessed at. Everything else is Claude-only.
- * Canonical ids only; inputs are resolved through `canonicalAgent`, so the
- * deprecated `gemini` alias behaves exactly like `antigravity`.
+ * The capability table itself lives in `@seedr/registry-ops` so the registry,
+ * the compile step and Studio can reconcile items against the same definition.
+ * This module is the CLI's front door onto it, plus the wording the CLI uses
+ * when a pair is refused.
  */
-export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> = {
-  skill: ["claude", "copilot", "antigravity", "codex", "opencode"],
-  command: ["claude"],
-  agent: ["claude"],
-  hook: ["claude"],
-  plugin: ["claude"],
-  settings: ["claude"],
-  mcp: ["claude", "codex", "opencode"],
-};
-
-/**
- * Check if a content type is supported by a specific agent.
- */
-export function isTypeSupported(type: ComponentType, agent: CodingAgent): boolean {
-  const canonical = canonicalAgent(agent);
-  return canonical !== null && AGENT_COMPATIBILITY[type].includes(canonical);
-}
-
-/**
- * Get all agents that support a given content type.
- */
-export function getCompatibleAgents(type: ComponentType): CodingAgent[] {
-  return AGENT_COMPATIBILITY[type];
-}
+export {
+  AGENT_COMPATIBILITY,
+  isTypeSupported,
+  getCompatibleAgents,
+  unclaimedAgents,
+} from "@seedr/registry-ops/pure";
 
 /**
  * Filter agents to only those that support the given content type.
@@ -49,10 +32,8 @@ export function filterCompatibleAgents(
 
 /** Why a type/agent pair is refused, when there is more to say than "not supported". */
 export const MCP_UNSUPPORTED_REASONS: Partial<Record<CanonicalCodingAgent, string>> = {
-  copilot:
-    "GitHub Copilot's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
   antigravity:
-    "Google Antigravity's MCP configuration format could not be verified against primary documentation, so seedr does not write it",
+    "Google Antigravity's MCP file name is documented but its schema has never been observed — the file is empty on every machine checked — so seedr does not guess at it",
 };
 
 /** A sentence explaining why `agent` cannot take `type` content. */

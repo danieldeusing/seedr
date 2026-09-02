@@ -67,7 +67,7 @@ describe("agent detection", () => {
     vol.fromJSON({
       "/my/project/.claude/skills/.keep": "",
       "/my/project/.codex/skills/.keep": "",
-      "/home/testuser/.agents/skills/.keep": "",
+      "/home/testuser/.gemini/config/skills/.keep": "",
     });
   });
 
@@ -77,7 +77,7 @@ describe("agent detection", () => {
     const detected = await detectInstalledAgents(PROJECT);
     expect(detected).toEqual([
       { agent: "claude", scope: "project", path: "/my/project/.claude/skills" },
-      { agent: "antigravity", scope: "user", path: "/home/testuser/.agents/skills" },
+      { agent: "antigravity", scope: "user", path: "/home/testuser/.gemini/config/skills" },
       { agent: "codex", scope: "project", path: "/my/project/.codex/skills" },
     ]);
   });

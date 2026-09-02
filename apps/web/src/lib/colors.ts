@@ -17,7 +17,7 @@ export type BadgeColor =
   | "pink";
 
 // Icon names consumed by breadcrumb rendering
-export type IconName = "sparkles" | "anchor" | "bot" | "puzzle" | "terminal" | "settings" | "server";
+export type IconName = "sparkles" | "anchor" | "bot" | "puzzle" | "terminal" | "settings" | "server" | "scroll-text";
 
 // Type labels for display (singular)
 export const typeLabels: Record<ComponentType, string> = {
@@ -28,6 +28,7 @@ export const typeLabels: Record<ComponentType, string> = {
   command: "Command",
   settings: "Settings",
   mcp: "MCP Server",
+  rule: "Rule",
 };
 
 // Type labels for display (plural)
@@ -39,6 +40,7 @@ export const typeLabelPlural: Record<ComponentType, string> = {
   command: "Commands",
   settings: "Settings",
   mcp: "MCP Servers",
+  rule: "Rules",
 };
 
 // URL path segment per type ("settings" is already plural)
@@ -50,6 +52,7 @@ export const typeToPath: Record<ComponentType, string> = {
   command: "commands",
   settings: "settings",
   mcp: "mcps",
+  rule: "rules",
 };
 
 const typeByPath = new Map<string, ComponentType>(
@@ -77,6 +80,7 @@ export const typeBorderColors: Record<ComponentType, string> = {
   mcp: "border-l-teal-500",
   settings: "border-l-orange-500",
   plugin: "border-l-indigo-500",
+  rule: "border-l-lime-500",
 };
 
 // Type icon/text colors (matching configr)
@@ -88,6 +92,7 @@ export const typeTextColors: Record<ComponentType, string> = {
   mcp: "text-teal-500",
   settings: "text-orange-500",
   plugin: "text-indigo-500",
+  rule: "text-lime-500",
 };
 
 // Type to breadcrumb icon/color mapping
@@ -99,6 +104,7 @@ export const typeBreadcrumbIcon: Record<ComponentType, IconName> = {
   command: "terminal",
   settings: "settings",
   mcp: "server",
+  rule: "scroll-text",
 };
 
 export const typeBreadcrumbColor: Record<ComponentType, string> = {
@@ -109,6 +115,7 @@ export const typeBreadcrumbColor: Record<ComponentType, string> = {
   command: "amber",
   settings: "orange",
   mcp: "teal",
+  rule: "lime",
 };
 
 // Source to badge color mapping (matches configr)

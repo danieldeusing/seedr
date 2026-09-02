@@ -369,7 +369,7 @@ A `PostToolUse` hook (`.agents/hooks/compile-on-item-edit.mjs`, wired in `.claud
 
 ### Agent-neutral tooling layout
 
-`.agents/` is the canonical, committed home of this repo's own dev tooling — `skills/`, `rules/`, `agents/` (subagents) and `hooks/`. Claude Code reads `.claude/`, so `scripts/setup-agents.mjs` links `.claude/skills/<name>`, `.claude/rules` and `.claude/agents` to it (per-skill links, directory junctions on Windows). It runs on every `pnpm install` via the root `prepare` script and is idempotent; the links are gitignored. Edit the files under `.agents/` — never the links — and re-run `node scripts/setup-agents.mjs` after adding a skill. `CLAUDE.md` is a one-line `@AGENTS.md` import.
+`.agents/` is the canonical, committed home of this repo's own dev tooling — `skills/`, `rules/`, `agents/` (subagents) and `hooks/`. Claude Code reads `.claude/`, so `scripts/setup-agents.mjs` links `.claude/skills/<name>`, `.claude/rules` and `.claude/agents` to it (per-skill links, directory junctions on Windows). `prepare` runs it on `pnpm install` — **but not when `ignore-scripts=true`** (a common and sensible hardening in `~/.npmrc`; it also skips husky, so the git hooks are never installed either). After cloning, run `pnpm bootstrap` once: it installs the hooks and creates the links, and is idempotent; the links are gitignored. Edit the files under `.agents/` — never the links — and re-run `pnpm bootstrap` after adding a skill. `CLAUDE.md` is a one-line `@AGENTS.md` import.
 
 ## Key Design Decisions
 

@@ -189,6 +189,9 @@ timeout, and a failing or unreachable endpoint is ignored.
 # Install dependencies
 pnpm install
 
+# Install the git hooks and link .agents/ into .claude/ (a global ignore-scripts=true skips prepare)
+pnpm bootstrap
+
 # Build all packages
 pnpm build
 

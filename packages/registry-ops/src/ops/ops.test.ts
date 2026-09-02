@@ -88,7 +88,17 @@ describe("add-local", () => {
 
   test("the same slug under another type is a different item", () => {
     const registry = makeRegistry();
-    expect(applyOp(registry, addLocalOp({ type: "plugin", slug: "alpha" })).item?.type).toBe("plugin");
+    expect(applyOp(registry, addLocalOp({ type: "rule", slug: "alpha" })).item?.type).toBe("rule");
+  });
+
+  // A plugin resolves through a marketplace, and the registry is not one: a
+  // first-party plugin installs and the agent then reports it orphaned. The
+  // refusal happens where the author can still choose differently.
+  test("refuses a first-party plugin, naming what to do instead", () => {
+    const registry = makeRegistry();
+    expect(() => applyOp(registry, addLocalOp({ type: "plugin", slug: "alpha" }))).toThrow(
+      /cannot be a plugin.*as their own items/s
+    );
   });
 
   test("validates the full item — including the description gate — before copying anything", () => {

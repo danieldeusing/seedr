@@ -349,6 +349,11 @@ export async function planPlugin(
     const pluginId = getPluginId(name, marketplace);
     const cachePath = await store.cachePath(marketplace, name, version);
 
+    // Fail here for anything the install would throw on, rather than printing a
+    // plan and then throwing. A dry run that reports success for an impossible
+    // install is worse than no dry run.
+    resolveGitCommitSha(item, null);
+
     if (cachePath) {
       changes.push({
         agent,
@@ -363,7 +368,7 @@ export async function planPlugin(
       : [];
     const context = {
       item, marketplace, name, version, pluginId, cachePath,
-      gitCommitSha: getEffectiveSourceRevision(item) ?? "",
+      gitCommitSha: resolveGitCommitSha(item, null),
       scope, cwd,
     };
 

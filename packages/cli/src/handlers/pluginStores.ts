@@ -6,7 +6,14 @@ import { promisify } from "node:util";
 import type { CodingAgent, InstallScope } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
 import { canonicalAgent } from "@seedr/registry-ops/pure";
-import { claudeUserRoot, getSettingsPath, CODING_AGENTS } from "../config/agents.js";
+import {
+  claudeUserRoot,
+  codexUserRoot,
+  copilotUserRoot,
+  openCodeUserConfigDir,
+  getSettingsPath,
+  CODING_AGENTS,
+} from "../config/agents.js";
 import { isTypeSupported } from "../config/compatibility.js";
 import { getEffectiveSourceRevision, parseGitHubRepo } from "../config/source.js";
 import { exists, removePathEntry, resolveContained } from "../utils/fs.js";
@@ -319,7 +326,7 @@ const claudeStore: PluginStore = {
 // GitHub Copilot CLI — ~/.copilot
 // ---------------------------------------------------------------------------
 
-const COPILOT_DIR = join(home, ".copilot");
+const COPILOT_DIR = copilotUserRoot();
 export const COPILOT_SETTINGS_PATH = join(COPILOT_DIR, "settings.json");
 export const COPILOT_PLUGINS_DIR = join(COPILOT_DIR, "installed-plugins");
 
@@ -387,7 +394,7 @@ const copilotStore: PluginStore = {
 // OpenAI Codex CLI — ~/.codex/config.toml
 // ---------------------------------------------------------------------------
 
-const CODEX_DIR = join(home, ".codex");
+const CODEX_DIR = codexUserRoot();
 export const CODEX_CONFIG_PATH = join(CODEX_DIR, "config.toml");
 export const CODEX_CACHE_DIR = join(CODEX_DIR, "plugins", "cache");
 
@@ -490,7 +497,7 @@ interface OpenCodeConfig {
 
 export function openCodeConfigPath(scope: InstallScope, cwd: string): string {
   return scope === "user"
-    ? join(home, ".config", "opencode", "opencode.json")
+    ? join(openCodeUserConfigDir(), "opencode.json")
     : join(cwd, "opencode.json");
 }
 

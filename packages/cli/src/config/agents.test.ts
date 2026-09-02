@@ -148,6 +148,33 @@ describe("agents", () => {
       }
     });
 
+    // The relocation variables each agent documents. Writing to the convention
+    // on a machine that has moved the tree reports success and installs where
+    // the CLI never looks — the same failure the Claude guard exists for.
+    it.each([
+      ["COPILOT_HOME", "copilot", "/elsewhere/copilot"] as const,
+      ["CODEX_HOME", "codex", "/elsewhere/codex"] as const,
+      ["OPENCODE_CONFIG_DIR", "opencode", "/elsewhere/opencode"] as const,
+    ])("honours $%s for %s user scope", async (variable, agent, target) => {
+      const previous = process.env[variable];
+      process.env[variable] = target;
+      try {
+        vi.resetModules();
+        const fresh = await import("./agents.js");
+        expect(fresh.getAgentRoot(agent, "user", "/project")).toBe(target);
+        // The MCP file follows the same root.
+        if (agent !== "copilot") {
+          expect(fresh.getMcpConfigPath(agent, "user", "/project")).toContain(target);
+        } else {
+          expect(fresh.getMcpConfigPath(agent, "user", "/project")).toBe(`${target}/mcp-config.json`);
+        }
+      } finally {
+        if (previous === undefined) delete process.env[variable];
+        else process.env[variable] = previous;
+        vi.resetModules();
+      }
+    });
+
     // Containers, multi-account setups and the Agent SDK all relocate Claude's
     // user tree. Writing to ~/.claude there reports success and installs where
     // Claude Code never looks.

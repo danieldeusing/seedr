@@ -36,6 +36,25 @@ export function claudeUserJsonPath(): string {
   return join(configDir || home, ".claude.json");
 }
 
+/**
+ * Each agent's user configuration root, honouring the relocation variable it
+ * documents. `~/.copilot` and friends are the convention, not the rule, and
+ * writing to the convention on a machine that has moved the tree reports
+ * success while installing where the CLI never looks — the same failure this
+ * file already guards against for Claude.
+ *
+ * Antigravity is deliberately absent: agy 1.1.12 exposes no config-root
+ * override, so there is nothing to honour.
+ */
+export const copilotUserRoot = (): string => process.env.COPILOT_HOME || join(home, ".copilot");
+
+export const codexUserRoot = (): string => process.env.CODEX_HOME || join(home, ".codex");
+
+/** OpenCode's global config directory: its own override, then XDG, then the default. */
+export const openCodeUserConfigDir = (): string =>
+  process.env.OPENCODE_CONFIG_DIR ||
+  (process.env.XDG_CONFIG_HOME ? join(process.env.XDG_CONFIG_HOME, "opencode") : join(home, ".config", "opencode"));
+
 export const claudeUserRoot = (): string => process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
 
 const SKILL_DIRECTORY: ContentTypeConfig = {
@@ -96,7 +115,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     // the two are not the same spelling. `~/.github/skills` is read by nothing;
     // `~/.copilot/skills` is what the CLI itself populates.
     projectRoot: ".github",
-    userRoot: join(home, ".copilot"),
+    userRoot: copilotUserRoot(),
     // Subagents are `<name>.agent.md` under `agents/`, with the same
     // `name` + `description` frontmatter a Claude subagent carries — confirmed
     // from files on a real machine.
@@ -108,14 +127,19 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     name: "OpenAI Codex CLI",
     shortName: "codex",
     projectRoot: ".codex",
-    userRoot: join(home, ".codex"),
+    userRoot: codexUserRoot(),
     contentTypes: { skill: SKILL_DIRECTORY },
   },
   opencode: {
     name: "OpenCode",
     shortName: "opencode",
+    // `~/.opencode` is the LEGACY user directory. The global config directory
+    // is `~/.config/opencode`, which is where this package already writes
+    // `opencode.json` and `AGENTS.md` — splitting one agent across two roots
+    // made `list` and `remove` diverge, and creating `~/.opencode` on a machine
+    // that had none adds a capability directory ranked above every project one.
     projectRoot: ".opencode",
-    userRoot: join(home, ".opencode"),
+    userRoot: openCodeUserConfigDir(),
     contentTypes: { skill: SKILL_DIRECTORY },
   },
 };
@@ -224,9 +248,9 @@ export function getMcpConfigPath(
     case "claude":
       return isUser ? claudeUserJsonPath() : join(cwd, ".mcp.json");
     case "codex":
-      return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
+      return isUser ? join(codexUserRoot(), "config.toml") : join(cwd, ".codex", "config.toml");
     case "opencode":
-      return isUser ? join(home, ".config", "opencode", "opencode.json") : join(cwd, "opencode.json");
+      return isUser ? join(openCodeUserConfigDir(), "opencode.json") : join(cwd, "opencode.json");
     case "copilot":
       // `copilot mcp --help` names three sources: `~/.copilot/mcp-config.json`
       // for the user, and `.mcp.json` OR `.github/mcp.json` for the workspace.
@@ -242,7 +266,7 @@ export function getMcpConfigPath(
       // `.mcp.json` is the shared project MCP file by design, and both agents
       // read it. Sharing it is the honest model: an entry there is the
       // project's, and removing it removes it for every agent that reads it.
-      return isUser ? join(home, ".copilot", "mcp-config.json") : join(cwd, ".mcp.json");
+      return isUser ? join(copilotUserRoot(), "mcp-config.json") : join(cwd, ".mcp.json");
     default:
       // copilot and antigravity: the mcp handler refuses these before ever
       // resolving a path (MCP_UNSUPPORTED_REASONS in config/compatibility.ts).

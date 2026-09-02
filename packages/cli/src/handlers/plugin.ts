@@ -93,7 +93,10 @@ async function readManifestForPlan(
       // Try the next manifest in the preference order.
     }
   }
-  throw new Error(`No plugin manifest for "${item.slug}" (looked for ${manifestPaths.join(", ")})`);
+  // The install treats a missing manifest as non-fatal and falls back to the
+  // item's own slug, so the plan must too — throwing here aborted `--dry-run`
+  // for a plugin the real install places without complaint.
+  return {};
 }
 
 // ---------------------------------------------------------------------------

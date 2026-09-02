@@ -2,7 +2,13 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { CodingAgent, InstallScope } from "../types.js";
 import { canonicalAgent } from "@seedr/registry-ops/pure";
-import { claudeUserRoot, CODING_AGENTS } from "../config/agents.js";
+import {
+  claudeUserRoot,
+  codexUserRoot,
+  copilotUserRoot,
+  openCodeUserConfigDir,
+  CODING_AGENTS,
+} from "../config/agents.js";
 import { isTypeSupported } from "../config/compatibility.js";
 
 const home = homedir();
@@ -72,7 +78,7 @@ const antigravityTarget: RuleTarget = {
 const copilotTarget: RuleTarget = {
   kind: "file",
   dir: (scope, cwd) =>
-    join(scope === "user" ? join(home, ".copilot") : join(cwd, ".github"), "instructions"),
+    join(scope === "user" ? copilotUserRoot() : join(cwd, ".github"), "instructions"),
   fileName: (slug) => `${slug}.instructions.md`,
   keepsFrontmatter: true,
 };
@@ -84,7 +90,7 @@ const copilotTarget: RuleTarget = {
  */
 const codexTarget: RuleTarget = {
   kind: "section",
-  file: (scope, cwd) => (scope === "user" ? join(home, ".codex", "AGENTS.md") : join(cwd, "AGENTS.md")),
+  file: (scope, cwd) => (scope === "user" ? join(codexUserRoot(), "AGENTS.md") : join(cwd, "AGENTS.md")),
 };
 
 /**
@@ -96,7 +102,7 @@ const codexTarget: RuleTarget = {
 const openCodeTarget: RuleTarget = {
   kind: "section",
   file: (scope, cwd) =>
-    scope === "user" ? join(home, ".config", "opencode", "AGENTS.md") : join(cwd, "AGENTS.md"),
+    scope === "user" ? join(openCodeUserConfigDir(), "AGENTS.md") : join(cwd, "AGENTS.md"),
 };
 
 const TARGETS: Partial<Record<CodingAgent, RuleTarget>> = {

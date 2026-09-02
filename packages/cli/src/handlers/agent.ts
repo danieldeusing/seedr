@@ -7,12 +7,22 @@ import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
 import { brand } from "../utils/ui.js";
 import { getItemContent, getItemSourcePath, mainFileName } from "../config/registry.js";
+import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { getContentPath, CODING_AGENTS } from "../config/agents.js";
 import { exists, ensureDir, writeTextFile, installFile, assertOverwritable, resolveContained } from "../utils/fs.js";
 import { assertValidSlug } from "../utils/slug.js";
 import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
 
 const SLUG_LABEL = "agent slug";
+
+/**
+ * The file name one agent gives a subagent. Copilot's loader keys on the
+ * `.agent.md` suffix the way its instructions loader keys on `.instructions.md`;
+ * a plain `.md` in that directory is a different kind of file.
+ */
+export function subagentFileName(agent: CodingAgent, slug: string): string {
+  return (canonicalAgent(agent) ?? agent) === "copilot" ? `${slug}.agent.md` : `${slug}.md`;
+}
 
 /** `<agent agents dir>/<slug>.md`, proven contained in the scope root. */
 async function resolveAgentFilePath(
@@ -24,7 +34,7 @@ async function resolveAgentFilePath(
   const destDir = getContentPath(agent, "agent", scope, cwd);
   if (!destDir) return null;
   const scopeRoot = scope === "user" ? homedir() : cwd;
-  return resolveContained(scopeRoot, relative(scopeRoot, destDir), `${slug}.md`);
+  return resolveContained(scopeRoot, relative(scopeRoot, destDir), subagentFileName(agent, slug));
 }
 
 async function installAgentForCodingAgent(

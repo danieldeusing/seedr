@@ -88,11 +88,23 @@ describe("agent handler", () => {
       expect(vol.lstatSync("/home/testuser/.claude/agents/test-agent.md").isSymbolicLink()).toBe(false);
     });
 
-    it("should fail for non-claude tools", async () => {
+    it("should fail for a tool with no subagents directory", async () => {
       const { installAgent } = await import("./agent.js");
-      const results = await installAgent(agentItem(), ["copilot"], "project", "copy", true, PROJECT);
+      const results = await installAgent(agentItem(), ["codex"], "project", "copy", true, PROJECT);
       expect(results[0]?.success).toBe(false);
       expect(results[0]?.error).toContain("does not support agents");
+    });
+
+    // Copilot's loader keys on the `.agent.md` suffix, the way its instructions
+    // loader keys on `.instructions.md`. A plain `.md` there is a different
+    // kind of file. The frontmatter is the same name/description shape Claude
+    // uses, which is why the content ports unchanged.
+    it("writes a Copilot subagent as <slug>.agent.md under .github/agents", async () => {
+      const { installAgent } = await import("./agent.js");
+      const results = await installAgent(agentItem(), ["copilot"], "project", "copy", true, PROJECT);
+      expect(results[0]?.success).toBe(true);
+      expect(results[0]?.path).toBe(`${PROJECT}/.github/agents/test-agent.agent.md`);
+      expect(vol.existsSync(`${PROJECT}/.github/agents/test-agent.md`)).toBe(false);
     });
 
     it("refuses to overwrite without force", async () => {

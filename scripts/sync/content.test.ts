@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FakeGitHub, SHA_A } from "../test/fake-github.js";
-import { classifyPlugin, collectContent, declaredMcpServerNames, withDeclaredLicense, type CollectedContent } from "./content.js";
+import { classifyPlugin, collectContent, declaredMcpServerNames, declaredSkillNames, withDeclaredLicense, type CollectedContent } from "./content.js";
 import { computeContentDigest } from "./digest.js";
 import { GitHubClient } from "./github.js";
 import { buildFileTree } from "./utils.js";
@@ -14,6 +14,20 @@ describe("classifyPlugin", () => {
   it("reads MCP server names from a root .mcp.json", () => {
     const c = content({ ".mcp.json": JSON.stringify({ mcpServers: { a: {}, b: {} } }), "skills/x/SKILL.md": "" });
     expect(classifyPlugin(c, { pluginJson: null, existing: null })).toEqual({ pluginType: "package", package: { skill: 1, mcp: 2 } });
+  });
+
+  it("counts the skills a plugin.json names by path, which live outside skills/<name>/", () => {
+    const c = content({ "skills/engineering/tdd/SKILL.md": "", "skills/productivity/grill-me/SKILL.md": "", ".mcp.json": JSON.stringify({ mcpServers: { a: {} } }) });
+    expect(classifyPlugin(c, { pluginJson: null, existing: null })).toEqual({ pluginType: "wrapper", wrapper: "mcp" });
+    expect(classifyPlugin(c, { pluginJson: { skills: ["./skills/engineering/tdd", "./skills/productivity/grill-me/"] }, existing: null })).toEqual({
+      pluginType: "package",
+      package: { skill: 2, mcp: 1 },
+    });
+    // A path may name a directory of skills instead, as impeccable's "./skills/" does;
+    // either way a path that ships nothing counts nothing.
+    expect(declaredSkillNames("./skills/engineering", c.files)).toEqual(["tdd"]);
+    expect(declaredSkillNames(["./skills/", "./skills/engineering/tdd", "./missing"], c.files)).toEqual(["tdd"]);
+    expect(declaredSkillNames(undefined, c.files)).toEqual([]);
   });
 
   it("follows a plugin.json mcpServers path, a list of paths, or an inline map", () => {

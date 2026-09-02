@@ -10,6 +10,7 @@
  *   tsx scripts/registry-op.ts hash <type> <slug>        the expectedHash an update/remove must present
  *   tsx scripts/registry-op.ts validate <type> <slug>    validation errors for one item
  *   tsx scripts/registry-op.ts identity                  owner/repo/branch/author derived from git
+ *   tsx scripts/registry-op.ts pin <github-url>          pinned commit, digest, file tree and plugin source for an add-remote
  *
  * `--repo <path>` acts on another checkout instead of this one, which is how a
  * registry whose own tooling predates this CLI can still be changed safely.
@@ -23,6 +24,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveRepoIdentity, isComponentType, itemExternalUrl, itemStateHash, listItemsChecked, readItem, readLocalSources, resolveRegistryDir, runRegistryTransaction, sourceDiff, sourceStatus, typeDirName, validateItem } from "@seedr/registry-ops";
 import type { ComponentType } from "@seedr/shared";
+import { cloneUrl, treeUrl } from "./sync/anthropic.js";
+import { collectContent } from "./sync/content.js";
+import { GitHubClient } from "./sync/github.js";
+import { parseGitHubTreeUrl } from "./sync/utils.js";
 
 /**
  * Which checkout to act on. It defaults to the one this script lives in, and
@@ -126,8 +131,39 @@ async function main(argv: string[]): Promise<void> {
       out({ ...identity, externalUrlTemplate: sample });
       return;
     }
+    case "pin": {
+      // Provenance for an add-remote, computed the way the sync computes it:
+      // the commit the content is read at, its digest, the file tree and the
+      // plugin source the daily re-sync will follow. Read-only, but it talks
+      // to GitHub, so the client's chatter goes to stderr and stdout stays JSON.
+      const parsed = parseGitHubTreeUrl(rest[0] ?? "");
+      if (!parsed) fail(`pin needs a GitHub repository or tree URL, got "${rest[0] ?? ""}"`);
+      const client = new GitHubClient({ log: (line) => console.error(line) });
+      const branch = await client.getDefaultBranch(parsed.repo);
+      const { sha } = await client.getCommit(parsed.repo, parsed.ref ?? branch);
+      const tree = await client.getTree(parsed.repo, sha);
+      const content = await collectContent(client, { repo: parsed.repo, sha, path: parsed.path }, tree);
+      const updatedAt = await client.getLastCommitDate(parsed.repo, sha, parsed.path);
+      out({
+        repo: parsed.repo,
+        branch,
+        path: parsed.path,
+        sourceRevision: sha,
+        externalUrl: treeUrl(parsed.repo, sha, parsed.path),
+        ...(content.contentDigest && { contentDigest: content.contentDigest }),
+        license: content.license,
+        ...(updatedAt && { updatedAt }),
+        pluginSource:
+          parsed.path === ""
+            ? { kind: "url", url: cloneUrl(parsed.repo), ref: branch, sha }
+            : { kind: "git-subdir", path: parsed.path, url: cloneUrl(parsed.repo), ref: branch, sha },
+        contents: { files: content.files },
+        skipped: content.skipped,
+      });
+      return;
+    }
     default:
-      fail("usage: run --op <file|->, list [type], hash <type> <slug>, validate <type> <slug>, identity");
+      fail("usage: run --op <file|->, list [type], hash <type> <slug>, validate <type> <slug>, identity, pin <github-url>");
   }
 }
 

@@ -8,16 +8,7 @@ import type { GitHubClient } from "./github.js";
 import { computeContentDigest } from "./digest.js";
 import { describeLicense, locateLicense } from "./license.js";
 import type { FileTreeNode, LicenseInfo, ManifestItem, PluginType } from "./types.js";
-import {
-  buildFileTree,
-  computeLegacyContentHash,
-  listTreeFiles,
-  mapConcurrent,
-  parsePluginContents,
-  treeHasDirectory,
-  type PluginJson,
-  type TreeFile,
-} from "./utils.js";
+import { buildFileTree, computeLegacyContentHash, isSkillDirectory, listTreeFiles, mapConcurrent, parsePluginContents, skillNamesIn, treeHasDirectory, type PluginJson, type TreeFile } from "./utils.js";
 import type { GitTreeItem } from "./types.js";
 
 /** Refuse to hash repositories beyond this size; the CLI would have to download all of it per install. */
@@ -140,6 +131,30 @@ export function withDeclaredLicense(license: LicenseInfo, declared: unknown): Li
   return { spdx: declared.trim(), note: `${license.note ?? "No license text found upstream."} plugin.json declares "${declared.trim()}".` };
 }
 
+/**
+ * Names of the skills a plugin.json declares by path. Each path is either a
+ * skill itself (`./skills/engineering/tdd` → `tdd`) or a directory of skills
+ * (`./skills/` → every skill in it), resolved against the file tree so a path
+ * that ships nothing counts nothing.
+ */
+export function declaredSkillNames(value: PluginJson["skills"], files: readonly FileTreeNode[]): string[] {
+  const paths = typeof value === "string" ? [value] : Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+  const names = new Set<string>();
+  for (const declared of paths) {
+    const segments = declared.split("/").filter((segment) => segment !== "" && segment !== ".");
+    let level: readonly FileTreeNode[] | undefined = files;
+    let node: FileTreeNode | undefined;
+    for (const segment of segments) {
+      node = level?.find((candidate) => candidate.name === segment);
+      level = node?.children;
+    }
+    if (segments.length > 0 && !node) continue;
+    if (node && isSkillDirectory(node)) names.add(node.name);
+    else for (const name of skillNamesIn(level ?? [])) names.add(name);
+  }
+  return [...names];
+}
+
 export interface PluginClassification {
   pluginType: PluginType;
   wrapper?: string;
@@ -181,6 +196,8 @@ export function classifyPlugin(
   if (!parsed.skills && options.inlineSkills && options.inlineSkills.length > 0) {
     parsed.skills = options.inlineSkills;
   }
+  const declaredSkills = declaredSkillNames(options.pluginJson?.skills, content.files);
+  if (declaredSkills.length > 0) parsed.skills = [...new Set([...(parsed.skills ?? []), ...declaredSkills])];
 
   const contentKeyToType: Record<string, string> = { skills: "skill", agents: "agent", hooks: "hook", commands: "command", mcpServers: "mcp" };
   const counts: Record<string, number> = {};

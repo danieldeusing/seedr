@@ -186,6 +186,20 @@ export async function mapConcurrent<T, R>(items: readonly T[], limit: number, fn
 }
 
 /**
+ * A skill is a directory carrying SKILL.md. A bucket folder above such
+ * directories is not one — Claude's loader does not descend into it — and
+ * neither is a stray README next to them.
+ */
+export function isSkillDirectory(node: FileTreeNode): boolean {
+  return node.type === "directory" && (node.children ?? []).some((child) => child.type === "file" && child.name === "SKILL.md");
+}
+
+/** Names of the skills directly under one level of the tree. */
+export function skillNamesIn(nodes: readonly FileTreeNode[]): string[] {
+  return nodes.filter(isSkillDirectory).map((node) => node.name);
+}
+
+/**
  * Parse plugin contents from file tree.
  * Plugins can have their content in:
  * - Root-level directories (skills/, agents/, hooks/, commands/)
@@ -219,7 +233,7 @@ export function parsePluginContents(files: FileTreeNode[]): ParsedPluginContents
   const processDir = (dir: FileTreeNode, merge: boolean) => {
     switch (dir.name) {
       case "skills": {
-        const items = extractMdItems(dir);
+        const items = skillNamesIn(dir.children ?? []);
         if (items.length > 0) contents.skills = merge ? contents.skills || items : items;
         break;
       }
@@ -272,6 +286,8 @@ export interface PluginJson {
   homepage?: string;
   keywords?: string[];
   license?: string;
+  /** Skill directories named by path — the only way a skill outside `skills/<name>/` reaches the plugin. */
+  skills?: string | string[];
   /** Inline server map, a path to an .mcp.json inside the plugin, or a list of such paths. */
   mcpServers?: Record<string, unknown> | string | string[];
 }

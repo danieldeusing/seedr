@@ -228,7 +228,7 @@ For third-party content hosted on GitHub. Metadata-only in the manifest (no loca
 ```
 
 - Detects type via GitHub API (checks `plugin.json` then `SKILL.md`)
-- Extracts metadata, builds file tree, asks clarifying questions
+- Extracts metadata, pins the revision and digests the content (`registry-op.ts pin`), asks clarifying questions
 - Adds manifest entry with `sourceType: "community"`
 - Community items are re-synced from their GitHub repos on `pnpm sync`
 

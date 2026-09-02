@@ -179,4 +179,10 @@ describe("parsePluginContents", () => {
     expect(parsed.mcpServers).toEqual([".mcp.json"]);
     expect(parsed.agents).toEqual(["r"]);
   });
+
+  it("counts only directories that carry a SKILL.md as skills", () => {
+    const buckets = buildFileTree(["skills/engineering/tdd/SKILL.md", "skills/engineering/README.md", "skills/productivity/grill-me/SKILL.md"]);
+    expect(parsePluginContents(buckets).skills).toBeUndefined();
+    expect(parsePluginContents(buildFileTree(["skills/tdd/SKILL.md", "skills/README.md"])).skills).toEqual(["tdd"]);
+  });
 });

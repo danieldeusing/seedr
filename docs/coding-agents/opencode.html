@@ -1,0 +1,1689 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenCode capability guide</title>
+    <meta name="description" content="Source-verified reference for OpenCode 1.18.16: the two-binary V1/V2 split, the merge-all-within-a-class instruction rule, the git worktree ceiling, ten config layers, every capability type, and why discovery is not read-only." />
+    <meta name="theme-color" content="#f5efe2" />
+
+    <!-- pre-paint: apply the saved theme + animation gate before first paint -->
+    <script>
+      (() => {
+        const bg = { warm: "#f5efe2", green: "#020604", mono: "#050505", paper: "#fafafa" };
+        let theme = "warm";
+        try {
+          const stored = localStorage.getItem("theme");
+          if (stored && stored in bg) theme = stored;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg[theme]);
+
+        let animOff = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        try {
+          if (localStorage.getItem("anim") === "off") animOff = true;
+        } catch {}
+        if (animOff) document.documentElement.classList.add("anim-off");
+
+        // The `ls -l` rail is SHOWN by default. A reader who hid it must not watch it
+        // paint and then jump away on every single load, so the state is applied HERE —
+        // the runtime module at the end of <body> runs long after first paint.
+        try {
+          if (localStorage.getItem("ls-nav") === "off") document.documentElement.dataset.lsNav = "off";
+        } catch {}
+      })();
+
+      // Resolution-independent zoom: lay out at a fixed 1920px reference, then scale the
+      // whole view up on wider screens so the empty side-margins never exceed their
+      // 1920-reference proportion (a true zoom of everything, never below 1×). Pre-paint
+      // to avoid a flash.
+      (() => {
+        const REFERENCE_WIDTH = 1920;
+        const applyZoom = () => {
+          document.documentElement.style.zoom = String(Math.max(1, window.innerWidth / REFERENCE_WIDTH));
+        };
+        applyZoom();
+        window.addEventListener("resize", applyZoom);
+      })();
+    </script>
+
+    <!-- The design system, PINNED — and it must be. This page ships the system's own
+         MARKUP (the `ls -l` rail, the fixed footer), so it is coupled to the release that
+         styles them, and the unpinned url cannot promise a release: jsDelivr serves it
+         `max-age=604800` — SEVEN DAYS in the browser, 12h at the edge. The pinned url is
+         served `immutable`, so the bytes always match the markup.
+         `onerror` swaps in a byte-for-byte snapshot of the SAME release, served from the
+         docs site. NOTE the path is site-absolute: it resolves on docs.danieldeusing.de,
+         NOT for a doc opened from disk over file://. -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/dist/danieldeusing-design.min.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.min.css'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/src/fonts.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.fonts.css'"
+    />
+
+    <style>
+      /* Page-only layout. The design system ships the visual identity AND the measurements
+         (--content-w / --content-pad / --fs-*), so every value below is a TOKEN.
+
+         Each one carries a literal fallback on purpose: a doc opened over file:// with no
+         route to the CDN loads no stylesheet at all, and a bare `var(--content-w)` would
+         resolve to nothing there — full-bleed page, collapsed type.
+
+         Note `padding-block` + `padding-inline`, never the `padding` shorthand: the
+         shorthand resets padding-inline and silently drops the left/right margins. */
+      /* design-conformance: a TOKEN declaration with literal fallbacks, not a copy of the
+         system's rule — the sanctioned exception. A doc is meant to open straight off disk
+         over file://, where no stylesheet loads at all and a bare var() resolves to nothing.
+         The literals are what that reader sees; the tokens win everywhere else. */
+      .wrap { max-width: var(--content-w, 78rem); margin-inline: auto;
+              padding-block: 2.5rem 5rem; padding-inline: var(--content-pad, 1.5rem); }
+
+      /* header/footer chrome + nav now ship with the design system (src/chrome.css) */
+
+      /* ONE COLUMN, CENTRED — the same shape every other danieldeusing surface has.
+         `.wrap` above is the whole layout. There is no table-of-contents column: its two
+         real jobs — how long is this, and where am I — moved to the MINIMAP in the left
+         gutter (initMinimap()), which does them in 2rem and is fixed. */
+      .content { min-width: 0; }
+      h1.title { font-size: var(--fs-2xl, 1.7rem); font-weight: 700; margin: 0.4rem 0 0.5rem; }
+      .lede { color: var(--muted-foreground); } /* full width — no max-width cap */
+
+      /* design-conformance: spacing BETWEEN doc sections on this page template, not a restyle
+         of the shared .doc — the system sets its own margin for the standalone case. */
+      section.doc { margin-top: 2.5rem; scroll-margin-top: 4rem; }
+      .body { margin-top: 0.85rem; }
+      .body > * + * { margin-top: 0.75rem; }
+
+      /* content components the generator uses */
+      ol.steps { counter-reset: step; padding: 0; }
+      ol.steps > li { position: relative; padding-left: 2.25rem; margin-top: 0.6rem; counter-increment: step; }
+      ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 1.5rem; text-align: right; color: var(--primary); font-weight: 700; }
+      ul.plain { padding-left: 1.1rem; }
+      ul.plain > li { margin-top: 0.3rem; }
+      .grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+      .pad { padding: 1rem; }
+      .muted { color: var(--muted-foreground); }
+      code.inline { font-family: inherit; background: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.92em; }
+      pre.block { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      /* No table CSS for scrolling or size here on purpose. `initTableScroll()` at the
+         bottom of this file gives every table a `.tablewrap` parent (overflow-x plus a
+         right-edge fade), so a table wider than its column scrolls itself instead of
+         handing the WHOLE PAGE a horizontal scrollbar. The markup contract is therefore
+         nothing: author a plain <table>. Size is the system's too. */
+
+      /* Mermaid diagrams. Before rendering, the <pre> shows the raw diagram source —
+         so with JS disabled (or if the CDN is unreachable) the page degrades to a
+         readable text diagram instead of an empty box. */
+      pre.mermaid { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      pre.mermaid[data-processed] { white-space: normal; text-align: center; }
+      pre.mermaid svg { max-width: 100%; height: auto; }
+    </style>
+  </head>
+
+  <body>
+    <a href="#top" class="skip-link">skip to content</a>
+    <header class="bar">
+      <!-- top-left: ALWAYS danieldeusing-docs -->
+      <a href="#top" class="brand">
+        <span class="glow">danieldeusing-docs</span>
+        <span class="cursor-block" aria-hidden="true"></span>
+      </a>
+      <button type="button" class="nav-burger" data-nav-toggle aria-label="menu" aria-controls="site-nav" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+      </button>
+      <nav aria-label="site" id="site-nav" class="site-nav">
+      <div class="ls-nav-head">
+        <span class="ls-nav-title prompt">ls -l</span>
+        <button type="button" class="ls-nav-toggle" data-ls-nav-toggle aria-controls="nav" aria-expanded="true" aria-label="show or hide navigation"></button>
+      </div>
+      <!-- The rail is justified here: these five docs are siblings a reader is meant to
+           move between, so there IS somewhere else to go. -->
+      <div class="ls-nav" id="nav">
+        <ul class="ls-panel" role="list">
+          <li><a class="dropdown-item ls-row" href="claude-code.html" title="Claude Code — claude-code.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Claude Code</span></a></li>
+          <li><a class="dropdown-item ls-row" href="openai-codex.html" title="OpenAI Codex — openai-codex.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenAI Codex</span></a></li>
+          <li><a class="dropdown-item ls-row" href="github-copilot.html" title="GitHub Copilot — github-copilot.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">GitHub Copilot</span></a></li>
+          <li><a class="dropdown-item ls-row" href="opencode.html" aria-current="page" title="OpenCode — opencode.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenCode</span></a></li>
+          <li><a class="dropdown-item ls-row" href="google-antigravity.html" title="Google Antigravity"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Antigravity</span></a></li>
+          <li><a class="dropdown-item ls-row" href="cross-tool-matrix.html" title="Cross-tool — cross-tool-matrix.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Cross-tool</span></a></li>
+        </ul>
+      </div>
+      <div class="mobile-footer">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <details class="mobile-theme">
+          <summary>
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span class="mf-chev" aria-hidden="true">▾</span>
+          </summary>
+          <div class="mf-panel">
+            <button type="button" class="dropdown-item" data-theme-value="warm">warm</button>
+            <button type="button" class="dropdown-item" data-theme-value="green">green</button>
+            <button type="button" class="dropdown-item" data-theme-value="mono">mono</button>
+            <button type="button" class="dropdown-item" data-theme-value="paper">paper</button>
+          </div>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </div></nav>
+    </header>
+
+    <main class="wrap" id="top">
+      <div class="content">
+          <p class="prompt">cat configr/docs/harness-analysis.md &#124; sed -n '/## 7. OpenCode/,/## 8./p'</p>
+          <h1 class="title">OpenCode capability guide</h1>
+          <p class="lede">Everything the <code class="inline">opencode</code> CLI reads, writes, and resolves — the two-binary V1/V2 split, the instruction selection rule that almost everyone states backwards, the git worktree ceiling, the ten configuration layers, every capability type, and the fact that merely <em>loading</em> this configuration writes to your disk. OpenCode is <strong>open source</strong>, so this page is anchored to the exact tag <code class="inline">v1.18.16</code> and cross-checked literal-by-literal against the installed binary: where the tagged loader and a rolling documentation page disagree, the loader governs this version row and both sides are stated. Nothing here comes from memory or a web search.</p>
+
+          <section class="doc" id="versions" data-term>
+            <p class="prompt">which -a opencode opencode2 &amp;&amp; opencode --version</p>
+            <div class="body" data-term-out>
+              <p><strong>Start here, because "OpenCode 1" and "OpenCode 2" are not two schemas of one program — they are two binaries.</strong> OpenCode 2 is a separate beta line. It installs from <code class="inline">@opencode-ai/cli@next</code> and runs as <code class="inline">opencode2</code>, and its own documentation is explicit that it does not replace OpenCode 1's <code class="inline">opencode</code> binary: both can stay installed and run side by side. <strong>D/O</strong></p>
+
+              <p><strong>This page documents the <code class="inline">opencode</code> 1.x binary only</strong>, pinned at <strong>1.18.16</strong>. Everything below — every path, every walk, every precedence rule — is that binary's behavior. OpenCode 2 carries its own configuration shape and <strong>1.18.16 reads none of it</strong>.</p>
+
+              <p><strong>The pin no longer matches the binary installed here — O, observed 2026-08-13.</strong> The only installed <code class="inline">opencode</code> on this machine is Homebrew's — <code class="inline">/opt/homebrew/bin/opencode</code> &rarr; <code class="inline">../Cellar/opencode/1.18.18/bin/opencode</code>, reporting <code class="inline">1.18.18</code>, two patch releases ahead of the <code class="inline">1.18.16</code> pin — and <code class="inline">~/.opencode/bin/opencode</code> does not exist (method: <code class="inline">which -a opencode</code> over the full PATH plus direct checks of <code class="inline">/usr/local/bin</code>, <code class="inline">~/.bun/bin</code>, <code class="inline">~/.local/bin</code> and <code class="inline">~/bin</code>). The pin still governs every claim on this page: every discovery literal quoted here is present verbatim in the installed <code class="inline">1.18.18</code> binary and the bounded negatives (<code class="inline">mcp.servers</code>, <code class="inline">opencode.local.json</code>, <code class="inline">AGENTS.override.md</code>) still count zero hits, so no drift correction to the capability rows is required — but the install cross-check is a dated observation, not a standing identity.</p>
+
+              <p><strong>Two releases postdate the 2026-08-11 research cut-off — D/S.</strong> <code class="inline">v1.18.17</code> (published 2026-08-12) and <code class="inline">v1.18.18</code> (published 2026-08-13, the latest as of the second pass and the Homebrew-installed binary here). Their release notes carry provider/model/session and desktop fixes — Kimi system-prompt selection, xai reasoning effort, session compaction, retry jitter, Copilot PDF capability detection — and the tag diff confirms the capability surface is untouched: <code class="inline">git diff v1.18.16..v1.18.18</code> touches no config, instruction, skill, command, MCP, plugin-loading, or theme discovery code.</p>
+
+              <p>The most visible difference is MCP. OpenCode 1 keys servers directly under <code class="inline">mcp</code> and switches them with <code class="inline">enabled</code>; OpenCode 2 nests them under <code class="inline">mcp.servers</code> and switches them with <code class="inline">disabled</code>. The literal <code class="inline">mcp.servers</code> is <strong>absent from both the tagged source and the installed binary</strong> — a bounded negative, not an omission. <strong>S</strong></p>
+
+              <pre class="mermaid">
+flowchart TD
+    N["opencode.json / opencode.jsonc&lt;br/&gt;same filenames, same schema url"] --> V1["opencode 1.18.16&lt;br/&gt;this page"]
+    N --> V2["opencode2 beta&lt;br/&gt;from opencode-ai/cli at next"]
+    V1 --> A1["mcp.NAME with enabled: false"]
+    V2 --> A2["mcp.servers.NAME with disabled: true"]
+    A2 --> Z["zero literals in the tagged source&lt;br/&gt;or the installed binary"]
+    N --> W["nothing in a config file names its version&lt;br/&gt;key SHAPE is the only discriminator"]
+
+    class W,Z warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p class="eli5"><span class="eli5-term">Why this matters for a configuration browser.</span> The two lines share the <code class="inline">opencode.json</code> / <code class="inline">opencode.jsonc</code> filenames <em>and</em> the same <code class="inline">$schema</code> URL, so a file gives you no version marker to read. A scanner that finds <code class="inline">mcp.servers</code> in a file has found an OpenCode 2 config that the installed <code class="inline">opencode</code> 1.18.16 will silently ignore — and one that finds <code class="inline">mcp.&lt;name&gt;</code> has found the opposite. Discriminate on shape, present the conclusion as an inference, and never assume one binary because one filename.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="evidence" data-term>
+            <p class="prompt">git log -1 --format=%H v1.18.16 &amp;&amp; file $(which opencode)</p>
+            <div class="body" data-term-out>
+              <p>Every claim on this page carries an <strong>evidence class</strong> and a citation. Where the source analysis marks something <strong>unknown</strong>, it is reproduced here as unknown, with its <code class="inline">U-</code> number where it has one. A documentation sentence is never promoted to a fact because it would round out a table.</p>
+
+              <table>
+                <colgroup><col style="width:7rem" /><col /><col style="width:11rem" /></colgroup>
+                <thead>
+                  <tr><th>Class</th><th>Meaning</th><th>Reliability</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>D</strong></td><td>documented — current first-party OpenCode documentation says this</td><td>rolling; no per-page revision date</td></tr>
+                  <tr><td><strong>S</strong></td><td>source-observed — the tagged source at <code class="inline">v1.18.16</code> says this, or the installed binary does: path templates, glob literals, enum runs, warning strings</td><td>strongest for the installed build</td></tr>
+                  <tr><td><strong>O</strong></td><td>disk-observed — a version, path, or shape was seen locally; values and secrets were not inspected</td><td>presence proves support; absence proves nothing</td></tr>
+                  <tr><td><strong>I</strong></td><td>inferred — a bounded conclusion from cited primary evidence, with the basis stated</td><td>only as good as its basis</td></tr>
+                  <tr><td><strong>U</strong></td><td>unknown — primary evidence is absent, self-contradictory, or insufficient</td><td>do not resolve; enumerate instead</td></tr>
+                  <tr><td><strong>D&ne;S</strong></td><td>documentation/source conflict — first-party prose and the pinned loader disagree; both are stated and the loader wins for its own version row</td><td>versioned, never normalized</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>How the OpenCode rows were verified.</strong> The section is anchored to tag <code class="inline">v1.18.16</code>, commit <code class="inline">a3647eb025c7615159d417dcc49fc39fdaeba65b</code>, committed <strong>2026-08-10</strong>, whose <code class="inline">packages/opencode/package.json</code> declares <code class="inline">"version": "1.18.16"</code>. Exact tagged source is used because several official pages simplify or contradict the loader. <strong>S</strong></p>
+
+              <p><strong>One repository under two names.</strong> The same tag object is served by <code class="inline">sst/opencode</code> and <code class="inline">anomalyco/opencode</code> — every <code class="inline">v1.18.x</code> tag resolves to an identical commit on both remotes. Links on this page use the <code class="inline">anomalyco</code> spelling; the other resolves to the same bytes. <strong>S</strong></p>
+
+              <p><strong>The install cross-check, re-anchored 2026-08-13.</strong> The first pass anchored these literals to a Bun single-file build at <code class="inline">~/.opencode/bin/opencode</code> reporting <code class="inline">1.18.16</code> — a tag-install match. That observation no longer reproduces: as of <strong>2026-08-13</strong>, <code class="inline">~/.opencode</code> does not exist on this machine and the only installed <code class="inline">opencode</code> is Homebrew's <code class="inline">/opt/homebrew/bin/opencode</code> — a Mach-O arm64 build whose symlink (re-stamped 2026-08-13; the same path reported <code class="inline">1.17.3</code> earlier that day, and the <code class="inline">1.17.3</code> keg has since been removed) points to <code class="inline">Cellar/opencode/1.18.18</code>, reporting <code class="inline">1.18.18</code>, two patch releases ahead of the <code class="inline">v1.18.16</code> pin. Binary-literal checks are therefore <strong>cross-version corroboration</strong>, not a tag-install identity. Re-run against the <code class="inline">1.18.18</code> build, every discovery literal quoted on this page is present verbatim:</p>
+
+              <pre class="block">{agent,agents}/**/*.md      {command,commands}/**/*.md   {plugin,plugins}/*.{ts,js}
+{tool,tools}/*.{js,ts}      {skill,skills}/**/SKILL.md   CONTEXT.md
+.well-known/opencode        ai.opencode.managed          mcp-auth.json
+OPENCODE_CONFIG_DIR         OPENCODE_CONFIG_CONTENT      OPENCODE_TUI_CONFIG</pre>
+
+              <p>The stated binary negatives — <code class="inline">mcp.servers</code>, <code class="inline">opencode.local.json</code>, <code class="inline">AGENTS.override.md</code> — remain zero-hit in the <code class="inline">1.18.18</code> build, so every structural conclusion transfers to the actually-installed binary. But "the tag matches the binary installed here" and "no drift correction was required" no longer hold: the pin now trails the install by two patch releases. <strong>O</strong>, observed 2026-08-13.</p>
+
+              <p><strong>Access discipline.</strong> <code class="inline">~/.config/opencode/</code> and <code class="inline">~/.opencode/</code> were read but never written; the CLI was run only with <code class="inline">--version</code>. That discipline is not incidental here — as the <a class="link-quiet" href="#side-effects">side-effects section</a> shows, running OpenCode's own loader to enumerate configuration <em>writes to disk</em>. Research cut-off <strong>2026-08-11</strong>; re-verified <strong>2026-08-13</strong> against the <code class="inline">v1.18.16</code> and <code class="inline">v1.17.3</code> tag worktrees and the Homebrew <code class="inline">1.18.18</code> binary. <strong>O</strong></p>
+
+              <p class="eli5"><span class="eli5-term">One observation that limits the page.</span> The remote <code class="inline">.well-known/opencode</code> layer and the organization API layer were read from <em>source only</em>, and whether they are reachable without an authenticated account was not tested. On the first pass (2026-08-11) <code class="inline">~/.config/opencode/</code> was empty; re-observed <strong>2026-08-13</strong> it holds authored configuration — <code class="inline">opencode.json</code>, an <code class="inline">agent/</code> file, a <code class="inline">skills/</code> tree of nine skill directories — plus generated <code class="inline">.gitignore</code>, <code class="inline">node_modules</code>, <code class="inline">bun.lock</code> and <code class="inline">package.json</code>, and <code class="inline">~/.local/share/opencode</code> now carries an <code class="inline">auth.json</code>. Names only were read; contents were never inspected, so whether an OpenCode account exists is <strong>undetermined in either direction</strong>. That remains an open <strong>U</strong>, carried in the <a class="link-quiet" href="#unknowns">unknowns</a> section rather than papered over.</p>
+
+              <p><strong>What was observed on disk anyway — O, re-dated 2026-08-13, names only.</strong> <code class="inline">~/.local/share/opencode</code> holds <code class="inline">auth.json</code>, <code class="inline">bin</code>, <code class="inline">log</code>, <code class="inline">opencode.db</code>, <code class="inline">repos</code>, <code class="inline">snapshot</code> and <code class="inline">storage</code>. <code class="inline">~/.cache/opencode</code> holds <code class="inline">bin</code>, <code class="inline">bun.lock</code>, <code class="inline">models.json</code>, <code class="inline">node_modules</code>, <code class="inline">package.json</code> and <code class="inline">version</code> — <strong>no</strong> <code class="inline">skills</code> directory, so the first pass's <code class="inline">~/.cache/opencode/{bin,skills}</code> observation no longer reproduces (consistent with on-demand creation). Presence proves those paths are used; absence of anything else proves nothing, because OpenCode creates parts of its tree on demand.</p>
+
+              <p class="eli5"><span class="eli5-term">An installation root that is also a capability root.</span> <code class="inline">~/.opencode</code>, when present, is <em>itself</em> one of the configuration directories the loader scans (<strong>S</strong>, <code class="inline">config/paths.ts</code>) — so an <code class="inline">~/.opencode</code> containing <code class="inline">bin/</code>, <code class="inline">node_modules/</code> and a generated <code class="inline">.gitignore</code> is entirely normal and none of it is authored configuration. As of <strong>2026-08-13</strong> no <code class="inline">~/.opencode</code> exists on this machine — <code class="inline">ls</code> returns <code class="inline">ENOENT</code>, and <code class="inline">~/.cache/opencode/bin</code> and <code class="inline">~/.local/share/opencode/bin</code> are empty — so only the S half of this paragraph applies here. <strong>O</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="corrections" data-term>
+            <p class="prompt">git log --oneline review-notes</p>
+            <div class="body" data-term-out>
+              <p>The independent verification pass against the tagged source and the installed binary <strong>corrected 12 claims</strong>, <strong>raised 10 documentation-shaped claims to source strength</strong>, and left <strong>3 unknowns standing</strong>. Every structural claim that had previously been contested — walk semantics, walk ceiling, the <code class="inline">CLAUDE.md</code> fallback, <code class="inline">instructions</code> resolution, config layering, singular/plural directories, JSON-defined agents and commands, the absence of a hooks surface, and ancestor capability directories — <strong>survived unchanged</strong>. The corrections are concentrated in field-level detail and in scopes the analysis had left implicit, which is exactly where a tool inventorying OpenCode configuration goes wrong.</p>
+
+              <table>
+                <colgroup><col style="width:12rem" /><col /><col /><col style="width:19rem" /></colgroup>
+                <thead>
+                  <tr><th>Claim</th><th>Was</th><th>Now</th><th>Evidence in the source</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>MCP local server fields</td>
+                    <td>"optional <code class="inline">cwd</code> / <code class="inline">env</code> / <code class="inline">enabled</code> / <code class="inline">timeout</code>"</td>
+                    <td>the environment key is <strong><code class="inline">environment</code></strong>, not <code class="inline">env</code>; an entry may also be a bare <code class="inline">{"enabled": boolean}</code> toggle carrying no <code class="inline">type</code>, <code class="inline">command</code> or <code class="inline">url</code></td>
+                    <td><code class="inline">ConfigMCPV1.Local</code> in <code class="inline">packages/core/src/v1/config/mcp.ts</code>; the <code class="inline">mcp</code> field in <code class="inline">ConfigV1.Info</code> is <code class="inline">Record&lt;string, Union([Info, Struct({enabled})])&gt;</code></td>
+                  </tr>
+                  <tr>
+                    <td>MCP timeout</td>
+                    <td>"the tagged runtime catalog uses 30 seconds"</td>
+                    <td>30 s is the <strong>connection</strong> timeout (<code class="inline">DEFAULT_TIMEOUT = 30_000</code>); <strong>requests get no built-in default at all</strong> — <code class="inline">requestTimeout</code> returns <code class="inline">undefined</code> unless the entry sets <code class="inline">timeout</code> or config sets <code class="inline">experimental.mcp_timeout</code></td>
+                    <td><code class="inline">MCP.create</code> / <code class="inline">connectTransport</code> and <code class="inline">requestTimeout</code> in <code class="inline">packages/opencode/src/mcp/index.ts</code></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">themes/</code> location</td>
+                    <td>listed inside the <code class="inline">.opencode</code> capability-directory row, i.e. bounded by the worktree</td>
+                    <td>themes use <strong>their own walk</strong>: the global config dir plus <code class="inline">&lt;dir&gt;/.opencode</code> for cwd and every ancestor <strong>to the filesystem root</strong>, ignoring the worktree ceiling and <code class="inline">OPENCODE_CONFIG_DIR</code></td>
+                    <td><code class="inline">themeSource.discover</code> + <code class="inline">discoverThemes</code> in <code class="inline">packages/tui/src/context/theme.tsx</code> — an unbounded <code class="inline">for (…; ; current = path.dirname(current))</code> loop</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">OPENCODE_CONFIG_DIR</code> semantics</td>
+                    <td>"can replace the effective config directory for selected loaders"</td>
+                    <td>it <strong>replaces</strong> the XDG directory in the <code class="inline">Global</code> service, so the global <code class="inline">AGENTS.md</code> moves — but it is only <strong>appended</strong> to the config-directory list, so for capability directories it <em>adds</em> a top-priority location and <code class="inline">~/.config/opencode</code> is still scanned</td>
+                    <td><code class="inline">Global.make()</code> returns <code class="inline">config: Flag.OPENCODE_CONFIG_DIR ?? Path.config</code>; <code class="inline">ConfigPaths.directories</code> starts from <code class="inline">Global.Path.config</code> and pushes <code class="inline">OPENCODE_CONFIG_DIR</code> last</td>
+                  </tr>
+                  <tr>
+                    <td>Step 5 of the precedence list</td>
+                    <td>"structured directories: XDG global, project <code class="inline">.opencode</code> …" without saying what each contributes</td>
+                    <td>only <code class="inline">.opencode</code>-suffixed entries (and <code class="inline">OPENCODE_CONFIG_DIR</code>) contribute a further <code class="inline">opencode.json</code> then <code class="inline">opencode.jsonc</code>; the XDG entry contributes capability directories only, having been read in step 2</td>
+                    <td>the <code class="inline">if (dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR)</code> guard in <code class="inline">Config.loadInstanceState</code></td>
+                  </tr>
+                  <tr>
+                    <td>Step 10 of the precedence list</td>
+                    <td>"permission environment post-processing"</td>
+                    <td><strong>four</strong> post-processing stages: <code class="inline">mode</code>&rarr;<code class="inline">agent</code> promotion as <code class="inline">mode:"primary"</code>; <code class="inline">OPENCODE_PERMISSION</code>; the deprecated <code class="inline">tools</code> map folded into permissions with <code class="inline">write</code>/<code class="inline">edit</code>/<code class="inline">patch</code> all becoming <code class="inline">edit</code> and explicit <code class="inline">permission</code> winning; then username, <code class="inline">autoshare</code>&rarr;<code class="inline">share</code> and compaction defaults</td>
+                    <td>tail of <code class="inline">Config.loadInstanceState</code></td>
+                  </tr>
+                  <tr>
+                    <td>Agent/mode and plugin/tool globs</td>
+                    <td>given as flat lists</td>
+                    <td><code class="inline">{agent,agents}</code> and <code class="inline">{command,commands}</code> are <strong>recursive</strong> (<code class="inline">**/*.md</code>); <code class="inline">{mode,modes}</code>, <code class="inline">{plugin,plugins}</code> and <code class="inline">{tool,tools}</code> are <strong>single-level</strong></td>
+                    <td><code class="inline">Glob.scan</code> patterns in <code class="inline">config/agent.ts</code>, <code class="inline">config/command.ts</code>, <code class="inline">config/plugin.ts</code>, <code class="inline">tool/registry.ts</code></td>
+                  </tr>
+                  <tr>
+                    <td>Command frontmatter fields</td>
+                    <td>"description, agent/subtask/model"</td>
+                    <td>plus <code class="inline">variant</code>; and registration <strong>overwrites by key at every stage except skills</strong>, while MCP prompts register namespaced as <code class="inline">server:prompt</code></td>
+                    <td><code class="inline">ConfigCommandV1.Info</code>; the assignment order in <code class="inline">Command.init</code></td>
+                  </tr>
+                  <tr>
+                    <td>Skills sources</td>
+                    <td>disk sources only</td>
+                    <td>a built-in <code class="inline">customize-opencode</code> skill is seeded <strong>before</strong> disk discovery and is overridable by a same-named disk skill</td>
+                    <td><code class="inline">CUSTOMIZE_OPENCODE_SKILL_NAME</code> seeding in <code class="inline">Skill.state</code></td>
+                  </tr>
+                  <tr>
+                    <td>Plugin array contents</td>
+                    <td>"the <code class="inline">plugin</code> config is an npm-package array"</td>
+                    <td>the array accepts npm specs <strong>and path-like specs</strong>, normalized to <code class="inline">file://</code> URLs relative to the declaring config file so a later merge cannot reinterpret <code class="inline">./plugin.ts</code></td>
+                    <td><code class="inline">ConfigPlugin.resolvePluginSpec</code>, called from <code class="inline">resolveLoadedPlugins</code> at load time</td>
+                  </tr>
+                  <tr>
+                    <td>Read-only assumption</td>
+                    <td>implicit</td>
+                    <td>config discovery <strong>writes</strong>: a <code class="inline">.gitignore</code> and a background <code class="inline">npm install @opencode-ai/plugin</code> in every config directory, <code class="inline">$schema</code> injected into any top-level config lacking it, and a stub global config created when absent</td>
+                    <td><code class="inline">ensureGitignore</code>, <code class="inline">npmSvc.install</code>, and the <code class="inline">$schema</code> rewrite in <code class="inline">Config.loadInstanceState</code> / <code class="inline">loadConfig</code></td>
+                  </tr>
+                  <tr>
+                    <td>Product boundary</td>
+                    <td>not stated</td>
+                    <td>OpenCode 2 is a separate beta binary (<code class="inline">opencode2</code>, <code class="inline">@opencode-ai/cli@next</code>) with its own <code class="inline">mcp.servers</code> + <code class="inline">disabled</code> shape; <strong>1.18.16 is OpenCode 1 and reads neither</strong></td>
+                    <td>the OpenCode 2 documentation; <code class="inline">mcp.servers</code> absent from both the tagged source and the installed binary</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Ten claims that were documentation-shaped and are now source-verified.</strong> These had the right answer for the wrong reason; each is now backed by a named function rather than a page.</p>
+
+              <ul class="plain">
+                <li><strong>The <code class="inline">AGENTS.md</code> walk is merge-all within one filename class and first-match across classes</strong> — see the <a class="link-quiet" href="#instructions">next section</a>, which is the single most misread thing about OpenCode.</li>
+                <li><strong>The walk ceiling is the Git worktree, inclusive, and "project root" is Git-defined only.</strong> <code class="inline">Project.resolve</code> returns <code class="inline">repo.worktree</code> from <code class="inline">git rev-parse --show-toplevel</code>, and returns the filesystem root with <code class="inline">vcs: undefined</code> when no <code class="inline">.git</code> exists above cwd.</li>
+                <li><strong>The <code class="inline">CLAUDE.md</code> fallback conditions are exact</strong> — both halves, stated precisely in the <a class="link-quiet" href="#ceiling">ceiling section</a>.</li>
+                <li><strong><code class="inline">instructions</code> resolution.</strong> Relative globs run per ancestor via <code class="inline">globUp</code>; absolute entries glob only their last segment; URLs are fetched separately at a 5 s timeout and appended after file results; and <code class="inline">Instruction.system()</code> re-runs inside the agent step loop.</li>
+                <li><strong>JSON-defined agents and commands are first-class.</strong> <code class="inline">ConfigV1.Info</code> declares <code class="inline">agent: Record&lt;string, ConfigAgentV1.Info&gt;</code> and <code class="inline">command: Record&lt;string, ConfigCommandV1.Info&gt;</code> (plus deprecated <code class="inline">mode</code>), so a config file alone can define both. File discovery is an <em>additional</em> source, not the only one.</li>
+                <li><strong><code class="inline">.opencode</code> outranks the sibling top-level <code class="inline">opencode.json</code></strong>, and rootmost outranks nearest inside <code class="inline">.opencode</code>, because the directory pass runs after the top-level pass and <code class="inline">ConfigPaths.directories</code> is not reversed while <code class="inline">ConfigPaths.files</code> is.</li>
+                <li><strong>Singular and plural directory names are both real and equal.</strong> Every loader uses one <code class="inline">{singular,plural}</code> brace pattern, so neither form has precedence and there is no fallback relationship.</li>
+                <li><strong>No hooks surface exists.</strong> No hooks path literal appears in the tagged source or the installed binary; plugin callbacks are the whole lifecycle contract.</li>
+                <li><strong>Ancestor <code class="inline">.opencode</code> directories carry capabilities, not just instructions.</strong> <code class="inline">ConfigPaths.directories</code> feeds the command, agent, mode, plugin, skill and custom-tool loaders alike.</li>
+                <li><strong>Bounded negatives re-checked literally:</strong> <code class="inline">.mcp.json</code>, <code class="inline">opencode.local.json</code>, <code class="inline">mcp.servers</code>, <code class="inline">AGENTS.override.md</code>, <code class="inline">GEMINI.md</code>, <code class="inline">.claude/agents</code>, <code class="inline">.claude/commands</code> and <code class="inline">.agents/agents</code> all return zero non-test hits in <code class="inline">packages/*/src</code>, and <code class="inline">mcp.servers</code> / <code class="inline">opencode.local.json</code> are absent from the installed binary too.</li>
+              </ul>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Second verification pass (2026-08-13).</strong> A full re-audit of this page against a fresh evidence corpus: the tagged worktrees <code class="inline">v1.18.16</code> (<code class="inline">a3647eb</code>) and <code class="inline">v1.17.3</code>, the installed Homebrew binary <code class="inline">1.18.18</code> at <code class="inline">/opt/homebrew/Cellar/opencode/1.18.18/bin/opencode</code>, the live opencode.ai documentation retrieved 2026-08-13, and dated disk re-observation.</p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /></colgroup>
+                <thead><tr><th>Outcome</th><th>Count and nature</th></tr></thead>
+                <tbody>
+                  <tr><td>Claims corrected</td><td><strong>8</strong> — mode files <em>deep-merge</em> over a same-named agent rather than replacing it; the "Scout" negative narrowed to the runtime source; the agent-level <code class="inline">tools</code> field marked deprecated; MCP <code class="inline">instructions</code> injection extended to zero-tool servers; "the only install command" narrowed to the only <em>package-install</em> verb; and the install anchor, disk observations and install path re-anchored to 2026-08-13.</td></tr>
+                  <tr><td>Capabilities added</td><td><strong>12</strong> — <code class="inline">{env:}</code>/<code class="inline">{file:}</code> substitution; <code class="inline">OPENCODE_DISABLE_PROJECT_CONFIG</code> (layers and scopes); <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE_SKILLS</code> (skills and cross-read); the <code class="inline">auth.json</code> well-known trigger; per-agent skill permission gating; the internal-plugin roster with <code class="inline">OPENCODE_DISABLE_DEFAULT_PLUGINS</code> and <code class="inline">--pure</code>; the first-party MCP CLI verbs; the TUI migration and legacy TOML migration writes; the permission model; the remaining config keys; plugin-shipped themes; the <code class="inline">tui.json</code> key inventory.</td></tr>
+                  <tr><td>Evidence labels attached</td><td><strong>3</strong> — the shadow section and the installing table now carry S marks; layer 7 (organization API) reclassified D/S&rarr;S; the themes documentation URL added as the D-side of the themes D&ne;S row.</td></tr>
+                  <tr><td>Version drift</td><td>Pin <code class="inline">v1.18.16</code> retained; the installed binary is now Homebrew <code class="inline">1.18.18</code>; <code class="inline">v1.18.17</code>/<code class="inline">v1.18.18</code> postdate the cut-off with no capability-surface change (tag diff verified).</td></tr>
+                  <tr><td>Unknowns resolved</td><td><strong>1</strong> — the OpenCode half of <strong>U-16</strong>: <code class="inline">CLAUDE_CONFIG_DIR</code> is not honored at this tag, a bounded negative at both tags. U-numbers unchanged.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="scopes" data-term>
+            <p class="prompt">ls -d ~/.config/opencode ~/.opencode ./.opencode /Library/Application\ Support/opencode</p>
+            <div class="body" data-term-out>
+              <p>OpenCode has <strong>ten</strong> distinct places configuration and capabilities can live. Two of them surprise people: <code class="inline">~/.opencode</code> is a full configuration directory ranked <em>above</em> every project one, and every ancestor <code class="inline">.opencode</code> carries <strong>complete capabilities</strong> — agents, commands, skills, plugins, tools — not just instructions.</p>
+
+              <table>
+                <colgroup><col style="width:10rem" /><col /><col /><col style="width:5rem" /></colgroup>
+                <thead>
+                  <tr><th>Scope</th><th>Location / mechanism</th><th>What lives there</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Remote / organization</td>
+                    <td>authenticated <code class="inline">.well-known/opencode</code> configuration<br />active-account organization API config</td>
+                    <td>Low/default remote config, and later an organization config that ranks near the top. Read from source only — whether an account exists on the inspected machine is undetermined (an <code class="inline">auth.json</code> is present as of 2026-08-13; its contents were not inspected).</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>User / global</td>
+                    <td><code class="inline">~/.config/opencode/</code> — XDG-based, i.e. <code class="inline">$XDG_CONFIG_HOME/opencode</code> — holding <code class="inline">config.json</code>, <code class="inline">opencode.json</code>, <code class="inline">opencode.jsonc</code>, <code class="inline">tui.json</code>, <code class="inline">tui.jsonc</code>, <code class="inline">AGENTS.md</code>, <code class="inline">agent(s)/</code>, <code class="inline">command(s)/</code>, <code class="inline">mode(s)/</code>, <code class="inline">skill(s)/</code>, <code class="inline">plugin(s)/</code>, <code class="inline">tool(s)/</code>, <code class="inline">themes/</code><br />plus shared <code class="inline">~/.agents/skills</code> and compatible <code class="inline">~/.claude/CLAUDE.md</code>, <code class="inline">~/.claude/skills</code></td>
+                    <td>Global configuration and the full capability set.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Legacy user</td>
+                    <td><code class="inline">~/.opencode/</code>, including its own <code class="inline">opencode.json</code> / <code class="inline">opencode.jsonc</code></td>
+                    <td>Treated as one more capability directory when it exists — the <strong>same</strong> file capabilities as a project <code class="inline">.opencode</code>, and <strong>ranked above all project ones</strong>. The first pass observed the installed binary here; as of 2026-08-13 no <code class="inline">~/.opencode</code> exists on this machine — the install is Homebrew's.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project top-level</td>
+                    <td>every <code class="inline">opencode.json</code> / <code class="inline">opencode.jsonc</code> from the worktree root down to cwd</td>
+                    <td>Hierarchical JSON/JSONC configuration, <code class="inline">.json</code> merged before <code class="inline">.jsonc</code> at each level.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project structured</td>
+                    <td>every ancestor <code class="inline">.opencode/</code> from cwd up to <em>and including</em> the worktree, holding <code class="inline">agent(s)</code>, <code class="inline">command(s)</code>, <code class="inline">mode(s)</code>, <code class="inline">skill(s)</code>, <code class="inline">plugin(s)</code>, <code class="inline">tool(s)</code></td>
+                    <td>Full file capabilities at every ancestor. The ordering is the <strong>reverse</strong> of the top-level config walk — see <a class="link-quiet" href="#shadow">shadow direction</a>.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Themes</td>
+                    <td><code class="inline">~/.config/opencode/themes/*.json</code><br /><code class="inline">&lt;dir&gt;/.opencode/themes/*.json</code> for cwd and <strong>every</strong> ancestor to the filesystem root</td>
+                    <td>TUI colour themes only — a separate walk that does <strong>not</strong> stop at the worktree and ignores <code class="inline">OPENCODE_CONFIG_DIR</code>.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>TUI configuration</td>
+                    <td>global / project / structured <code class="inline">tui.json</code> and <code class="inline">tui.jsonc</code><br /><code class="inline">OPENCODE_TUI_CONFIG</code></td>
+                    <td>A separate settings and plugin loader. Main config <em>strips</em> legacy <code class="inline">theme</code>, <code class="inline">keybinds</code> and <code class="inline">tui</code> keys on load.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Explicit</td>
+                    <td><code class="inline">OPENCODE_CONFIG</code>, <code class="inline">OPENCODE_CONFIG_CONTENT</code>, <code class="inline">OPENCODE_CONFIG_DIR</code>, <code class="inline">OPENCODE_TUI_CONFIG</code>, <code class="inline">OPENCODE_DISABLE_PROJECT_CONFIG</code><br />configured <code class="inline">instructions</code>, <code class="inline">skills.paths</code>, <code class="inline">skills.urls</code>, and the <code class="inline">plugin</code> array</td>
+                    <td>Additional and override sources declared by environment or by config content.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Managed</td>
+                    <td>macOS <code class="inline">/Library/Application Support/opencode/opencode.json(c)</code><br />Linux <code class="inline">/etc/opencode/opencode.json(c)</code><br />Windows <code class="inline">%ProgramData%\opencode\opencode.json(c)</code><br />macOS managed preferences <code class="inline">ai.opencode.managed</code></td>
+                    <td>Administrative configuration, applied near the top, followed by permission post-processing.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session / runtime</td>
+                    <td>flags, active agent / model / variant, permissions, TUI state; XDG data, cache and state directories</td>
+                    <td>Selection and generated state — not another project file scope. <code class="inline">~/.local/share/opencode/{auth.json,log,repos}</code> and <code class="inline">~/.cache/opencode/bin</code> observed 2026-08-13; the first pass additionally observed <code class="inline">~/.cache/opencode/skills</code>, which no longer reproduces — created on demand.</td>
+                    <td><strong>D/S/O</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>What triggers the remote layer, and where its credentials live — S.</strong> Provider credentials sit in <code class="inline">~/.local/share/opencode/auth.json</code> (the XDG data directory, written mode <code class="inline">0600</code>) — generated state like <code class="inline">mcp-auth.json</code>, and observed on this machine. The <code class="inline">.well-known</code> remote layer fires <strong>only</strong> for <code class="inline">auth.json</code> entries of type <code class="inline">"wellknown"</code>: for each, the loader exports the entry's token into the environment map used for <code class="inline">{env:}</code> substitution (taking precedence over the process environment), fetches <code class="inline">&lt;entry-url&gt;/.well-known/opencode</code>, and optionally follows its <code class="inline">remote_config</code> URL.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>What one configuration directory actually contributes — S.</strong> Every directory in the config-directory list — the XDG global directory, each project <code class="inline">.opencode</code>, <code class="inline">~/.opencode</code>, and <code class="inline">OPENCODE_CONFIG_DIR</code> — is scanned for the same capability set. Only the <code class="inline">.opencode</code>-suffixed entries (and <code class="inline">OPENCODE_CONFIG_DIR</code> itself) additionally contribute another <code class="inline">opencode.json</code> then <code class="inline">opencode.jsonc</code>.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    D["one config directory"] --> AG["agent + agents&lt;br/&gt;**/*.md — recursive"]
+    D --> CM["command + commands&lt;br/&gt;**/*.md — recursive"]
+    D --> SK["skill + skills&lt;br/&gt;**/SKILL.md — recursive"]
+    D --> MD["mode + modes&lt;br/&gt;*.md — single level"]
+    D --> PL["plugin + plugins&lt;br/&gt;*.ts *.js — single level"]
+    D --> TL["tool + tools&lt;br/&gt;*.js *.ts — single level"]
+    D --> HK["a hooks directory&lt;br/&gt;NO SUCH SURFACE EXISTS"]
+
+    class HK warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>Singular and plural are both real, with no precedence — S.</strong> Each loader issues <em>one</em> <code class="inline">{singular,plural}</code> brace pattern, so <code class="inline">agent/</code> and <code class="inline">agents/</code> are equal citizens of one scan. There is no fallback relationship — <code class="inline">agents/</code> is not "the one that wins if <code class="inline">agent/</code> is missing". Both are scanned, always. What happens when the <em>same name</em> appears in both siblings of one directory is genuinely <strong>unspecified</strong>: it resolves by whatever order <code class="inline">Glob.scan</code> returns brace alternatives, and the tagged source does not pin that down. Across <em>different</em> directories the list order governs and is deterministic. <strong>S / U</strong></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong><code class="inline">OPENCODE_CONFIG_DIR</code> is not a single switch — S.</strong> It behaves two different ways in one run, and the split is the correction most likely to bite:</p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col /></colgroup>
+                <thead><tr><th>Consumer</th><th>Behavior</th><th>Consequence</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>The <code class="inline">Global</code> service</td>
+                    <td><strong>Replaces</strong> the XDG config directory — <code class="inline">Global.make()</code> returns <code class="inline">config: Flag.OPENCODE_CONFIG_DIR ?? Path.config</code></td>
+                    <td>The global <code class="inline">AGENTS.md</code> candidate <strong>moves</strong> with the variable. <code class="inline">~/.config/opencode/AGENTS.md</code> is no longer consulted.</td>
+                  </tr>
+                  <tr>
+                    <td>The config-directory list</td>
+                    <td><strong>Appends</strong> — <code class="inline">ConfigPaths.directories</code> starts from the <em>static</em> <code class="inline">Global.Path.config</code> and pushes <code class="inline">OPENCODE_CONFIG_DIR</code> last</td>
+                    <td>For capability directories the variable <em>adds</em> a highest-priority location. <code class="inline">~/.config/opencode</code> is <strong>still scanned</strong>, so a tool must report both.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong><code class="inline">OPENCODE_DISABLE_PROJECT_CONFIG</code> is a project-scope kill-switch — S.</strong> When truthy, the project top-level <code class="inline">opencode.json(c)</code> walk, every project <code class="inline">.opencode</code> entry in the config-directory list, the project instruction filename-class walk (<code class="inline">AGENTS.md</code> / <code class="inline">CLAUDE.md</code> / <code class="inline">CONTEXT.md</code>), relative <code class="inline">instructions</code>-glob resolution against the project ancestry, and the project <code class="inline">tui.json(c)</code> walk are all removed from the run — see <a class="link-quiet" href="#layers">layers</a> for the per-layer effect. <strong>Not gated:</strong> the ancestor <code class="inline">.claude/skills</code> and <code class="inline">.agents/skills</code> scans and the theme walk still run, and <code class="inline">~/.opencode</code> and <code class="inline">OPENCODE_CONFIG_DIR</code> survive in the directory list. The flag is absent from the opencode.ai env-var tables (config and CLI pages, checked 2026-08-13) and is described only by the built-in <code class="inline">customize-opencode</code> skill; it was added for external tooling per <a class="link-quiet" href="https://github.com/anomalyco/opencode/issues/7559">anomalyco/opencode#7559</a>. A scanner computing effective configuration must model this switch.</p>
+
+              <p class="eli5"><span class="eli5-term">There is no private-project override file.</span> No <code class="inline">opencode.local.json</code> convention exists — the literal is absent from both the tagged source and the installed binary. "Local" in OpenCode means one of three unrelated things: an MCP transport (<code class="inline">type: "local"</code>), a plugin scope, or the mDNS domain <code class="inline">opencode.local</code>. Never a gitignored override class. Synthesizing one produces a dead file. <strong>S</strong>, bounded negative.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="instructions" data-term>
+            <p class="prompt">cat AGENTS.md CLAUDE.md CONTEXT.md 2&gt;/dev/null</p>
+            <div class="body" data-term-out>
+              <p><strong>This is the most misunderstood thing about OpenCode, and the misunderstanding has a traceable origin.</strong> The rule is not "first match wins" and it is not "merge everything". It is both, on two different axes:</p>
+
+              <p class="eli5"><span class="eli5-term">The rule, in one line.</span> <strong>Merge-all WITHIN one filename class, first-match ACROSS classes.</strong> Every <code class="inline">AGENTS.md</code> from cwd through the worktree loads; only if <em>none</em> exists anywhere in that range does <code class="inline">CLAUDE.md</code> get a turn, and only if that class is empty too does deprecated <code class="inline">CONTEXT.md</code>.</p>
+
+              <p><strong>Why both readings exist — S.</strong> Two pieces of code sit on top of each other and each contributes half the answer:</p>
+
+              <ul class="plain">
+                <li><code class="inline">FSUtil.findUp(target, start, stop)</code> contains <strong>no early exit</strong>. It appends <code class="inline">join(current, target)</code> for <em>every</em> level that has the file and stops only at <code class="inline">stop</code> or the filesystem root — so it returns <strong>all</strong> matches, nearest&rarr;root.</li>
+                <li><code class="inline">Instruction.systemPaths</code> then runs <code class="inline">matches.forEach(add)</code> followed by <code class="inline">break</code>. That <code class="inline">break</code> ends the <strong>filename-class loop</strong>, not the ancestor walk.</li>
+              </ul>
+
+              <p><strong>The in-source comment is misleading, and it is the origin of the recurring wrong answer — S.</strong> The comment sitting directly above that block says, in substance, that <em>the first project-level match wins so <code class="inline">AGENTS.md</code>/<code class="inline">CLAUDE.md</code> are not stacked from every ancestor</em>. That sentence describes the <strong>class</strong> rule. The code beneath it stacks every ancestor of the winning class. Anyone who reads the comment and stops has the right words and the wrong algorithm — which is how "OpenCode takes the nearest <code class="inline">AGENTS.md</code>" became folklore.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    G["global candidate&lt;br/&gt;breaks on first hit"] --> P{"first filename class&lt;br/&gt;with ANY match"}
+    P -->|AGENTS.md| A["EVERY AGENTS.md&lt;br/&gt;cwd to worktree"]
+    P -->|"else CLAUDE.md"| B["EVERY CLAUDE.md"]
+    P -->|"else CONTEXT.md"| C["EVERY CONTEXT.md&lt;br/&gt;deprecated"]
+    A --> S["insertion order: global,&lt;br/&gt;then nearest to root,&lt;br/&gt;then configured instructions"]
+    B --> S
+    C --> S
+    M["in-source comment says&lt;br/&gt;first project-level match wins"] -.->|describes the CLASS loop only| P
+
+    class M warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>Where the documentation diverges — D&ne;S.</strong> The rules page says the first matching file wins in each category, and lists only <code class="inline">AGENTS.md</code> and <code class="inline">CLAUDE.md</code>. The loader picks the first matching filename <strong>class</strong> and then loads every file in it, and additionally accepts undocumented <code class="inline">CONTEXT.md</code>. Two concrete consequences a tool must model:</p>
+
+              <ul class="plain">
+                <li>A worktree-root <code class="inline">AGENTS.md</code> <strong>suppresses a closer <code class="inline">CLAUDE.md</code></strong>. Distance loses to class.</li>
+                <li>Two ancestor <code class="inline">AGENTS.md</code> files <strong>both load</strong>. Neither shadows the other.</li>
+              </ul>
+
+              <p><strong>Ordering inside the resulting set — S.</strong> Insertion order: the global file first, then the project matches nearest&rarr;root, then the configured <code class="inline">instructions</code>. Nothing is replaced; everything accumulates.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The lazy descendant path is a second, different mechanism — S.</strong> When the Read tool opens a file <em>below</em> the session cwd, <code class="inline">Instruction.resolve</code> walks upward from that file's directory to — but <strong>excluding</strong> — the session directory. Not the worktree: the session directory. It attaches one nearby instruction per descendant directory, trying <code class="inline">AGENTS</code> &rarr; <code class="inline">CLAUDE</code> &rarr; <code class="inline">CONTEXT</code> at each. So <strong>this path can mix filename classes</strong>, which the startup path cannot.</p>
+
+              <p>A nearby instruction is skipped while its path already appears in the startup system paths, or in the <code class="inline">loaded</code> metadata of an earlier uncompacted completed Read call; a separate per-assistant-message claim set prevents duplicate attachment during concurrent or current-message reads.</p>
+
+              <p class="eli5"><span class="eli5-term">For a configuration browser.</span> Startup instructions and lazily attached ones are <em>different sets with different rules</em>. Only the startup set obeys the class rule; the descendant set is opportunistic, per-directory and per-read. Presenting them as one flat "instruction files" list states something false about both.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="ceiling" data-term>
+            <p class="prompt">git rev-parse --show-toplevel</p>
+            <div class="body" data-term-out>
+              <p><strong>Every project walk in OpenCode stops at <code class="inline">ctx.worktree</code>, inclusive</strong> — the instruction walk, the top-level <code class="inline">opencode.json</code> walk, and the <code class="inline">.opencode</code> capability walk alike. And "project root" here has exactly one definition: <strong>Git</strong>. <strong>S</strong></p>
+
+              <p><code class="inline">Project.resolve</code> walks up looking for a <code class="inline">.git</code> entry. On a hit it runs <code class="inline">git rev-parse --show-toplevel</code> and takes that as the project directory. There is <strong>no <code class="inline">.opencode</code>-marker root and no config-file-based root</strong> — dropping an <code class="inline">.opencode</code> directory or an <code class="inline">opencode.json</code> somewhere does not create a boundary.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    W["Project.resolve walks up from cwd&lt;br/&gt;looking for a .git entry"] --> Q{"what does it find?"}
+    Q -->|"a repository checkout"| R["git rev-parse --show-toplevel&lt;br/&gt;that path IS ctx.worktree"]
+    Q -->|"a linked worktree"| L["the linked worktree top level&lt;br/&gt;NOT the main checkout"]
+    Q -->|"nothing above cwd"| N["sentinel global project&lt;br/&gt;worktree becomes the filesystem root"]
+    R --> C["ceiling, INCLUSIVE, for instructions,&lt;br/&gt;opencode.json and .opencode walks"]
+    L --> C
+    N --> Z["every walk reaches the filesystem root&lt;br/&gt;and can traverse the home directory"]
+
+    class N,Z warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /><col style="width:5rem" /></colgroup>
+                <thead><tr><th>Situation</th><th>Where the walks stop</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Ordinary repository checkout</td>
+                    <td>At the repository top level, <strong>inclusive</strong> — that directory's files are read, and nothing above it is.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Linked worktree</td>
+                    <td>At the <strong>linked worktree's own</strong> top level. It is its own root; the main checkout's ancestors are never visited, even when the worktree is nested inside it.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>No <code class="inline">.git</code> anywhere above cwd</td>
+                    <td>The project is the sentinel "global" project and the worktree becomes <code class="inline">"/"</code>, so <strong>all three walks reach the filesystem root</strong> — traversing the home directory on the way.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Themes, and both TUI walks</td>
+                    <td><strong>Not bounded by the worktree at all.</strong> Themes use their own loop, and the TUI loader calls the same path helpers <em>without</em> a worktree argument, so both run to the filesystem root even inside a Git project. See <a class="link-quiet" href="#themes">themes and TUI</a>.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The <code class="inline">CLAUDE.md</code> fallback, with its exact conditions — S.</strong> Both halves are conditional, and both conditions are precise. This is the pair most often stated loosely:</p>
+
+              <table>
+                <colgroup><col style="width:8rem" /><col /><col /></colgroup>
+                <thead><tr><th>Half</th><th>File</th><th>Loads only if&hellip;</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Global</td>
+                    <td><code class="inline">~/.claude/CLAUDE.md</code> — the <strong>literal</strong> path, not a <code class="inline">CLAUDE_CONFIG_DIR</code> resolution</td>
+                    <td><code class="inline">&lt;config&gt;/AGENTS.md</code> <strong>does not exist</strong>, where <code class="inline">&lt;config&gt;</code> is the effective config directory (<code class="inline">OPENCODE_CONFIG_DIR</code> replaces the XDG one for this file). The global loop <em>does</em> break on the first hit, so at most one global file ever loads.</td>
+                  </tr>
+                  <tr>
+                    <td>Project</td>
+                    <td>project <code class="inline">CLAUDE.md</code>, as the second filename class</td>
+                    <td><strong>No <code class="inline">AGENTS.md</code> exists anywhere</strong> from cwd through the worktree. A single <code class="inline">AGENTS.md</code> at any level of that range suppresses <em>every</em> startup project <code class="inline">CLAUDE.md</code>.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p>Both halves are removed by <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE</code> (or the <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE_PROMPT</code> variant). <strong>S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">The trap.</span> "OpenCode also reads <code class="inline">CLAUDE.md</code>" is true only in the negative case. In any repository that has one <code class="inline">AGENTS.md</code>, no project <code class="inline">CLAUDE.md</code> is read at startup at all — and a browser that lists it as an active instruction source is showing a file that never enters the context.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="configured-instructions" data-term>
+            <p class="prompt">jq '.instructions' opencode.json</p>
+            <div class="body" data-term-out>
+              <p>Beyond the filename classes, the <code class="inline">instructions</code> config key adds explicit sources. It accepts <strong>relative globs, absolute paths, <code class="inline">~/</code>-prefixed paths and HTTP(S) URLs</strong>, and each form resolves differently. <strong>D/S</strong></p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col style="width:5rem" /></colgroup>
+                <thead><tr><th>Entry form</th><th>How it resolves</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Relative glob</td>
+                    <td>Goes through <code class="inline">FSUtil.globUp</code>, which runs the glob <strong>once per ancestor</strong> from cwd through the worktree. A pattern may therefore intentionally select descendants at every level — that is a feature, not an accident.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Absolute path</td>
+                    <td>Globbed as <code class="inline">basename</code> with <code class="inline">cwd = dirname</code>, so <strong>wildcards are honored only in the last path segment</strong>. A wildcard in a middle segment does not expand.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>HTTP(S) URL</td>
+                    <td>Skipped by the path pass and fetched separately with a <strong>five-second</strong> timeout. Failures yield <strong>empty content rather than an error</strong> — a broken URL is silent.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>File results come first, URL results append after them</strong>, and everything is <em>combined, never replaced</em>. This is explicit inclusion, not import parsing: <strong>no <code class="inline">@</code> syntax exists in this loader</strong>. <strong>S</strong></p>
+
+              <p><strong><code class="inline">instructions</code> is re-read per agent step — S.</strong> <code class="inline">Instruction.system()</code> is invoked inside the agent step loop, so paths <em>and content</em> are re-resolved on every step rather than snapshotted at session start. A file edited mid-session takes effect at the next step.</p>
+
+              <p><strong>Array merge, as an exception — D/S.</strong> Configuration deep-merges and later leaves win, and arrays normally <em>replace</em> wholesale. <code class="inline">instructions</code> is one of two exceptions: it is <strong>concatenated and de-duplicated</strong> across layers. (The other is <code class="inline">plugin</code>, de-duplicated by load identity.) So a project layer adding one instruction does not erase the global list.</p>
+
+              <p class="eli5"><span class="eli5-term">Two consequences worth encoding.</span> First, a relative <code class="inline">instructions</code> glob expands to a <em>different set per ancestor</em>, so the effective file list cannot be computed from cwd alone. Second, a URL entry is a live network dependency inside the prompt-assembly path, evaluated every step and failing silently — worth surfacing as its own artifact kind rather than folding it into "instruction files".</p>
+            </div>
+          </section>
+
+          <section class="doc" id="layers" data-term>
+            <p class="prompt">echo 'ten configuration layers, low to high'</p>
+            <div class="body" data-term-out>
+              <p>Configuration is assembled by <code class="inline">Config.loadInstanceState</code> in <strong>statement order</strong>, low&rarr;high, later values winning. There are <strong>ten</strong> stages, and the tenth is post-processing rather than a file source. <strong>S</strong></p>
+
+              <pre class="mermaid">
+flowchart LR
+    A["1-2 remote&lt;br/&gt;+ global XDG"] --> B["3 OPENCODE&#95;CONFIG"]
+    B --> C["4 project files&lt;br/&gt;root to cwd"]
+    C --> D["5 config dirs&lt;br/&gt;cwd to root"]
+    D --> E["6-7 env content&lt;br/&gt;+ org API"]
+    E --> F["8-9 managed&lt;br/&gt;+ MDM"]
+    F --> G["10 post-processing"]
+
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:3rem" /><col style="width:15rem" /><col /></colgroup>
+                <thead><tr><th>#</th><th>Layer</th><th>Detail</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>Remote config</td>
+                    <td>The authenticated <code class="inline">.well-known/opencode</code> configuration, and any <code class="inline">remote_config</code> URL it points at. Lowest priority. <strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>Global XDG</td>
+                    <td><code class="inline">config.json</code>, then <code class="inline">opencode.json</code>, then <code class="inline">opencode.jsonc</code>, in <code class="inline">~/.config/opencode</code>. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td><code class="inline">OPENCODE_CONFIG</code></td>
+                    <td>An explicit file, <strong>parsed as JSONC regardless of extension</strong>. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td>Project top-level</td>
+                    <td>Every <code class="inline">opencode.json(c)</code> from the <strong>worktree root down to cwd</strong>, with <code class="inline">.json</code> merged before <code class="inline">.jsonc</code> at each level. Closest therefore wins <em>within this layer</em>. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td>The config-directory list</td>
+                    <td>In list order: XDG global, then project <code class="inline">.opencode</code> <strong>cwd&rarr;worktree root</strong>, then legacy <code class="inline">~/.opencode</code>, then <code class="inline">OPENCODE_CONFIG_DIR</code>. Rootmost therefore wins <em>within this layer</em>, and <code class="inline">~/.opencode</code> and <code class="inline">OPENCODE_CONFIG_DIR</code> outrank <strong>every</strong> project directory. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td><code class="inline">OPENCODE_CONFIG_CONTENT</code></td>
+                    <td>Inline configuration passed through the environment. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td>Organization API</td>
+                    <td>The active account's <code class="inline">&lt;account url&gt;/api/config</code>. Source-verified only: the config docs' precedence list carries no organization-API entry, and the enterprise page's "Central Config" mention names no endpoint or precedence position. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>8</td>
+                    <td>OS managed</td>
+                    <td><code class="inline">opencode.json</code> then <code class="inline">opencode.jsonc</code> at the platform administrative path. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>9</td>
+                    <td>macOS MDM</td>
+                    <td>Managed preferences <code class="inline">ai.opencode.managed</code>, read via <code class="inline">plutil</code>, with MDM payload keys stripped. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>10</td>
+                    <td>Post-processing</td>
+                    <td>Four stages, in order: deprecated <code class="inline">mode</code> entries promoted into <code class="inline">agent</code> as <code class="inline">mode: "primary"</code>; <code class="inline">OPENCODE_PERMISSION</code> JSON deep-merged over <code class="inline">permission</code>; the deprecated <code class="inline">tools</code> map converted to permissions — with <code class="inline">write</code>, <code class="inline">edit</code> and <code class="inline">patch</code> <strong>all folding into <code class="inline">edit</code></strong> — placed <em>beneath</em> any explicit <code class="inline">permission</code>; then <code class="inline">username</code>, <code class="inline">autoshare</code>&rarr;<code class="inline">share</code>, and the autocompact/prune flags. <strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>What step 5 does at each directory — S, and this is a correction.</strong> Only entries ending in <code class="inline">.opencode</code> (or <code class="inline">OPENCODE_CONFIG_DIR</code> itself) contribute another <code class="inline">opencode.json</code> then <code class="inline">opencode.jsonc</code> merge. The XDG global directory <em>is</em> in the list but does not, because step 2 already read it. Every directory in the list, XDG included, contributes <code class="inline">{command,commands}/**/*.md</code>, <code class="inline">{agent,agents}/**/*.md</code>, <code class="inline">{mode,modes}/*.md</code> and <code class="inline">{plugin,plugins}/*.{ts,js}</code>, each deep-merged in list order.</p>
+
+              <p><strong>Merge semantics — D/S.</strong> Configuration deep-merges and later leaves win. Arrays are <strong>replaced</strong>, with exactly two exceptions:</p>
+              <ul class="plain">
+                <li><code class="inline">instructions</code> — <strong>concatenated and de-duplicated</strong>.</li>
+                <li><code class="inline">plugin</code> — <strong>de-duplicated by load identity</strong> (npm <em>package name irrespective of version</em>, or exact <code class="inline">file://</code> URL), with the later occurrence winning while retaining the declaring file and scope.</li>
+              </ul>
+
+              <p><strong>Every config text is substituted before parsing — D/S.</strong> Everything <code class="inline">Config.loadConfig</code> parses — <code class="inline">opencode.json(c)</code> at every scope, <code class="inline">OPENCODE_CONFIG</code>, <code class="inline">OPENCODE_CONFIG_CONTENT</code>, the organization-API payload — plus <code class="inline">tui.json(c)</code> and the remote well-known <code class="inline">remote_config</code> URL and headers, passes through <code class="inline">ConfigVariable.substitute</code> first. <code class="inline">{env:VAR}</code> tokens are replaced from the process environment (or the injected auth env), a missing variable becoming an empty string; <code class="inline">{file:path}</code> tokens are replaced with the trimmed, JSON-escaped contents of the referenced file, resolved relative to the declaring config file with <code class="inline">~/</code> expansion. Both token forms are first-party documented. Source-only details (<strong>S</strong>): a missing <code class="inline">{file:}</code> target is a hard config error ("bad file reference") for the main stack but resolves to empty for the TUI stack, and a <code class="inline">{file:}</code> token on a <code class="inline">//</code>-comment line is left as-is (<code class="inline">{env:}</code> has no such guard). A browser that renders raw file bytes shows placeholders, not effective values — and <code class="inline">{file:}</code> can pull secrets files into effective config.</p>
+
+              <p><strong><code class="inline">OPENCODE_DISABLE_PROJECT_CONFIG</code> removes the project file scope from the run — S.</strong> When truthy it skips the entire project <code class="inline">opencode.json(c)</code> walk (layer 4); removes every project <code class="inline">.opencode</code> entry from the config-directory list, so layer 5 keeps only the XDG global directory, <code class="inline">~/.opencode</code> and <code class="inline">OPENCODE_CONFIG_DIR</code>; skips the project instruction filename-class walk in <code class="inline">Instruction.systemPaths</code>; makes relative <code class="inline">instructions</code> globs resolve against the global config directory instead of the project ancestry; and empties the project <code class="inline">tui.json(c)</code> walk. Undocumented in the first-party docs — see <a class="link-quiet" href="#scopes">scopes</a> for what it does <em>not</em> gate.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="shadow" data-term>
+            <p class="prompt">echo 'rootmost wins — the opposite of Claude Code'</p>
+            <div class="body" data-term-out>
+              <p><strong>OpenCode's two project walks run in opposite directions, and the one people guess wrong is the capability one.</strong> Inside a project:</p>
+
+              <pre class="block">top-level opencode.json(c):   root -> cwd     CLOSEST duplicate wins
+.opencode capability dirs:    cwd  -> root    ROOTMOST duplicate wins</pre>
+
+              <p><strong>The mechanism is plain — S.</strong> <code class="inline">ConfigPaths.files</code> applies <code class="inline">.toReversed()</code> while <code class="inline">ConfigPaths.directories</code> does not (<code class="inline">config/paths.ts</code>), and later assignment wins in both. Two consequences follow, and both are counter-intuitive:</p>
+
+              <ul class="plain">
+                <li>Because step 5 runs <em>after</em> step 4, <strong><code class="inline">.opencode</code> always outranks the sibling top-level <code class="inline">opencode.json</code></strong> in the same directory.</li>
+                <li>A <strong>rootmost</strong> <code class="inline">.opencode</code> outranks a nearer one — the file furthest from your working directory wins.</li>
+              </ul>
+
+              <pre class="mermaid">
+flowchart TD
+    T["top-level opencode.json(c)&lt;br/&gt;walked root to cwd"] --> TW["CLOSEST duplicate wins"]
+    O[".opencode capability dirs&lt;br/&gt;walked cwd to root"] --> OW["ROOTMOST duplicate wins"]
+    OW --> X[".opencode outranks its sibling&lt;br/&gt;top-level opencode.json"]
+    OW --> H["~/.opencode and OPENCODE_CONFIG_DIR&lt;br/&gt;outrank every project directory"]
+    CC["Claude Code capability walk"] --> CW["NEAREST wins"]
+    OW -.->|opposite direction| CW
+
+    class OW,X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>The cross-tool contrast, stated explicitly.</strong> Claude Code's project capability walk resolves duplicates <strong>nearest-wins</strong> — the closest project agent, command or skill beats a farther one. OpenCode's <code class="inline">.opencode</code> ancestry resolves them <strong>rootmost-wins</strong>. Those are opposite directions from the same-looking directory layout, so a shared "nearest wins" implementation is not merely imprecise for OpenCode: it returns the <em>wrong file</em> whenever there is more than one candidate.</p>
+
+              <p class="eli5"><span class="eli5-term">Why "nearest wins" feels right and is not.</span> Every other coding agent on these pages either walks root&rarr;cwd or resolves nearest-first, so the intuition is well-earned everywhere else. OpenCode builds its directory list cwd-upward and then simply <em>does not reverse it</em> before merging. There is no explicit "rootmost wins" statement anywhere in the product — the behavior is a consequence of one missing <code class="inline">reverse()</code>, which is exactly why it does not appear in anybody's mental model.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="side-effects" data-term>
+            <p class="prompt">git status --porcelain .opencode/</p>
+            <div class="body" data-term-out>
+              <p><strong>Reading OpenCode's configuration is not a read-only act.</strong> This matters more than it sounds: a configuration browser that enumerates capabilities by invoking OpenCode's own loader is performing a <em>mutating</em> operation on the user's repository. <strong>S</strong></p>
+
+              <pre class="mermaid">
+flowchart TD
+    L["loading configuration"] --> D["for EVERY directory in the config-directory list&lt;br/&gt;including ~/.config/opencode and each .opencode"]
+    D --> M["create the directory if it is missing"]
+    D --> G["write a .gitignore if absent"]
+    D --> N["fork a background npm install of the plugin package"]
+    L --> S["a top-level config without a schema key&lt;br/&gt;is rewritten in place to add one"]
+    L --> C["a missing global config file is CREATED&lt;br/&gt;holding only the schema key"]
+
+    class M,G,N,S,C warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col /></colgroup>
+                <thead><tr><th>Write</th><th>When</th><th>What appears on disk</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Directory creation</td>
+                    <td>For every directory in the config-directory list, including <code class="inline">~/.config/opencode</code> and each discovered <code class="inline">.opencode</code></td>
+                    <td>The directory itself, created if missing.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.gitignore</code></td>
+                    <td>In each of those directories, when absent</td>
+                    <td>A generated file listing <code class="inline">node_modules</code>, <code class="inline">package.json</code>, <code class="inline">package-lock.json</code>, <code class="inline">bun.lock</code> and <code class="inline">.gitignore</code>.</td>
+                  </tr>
+                  <tr>
+                    <td>Background install</td>
+                    <td>In each of those directories</td>
+                    <td>A forked <code class="inline">npm install @opencode-ai/plugin</code>, which is what produces <code class="inline">node_modules/</code>, <code class="inline">package.json</code> and a lockfile.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">$schema</code> injection</td>
+                    <td>Whenever a loaded top-level config file lacks <code class="inline">$schema</code></td>
+                    <td>The user's own <code class="inline">opencode.json</code>, <strong>rewritten in place</strong> to add the key.</td>
+                  </tr>
+                  <tr>
+                    <td>Global config stub</td>
+                    <td>When no global config file exists — unless <code class="inline">OPENCODE_CONFIG</code>, <code class="inline">OPENCODE_CONFIG_DIR</code> or <code class="inline">OPENCODE_CONFIG_CONTENT</code> is set</td>
+                    <td>A new file containing only <code class="inline">$schema</code>.</td>
+                  </tr>
+                  <tr>
+                    <td>TUI migration</td>
+                    <td>TUI startup, over the global <code class="inline">opencode.json(c)</code>, every <code class="inline">opencode.json(c)</code> found walking up from cwd — <strong>no worktree stop</strong>, the TUI pattern — and every config directory, whenever a file holds legacy <code class="inline">theme</code> / <code class="inline">keybinds</code> / <code class="inline">tui</code> keys and lacks a sibling <code class="inline">tui.json</code></td>
+                    <td>A new <code class="inline">tui.json</code> (<code class="inline">$schema</code> <code class="inline">https://opencode.ai/tui.json</code>) beside the file, holding those keys; a one-time <code class="inline">&lt;file&gt;.tui-migration.bak</code> backup; and the user's own <code class="inline">opencode.json(c)</code> <strong>rewritten in place</strong> with the three keys stripped — the strip is skipped if the backup write fails. A heavier rewrite of user-authored config than the <code class="inline">$schema</code> injection. Present at the <code class="inline">v1.17.3</code> tag as well. (<code class="inline">config/tui-migrate.ts</code>) <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Legacy TOML migration</td>
+                    <td>Plain global config loading, when extensionless legacy <code class="inline">~/.config/opencode/config</code> (TOML) exists</td>
+                    <td><code class="inline">~/.config/opencode/config.json</code> <strong>written</strong> — holding the full merged global result (existing <code class="inline">config.json</code> plus <code class="inline">opencode.json(c)</code> content plus the converted TOML keys) — and the legacy file <strong>deleted</strong>. A write-plus-unlink triggered by mere config loading, with failures silently swallowed. Present at the <code class="inline">v1.17.3</code> tag as well. <strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">The practical rule for an inventory tool.</span> A <code class="inline">.opencode</code> directory containing <code class="inline">node_modules/</code>, <code class="inline">package.json</code>, a lockfile and a <code class="inline">.gitignore</code> is <strong>normal and generated, not user-authored</strong>. Do not present those as capabilities, do not offer to edit them, and do not treat their absence as meaningful. And <strong>read the tree directly</strong> — never shell out to OpenCode to enumerate it, because enumeration is what triggers the writes above.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="agents" data-term>
+            <p class="prompt">ls .opencode/agent .opencode/agents 2&gt;/dev/null &amp;&amp; jq '.agent' opencode.json</p>
+            <div class="body" data-term-out>
+              <p><strong>Two sources, both first-class — D/S.</strong> Agents come from <code class="inline">{agent,agents}/**/*.md</code> in every configuration directory (<strong>recursive</strong>; nested directories become <code class="inline">parent/child</code> names) <em>and</em> from an inline <code class="inline">agent</code> map inside <code class="inline">opencode.json</code>. The schema field is real — <code class="inline">ConfigV1.Info</code> declares <code class="inline">agent: Record&lt;string, ConfigAgentV1.Info&gt;</code> — so <strong>an agent can be declared entirely in JSON with no file at all</strong>. File discovery is an additional source, not the only one.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /></colgroup>
+                <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">description</code></td><td>What the agent is for.</td></tr>
+                  <tr><td><code class="inline">mode</code></td><td><code class="inline">primary</code> | <code class="inline">subagent</code> | <code class="inline">all</code>. Primary agents are selected; subagents run through Task, automatic selection, or an <code class="inline">@mention</code>.</td></tr>
+                  <tr><td><code class="inline">model</code>, <code class="inline">variant</code></td><td>Model selection.</td></tr>
+                  <tr><td><code class="inline">temperature</code>, <code class="inline">top_p</code></td><td>Sampling.</td></tr>
+                  <tr><td><code class="inline">tools</code>, <code class="inline">permission</code></td><td>Tool exposure and permission overrides. <code class="inline">tools</code> is <strong>deprecated</strong> in favor of <code class="inline">permission</code> — the docs mark the agent field deprecated as of v1.1.1, and the schema annotates it <code class="inline">@deprecated Use 'permission' field instead</code>; it stays supported for backwards compatibility and is folded into <code class="inline">permission</code> (<code class="inline">true</code> &rarr; allow, <code class="inline">false</code> &rarr; deny, <code class="inline">write</code>/<code class="inline">edit</code>/<code class="inline">patch</code> folding into <code class="inline">edit</code>, explicit <code class="inline">permission</code> winning). <strong>D/S</strong></td></tr>
+                  <tr><td><code class="inline">prompt</code></td><td>The Markdown body, when the agent comes from a file.</td></tr>
+                  <tr><td><code class="inline">hidden</code>, <code class="inline">color</code></td><td>Presentation.</td></tr>
+                  <tr><td><code class="inline">steps</code> / <code class="inline">maxSteps</code></td><td>Step budget.</td></tr>
+                  <tr><td><code class="inline">disable</code></td><td>Switches the agent off.</td></tr>
+                  <tr><td><code class="inline">options</code></td><td>Free-form provider settings.</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Deprecated modes — S.</strong> <code class="inline">{mode,modes}/*.md</code> is <strong>single-level</strong> (not recursive), loads <em>after</em> agents, and <strong>deep-merges over</strong> an agent of the same name — mode-file fields win (the file always contributes <code class="inline">prompt</code> and a forced <code class="inline">mode: "primary"</code>), while agent-only fields such as <code class="inline">model</code> or <code class="inline">temperature</code> survive, so the result can be a <em>hybrid</em> of both definitions (<code class="inline">mergeDeep</code> in <code class="inline">config/config.ts</code>). The same <code class="inline">mergeDeep</code> promotion applies to inline deprecated <code class="inline">mode</code> config entries during post-processing.</p>
+
+              <p><strong>Built-ins at this tag — S.</strong> <code class="inline">build</code>, <code class="inline">plan</code>, <code class="inline">general</code> and <code class="inline">explore</code>, plus hidden <code class="inline">compaction</code>, <code class="inline">title</code> and <code class="inline">summary</code>. The documentation's "Scout" is <strong>absent from the tagged runtime</strong> — no agent named <code class="inline">scout</code> exists in <code class="inline">packages/opencode/src</code> or <code class="inline">packages/core/src</code> (case-insensitive grep, zero hits). The only <code class="inline">scout</code> matches elsewhere in the tree are <code class="inline">llama-4-scout</code> model-ID test fixtures and the docs content that names the Scout subagent. <strong>D&ne;S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">The scanning consequence.</span> An OpenCode agent inventory that only walks directories misses every JSON-declared agent, and one that only reads config misses every file. Both sources are normal, and a single project routinely uses both. The same is true of commands.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="commands" data-term>
+            <p class="prompt">ls .opencode/command .opencode/commands 2&gt;/dev/null &amp;&amp; jq '.command' opencode.json</p>
+            <div class="body" data-term-out>
+              <p><strong>Also two sources — D/S.</strong> <code class="inline">{command,commands}/**/*.md</code> (<strong>recursive</strong>) in every configuration directory, plus an inline <code class="inline">command</code> map in <code class="inline">opencode.json</code>. <code class="inline">ConfigV1.Info</code> declares <code class="inline">command: Record&lt;string, ConfigCommandV1.Info&gt;</code>, so <strong>commands need no file either</strong>.</p>
+
+              <p><strong>Shape — D/S.</strong> Markdown frontmatter supports <code class="inline">description</code>, <code class="inline">agent</code>, <code class="inline">model</code>, <code class="inline">variant</code> and <code class="inline">subtask</code>. The body becomes <code class="inline">template</code> and supports <code class="inline">$ARGUMENTS</code>, numbered arguments, <code class="inline">@file</code> references, and shell interpolation evaluated at invocation time.</p>
+
+              <p><strong>Registration order, and what overwrites what — S, corrected.</strong> Commands are registered in four stages, and the rule is <em>not</em> "later namespaces fill free names only":</p>
+
+              <table>
+                <colgroup><col style="width:4rem" /><col style="width:13rem" /><col /></colgroup>
+                <thead><tr><th>Stage</th><th>Source</th><th>Collision behavior</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>Built-in <code class="inline">init</code> and <code class="inline">review</code></td><td>Seeded first.</td></tr>
+                  <tr><td>2</td><td>Configured commands</td><td><strong>Overwrites</strong> by key — a configured command named <code class="inline">init</code> replaces the built-in.</td></tr>
+                  <tr><td>3</td><td>MCP prompts</td><td><strong>Overwrites</strong> by key, but registers under the namespaced key <code class="inline">server:prompt</code>, so in practice these collide only with each other.</td></tr>
+                  <tr><td>4</td><td>Skills</td><td><strong>The only exception.</strong> A skill is added only when the name is still free, so <strong>a skill never displaces anything</strong>.</td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">The asymmetry to encode.</span> Three of the four stages overwrite; one does not. So "a command shadows a skill" is always possible and "a skill shadows a command" never is — which is the opposite of the priority ordering people assume from the registration sequence.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="skills" data-term>
+            <p class="prompt">find . ~/.claude ~/.agents -name SKILL.md 2&gt;/dev/null</p>
+            <div class="body" data-term-out>
+              <p><strong>Skills have the widest discovery surface of any OpenCode capability, and it crosses coding-agent boundaries.</strong> In discovery order — D/S:</p>
+
+              <ol class="steps">
+                <li><code class="inline">~/.claude/skills/**/SKILL.md</code> (unless Claude compatibility is disabled) and <code class="inline">~/.agents/skills/**/SKILL.md</code>.</li>
+                <li><code class="inline">.claude/skills</code> and <code class="inline">.agents/skills</code> at <strong>every ancestor from cwd through the worktree</strong>.</li>
+                <li><code class="inline">{skill,skills}/**/SKILL.md</code> inside <strong>every configuration directory</strong> — XDG global, each project <code class="inline">.opencode</code>, <code class="inline">~/.opencode</code>, and <code class="inline">OPENCODE_CONFIG_DIR</code>.</li>
+                <li><code class="inline">skills.paths</code> — relative to cwd, <code class="inline">~/</code>-expanded, or absolute; each scanned as <code class="inline">**/SKILL.md</code>.</li>
+                <li>Remote <code class="inline">skills.urls</code>.</li>
+              </ol>
+
+              <p><code class="inline">OPENCODE_DISABLE_EXTERNAL_SKILLS</code> removes both the <code class="inline">.claude</code> and the <code class="inline">.agents</code> roots (<strong>S</strong>). The narrower, documented <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE_SKILLS</code> — OR'd with the broad <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE</code> — disables only the <code class="inline">.claude</code> skill roots, global <code class="inline">~/.claude/skills</code> and the ancestor <code class="inline">.claude/skills</code> walk, leaving the <code class="inline">.agents</code> roots active. <strong>D/S</strong></p>
+
+              <p><strong>A built-in skill is seeded first — S, correction.</strong> <code class="inline">customize-opencode</code> is registered <em>before</em> disk discovery, so a same-named disk skill overrides it. It is the only built-in skill.</p>
+
+              <p><strong>Shape, and where the docs overstate — D&ne;S.</strong> A skill is a directory containing <code class="inline">SKILL.md</code>, whose frontmatter identifies <code class="inline">name</code> and <code class="inline">description</code>; supporting files are loaded on demand. The documentation requires a description, a name regex, and a name/directory match. <strong>The exact loader validates only a string <code class="inline">name</code> plus an optional string <code class="inline">description</code></strong> — and a description-less skill <em>is loaded</em> but is omitted from the advertised catalog, so the model never sees it, though it still resolves as a slash command.</p>
+
+              <p><strong>How a skill reaches the model — D.</strong> Metadata is exposed and the body retrieved through the <code class="inline">skill</code> tool; free names additionally become slash commands (stage 4 of command registration, above).</p>
+
+              <p><strong>Availability is permission-filtered per agent — S.</strong> <code class="inline">Skill.available</code> drops any skill whose name evaluates to <code class="inline">deny</code> under the agent's <code class="inline">skill</code> permission rule <em>before</em> the catalog is advertised to the model, so a discovered skill can be invisible for a given agent. A browser listing skills as globally "available" is over-claiming whenever a <code class="inline">skill</code> permission deny exists.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Remote skills — S.</strong> <code class="inline">skills.urls</code> entries fetch <code class="inline">&lt;url&gt;/index.json</code>, skip any entry whose <code class="inline">files</code> list lacks <code class="inline">SKILL.md</code>, cache under <code class="inline">~/.cache/opencode/skills/&lt;name&gt;</code>, and download only files that are missing. A changed <code class="inline">version</code> triggers a staged download into <code class="inline">&lt;name&gt;.tmp-&lt;uuid&gt;</code> with an atomic rename and an <code class="inline">.old-&lt;uuid&gt;</code> backup.</p>
+
+              <p class="eli5"><span class="eli5-term">Duplicate skill names have no winner — U-09.</span> Discovery produces an <em>ordered</em> array, but <code class="inline">Effect.forEach(…, { concurrency: "unbounded" })</code> parses every <code class="inline">SKILL.md</code> in parallel and each parse assigns <code class="inline">state.skills[name]</code> on completion. The survivor therefore follows <strong>IO timing, not discovery order</strong>. A warning is logged. This is the highest-ranked residual unknown for OpenCode: a UI that displays "the active one" for duplicate skills is inventing it. <strong>Enumerate the set; do not resolve it.</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="tools" data-term>
+            <p class="prompt">ls .opencode/tool .opencode/tools 2&gt;/dev/null</p>
+            <div class="body" data-term-out>
+              <p><strong>Custom tools are JavaScript or TypeScript modules — D/S.</strong> <code class="inline">{tool,tools}/*.{js,ts}</code>, <strong>single-level</strong> (not recursive), in every configuration directory. Each module enters the model's tool registry:</p>
+
+              <ul class="plain">
+                <li>A <strong>default export</strong> takes the filename as its tool name.</li>
+                <li><strong>Named exports</strong> become <code class="inline">filename_export</code>.</li>
+              </ul>
+
+              <p><strong>The shadow order — S.</strong> Final assignment runs built-ins &rarr; file tools &rarr; plugin tools &rarr; MCP resource tools &rarr; MCP server tools. The registry is a <strong>plain keyed object</strong>, so an exact later name simply shadows an earlier one. There is no warning and no namespacing: an MCP server tool whose sanitized name collides with a file tool wins silently.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="plugins" data-term>
+            <p class="prompt">jq '.plugin' opencode.json &amp;&amp; ls .opencode/plugin .opencode/plugins 2&gt;/dev/null</p>
+            <div class="body" data-term-out>
+              <p><strong>An OpenCode plugin is executable code, not a manifest bundle.</strong> That is a genuine vocabulary difference: Claude Code, Codex, Copilot and Antigravity all use manifest bundles, while OpenCode loads a JavaScript/TypeScript module or an npm package that returns callbacks. <strong>D/S</strong></p>
+
+              <p><strong>Two sources — D/S:</strong></p>
+              <ul class="plain">
+                <li>The <code class="inline">plugin</code> config array, which holds npm specs <strong>or path-like specs</strong>. Path-like entries are resolved to <code class="inline">file://</code> URLs <em>relative to the declaring config file</em>, so a later merge cannot reinterpret <code class="inline">./plugin.ts</code> against a different directory. This is a correction: the array is not npm-only.</li>
+                <li>Local <code class="inline">{plugin,plugins}/*.{js,ts}</code>, <strong>single-level</strong>, auto-discovered in every configuration directory and appended by path.</li>
+              </ul>
+
+              <p><strong>Identity and ordering — S.</strong> npm identity is the <strong>package name irrespective of version</strong>, and the later occurrence wins; local identity is the <strong>exact file URL</strong>. Internal plugins run first, then external plugins <strong>strictly sequentially</strong> in resolved order.</p>
+
+              <p><strong>What the internal plugins are, and how they are switched off.</strong> Version 1.18.16 bundles <strong>11</strong> internal plugins — the Codex, Copilot, Modal, GitLab, Poe, Cloudflare Workers, Cloudflare AI Gateway, Azure, DigitalOcean, Snowflake Cortex and xAI auth/provider plugins (<code class="inline">plugin/index.ts</code>, <strong>S</strong>). <code class="inline">OPENCODE_DISABLE_DEFAULT_PLUGINS</code> — listed in the CLI env-var table — switches them off wholesale: the loader iterates an empty internal-plugin list, so "internal plugins run first" holds only while that flag is unset (<strong>D/S</strong>). Separately, <code class="inline">--pure</code> / <code class="inline">OPENCODE_PURE</code> skips <em>all</em> external plugins — configured and auto-discovered alike — while keeping the internals (<strong>S</strong>).</p>
+
+              <p><strong>What a plugin can hook into — D/S.</strong> Plugins return callbacks for configuration, auth and providers, events, chat transforms, permissions, commands, tool before/after, environment, compaction, and custom tools.</p>
+
+              <p class="eli5"><span class="eli5-term">There is NO hooks surface at all.</span> Not a hooks JSON file, not a hooks directory, not a hooks key. <strong>No hooks-path literal appears in the tagged source or in the installed binary</strong>, and the plugin callback table is the entire lifecycle contract. A configuration browser must not scan for one, and must not present "hooks" as a missing-but-supported OpenCode capability — it is a capability OpenCode does not have. <strong>S</strong>, bounded negative.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Lifecycle management, with its gaps — S / U-10.</strong> Version 1.18.16 ships <code class="inline">opencode plugin &lt;module&gt;</code> with <code class="inline">--global</code> and <code class="inline">--force</code>, which installs the package and patches it into the global or project config, plus a TUI plugin dialog. What is <em>missing</em> matters as much:</p>
+
+              <table>
+                <colgroup><col style="width:12rem" /><col /></colgroup>
+                <thead><tr><th>Operation</th><th>State at 1.18.16</th></tr></thead>
+                <tbody>
+                  <tr><td>Install</td><td><code class="inline">opencode plugin &lt;module&gt;</code>, optionally <code class="inline">--global</code>. Patches the config file.</td></tr>
+                  <tr><td>Replace a spec</td><td><code class="inline">--force</code> can replace a configured package spec — but an unchanged cached <code class="inline">@latest</code> is <strong>not automatically re-resolved</strong>.</td></tr>
+                  <tr><td>Uninstall / remove</td><td><strong>No subcommand exists.</strong></td></tr>
+                  <tr><td>Marketplace</td><td><strong>No first-party marketplace manifest was found at this tag.</strong></td></tr>
+                  <tr><td>TUI activation</td><td>Toggles only the TUI target — <strong>not</strong> server-side callbacks.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="mcp" data-term>
+            <p class="prompt">jq '.mcp' opencode.json</p>
+            <div class="body" data-term-out>
+              <p><strong>Only the merged config <code class="inline">mcp</code> map is native — S.</strong> There is <strong>no <code class="inline">.mcp.json</code> reader</strong> (the literal is absent from source and binary) and <strong>no <code class="inline">mcp.servers</code> nesting</strong> at this version — that shape belongs to <code class="inline">opencode2</code>.</p>
+
+              <p>Each entry under <code class="inline">mcp.&lt;name&gt;</code> is <strong>either</strong> a server declaration <strong>or</strong> a bare toggle:</p>
+
+              <table>
+                <colgroup><col style="width:6rem" /><col /><col /></colgroup>
+                <thead><tr><th>Kind</th><th>Shape</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>local</td>
+                    <td><code class="inline">{"type":"local","command":[…],"cwd"?,"environment"?,"enabled"?,"timeout"?}</code></td>
+                    <td>The environment key is <strong><code class="inline">environment</code>, not <code class="inline">env</code></strong>. Writing <code class="inline">env</code> silently does nothing.</td>
+                  </tr>
+                  <tr>
+                    <td>remote</td>
+                    <td><code class="inline">{"type":"remote","url":…,"headers"?,"oauth"?,"enabled"?,"timeout"?}</code></td>
+                    <td><code class="inline">oauth: false</code> disables auto-detection.</td>
+                  </tr>
+                  <tr>
+                    <td>toggle</td>
+                    <td><code class="inline">{"enabled": boolean}</code> with <strong>no <code class="inline">type</code></strong></td>
+                    <td>A fully legal entry whose only job is switching a server declared at another layer on or off.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Merging and disabling — S.</strong> Same server ID <strong>deep-merges</strong> through the configuration precedence, so a later layer can add <code class="inline">enabled: false</code> to an earlier layer's full declaration. <code class="inline">enabled: false</code> <strong>short-circuits before any transport is attempted</strong> — nothing is spawned and nothing is dialled.</p>
+
+              <p><strong>Connection — D/S.</strong> Enabled servers connect concurrently; a remote server tries streamable HTTP and then SSE.</p>
+
+              <p><strong>Naming, which is lossy — S.</strong> Tools are exposed as <code class="inline">sanitize(server)_sanitize(tool)</code>, where any character outside <code class="inline">[A-Za-z0-9_-]</code> becomes <code class="inline">_</code>. Prompts become slash commands keyed <code class="inline">sanitize(server):sanitize(prompt)</code>. Resources and templates go through generic MCP tools and are keyed with the <em>raw</em> server name, percent-escaped for <code class="inline">%</code> and <code class="inline">:</code> only. A non-blank server <code class="inline">instructions</code> value enters system context whenever at least one of that server's tools is <em>not</em> permission-disabled — <strong>or</strong> the server exposes no tools at all: a connected prompt/resource-only server also gets its instructions injected.</p>
+
+              <p><strong>Auth state — S.</strong> OAuth state lives at <code class="inline">~/.local/share/opencode/mcp-auth.json</code>, written mode <code class="inline">0600</code>. It is generated state, not authored configuration. The CLI surface that manages it is first-party: <code class="inline">opencode mcp auth [name]</code>, <code class="inline">opencode mcp logout [name]</code> and <code class="inline">opencode mcp list</code> ship at the tag and are documented — the MCP docs page states "After you authorize, OpenCode will store the tokens securely in <code class="inline">~/.local/share/opencode/mcp-auth.json</code>." <strong>D/S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">The timeout numbers disagree with the schema — D&ne;S.</span> The schema's own description says the default is 5000 ms. The runtime uses <code class="inline">DEFAULT_TIMEOUT = 30_000</code> for the <strong>connection</strong>, and applies <strong>no built-in default to requests at all</strong>: a request timeout is passed only when the entry sets <code class="inline">timeout</code> or config sets <code class="inline">experimental.mcp_timeout</code>, otherwise the MCP client's own default applies. Documented and effective timeouts differ in <em>both value and scope</em>, so a UI that renders "timeout: 5000 (default)" is wrong twice.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="themes" data-term>
+            <p class="prompt">ls ~/.config/opencode/themes ./.opencode/themes 2&gt;/dev/null &amp;&amp; cat tui.json</p>
+            <div class="body" data-term-out>
+              <p><strong>Themes use a walk that belongs to nothing else in the product — S.</strong> Every other project capability is bounded by the worktree. Themes are not:</p>
+
+              <ul class="plain">
+                <li>Discovered <strong>only</strong> as <strong>plural</strong> <code class="inline">themes/*.json</code> — the singular <code class="inline">theme/</code> form does <em>not</em> exist here, unlike every other capability directory — and <strong>non-recursive</strong>.</li>
+                <li>From a hand-rolled walk starting at <code class="inline">Global.Path.config</code>, then appending <code class="inline">&lt;dir&gt;/.opencode</code> for cwd and <strong>every ancestor to the filesystem root</strong>.</li>
+                <li><strong>Ignoring the worktree ceiling</strong> and <strong>ignoring <code class="inline">OPENCODE_CONFIG_DIR</code></strong>.</li>
+                <li>Keyed by <strong>basename</strong>, with later assignment winning — so the <strong>rootmost</strong> same-basename project theme wins, and any custom theme overrides a built-in of the same name.</li>
+              </ul>
+
+              <pre class="mermaid">
+flowchart TD
+    T["theme discovery&lt;br/&gt;plural themes/*.json only, non-recursive"] --> G["the global config directory"]
+    T --> A["cwd/.opencode and EVERY ancestor"]
+    A --> R["the loop has no worktree stop&lt;br/&gt;it runs to the filesystem root"]
+    R --> K["keyed by basename, later assignment wins&lt;br/&gt;so the ROOTMOST theme wins"]
+    T --> E["OPENCODE_CONFIG_DIR is ignored here"]
+
+    class R,E warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>Rolling documentation says something else — D&ne;S.</strong> The docs describe built-in &lt; user &lt; project-root &lt; cwd. The tagged loader gives rootmost-wins with no worktree bound. Both are stated; the loader governs version <strong>1.18.16</strong>.</p>
+
+              <p><strong>Themes are UI assets, not prompt files.</strong> They change terminal presentation only. Claude Code's output styles sound adjacent and are not: those change model instructions.</p>
+
+              <p><strong>Plugins are a third theme source — S.</strong> Besides built-ins and the <code class="inline">themes/*.json</code> walk, a plugin package can ship TUI themes declared via a <code class="inline">package.json</code> <code class="inline">"oc-themes"</code> field (validated; relative paths only), and TUI plugins register themes at runtime through <code class="inline">addTheme</code> / <code class="inline">upsertTheme</code>. Plugin themes live in a separate <code class="inline">pluginThemes</code> bucket that a same-named custom disk theme overrides.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The TUI is a separate loader entirely — S.</strong> <code class="inline">tui.json</code> / <code class="inline">tui.jsonc</code> are loaded by their own stack, low&rarr;high:</p>
+
+              <pre class="block">global XDG tui.json -> tui.jsonc
+  -> OPENCODE_TUI_CONFIG
+  -> project tui.json(c), root -> cwd
+  -> .opencode/tui.json(c), cwd -> root
+  -> legacy ~/.opencode
+  -> OPENCODE_CONFIG_DIR          (JSONC after JSON at every location)</pre>
+
+              <p>It <strong>calls the same path helpers without a worktree argument</strong>, so <em>both</em> TUI walks run to the filesystem root even inside a Git project. It deep-merges, flattens a nested <code class="inline">tui</code> key, drops unknown keybinds, and resolves and de-duplicates TUI plugins <strong>independently</strong> of the main <code class="inline">opencode.json(c)</code> stack.</p>
+
+              <p><strong>What <code class="inline">tui.json(c)</code> can hold — S.</strong> <code class="inline">$schema</code> (<code class="inline">https://opencode.ai/tui.json</code>), <code class="inline">theme</code>, <code class="inline">keybinds</code>, <code class="inline">plugin</code>, <code class="inline">plugin_enabled</code> (the per-plugin on/off map behind "TUI activation"), <code class="inline">leader_timeout</code>, <code class="inline">attention</code> (<code class="inline">enabled</code>, <code class="inline">notifications</code>, <code class="inline">sound</code>, <code class="inline">volume</code>, <code class="inline">sound_pack</code>, <code class="inline">sounds</code>), <code class="inline">prompt</code> (<code class="inline">max_height</code>, <code class="inline">max_width</code>), <code class="inline">scroll_speed</code>, <code class="inline">scroll_acceleration</code>, <code class="inline">diff_style</code>, <code class="inline">cursor</code>, and <code class="inline">mouse</code>.</p>
+
+              <p><strong>And the main config strips the legacy keys — S.</strong> At 1.18.16, <code class="inline">theme</code>, <code class="inline">keybinds</code> and <code class="inline">tui</code> are removed from the main configuration on load. A tool that reads them from <code class="inline">opencode.json</code> and reports them as effective is reporting values the loader has already discarded. That strip is <em>in-memory</em>, on every load; TUI startup additionally <strong>persists</strong> it to disk via the migration listed under <a class="link-quiet" href="#side-effects">side-effects</a> — a sibling <code class="inline">tui.json</code>, a <code class="inline">.tui-migration.bak</code> backup, and the user's <code class="inline">opencode.json(c)</code> rewritten with the three keys stripped.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>What else the main config declares — D/S.</strong> Providers and models, formatters, LSP, permissions, references, sharing, compaction, attachments, tool-output truncation, <code class="inline">experimental</code>, and server behavior — plus <code class="inline">shell</code>, <code class="inline">logLevel</code>, <code class="inline">snapshot</code> (<code class="inline">false</code> disables filesystem snapshot tracking, so undo/revert no longer touches files; default <code class="inline">true</code>), <code class="inline">watcher.ignore</code>, <code class="inline">autoupdate</code> (<code class="inline">true</code> | <code class="inline">false</code> | <code class="inline">"notify"</code>), <code class="inline">disabled_providers</code> / <code class="inline">enabled_providers</code>, <code class="inline">small_model</code>, <code class="inline">default_agent</code> (which primary agent a session starts as — the selector prefers it over <code class="inline">build</code>), <code class="inline">subagent_depth</code> (caps subagent nesting, default 1; absent at the <code class="inline">v1.17.3</code> tag, present at <code class="inline">v1.18.16</code>), and <code class="inline">enterprise.url</code>. All are documented in the config docs except <code class="inline">logLevel</code> and <code class="inline">enterprise</code>, which are S-only. There is <strong>no separate workflow or profile capability directory</strong> — agents, commands, skills and plugins compose workflows.</p>
+
+              <p><strong>The permission model, stated — D/S.</strong> Actions are <code class="inline">ask</code> | <code class="inline">allow</code> | <code class="inline">deny</code>; a bare string permission normalizes to <code class="inline">{"*": action}</code>. The keys <code class="inline">read</code>, <code class="inline">edit</code>, <code class="inline">glob</code>, <code class="inline">grep</code>, <code class="inline">list</code>, <code class="inline">bash</code>, <code class="inline">task</code>, <code class="inline">external_directory</code>, <code class="inline">lsp</code> and <code class="inline">skill</code> — and any arbitrary extra key — accept either a single action or a pattern&rarr;action object, while <code class="inline">todowrite</code>, <code class="inline">question</code>, <code class="inline">webfetch</code>, <code class="inline">websearch</code> and <code class="inline">doom_loop</code> accept an action only. User key order is preserved for precedence — config is parsed with <code class="inline">propertyOrder: "original"</code>, and the docs state the last matching rule wins. Agents carry their own <code class="inline">permission</code> override, and the agent-level <code class="inline">tools</code> map folds into it the same way as at config level (<code class="inline">write</code>/<code class="inline">edit</code>/<code class="inline">patch</code> &rarr; <code class="inline">edit</code>) with explicit <code class="inline">permission</code> winning.</p>
+
+              <p class="eli5"><span class="eli5-term">Memory, as a bounded negative — S.</span> Sessions, history, summary agents and compaction persist operational conversation state, but <strong>no first-party durable learned-memory file or configuration exists</strong> in the tagged loaders or in the config schema — nothing comparable to Claude auto memory or Copilot Memory. Semantic memory is plugin-provided if you want it. Session, share and server state is runtime-owned: treat it as opaque, do not parse it, do not offer to edit it.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="cross-read" data-term>
+            <p class="prompt">ls -d .claude/skills .agents/skills ~/.claude ~/.agents</p>
+            <div class="body" data-term-out>
+              <p>OpenCode reads three foreign artifact families natively. The set is <strong>narrow and exact</strong> — it is not "OpenCode reads <code class="inline">.claude</code>" and it is not "<code class="inline">.agents</code> is a portable root". <strong>S</strong></p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col style="width:5rem" /></colgroup>
+                <thead><tr><th>Foreign path</th><th>How OpenCode reads it</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">AGENTS.md</code></td>
+                    <td>The winning instruction filename class, at <strong>all ancestors from cwd through the worktree</strong>. Shared live with Codex, Copilot and Antigravity — but the file is portable while the assembly rule is not: those four use different ceilings and three different assembly rules.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.agents/skills</code></td>
+                    <td>At every ancestor cwd&rarr;worktree, plus <code class="inline">~/.agents/skills</code>. Removed by <code class="inline">OPENCODE_DISABLE_EXTERNAL_SKILLS</code>.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.claude/CLAUDE.md</code></td>
+                    <td>The global instruction fallback, at the <strong>literal</strong> path — only when the config-dir <code class="inline">AGENTS.md</code> is absent.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>project <code class="inline">CLAUDE.md</code></td>
+                    <td>The second filename class — only when no <code class="inline">AGENTS.md</code> exists anywhere cwd&rarr;worktree.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.claude/skills</code> and ancestor <code class="inline">.claude/skills</code></td>
+                    <td>Scanned as <code class="inline">**/SKILL.md</code> — see the depth asymmetry below.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><code class="inline">OPENCODE_DISABLE_CLAUDE_CODE</code> removes <strong>both halves</strong> of the Claude compatibility — the instruction fallback and the skill roots. Two narrower switches split it: <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE_PROMPT</code> removes the instruction fallback only, and <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE_SKILLS</code> — OR'd with the broad flag (<code class="inline">effect/runtime-flags.ts</code>) — removes only the <code class="inline">~/.claude/skills</code> and ancestor <code class="inline">.claude/skills</code> roots, leaving the <code class="inline">CLAUDE.md</code> instruction fallback and the <code class="inline">.agents</code> roots intact: the mirror image of the <code class="inline">_PROMPT</code> variant. <strong>S</strong></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Two asymmetries that produce confidently wrong provenance.</strong></p>
+
+              <p class="eli5"><span class="eli5-term">Depth differs, so one physical directory serves one reader and not the other.</span> Claude Code accepts a skill only at the exact four-segment shape <code class="inline">.claude/skills/&lt;name&gt;/SKILL.md</code>. OpenCode scans <code class="inline">.claude/skills/**/SKILL.md</code> — <strong>recursively, deeper than Claude itself accepts</strong>. A nested skill is therefore <em>live for OpenCode and invisible to Claude</em>, from one physical directory. <strong>S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">The same directory name is not the same directory — U-16, OpenCode half resolved (S).</span> Claude Code resolves its own user tree through <code class="inline">$CLAUDE_CONFIG_DIR</code> (falling back to <code class="inline">~/.claude</code>). OpenCode <strong>does not honor that variable at this tag</strong>: both fallbacks are built from <code class="inline">global.home</code> (<code class="inline">OPENCODE_TEST_HOME ?? os.homedir()</code>) with hardcoded <code class="inline">.claude</code> segments, and the literal <code class="inline">CLAUDE_CONFIG_DIR</code> appears in <strong>zero files</strong> under <code class="inline">packages/</code> at <code class="inline">v1.18.16</code> (method: <code class="inline">grep -rF</code>; likewise <code class="inline">v1.17.3</code>, and zero hits in the installed <code class="inline">1.18.18</code> binary — off-pin corroboration). With <code class="inline">CLAUDE_CONFIG_DIR</code> set, the two coding agents read <em>different files under the same nominal name</em> — a relocated Claude home silently desynchronizes the foreign reader, now as fact rather than open question. The Claude-side variable behavior remains the other coding agent&#8217;s row.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Bounded negatives — S.</strong> No loader was found for any of these. Each literal is either absent from <code class="inline">packages/*/src</code> or occurs only as an unrelated identifier (<code class="inline">providerOptions.gemini</code>, <code class="inline">codexApiEndpoint</code>):</p>
+
+              <table>
+                <colgroup><col style="width:16rem" /><col /></colgroup>
+                <thead><tr><th>Not read</th><th>Why it comes up</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">.agents/agents</code></td><td>An <strong>Antigravity-only</strong> contract. <code class="inline">.agents/</code> is not a portable capability root — only <code class="inline">.agents/skills</code> is shared.</td></tr>
+                  <tr><td><code class="inline">.claude/agents</code>, <code class="inline">.claude/commands</code></td><td>Assumed by analogy with the skills cross-read. Source- and binary-confirmed absent.</td></tr>
+                  <tr><td>Claude settings, hooks, plugins, MCP</td><td>OpenCode consumes <em>selected</em> Claude artifacts, never <code class="inline">.claude/</code> as a unit.</td></tr>
+                  <tr><td><code class="inline">AGENTS.override.md</code></td><td>A Codex mechanism. Absent from source and binary.</td></tr>
+                  <tr><td><code class="inline">GEMINI.md</code>, <code class="inline">.gemini</code></td><td>Antigravity and Copilot inputs. Absent.</td></tr>
+                  <tr><td><code class="inline">.codex</code>, <code class="inline">.github</code></td><td>No loader.</td></tr>
+                  <tr><td><code class="inline">.mcp.json</code></td><td>Shared by Claude Code and Copilot CLI. OpenCode has <strong>no <code class="inline">.mcp.json</code> reader at all</strong>; MCP is merged config only.</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Vocabulary warnings — D.</strong> Two words mean something different here than elsewhere. OpenCode <em>"rules"</em> are instruction documents (Codex <code class="inline">.rules</code> files enforce shell-command policy — a different thing entirely). And an OpenCode <em>plugin</em> is executable JS/TS or an npm package, where the other four coding agents mean a manifest bundle.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="installing" data-term>
+            <p class="prompt">opencode plugin &lt;module&gt; --global</p>
+            <div class="body" data-term-out>
+              <p><code class="inline">opencode plugin &lt;module&gt;</code> is the only <em>package-install</em> verb — but not the only first-party command that creates capabilities. At v1.18.16 the CLI also ships <code class="inline">opencode mcp add [name]</code> (interactive or flag-driven; writes an <code class="inline">mcp.&lt;name&gt;</code> entry into the global config file or a chosen project config), <code class="inline">opencode agent create</code> (interactively generates <code class="inline">&lt;global config&gt;/agents/&lt;id&gt;.md</code> or <code class="inline">&lt;worktree&gt;/.opencode/agents/&lt;id&gt;.md</code>, with <code class="inline">--dir</code>/<code class="inline">--mode</code>/<code class="inline">--model</code>/permission options), and <code class="inline">opencode github install</code> (writes <code class="inline">.github/workflows/opencode.yml</code>); <code class="inline">opencode mcp auth</code> / <code class="inline">logout</code> manage <code class="inline">mcp-auth.json</code> OAuth state. All are registered in the root CLI and documented on the first-party CLI docs page — a capability browser attributing provenance should know these first-party writers exist. <strong>D/S</strong> Everything else is created by writing a file at the shape the loader accepts, in a directory the walk visits — <strong>or by adding a key to <code class="inline">opencode.json</code></strong>, which for agents and commands is fully equivalent.</p>
+
+              <table>
+                <colgroup><col style="width:8rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>Capability</th><th>User scope</th><th>Project scope</th><th>Shape that is accepted</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Instructions</td>
+                    <td><code class="inline">~/.config/opencode/AGENTS.md</code> (moves with <code class="inline">OPENCODE_CONFIG_DIR</code>), else literal <code class="inline">~/.claude/CLAUDE.md</code></td>
+                    <td><code class="inline">AGENTS.md</code> at any level cwd&rarr;worktree; <code class="inline">CLAUDE.md</code> only if no <code class="inline">AGENTS.md</code> exists in that range; deprecated <code class="inline">CONTEXT.md</code> last</td>
+                    <td>Plain Markdown, no frontmatter contract — instruction files are read with a plain <code class="inline">readFileString</code>, no frontmatter parse (<strong>S</strong>). <code class="inline">/init</code> targets <code class="inline">AGENTS.md</code> — "Create or update <code class="inline">AGENTS.md</code> for this repository." (<code class="inline">command/template/initialize.txt</code>, <strong>S</strong>)</td>
+                  </tr>
+                  <tr>
+                    <td>Agent</td>
+                    <td><code class="inline">~/.config/opencode/agent(s)/**/*.md</code>, <code class="inline">~/.opencode/agent(s)/</code>, or the <code class="inline">agent</code> map in the global config</td>
+                    <td><code class="inline">.opencode/agent(s)/**/*.md</code> at any ancestor, or the <code class="inline">agent</code> map in any <code class="inline">opencode.json(c)</code></td>
+                    <td>Markdown with frontmatter, body becomes <code class="inline">prompt</code> — <strong>or</strong> a pure JSON object. Nested directories become <code class="inline">parent/child</code> names</td>
+                  </tr>
+                  <tr>
+                    <td>Command</td>
+                    <td><code class="inline">~/.config/opencode/command(s)/**/*.md</code>, or the <code class="inline">command</code> map</td>
+                    <td><code class="inline">.opencode/command(s)/**/*.md</code> at any ancestor, or the <code class="inline">command</code> map</td>
+                    <td>Markdown with frontmatter, body becomes <code class="inline">template</code> — <strong>or</strong> a pure JSON object</td>
+                  </tr>
+                  <tr>
+                    <td>Skill</td>
+                    <td><code class="inline">~/.config/opencode/skill(s)/&lt;name&gt;/SKILL.md</code>, <code class="inline">~/.claude/skills/</code>, <code class="inline">~/.agents/skills/</code></td>
+                    <td><code class="inline">.opencode/skill(s)/</code>, <code class="inline">.claude/skills/</code> or <code class="inline">.agents/skills/</code> at any ancestor; plus <code class="inline">skills.paths</code> and <code class="inline">skills.urls</code></td>
+                    <td>A directory containing <code class="inline">SKILL.md</code>; the loader requires only a string <code class="inline">name</code>, but omit <code class="inline">description</code> and the model never sees it</td>
+                  </tr>
+                  <tr>
+                    <td>Custom tool</td>
+                    <td><code class="inline">~/.config/opencode/tool(s)/*.{js,ts}</code></td>
+                    <td><code class="inline">.opencode/tool(s)/*.{js,ts}</code> at any ancestor</td>
+                    <td>A module; default export takes the filename, named exports become <code class="inline">filename_export</code>. Single-level only</td>
+                  </tr>
+                  <tr>
+                    <td>Plugin</td>
+                    <td colspan="2"><code class="inline">opencode plugin &lt;module&gt;</code> with <code class="inline">--global</code> or <code class="inline">--force</code> — the only <em>package-install</em> verb in the product. It patches the config file. Otherwise: an entry in the <code class="inline">plugin</code> array (npm spec or path spec), or a file in <code class="inline">{plugin,plugins}/</code></td>
+                    <td>A JS/TS module returning callbacks. <strong>No uninstall verb, no marketplace manifest</strong></td>
+                  </tr>
+                  <tr>
+                    <td>MCP server</td>
+                    <td colspan="2">An <code class="inline">mcp.&lt;name&gt;</code> entry in <em>any</em> configuration layer — there is no separate MCP file anywhere</td>
+                    <td><code class="inline">type: "local"</code> with <code class="inline">command</code> and <code class="inline">environment</code>, <code class="inline">type: "remote"</code> with <code class="inline">url</code>, or a bare <code class="inline">{"enabled": boolean}</code> toggle</td>
+                  </tr>
+                  <tr>
+                    <td>Theme</td>
+                    <td><code class="inline">~/.config/opencode/themes/*.json</code></td>
+                    <td><code class="inline">.opencode/themes/*.json</code> at cwd or <strong>any</strong> ancestor to the filesystem root</td>
+                    <td>JSON, keyed by basename. <strong>Plural directory only</strong>, non-recursive</td>
+                  </tr>
+                  <tr>
+                    <td>Hook</td>
+                    <td colspan="3"><strong>Does not exist.</strong> Use a plugin callback — that is the entire lifecycle surface</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Where to put a file so it wins.</span> Counter-intuitively, for anything under <code class="inline">.opencode</code> the answer is <strong>as far up the tree as possible</strong>, because rootmost wins — and <code class="inline">~/.opencode</code> beats every project directory. For top-level <code class="inline">opencode.json</code> the answer is the opposite: closest wins. Two directions, one repository.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="precedence-table" data-term>
+            <p class="prompt">echo 'precedence and shadowing, per capability'</p>
+            <div class="body" data-term-out>
+              <p>The full per-capability table. Every row is the <code class="inline">opencode</code> 1.x binary at <strong>1.18.16</strong>; nothing here transfers to <code class="inline">opencode2</code> or to another coding agent. Rows whose winner is <strong>not resolvable</strong> say so rather than naming one.</p>
+
+              <table>
+                <colgroup><col style="width:8rem" /><col /><col /><col style="width:5rem" /></colgroup>
+                <thead>
+                  <tr><th>Capability</th><th>Search boundary and effective order</th><th>Duplicate / merge behavior</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Instructions</td>
+                    <td>Global candidate first (config-dir <code class="inline">AGENTS.md</code>, else literal <code class="inline">~/.claude/CLAUDE.md</code>), then the winning project filename class cwd&rarr;worktree inclusive, then configured <code class="inline">instructions</code></td>
+                    <td><strong>Merge-all within one filename class, first-match across classes.</strong> A worktree-root <code class="inline">AGENTS.md</code> suppresses a <em>closer</em> <code class="inline">CLAUDE.md</code>; two ancestor <code class="inline">AGENTS.md</code> files both load; lazy descendant reads can mix classes</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Main config</td>
+                    <td>The ten layers, low&rarr;high: remote &rarr; global XDG &rarr; <code class="inline">OPENCODE_CONFIG</code> &rarr; project files root&rarr;cwd &rarr; config-dir list &rarr; <code class="inline">OPENCODE_CONFIG_CONTENT</code> &rarr; org API &rarr; OS managed &rarr; MDM &rarr; post-processing</td>
+                    <td>Deep merge, later leaves win. Arrays replace, <strong>except</strong> <code class="inline">instructions</code> (concatenated, de-duplicated) and <code class="inline">plugin</code> (de-duplicated by load identity, later wins). Post-processing promotes <code class="inline">mode</code> into <code class="inline">agent</code>, applies <code class="inline">OPENCODE_PERMISSION</code>, and folds the deprecated <code class="inline">tools</code> map into permissions beneath any explicit <code class="inline">permission</code></td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project directories</td>
+                    <td>Top-level <code class="inline">opencode.json(c)</code> root&rarr;cwd; <code class="inline">.opencode</code> directories cwd&rarr;root</td>
+                    <td><strong>Rootmost project duplicate wins</strong> — the reverse of top-level config — and because the directory pass runs after the top-level pass, <code class="inline">.opencode</code> always outranks its sibling <code class="inline">opencode.json</code>. Only <code class="inline">.opencode</code>-suffixed entries and <code class="inline">OPENCODE_CONFIG_DIR</code> contribute a further <code class="inline">opencode.json(c)</code></td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>TUI config</td>
+                    <td>Its own stack: global XDG &rarr; <code class="inline">OPENCODE_TUI_CONFIG</code> &rarr; project root&rarr;cwd &rarr; <code class="inline">.opencode</code> cwd&rarr;root &rarr; <code class="inline">~/.opencode</code> &rarr; <code class="inline">OPENCODE_CONFIG_DIR</code>. <strong>Both walks omit the worktree argument and run to the filesystem root</strong></td>
+                    <td>Deep merge, later TUI leaves win, a nested <code class="inline">tui</code> key is flattened, unknown keybinds are dropped, and TUI plugins resolve and de-duplicate independently of main config</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agents / modes</td>
+                    <td><code class="inline">{agent,agents}/**/*.md</code> recursive in every config directory, plus the inline <code class="inline">agent</code> map; then deprecated <code class="inline">{mode,modes}/*.md</code>, single-level</td>
+                    <td>A later effective same name can replace an earlier one, and mode conversion deep-merges over a same-named agent and forces <code class="inline">mode: "primary"</code>. Singular vs plural <em>within</em> one directory is <strong>unspecified</strong></td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Commands</td>
+                    <td><code class="inline">{command,commands}/**/*.md</code> recursive in every config directory, plus the inline <code class="inline">command</code> map; registration built-in &rarr; configured &rarr; MCP prompts &rarr; skills</td>
+                    <td><strong>Every stage overwrites the existing key except skills</strong>, which are added only when the name is still free — so a configured command replaces a built-in and a skill never displaces anything. MCP prompts register namespaced as <code class="inline">sanitize(server):sanitize(prompt)</code> and therefore overwrite only each other</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Skills</td>
+                    <td><code class="inline">~/.claude/skills</code> and <code class="inline">~/.agents/skills</code>; then <code class="inline">.claude/skills</code> and <code class="inline">.agents/skills</code> at every ancestor cwd&rarr;worktree; then <code class="inline">{skill,skills}</code> in every config directory; then <code class="inline">skills.paths</code>; then <code class="inline">skills.urls</code></td>
+                    <td><strong>Discovery is ordered but assignment is not.</strong> Parsing runs at unbounded concurrency and each parse assigns by frontmatter <code class="inline">name</code> on completion, so the surviving duplicate follows IO timing (<strong>U-09</strong>). A built-in <code class="inline">customize-opencode</code> skill is seeded first and a same-named disk skill overrides it</td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Custom tools</td>
+                    <td><code class="inline">{tool,tools}/*.{js,ts}</code>, single-level, in every config directory; assignment built-ins &rarr; file &rarr; plugin &rarr; MCP resource &rarr; MCP server</td>
+                    <td>The registry is a <strong>plain keyed object</strong>, so an exact later name shadows an earlier one — silently</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Plugins</td>
+                    <td>The <code class="inline">plugin</code> array (npm or path-like specs, resolved relative to the declaring config file) plus auto-discovered <code class="inline">{plugin,plugins}/*.{js,ts}</code>, single-level, appended by path</td>
+                    <td>npm identity is the <strong>package name irrespective of version</strong> and the later occurrence wins; local identity is the exact <code class="inline">file://</code> URL. Internal plugins run first, then external plugins strictly sequentially. <strong>No hooks surface exists</strong> — callbacks are the whole contract</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>MCP</td>
+                    <td>The merged config <code class="inline">mcp</code> map only. No <code class="inline">.mcp.json</code>, no <code class="inline">mcp.servers</code></td>
+                    <td>Same server ID <strong>deep-merges</strong>, so a later layer can disable an earlier declaration with a bare <code class="inline">{"enabled": false}</code> entry, and <code class="inline">enabled: false</code> short-circuits before any transport. Connection timeout is 30 s while requests get no built-in default (<strong>D&ne;S</strong>)</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Themes</td>
+                    <td>Global config dir plus <code class="inline">&lt;dir&gt;/.opencode/themes</code> for cwd and every ancestor <strong>to the filesystem root</strong>; plural only, non-recursive; <code class="inline">OPENCODE_CONFIG_DIR</code> ignored</td>
+                    <td>Each file is keyed by basename with later assignment winning, so the <strong>rootmost</strong> duplicate wins and a custom theme overrides a built-in of the same name. Presentation only. Rolling docs say built-in &lt; user &lt; project-root &lt; cwd (<strong>D&ne;S</strong>)</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session state</td>
+                    <td>Generated session, history, compaction and summary records under the XDG data and state directories</td>
+                    <td>Resume, summary and compaction records are <strong>operational</strong> and do not inherit as authored capabilities. No native durable learned-memory contract exists</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="unknowns" data-term>
+            <p class="prompt">grep -n 'U-0[9]\|U-1[06]' harness-analysis.md</p>
+            <div class="body" data-term-out>
+              <p>Three section-level unknowns survived the source pass, and three consolidated <code class="inline">U-</code> numbers touch OpenCode. None was resolved by guessing — but the second verification pass (2026-08-13) settled the OpenCode half of <strong>U-16</strong> at source strength, by exactly the evidence its row had named. The row below records the resolution and keeps its number; nothing is renumbered.</p>
+
+              <table>
+                <colgroup><col style="width:5rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>ID</th><th>What is unknown</th><th>What evidence would settle it</th><th>Consequence for a tool</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>U-09</strong></td>
+                    <td><strong>Duplicate skill names have no stable winner.</strong> Discovery produces an ordered array, but <code class="inline">Effect.forEach(…, { concurrency: "unbounded" })</code> parses every <code class="inline">SKILL.md</code> in parallel and each parse assigns <code class="inline">state.skills[name]</code> on completion, so the survivor follows IO timing rather than discovery order.</td>
+                    <td>A serialized assignment, or an explicit tie-break in the loader.</td>
+                    <td><strong>Highest-ranked residual risk for OpenCode.</strong> A UI that displays "the active one" is inventing it. Enumerate the set and keep names independently inventoried.</td>
+                  </tr>
+                  <tr>
+                    <td>&mdash;</td>
+                    <td><strong>Singular-versus-plural collisions inside one directory.</strong> When <code class="inline">agent/x.md</code> and <code class="inline">agents/x.md</code> both exist in one configuration directory, the winner depends on the order <code class="inline">Glob.scan</code> returns brace alternatives — which the tagged source does not specify. Across <em>different</em> directories the list order governs and is deterministic.</td>
+                    <td>A documented or observed ordering guarantee for brace expansion in the glob implementation.</td>
+                    <td>Report both files. Do not present either spelling as canonical, and do not "normalize" one into the other.</td>
+                  </tr>
+                  <tr>
+                    <td>&mdash;</td>
+                    <td><strong>Whether the remote layers are reachable unauthenticated.</strong> The <code class="inline">.well-known/opencode</code> layer and the organization API layer were read from <em>source only</em>. Whether an OpenCode account exists on the inspected machine is undetermined — an <code class="inline">auth.json</code> is present as of 2026-08-13, and its contents were deliberately not inspected.</td>
+                    <td>An authenticated run, or first-party documentation of the unauthenticated path.</td>
+                    <td>Both layers exist in the precedence list and must be shown as such. Do not claim they are inert without an account.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-10</strong></td>
+                    <td><strong>Plugin lifecycle is incomplete.</strong> 1.18.16 has installation and TUI activation but <strong>no first-party marketplace manifest</strong> and <strong>no uninstall or remove subcommand</strong>; an unchanged cached <code class="inline">@latest</code> is not automatically re-resolved.</td>
+                    <td>A later version shipping either verb, or a published manifest format.</td>
+                    <td>Do not offer an uninstall action that does not exist. Removal means editing the <code class="inline">plugin</code> array or deleting the file.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-16</strong></td>
+                    <td><strong>Cross-tool <code class="inline">~/.claude</code> resolution — OpenCode half resolved (2026-08-13).</strong> Claude Code resolves its user tree through <code class="inline">$CLAUDE_CONFIG_DIR</code>; OpenCode's fallbacks are the literal <code class="inline">~/.claude/CLAUDE.md</code> and <code class="inline">~/.claude/skills</code>. OpenCode <strong>does not honor</strong> the variable at this version row — see <a class="link-quiet" href="#cross-read">cross-read</a> for the resolving evidence. The Claude-side half remains the other coding agent&#8217;s row.</td>
+                    <td>Settled by the row's own named method — a literal in the loader: <code class="inline">grep -rF CLAUDE_CONFIG_DIR</code> over <code class="inline">packages/</code> &rarr; 0 files at <code class="inline">v1.18.16</code> and <code class="inline">v1.17.3</code>; both fallbacks built from <code class="inline">global.home</code> with hardcoded <code class="inline">.claude</code> segments. <strong>S</strong>, bounded negative.</td>
+                    <td>Now fact rather than risk: a relocated Claude home silently desynchronizes the two readers. Model the reader relationship per artifact, with its own resolution rule.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Change risk, ranked.</strong> Which of these facts, if a tool encodes them wrongly, causes the most damage:</p>
+
+              <table>
+                <colgroup><col style="width:8rem" /><col /></colgroup>
+                <thead><tr><th>Risk</th><th>What can go wrong</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Very high</strong></td>
+                    <td><strong>Loader-triggered writes.</strong> Enumerating OpenCode configuration by invoking its own loader is a <em>mutating</em> operation — directories created, a <code class="inline">.gitignore</code> written, <code class="inline">npm install</code> forked in the background, <code class="inline">$schema</code> injected into any top-level config lacking it, and a stub global config created. <strong>An inventory must read the tree directly.</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Very high</strong></td>
+                    <td><strong>Shared physical artifacts.</strong> Editing or removing <code class="inline">AGENTS.md</code> or <code class="inline">.agents/skills</code> affects four CLIs with different selection semantics. Editing a Claude artifact can change OpenCode behavior, and the same physical path can resolve differently per reader.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Very high</strong></td>
+                    <td><strong>Generated state treated as authored.</strong> Session, history, compaction and summary records are runtime-owned, as is <code class="inline">mcp-auth.json</code>. Treating them as capabilities risks corruption or lost resumability.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>High</strong></td>
+                    <td><strong>Plugin lifecycle.</strong> Cached package identity is the package name irrespective of version, and an unchanged cached <code class="inline">@latest</code> is not re-resolved — so "up to date" is not a computable state from the config file alone.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Moderate</strong></td>
+                    <td><strong>Instruction ordering.</strong> "Nearest wins" is wrong for this loader, and OpenCode additionally has <em>opposite</em> orders for top-level config and structured capability directories in the same repository.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Moderate</strong></td>
+                    <td><strong>Inventing a local scope.</strong> There is no <code class="inline">opencode.local.json</code>, and that absence is now source-proven rather than merely undocumented. Synthesizing one produces a dead file.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Lower, not zero</strong></td>
+                    <td><strong>Themes are not scope-bounded like everything else.</strong> Their walk ignores the worktree ceiling and runs to the filesystem root, so a theme far above the project can win. Presentation-only, but still requires schema and version validation.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">A path with no documented reader is unsupported, not deleted.</span> Every bounded negative on this page is scoped to this version row and to the extraction method that established it. "Absent from the tagged source and the installed binary" is strong evidence about <code class="inline">1.18.16</code> and no evidence at all about a future release.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="sources" data-term>
+            <p class="prompt">cat sources.txt</p>
+            <div class="body" data-term-out>
+              <p>Every documentation URL was retrieved <strong>2026-08-11</strong> and re-verified <strong>2026-08-13</strong> during the second verification pass. OpenCode's rolling pages expose no stable per-page revision date, so loader claims are pinned to tag <code class="inline">v1.18.16</code>, commit <code class="inline">a3647eb025c7615159d417dcc49fc39fdaeba65b</code>, dated <strong>2026-08-10</strong>. Source links below are commit-pinned to that tree.</p>
+
+              <div class="grid">
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/rules/">Rules docs</a><br /><span class="muted">the "first matching file" claim</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/config/">Configuration</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/agents/">Agents</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/commands/">Commands</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/skills/">Skills</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/plugins/">Plugins</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/custom-tools/">Custom tools</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/mcp-servers/">MCP servers</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/permissions/">Permissions</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/themes/">Themes</a><br /><span class="muted">the D-side of the themes D&ne;S row</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/cli/">CLI reference</a><br /><span class="muted">mcp add / agent create / github install; the env-var table</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/docs/enterprise/">Enterprise</a><br /><span class="muted">"Central Config" — names no endpoint</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/anomalyco/opencode/issues/7559">Issue #7559</a><br /><span class="muted">OPENCODE_DISABLE_PROJECT_CONFIG origin</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/sst/opencode/releases/tag/v1.18.17">Release v1.18.17</a><br /><span class="muted">post-cutoff; no capability-surface change</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/sst/opencode/releases/tag/v1.18.18">Release v1.18.18</a><br /><span class="muted">the installed Homebrew build</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/v2/docs/">OpenCode 2 docs</a><br /><span class="muted">the separate opencode2 binary</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://opencode.ai/v2/docs/mcp-servers">OpenCode 2 MCP</a><br /><span class="muted">mcp.servers + disabled</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/anomalyco/opencode/tree/a3647eb025c7615159d417dcc49fc39fdaeba65b">Tagged tree v1.18.16</a><br /><span class="muted">also served as sst/opencode</span></div>
+              </div>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Commit-pinned source citations.</strong> Everything marked <strong>S</strong> on this page traces to one of these files in the tagged tree, or to the installed binary — first pass: a Bun single-file build reporting <code class="inline">1.18.16</code>; second pass (2026-08-13): Homebrew's <code class="inline">/opt/homebrew/Cellar/opencode/1.18.18/bin/opencode</code> reporting <code class="inline">1.18.18</code>.</p>
+
+              <table>
+                <colgroup><col style="width:14rem" /><col /><col /></colgroup>
+                <thead><tr><th>Source file</th><th>Function or symbol</th><th>What it establishes here</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/session/instruction.ts"><code class="inline">session/instruction.ts</code></a></td>
+                    <td><code class="inline">Instruction.systemPaths</code>, <code class="inline">Instruction.resolve</code>, <code class="inline">Instruction.system()</code></td>
+                    <td>The filename-class loop and its <code class="inline">break</code>; the <code class="inline">CLAUDE.md</code> fallback conditions; <code class="inline">CONTEXT.md</code>; the lazy descendant walk; per-step re-reading; <code class="inline">instructions</code> resolution</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/core/src/fs-util.ts"><code class="inline">core/fs-util.ts</code></a></td>
+                    <td><code class="inline">FSUtil.findUp</code>, <code class="inline">FSUtil.globUp</code></td>
+                    <td>No early exit in the ancestor walk — every match is returned, nearest&rarr;root; per-ancestor glob expansion</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/config/config.ts"><code class="inline">config/config.ts</code></a></td>
+                    <td><code class="inline">Config.loadInstanceState</code>, <code class="inline">loadConfig</code>, <code class="inline">loadGlobal</code>, <code class="inline">ensureGitignore</code>, <code class="inline">npmSvc.install</code></td>
+                    <td>The ten layers in statement order; the <code class="inline">dir.endsWith(".opencode")</code> guard; the four post-processing stages; the discovery writes and the legacy TOML migration in <code class="inline">loadGlobal</code> — the TUI migration has its own row</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/config/paths.ts"><code class="inline">config/paths.ts</code></a></td>
+                    <td><code class="inline">ConfigPaths.files</code>, <code class="inline">ConfigPaths.directories</code></td>
+                    <td>The direction asymmetry — <code class="inline">files</code> is reversed, <code class="inline">directories</code> is not; <code class="inline">OPENCODE_CONFIG_DIR</code> pushed last</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/core/src/global.ts"><code class="inline">core/global.ts</code></a></td>
+                    <td><code class="inline">Global.make()</code>, <code class="inline">Global.Path.config</code></td>
+                    <td><code class="inline">config: Flag.OPENCODE_CONFIG_DIR ?? Path.config</code> — the replace half of the <code class="inline">OPENCODE_CONFIG_DIR</code> split</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/core/src/project.ts"><code class="inline">core/project.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/core/src/git.ts"><code class="inline">core/git.ts</code></a></td>
+                    <td><code class="inline">Project.resolve</code>, <code class="inline">Project.fromDirectory</code>, <code class="inline">repo.worktree</code></td>
+                    <td>The Git-only ceiling; <code class="inline">git rev-parse --show-toplevel</code>; the linked-worktree case; <code class="inline">vcs: undefined</code> and worktree <code class="inline">"/"</code></td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/config/agent.ts"><code class="inline">config/agent.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/agent/agent.ts"><code class="inline">agent/agent.ts</code></a></td>
+                    <td><code class="inline">Glob.scan</code> patterns; <code class="inline">ConfigV1.Info.agent</code></td>
+                    <td>Recursive agent globs, single-level mode globs, the inline <code class="inline">agent</code> map, the built-in agent list</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/command/index.ts"><code class="inline">command/index.ts</code></a></td>
+                    <td><code class="inline">Command.init</code>, <code class="inline">ConfigCommandV1.Info</code></td>
+                    <td>The four-stage registration order, overwrite-by-key, the skills exception, <code class="inline">server:prompt</code> namespacing, the <code class="inline">variant</code> field</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/skill/index.ts"><code class="inline">skill/index.ts</code></a></td>
+                    <td><code class="inline">Skill.state</code>, <code class="inline">CUSTOMIZE_OPENCODE_SKILL_NAME</code>, <code class="inline">Effect.forEach(…, { concurrency: "unbounded" })</code></td>
+                    <td>The five-stage discovery order; the seeded built-in skill; the unbounded-concurrency assignment behind <strong>U-09</strong>; remote skill caching</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/plugin/index.ts"><code class="inline">plugin/index.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/config/plugin.ts"><code class="inline">config/plugin.ts</code></a></td>
+                    <td><code class="inline">ConfigPlugin.resolvePluginSpec</code>, <code class="inline">resolveLoadedPlugins</code></td>
+                    <td>Path-like specs normalized to <code class="inline">file://</code> relative to the declaring config file; identity rules; sequential external execution; the absence of any hooks path</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/tool/registry.ts"><code class="inline">tool/registry.ts</code></a></td>
+                    <td>the registry object; <code class="inline">Glob.scan</code> pattern</td>
+                    <td>Single-level tool globs; default/named export naming; the built-in &rarr; file &rarr; plugin &rarr; MCP shadow order</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/mcp/index.ts"><code class="inline">mcp/index.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/core/src/v1/config/mcp.ts"><code class="inline">v1/config/mcp.ts</code></a></td>
+                    <td><code class="inline">MCP.create</code>, <code class="inline">connectTransport</code>, <code class="inline">requestTimeout</code>, <code class="inline">DEFAULT_TIMEOUT = 30_000</code>, <code class="inline">ConfigMCPV1.Local</code></td>
+                    <td>The <code class="inline">environment</code> key; the bare <code class="inline">{"enabled"}</code> toggle union; the connection-versus-request timeout split; tool and prompt name sanitization</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/tui/src/context/theme.tsx"><code class="inline">tui/context/theme.tsx</code></a></td>
+                    <td><code class="inline">themeSource.discover</code>, <code class="inline">discoverThemes</code></td>
+                    <td>The unbounded <code class="inline">for (…; ; current = path.dirname(current))</code> loop — no worktree stop, <code class="inline">OPENCODE_CONFIG_DIR</code> ignored, rootmost basename wins</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/config/tui.ts"><code class="inline">config/tui.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/config/managed.ts"><code class="inline">config/managed.ts</code></a></td>
+                    <td>the TUI stack; the managed path table</td>
+                    <td>The separate TUI loader with no worktree argument; the three OS managed paths and <code class="inline">ai.opencode.managed</code></td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/config/variable.ts"><code class="inline">config/variable.ts</code></a></td>
+                    <td><code class="inline">ConfigVariable.substitute</code></td>
+                    <td><code class="inline">{env:}</code> / <code class="inline">{file:}</code> substitution before parsing at every scope; a missing <code class="inline">{file:}</code> target erroring in the main stack but resolving empty in the TUI stack; the <code class="inline">//</code>-comment guard</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/config/tui-migrate.ts"><code class="inline">config/tui-migrate.ts</code></a></td>
+                    <td>the TUI migration routine</td>
+                    <td>The TUI-migration write family — sibling <code class="inline">tui.json</code>, the <code class="inline">.tui-migration.bak</code> backup, the in-place strip of <code class="inline">theme</code> / <code class="inline">keybinds</code> / <code class="inline">tui</code> — and the no-worktree-stop walk it migrates over</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/auth/index.ts"><code class="inline">auth/index.ts</code></a></td>
+                    <td>the <code class="inline">Auth</code> store; the <code class="inline">"wellknown"</code> entry type</td>
+                    <td><code class="inline">~/.local/share/opencode/auth.json</code> written mode <code class="inline">0600</code>; the remote layer firing only for <code class="inline">wellknown</code> entries, each token exported into the <code class="inline">{env:}</code> map ahead of the process environment</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/effect/runtime-flags.ts"><code class="inline">effect/runtime-flags.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/core/src/flag/flag.ts"><code class="inline">core/flag/flag.ts</code></a></td>
+                    <td>the <code class="inline">Flag</code> definitions and their OR-composition</td>
+                    <td>The env switches: <code class="inline">OPENCODE_DISABLE_PROJECT_CONFIG</code>; <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE</code> OR'd with its <code class="inline">_PROMPT</code> / <code class="inline">_SKILLS</code> halves; <code class="inline">OPENCODE_DISABLE_EXTERNAL_SKILLS</code>; <code class="inline">OPENCODE_DISABLE_DEFAULT_PLUGINS</code>; <code class="inline">OPENCODE_PURE</code></td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/cli/cmd/mcp.ts"><code class="inline">cli/cmd/mcp.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/cli/cmd/agent.ts"><code class="inline">cli/cmd/agent.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/cli/cmd/github.ts"><code class="inline">cli/cmd/github.ts</code></a></td>
+                    <td>the registered command builders</td>
+                    <td>The S half of the first-party capability writers: <code class="inline">mcp add</code> config writes and <code class="inline">mcp auth</code> / <code class="inline">logout</code> over <code class="inline">mcp-auth.json</code>; <code class="inline">agent create</code> file generation; <code class="inline">github install</code> writing <code class="inline">.github/workflows/opencode.yml</code></td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/session/system.ts"><code class="inline">session/system.ts</code></a></td>
+                    <td>the MCP-instruction assembly</td>
+                    <td>Server <code class="inline">instructions</code> entering system context only when at least one of the server's tools survives permission filtering — or the server exposes no tools at all</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/core/src/v1/config/permission.ts"><code class="inline">v1/config/permission.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/core/src/v1/config/config.ts"><code class="inline">v1/config/config.ts</code></a></td>
+                    <td><code class="inline">ConfigPermissionV1</code>; <code class="inline">ConfigV1.Info</code></td>
+                    <td>The permission model — pattern-map versus action-only keys, bare-string normalization, <code class="inline">propertyOrder: "original"</code>; the config-key inventory including S-only <code class="inline">logLevel</code> and <code class="inline">enterprise</code></td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/tui/src/config/index.tsx"><code class="inline">tui/config/index.tsx</code></a></td>
+                    <td>the TUI config schema</td>
+                    <td>The <code class="inline">tui.json(c)</code> key inventory — <code class="inline">plugin_enabled</code>, <code class="inline">attention</code>, <code class="inline">leader_timeout</code>, <code class="inline">prompt</code>, the scroll keys, <code class="inline">diff_style</code>, <code class="inline">cursor</code>, <code class="inline">mouse</code></td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/plugin/shared.ts"><code class="inline">plugin/shared.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/opencode/src/plugin/tui/runtime.ts"><code class="inline">plugin/tui/runtime.ts</code></a><br /><a class="link-quiet" href="https://github.com/anomalyco/opencode/blob/a3647eb025c7615159d417dcc49fc39fdaeba65b/packages/tui/src/theme/index.ts"><code class="inline">tui/theme/index.ts</code></a></td>
+                    <td><code class="inline">"oc-themes"</code> validation; <code class="inline">addTheme</code> / <code class="inline">upsertTheme</code>; <code class="inline">pluginThemes</code></td>
+                    <td>Plugin-shipped themes — <code class="inline">package.json</code> declarations (relative paths only), runtime registration, and the separate <code class="inline">pluginThemes</code> bucket a same-named disk theme overrides</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Binary-literal citations.</strong> Non-web, non-repository evidence has no citable URL. The first pass cross-checked the discovery literals against a Bun single-file build at <code class="inline">~/.opencode/bin/opencode</code> reporting <code class="inline">1.18.16</code>; that install no longer exists here, and the second pass (2026-08-13) re-ran every check read-only against the installed Homebrew binary at <code class="inline">/opt/homebrew/Cellar/opencode/1.18.18/bin/opencode</code> reporting <code class="inline">1.18.18</code> — all discovery literals listed in the <a class="link-quiet" href="#evidence">evidence section</a> present verbatim. Stated negatives name their method: <code class="inline">.mcp.json</code>, <code class="inline">opencode.local.json</code>, <code class="inline">mcp.servers</code>, <code class="inline">AGENTS.override.md</code>, <code class="inline">GEMINI.md</code>, <code class="inline">.claude/agents</code>, <code class="inline">.claude/commands</code> and <code class="inline">.agents/agents</code> return zero non-test hits in <code class="inline">packages/*/src</code>, and <code class="inline">mcp.servers</code>, <code class="inline">opencode.local.json</code> and <code class="inline">AGENTS.override.md</code> are additionally absent from the installed binary.</p>
+
+              <p><strong>Review outcome for OpenCode.</strong> 12 claims corrected, 10 documentation-shaped claims raised to source strength, 3 unknowns standing. Every previously contested structural claim survived source verification unchanged. No OpenCode state was modified by any part of the review: <code class="inline">~/.config/opencode/</code> and <code class="inline">~/.opencode/</code> were read but never written, and the CLI was run only with <code class="inline">--version</code>. Where a rolling page and the tagged loader disagree — the instruction "first match" wording, theme precedence, the MCP timeout default, plugin management, remote skills, agent built-ins — both sides are stated on this page and the loader governs version row <strong>1.18.16</strong>. A <strong>second verification pass (2026-08-13)</strong> — summarized in the <a class="link-quiet" href="#corrections">corrections section</a> — corrected a further 8 claims, added 12 capabilities, attached 3 missing evidence labels, and resolved the OpenCode half of U-16.</p>
+            </div>
+          </section>
+      </div>
+    </main>
+
+    <footer class="status">
+      <span class="status-left"><span class="glow">[configr]</span> OpenCode capability guide</span>
+      <nav class="status-right">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <span class="sep" aria-hidden="true"></span>
+        <details class="dropdown">
+          <summary aria-label="theme">
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span aria-hidden="true">▾</span>
+          </summary>
+          <ul class="dropdown-panel" role="list">
+            <li><button type="button" class="dropdown-item" data-theme-value="warm">warm</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="green">green</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="mono">mono</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="paper">paper</button></li>
+          </ul>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </nav>
+    </footer>
+
+    <script type="module">
+      import { applyStoredTheme, initThemeSwitcher, initDropdowns, initSelects, initTerminal, initAnimToggle, initBurgerNav, initLsNav, initTableScroll, initDiagramZoom, initMinimap, initTooltips } from
+        "https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/runtime/index.js";
+      applyStoredTheme();
+      initThemeSwitcher();
+      initDropdowns();
+      initTerminal();
+      initAnimToggle();
+      initBurgerNav();
+      // The rail's show/hide, and it measures the real header/footer heights into
+      // --ls-nav-top / --ls-nav-bottom so the rail sits BETWEEN the chrome, not under it.
+      initLsNav();
+      // Every table gets a .tablewrap parent, so a table wider than its column scrolls
+      // itself instead of pushing the whole page sideways. Already-wrapped ones are skipped.
+      initTableScroll();
+      // Every <select> gets the estate's dropdown instead of the OS one. Called
+      // unconditionally, beside initTableScroll() and for the same reason: both have no
+      // markup contract, so both are a no-op on a page that has none of their element.
+      initSelects();
+
+      // Mermaid diagrams — themed from the design tokens, re-rendered on theme switch.
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs";
+
+      const diagrams = Array.from(document.querySelectorAll("pre.mermaid"));
+      if (diagrams.length) {
+        // capture the sources before the first render replaces them with SVG
+        for (const node of diagrams) node.dataset.mermaidSource = node.textContent;
+
+        // Renders are serialized: applyStoredTheme() writes data-theme on startup, so an
+        // unguarded observer would kick off a second pass while the first is still
+        // running — two passes mutating the same nodes stack every diagram into one box.
+        let renderPass = 0;
+        let pending = Promise.resolve();
+        let zoomWired = false;
+
+        const renderDiagrams = () => {
+          pending = pending.then(async () => {
+            const pass = (renderPass += 1);
+            const styles = getComputedStyle(document.documentElement);
+            const token = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: "strict",
+              fontFamily: token("--font-mono", "monospace"),
+              flowchart: { htmlLabels: true, useMaxWidth: true },
+              themeVariables: {
+                background: token("--background", "#f5efe2"),
+                primaryColor: token("--card", "#efe7d4"),
+                primaryTextColor: token("--foreground", "#43352a"),
+                primaryBorderColor: token("--border", "#d9cdb6"),
+                secondaryColor: token("--muted", "#ece3cf"),
+                tertiaryColor: token("--muted", "#ece3cf"),
+                lineColor: token("--muted-foreground", "#71614e"),
+                textColor: token("--foreground", "#43352a"),
+                mainBkg: token("--card", "#efe7d4"),
+                nodeBorder: token("--border", "#d9cdb6"),
+                clusterBkg: token("--muted", "#ece3cf"),
+                clusterBorder: token("--border", "#d9cdb6"),
+                edgeLabelBackground: token("--background", "#f5efe2"),
+                titleColor: token("--primary", "#8a4516"),
+              },
+            });
+            // render ids must be unique per pass, or a re-render collides with itself
+            for (const [index, node] of diagrams.entries()) {
+              try {
+                const { svg } = await mermaid.render(`mermaid-svg-${index}-${pass}`, node.dataset.mermaidSource);
+                node.innerHTML = svg;
+                node.dataset.processed = "true";
+              } catch {
+                // a broken diagram falls back to its source — it must never blank the box
+                node.textContent = node.dataset.mermaidSource;
+                node.removeAttribute("data-processed");
+              }
+            }
+            // EVERY DIAGRAM IS ZOOMABLE. Wired ONCE, and after the first render rather than
+            // before it: the opener binds a listener per element and is not idempotent, so
+            // calling it again on the theme re-render would open two overlays per click.
+            if (!zoomWired) {
+              zoomWired = true;
+              initDiagramZoom("pre.mermaid");
+            }
+          });
+          return pending;
+        };
+
+        // Wait for the terminal reveal: a diagram inside a not-yet-revealed
+        // [data-term-out] is visibility:hidden, and Mermaid would size it against a
+        // container it cannot measure properly. With animation off, render at once.
+        if (document.documentElement.classList.contains("anim-off") || window.termContentDone) {
+          void renderDiagrams();
+        } else {
+          window.addEventListener("term:contentdone", () => void renderDiagrams(), { once: true });
+        }
+
+        // re-render with the new palette, but only when the theme actually changed
+        let lastTheme = document.documentElement.dataset.theme;
+        new MutationObserver(() => {
+          const theme = document.documentElement.dataset.theme;
+          if (theme === lastTheme) return;
+          lastTheme = theme;
+          void renderDiagrams();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+      }
+
+      // The minimap builds itself from the sections — one bar each, in the left gutter,
+      // with the scroll-spy built in. No markup and no per-section wiring.
+      initMinimap({ sections: "section.doc" });
+      // The minimap's bars carry `data-tip`, not `title`: the native tooltip waits about a
+      // second and renders in the OS's chrome, which is useless on a strip meant to be
+      // scrubbed. Delegated, so it covers the bars the minimap just built.
+      initTooltips();
+    </script>
+  </body>
+</html>

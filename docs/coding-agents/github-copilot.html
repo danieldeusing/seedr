@@ -1,0 +1,1478 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitHub Copilot capability guide</title>
+    <meta name="description" content="Package-verified reference for the GitHub Copilot CLI 1.0.78: the CLI-versus-IDE-versus-cloud boundary, every scope and capability type, three precedence directions at once, the .claude cross-read, and the bounded unknowns." />
+    <meta name="theme-color" content="#f5efe2" />
+
+    <!-- pre-paint: apply the saved theme + animation gate before first paint -->
+    <script>
+      (() => {
+        const bg = { warm: "#f5efe2", green: "#020604", mono: "#050505", paper: "#fafafa" };
+        let theme = "warm";
+        try {
+          const stored = localStorage.getItem("theme");
+          if (stored && stored in bg) theme = stored;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg[theme]);
+
+        let animOff = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        try {
+          if (localStorage.getItem("anim") === "off") animOff = true;
+        } catch {}
+        if (animOff) document.documentElement.classList.add("anim-off");
+
+        // The `ls -l` rail is SHOWN by default. A reader who hid it must not watch it
+        // paint and then jump away on every single load, so the state is applied HERE —
+        // the runtime module at the end of <body> runs long after first paint.
+        try {
+          if (localStorage.getItem("ls-nav") === "off") document.documentElement.dataset.lsNav = "off";
+        } catch {}
+      })();
+
+      // Resolution-independent zoom: lay out at a fixed 1920px reference, then scale the
+      // whole view up on wider screens so the empty side-margins never exceed their
+      // 1920-reference proportion (a true zoom of everything, never below 1×). Pre-paint
+      // to avoid a flash.
+      (() => {
+        const REFERENCE_WIDTH = 1920;
+        const applyZoom = () => {
+          document.documentElement.style.zoom = String(Math.max(1, window.innerWidth / REFERENCE_WIDTH));
+        };
+        applyZoom();
+        window.addEventListener("resize", applyZoom);
+      })();
+    </script>
+
+    <!-- The design system, PINNED — and it must be. This page ships the system's own
+         MARKUP (the `ls -l` rail, the fixed footer), so it is coupled to the release that
+         styles them, and the unpinned url cannot promise a release: jsDelivr serves it
+         `max-age=604800` — SEVEN DAYS in the browser, 12h at the edge. The pinned url is
+         served `immutable`, so the bytes always match the markup.
+         `onerror` swaps in a byte-for-byte snapshot of the SAME release, served from the
+         docs site. NOTE the path is site-absolute: it resolves on docs.danieldeusing.de,
+         NOT for a doc opened from disk over file://. -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/dist/danieldeusing-design.min.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.min.css'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/src/fonts.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.fonts.css'"
+    />
+
+    <style>
+      /* Page-only layout. The design system ships the visual identity AND the measurements
+         (--content-w / --content-pad / --fs-*), so every value below is a TOKEN.
+
+         Each one carries a literal fallback on purpose: a doc opened over file:// with no
+         route to the CDN loads no stylesheet at all, and a bare `var(--content-w)` would
+         resolve to nothing there — full-bleed page, collapsed type.
+
+         Note `padding-block` + `padding-inline`, never the `padding` shorthand: the
+         shorthand resets padding-inline and silently drops the left/right margins. */
+      /* design-conformance: a TOKEN declaration with literal fallbacks, not a copy of the
+         system's rule — the sanctioned exception. A doc is meant to open straight off disk
+         over file://, where no stylesheet loads at all and a bare var() resolves to nothing.
+         The literals are what that reader sees; the tokens win everywhere else. */
+      .wrap { max-width: var(--content-w, 78rem); margin-inline: auto;
+              padding-block: 2.5rem 5rem; padding-inline: var(--content-pad, 1.5rem); }
+
+      /* header/footer chrome + nav now ship with the design system (src/chrome.css) */
+
+      /* ONE COLUMN, CENTRED — the same shape every other danieldeusing surface has.
+         `.wrap` above is the whole layout. There is no table-of-contents column: its two
+         real jobs — how long is this, and where am I — moved to the MINIMAP in the left
+         gutter (initMinimap()), which does them in 2rem and is fixed. */
+      .content { min-width: 0; }
+      h1.title { font-size: var(--fs-2xl, 1.7rem); font-weight: 700; margin: 0.4rem 0 0.5rem; }
+      .lede { color: var(--muted-foreground); } /* full width — no max-width cap */
+
+      /* design-conformance: spacing BETWEEN doc sections on this page template, not a restyle
+         of the shared .doc — the system sets its own margin for the standalone case. */
+      section.doc { margin-top: 2.5rem; scroll-margin-top: 4rem; }
+      .body { margin-top: 0.85rem; }
+      .body > * + * { margin-top: 0.75rem; }
+
+      /* content components the generator uses */
+      ol.steps { counter-reset: step; padding: 0; }
+      ol.steps > li { position: relative; padding-left: 2.25rem; margin-top: 0.6rem; counter-increment: step; }
+      ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 1.5rem; text-align: right; color: var(--primary); font-weight: 700; }
+      ul.plain { padding-left: 1.1rem; }
+      ul.plain > li { margin-top: 0.3rem; }
+      .grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+      .pad { padding: 1rem; }
+      .muted { color: var(--muted-foreground); }
+      code.inline { font-family: inherit; background: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.92em; }
+      pre.block { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      /* No table CSS for scrolling or size here on purpose. `initTableScroll()` at the
+         bottom of this file gives every table a `.tablewrap` parent (overflow-x plus a
+         right-edge fade), so a table wider than its column scrolls itself instead of
+         handing the WHOLE PAGE a horizontal scrollbar. The markup contract is therefore
+         nothing: author a plain <table>. Size is the system's too. */
+
+      /* Mermaid diagrams. Before rendering, the <pre> shows the raw diagram source —
+         so with JS disabled (or if the CDN is unreachable) the page degrades to a
+         readable text diagram instead of an empty box. */
+      pre.mermaid { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      pre.mermaid[data-processed] { white-space: normal; text-align: center; }
+      pre.mermaid svg { max-width: 100%; height: auto; }
+    </style>
+  </head>
+
+  <body>
+    <a href="#top" class="skip-link">skip to content</a>
+    <header class="bar">
+      <!-- top-left: ALWAYS danieldeusing-docs -->
+      <a href="#top" class="brand">
+        <span class="glow">danieldeusing-docs</span>
+        <span class="cursor-block" aria-hidden="true"></span>
+      </a>
+      <button type="button" class="nav-burger" data-nav-toggle aria-label="menu" aria-controls="site-nav" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+      </button>
+      <nav aria-label="site" id="site-nav" class="site-nav">
+      <div class="ls-nav-head">
+        <span class="ls-nav-title prompt">ls -l</span>
+        <button type="button" class="ls-nav-toggle" data-ls-nav-toggle aria-controls="nav" aria-expanded="true" aria-label="show or hide navigation"></button>
+      </div>
+      <!-- The rail is justified here: these five docs are siblings a reader is meant to
+           move between, so there IS somewhere else to go. -->
+      <div class="ls-nav" id="nav">
+        <ul class="ls-panel" role="list">
+          <li><a class="dropdown-item ls-row" href="claude-code.html" title="Claude Code — claude-code.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Claude Code</span></a></li>
+          <li><a class="dropdown-item ls-row" href="openai-codex.html" title="OpenAI Codex — openai-codex.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenAI Codex</span></a></li>
+          <li><a class="dropdown-item ls-row" href="github-copilot.html" aria-current="page" title="GitHub Copilot — github-copilot.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">GitHub Copilot</span></a></li>
+          <li><a class="dropdown-item ls-row" href="opencode.html" title="OpenCode — opencode.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenCode</span></a></li>
+          <li><a class="dropdown-item ls-row" href="google-antigravity.html" title="Google Antigravity"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Antigravity</span></a></li>
+          <li><a class="dropdown-item ls-row" href="cross-tool-matrix.html" title="Cross-tool — cross-tool-matrix.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Cross-tool</span></a></li>
+        </ul>
+      </div>
+      <div class="mobile-footer">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <details class="mobile-theme">
+          <summary>
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span class="mf-chev" aria-hidden="true">▾</span>
+          </summary>
+          <div class="mf-panel">
+            <button type="button" class="dropdown-item" data-theme-value="warm">warm</button>
+            <button type="button" class="dropdown-item" data-theme-value="green">green</button>
+            <button type="button" class="dropdown-item" data-theme-value="mono">mono</button>
+            <button type="button" class="dropdown-item" data-theme-value="paper">paper</button>
+          </div>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </div></nav>
+    </header>
+
+    <main class="wrap" id="top">
+      <div class="content">
+          <p class="prompt">cat configr/docs/harness-analysis.md &#124; sed -n '/## 5. GitHub Copilot/,/## 6./p'</p>
+          <h1 class="title">GitHub Copilot capability guide</h1>
+          <p class="lede">Everything the <code class="inline">copilot</code> CLI reads, writes, and resolves — scopes, every capability type, the three precedence directions that run at once, the unusually wide <code class="inline">.claude</code> cross-read, and the bounded unknowns. Copilot CLI is <strong>closed source</strong>, so this page is verified against the <strong>shipped package</strong> <code class="inline">@github/copilot 1.0.78</code>: where a binary literal and a rolling documentation page disagree, the binary governs this version row and both sides are stated. Nothing here comes from memory or a web search.</p>
+
+          <section class="doc" id="products" data-term>
+            <p class="prompt">copilot --version &amp;&amp; copilot --help &#124; head -1</p>
+            <div class="body" data-term-out>
+              <p><strong>Start here, because most Copilot advice on the internet is about a different product.</strong> "GitHub Copilot" is a brand over several loaders: the <code class="inline">copilot</code> CLI, the IDE extensions for VS Code / Visual Studio / JetBrains, and a set of cloud surfaces — the web coding agent, code review, Actions automation. They share a name and, in places, a file path. They do <em>not</em> share a loader.</p>
+
+              <p>This page documents <strong>the CLI only</strong>. That is the rule the source analysis applies throughout: <em>"A product name may cover multiple loaders. Only claims about the named CLI executable belong in this report; a shared brand or path does not import IDE, desktop, web, code-review, or Actions behavior into the CLI model."</em> Several widely repeated Copilot facts fail that test.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    N["GitHub Copilot&lt;br/&gt;one brand"] --> C["copilot CLI 1.0.78&lt;br/&gt;this page"]
+    N --> I["IDE extensions"]
+    N --> W["cloud surfaces"]
+    I --> P[".github/prompts/*.prompt.md"]
+    I --> V[".vscode/mcp.json"]
+    W --> M["hosted Copilot Memory"]
+    W --> R["org and enterprise tiers"]
+    P -.->|zero literals in either binary| C
+    V -.->|support removed, detected only| C
+    M -.->|CLI participates, no local file| C
+    R -.->|remote, no local path| C
+
+    class P,V warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /><col style="width:9rem" /></colgroup>
+                <thead>
+                  <tr><th>Widely repeated fact</th><th>Where it is actually true, and what the CLI does</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>"Prompt files live in <code class="inline">.github/prompts/*.prompt.md</code>"</td>
+                    <td>True for VS Code and Visual Studio, with JetBrains and Xcode marked <em>preview</em> on GitHub's cheat sheet (fetched 2026-08-13). <strong>Not a CLI root.</strong> Zero <code class="inline">.prompt.md</code> literals exist in <code class="inline">app.js</code> or <code class="inline">runtime.node</code>, and GitHub's own cheat sheet marks Copilot CLI unsupported for prompt files. Do not scan <code class="inline">.github/prompts</code> as a CLI capability root.</td>
+                    <td><strong>S</strong>, bounded negative</td>
+                  </tr>
+                  <tr>
+                    <td>"Copilot reads <code class="inline">.vscode/mcp.json</code>"</td>
+                    <td>An editor path. In the CLI, support was <strong>removed</strong> — stronger than "not read". The only surviving code path detects the file's presence so it can emit a one-time migration notice. <code class="inline">.vscode</code> appears nowhere in <code class="inline">runtime.node</code>.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>"An agent file is <code class="inline">AGENT-NAME.md</code>"</td>
+                    <td>That spelling comes from the multi-surface cheat sheet. CLI pages use <code class="inline">.agent.md</code>, and <code class="inline">.agent.md</code> is the literal in the shipped bundle.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>"The lowest-level configuration overrides higher-level ones"</td>
+                    <td>That sentence is from the multi-surface custom-agents configuration reference, which omits the personal tier. For the CLI the plugin reference governs: <strong>first loaded wins</strong>, with <code class="inline">~/.copilot/agents/</code> first — and the CLI-scoped how-to "Invoking custom agents" now states the tier direction outright: user-level overrides repository-level overrides organization-level overrides enterprise-level. The multi-surface page as currently published agrees in direction and merely omits the personal tier, so no inversion stands; <strong>U-04</strong> is downgraded to a residual doc gap (fetched 2026-08-13).</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>"<code class="inline">vscode-instructions</code> means Copilot reads a <code class="inline">.vscode/</code> directory"</td>
+                    <td>No. <code class="inline">vscode-instructions</code> is the runtime's <em>label</em> for the VS Code-<em>shaped</em> <code class="inline">*.instructions.md</code> class. The string <code class="inline">.vscode</code> does not occur anywhere in <code class="inline">runtime.node</code>.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>"Copilot Memory is a file in the repository"</td>
+                    <td>It is GitHub-hosted service state. The CLI participates — it stores repository facts and user preferences, validates facts against cited code, and expires unused entries after 28 days — but there is <strong>no local contract at all</strong>: no path and no cache file in either binary beyond the <code class="inline">memory</code> toggle and <code class="inline">--enable-memory</code>.</td>
+                    <td><strong>D</strong> / <strong>U</strong> (U-15)</td>
+                  </tr>
+                  <tr>
+                    <td>"Organization agents and skills are files you can find"</td>
+                    <td>Organization and enterprise <em>agents</em> are a documented remote tier — the agents load order ends "Remote org/enterprise agents (remote, via API)" — but the documented skills load order has <strong>no remote tier</strong>: it ends at <code class="inline">COPILOT_SKILLS_DIRS</code> plus configured <code class="inline">skillDirectories</code>. Nothing in the bundle exposes a scannable path for the remote agents tier; <code class="inline">customAgents.defaultLocalOnly</code> is the only local trace. <code class="inline">copilot plugins list</code> does group by an <code class="inline">organization</code> scope across kinds at 1.0.79, but no skills load-order tier is documented.</td>
+                    <td><strong>D</strong> / <strong>U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>"Remote Control runs Copilot in the cloud"</td>
+                    <td>Remote Control keeps execution on the <strong>local machine</strong>; GitHub.com and GitHub Mobile can view and steer an online interactive session, subject to policy and settings.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Why this matters for a configuration browser.</span> Three of these are paths a scanner would happily walk and then report as live Copilot capabilities. Two of them the CLI actively refuses. Reporting a refused path as supported is worse than missing it — <code class="inline">.vscode/mcp.json</code> in particular deserves a <em>migration hint</em>, not silence and not a green tick.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="evidence" data-term>
+            <p class="prompt">ls -l /usr/local/lib/node_modules/@github/copilot</p>
+            <div class="body" data-term-out>
+              <p>Every claim on this page carries an <strong>evidence class</strong> and a citation. Closed source means <em>more</em> honest unknowns, not fewer: where the source analysis marks something unknown it is reproduced here as unknown, with its <code class="inline">U-</code> number where it has one. A documentation sentence is never promoted to a fact because it would round out a table.</p>
+
+              <table>
+                <colgroup><col style="width:7rem" /><col /><col style="width:11rem" /></colgroup>
+                <thead>
+                  <tr><th>Class</th><th>Meaning</th><th>Reliability</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>D</strong></td><td>documented — current first-party GitHub documentation says this</td><td>rolling; no per-page revision date</td></tr>
+                  <tr><td><strong>S</strong></td><td>source/package-observed — the installed product says this: path templates, enum runs, error and warning strings, help text and typed declarations recovered read-only from the shipped package</td><td>strongest for the installed build</td></tr>
+                  <tr><td><strong>O</strong></td><td>disk-observed — a version, path, or shape was seen locally; values and secrets were not inspected</td><td>presence proves support; absence proves nothing</td></tr>
+                  <tr><td><strong>I</strong></td><td>inferred — a bounded conclusion from cited primary evidence, with the basis stated</td><td>only as good as its basis</td></tr>
+                  <tr><td><strong>U</strong></td><td>unknown — primary evidence is absent, self-contradictory, or insufficient</td><td>do not resolve; enumerate instead</td></tr>
+                  <tr><td><strong>D&ne;S</strong></td><td>documentation/package conflict — first-party prose and the installed build disagree; both are stated and the build wins for its own version row</td><td>versioned, never normalized</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>How the Copilot rows were verified.</strong> Installed package <code class="inline">@github/copilot 1.0.78</code>, build <code class="inline">5037332</code>, at <code class="inline">/usr/local/lib/node_modules/@github/copilot</code>. Its platform payload ships three readable artifacts: a bundled <strong>9.2 MB</strong> <code class="inline">app.js</code>, a <strong>101 MB</strong> Rust <code class="inline">prebuilds/darwin-arm64/runtime.node</code>, and a <strong>1.7 MB</strong> first-party <code class="inline">sdk/index.d.ts</code>. Only <code class="inline">--version</code>, <code class="inline">--help</code> and <code class="inline">help &lt;topic&gt;</code> were run, with <code class="inline">COPILOT_HOME</code> redirected to a scratch directory so no real state could be touched. No mutating subcommand was run and no Copilot file was written. One real <code class="inline">~/.copilot</code> was observed read-only. Research cut-off <strong>2026-08-11</strong>. <strong>O/S</strong></p>
+
+              <p><strong>Second-pass evidence basis (re-verified 2026-08-13) — O.</strong> The 1.0.78 npm install cited above is no longer present at <code class="inline">/usr/local/lib/node_modules/@github/copilot</code>. The machine now runs the Homebrew-cask CLI, currently <strong>1.0.79</strong> (<code class="inline">/opt/homebrew/bin/copilot</code> &rarr; <code class="inline">Caskroom/copilot-cli/1.0.79/copilot</code>); cached payloads under <code class="inline">~/Library/Caches/copilot/pkg/darwin-arm64/</code> — including <strong>1.0.73</strong> and <strong>1.0.79</strong> — keep the same <code class="inline">app.js</code> / <code class="inline">prebuilds/darwin-arm64/runtime.node</code> / <code class="inline">sdk/index.d.ts</code> layout, but no 1.0.78 build exists on disk. Every <strong>S</strong> citation on this page is therefore <em>historical</em>: re-verification brackets the pin with the cached 1.0.73 and 1.0.79 payloads — the second pass re-reproduced the version-sensitive S literals against both — or uses the readable <code class="inline">~/.copilot/pkg/universal/1.0.40/app.js</code> payload where a literal is named to 1.0.40.</p>
+
+              <p><strong>The version boundary — D.</strong> 1.0.79 was released 2026-08-10 — already npm <code class="inline">latest</code> at this page's 2026-08-11 cutoff — and remains the latest stable as of the 2026-08-13 re-verification (a 1.0.80-0 prerelease exists under the npm <code class="inline">prerelease</code> dist-tag only). Page-relevant 1.0.79 changes: Agent Plugins spec plugins can ship extensions under a <code class="inline">com.github.copilot/extensions/</code> directory; an <code class="inline">autoUpdate</code> option on <code class="inline">extraKnownMarketplaces</code> entries; settings-key renames (<code class="inline">allowDevToolCaches</code> &rarr; <code class="inline">allowDevToolAccess</code>, breaking — the old key is silently ignored; <code class="inline">sandbox.gitAuth</code>/<code class="inline">ghAuth</code> &rarr; <code class="inline">sandbox.auth.git</code>/<code class="inline">gh</code>); new <code class="inline">/worktree</code>, <code class="inline">/app</code> and <code class="inline">/config model</code> commands; a Sessions tab; and <code class="inline">worktreeBaseRef</code> / <code class="inline">pinnedPrompts</code> settings. U-11 bounds every claim to 1.0.78; this states the 1.0.79 boundary explicitly.</p>
+
+              <p class="eli5"><span class="eli5-term">Closed source, but not opaque.</span> The JavaScript half and the Rust half both retain path literals, enum runs and warning strings, and the SDK <code class="inline">.d.ts</code> is first-party <em>documented type surface</em>. That is why so many rows on this page carry <strong>S</strong> rather than <strong>D</strong>, despite no repository existing.</p>
+
+              <p class="eli5"><span class="eli5-term">Binary evidence is asymmetric.</span> A positive literal hit is strong evidence of support. An absence is only as strong as the extraction method, so every stated negative on this page names its method — "zero <code class="inline">.prompt.md</code> literals in <code class="inline">app.js</code> or <code class="inline">runtime.node</code>", "no <code class="inline">.claude</code>+<code class="inline">CLAUDE.md</code> adjacency among the nine <code class="inline">.claude</code> occurrences in <code class="inline">runtime.node</code>", and so on.</p>
+
+              <p><strong>The real <code class="inline">~/.copilot</code>, re-observed — O, corrected on the second pass.</strong> The first pass described a 0.0.372-era home here: flat session files, <code class="inline">node_modules/</code>, snake_case <code class="inline">config.json</code>, no <code class="inline">settings.json</code>. That description is unreproducible on this machine — the tree has been unchanged since 2026-07-30, <em>before</em> the first pass's 2026-08-11 cutoff, so it was wrong at research time (or described a machine this page does not identify). Observed read-only 2026-08-13, the home matches the <strong>modern layout</strong>. Present: <code class="inline">settings.json</code>, <code class="inline">skills/</code> (25 skill directories), <code class="inline">agents/</code> (<code class="inline">*.agent.md</code>), <code class="inline">instructions/</code> (<code class="inline">*.instructions.md</code>), <code class="inline">hooks/</code> (five hook directories), <code class="inline">mcp-config.json</code>, <code class="inline">session-store.db</code>, <code class="inline">config.json</code>, <code class="inline">command-history-state.json</code>, <code class="inline">logs/</code>, <code class="inline">pkg/</code>. Absent: <code class="inline">installed-plugins/</code>, <code class="inline">node_modules/</code>, <code class="inline">package.json</code>, <code class="inline">package-lock.json</code>. <code class="inline">pkg/darwin-arm64</code> holds 0.0.422; <code class="inline">pkg/universal</code> holds 0.0.393&ndash;1.0.40. <code class="inline">session-state/</code> holds <strong>448 per-session directories</strong> (<code class="inline">events.jsonl</code>, <code class="inline">checkpoints/</code>, <code class="inline">files/</code>, <code class="inline">workspace.yaml</code>) plus 3 legacy flat <code class="inline">&lt;session-id&gt;.jsonl</code> files — corroborating the documented per-session directory shape. <code class="inline">config.json</code> is JSONC (first line "<code class="inline">// User settings belong in settings.json</code>") with camelCase keys <code class="inline">expAssignmentsCache</code>, <code class="inline">firstLaunchAt</code>, <code class="inline">lastLoggedInUser</code>, <code class="inline">trustedFolders</code> — not the snake_case list. The last writer names a 1.1.x-era CLI: the newest <code class="inline">data.db</code> pre-update backup carries <strong>1.1.2</strong>. <strong>O</strong></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The six things most often gotten wrong,</strong> each corrected against the shipped package — or, for the last, against current CLI documentation — and expanded further down:</p>
+              <ul class="plain">
+                <li><strong><code class="inline">$COPILOT_HOME/config.json</code> is not generated auth state.</strong> It is the <em>legacy user settings file</em>, and its values shadow the entire matching subtree of <code class="inline">settings.json</code>. <strong>S</strong></li>
+                <li><strong>Precedence runs three directions at once.</strong> Skills and agents are first-loaded-wins, MCP is last-loaded-wins, hooks all run, settings are ranked. A single "nearest wins" rule is wrong three different ways. <strong>S</strong></li>
+                <li><strong><code class="inline">applyTo</code> instruction files and nested <code class="inline">AGENTS.md</code> are advertised, not concatenated.</strong> They are rendered as a table the model fetches from on demand. <strong>S</strong></li>
+                <li><strong><code class="inline">.vscode/mcp.json</code> support was removed</strong> and the path is now detected only to emit a migration notice. <strong>S</strong></li>
+                <li><strong>There are two plugin CLIs</strong> — <code class="inline">copilot plugin</code> and a separate cross-kind <code class="inline">copilot plugins</code>. <strong>S</strong></li>
+                <li><strong><code class="inline">.claude/commands/*.md</code> and <code class="inline">.claude/CLAUDE.md</code> are documented CLI read locations after all</strong> — both were withdrawn to <strong>U</strong> on the first pass, and both were restored to <strong>D</strong> on the second: current CLI pages state each, and stated it before the first pass's cutoff. The joined-literal absences in the binaries stand as bounded negatives, not conflicts. <strong>D</strong></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="doc" id="corrections" data-term>
+            <p class="prompt">git log --oneline review-notes</p>
+            <div class="body" data-term-out>
+              <p>The independent verification pass against the shipped package <strong>corrected 12 claims</strong>, <strong>raised 5 documentation-only claims to package strength</strong>, established <strong>several bounded negatives at binary strength</strong>, and left <strong>5 unknowns standing</strong>. The corrections are the highest-value content on this page: each one is a belief a configuration tool would otherwise encode confidently and wrongly.</p>
+
+              <table>
+                <colgroup><col style="width:12rem" /><col /><col /><col style="width:19rem" /></colgroup>
+                <thead>
+                  <tr><th>Claim</th><th>Was</th><th>Now</th><th>Evidence in the package</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">$COPILOT_HOME/config.json</code></td>
+                    <td>generated "authentication / permissions" state, filed by the directory reference under automatically managed files</td>
+                    <td>the <strong>legacy user settings file</strong>; its values shadow <code class="inline">settings.json</code> and must be read to compute effective user settings</td>
+                    <td><code class="inline">loadLegacyConfig</code> sitting beside <code class="inline">loadSettingsFileOnly</code>; the warning literal "is set in your legacy <code class="inline">config.json</code>, which takes precedence and shadows the entire … subtree"; <code class="inline">copilot help config</code></td>
+                  </tr>
+                  <tr>
+                    <td>Instruction assembly</td>
+                    <td>"All applicable content is combined"</td>
+                    <td>unconditional sources concatenate; <code class="inline">applyTo</code> files and nested <code class="inline">AGENTS.md</code> are <strong>advertised</strong> as <code class="inline">| Pattern | File Path | Description |</code> / <code class="inline">| Directory | … |</code> tables and fetched on demand</td>
+                    <td>both table headers, plus "Make sure to acquire the instructions before making any changes to the code" in <code class="inline">runtime.node</code></td>
+                  </tr>
+                  <tr>
+                    <td>Agent duplicate rule</td>
+                    <td><strong>U</strong> — "no universal duplicate rule is defensible"</td>
+                    <td>settled for the CLI: user &rarr; project <code class="inline">.github</code> &rarr; parents <code class="inline">.github</code> &rarr; project <code class="inline">.claude</code> &rarr; parents <code class="inline">.claude</code> &rarr; plugin &rarr; remote, <strong>first loaded wins, dedup by ID</strong></td>
+                    <td>the plugin reference's "Loading order and precedence"; the residual <strong>U-04</strong> doc gap is with a non-CLI page that omits the personal tier</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.claude/commands/*.md</code></td>
+                    <td><strong>D</strong> — "accepted as a lower-priority skill-like slash-command input"</td>
+                    <td><strong>U</strong> at the first pass — no such path literal in either binary; the pass also found no current CLI page stating it. <strong>Second pass 2026-08-13: restored to D.</strong> The CLI plugin reference's skills loading diagram ends "--- then commands (<code class="inline">.claude/commands/</code>), skills override commands ---", in the page source since 2026-08-06 — before the first pass's cutoff, so "no current CLI page" was wrong at research time. The joined-literal absence stands (0 hits at 1.0.73 and 1.0.79); a native <code class="inline">skillsGetCommandDirectories</code> entry point means the path may be assembled, so the absence is a bounded negative, not a conflict</td>
+                    <td>the plugin feature loader called with <code class="inline">"agents"</code> / <code class="inline">"skills"</code> / <code class="inline">"mcp"</code> / <code class="inline">"commands"</code>; zero <code class="inline">.claude/commands</code> literals</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.claude/CLAUDE.md</code></td>
+                    <td>listed as a read location</td>
+                    <td>unconfirmed at the first pass; only root <code class="inline">CLAUDE.md</code> was evidenced. <strong>Second pass 2026-08-13: restored to D.</strong> The CLI custom-instructions page states "Copilot CLI also uses <code class="inline">.claude/CLAUDE.md</code>", in the page source since 2026-07-14 — before the first pass's cutoff, so the withdrawal was a research miss. No joined <code class="inline">.claude/CLAUDE.md</code> literal exists in <code class="inline">app.js</code> or <code class="inline">runtime.node</code> at 1.0.73 or 1.0.79, but <code class="inline">.claude</code> and <code class="inline">CLAUDE.md</code> are independent literals, so the path may be assembled — a bounded negative, not a conflict</td>
+                    <td>no <code class="inline">.claude</code>+<code class="inline">CLAUDE.md</code> adjacency among the nine <code class="inline">.claude</code> occurrences in <code class="inline">runtime.node</code></td>
+                  </tr>
+                  <tr>
+                    <td>MCP walk direction</td>
+                    <td>"walking cwd&rarr;Git root; project outranks user"</td>
+                    <td>true but under-specified: per directory <code class="inline">.mcp.json</code> beats <code class="inline">.github/mcp.json</code>; results sort <strong>root-most first</strong> and merge forward, so nearest wins; folder trust gates the ascent</td>
+                    <td>the array <code class="inline">[".mcp.json",".github/mcp.json"]</code>; <code class="inline">sort((u,g)=&gt;g.depth-u.depth)</code>; depth 0 = cwd tagged <code class="inline">project</code>, above tagged <code class="inline">inherited</code>; the <code class="inline">folderTrustIsTrusted</code> guard and <code class="inline">COPILOT_ALLOW_ALL</code></td>
+                  </tr>
+                  <tr>
+                    <td>MCP whole-session order</td>
+                    <td>not stated</td>
+                    <td>user &rarr; workspace &rarr; installed plugins &rarr; <code class="inline">--plugin-dir</code> plugins &rarr; ODR &rarr; <code class="inline">--additional-mcp-config</code>, <strong>last wins</strong></td>
+                    <td>the loader merges each source as the overriding overlay in that literal sequence</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.vscode/mcp.json</code></td>
+                    <td>"explicitly does not live-read"</td>
+                    <td>support was <strong>removed</strong> and the path is now actively detected to emit a migration notice</td>
+                    <td>"Copilot CLI's incomplete support for .vscode/mcp.json has been removed …"; <code class="inline">.vscode</code> absent from <code class="inline">runtime.node</code></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">copilot plugin</code> surface</td>
+                    <td>"plugin update and marketplace refresh are distinct commands"</td>
+                    <td><code class="inline">copilot plugin</code> = <code class="inline">install, list, marketplace, uninstall, update</code>; a <strong>second</strong> command <code class="inline">copilot plugins</code> manages plugins, MCP servers and skills across kinds</td>
+                    <td><code class="inline">copilot plugin --help</code> and <code class="inline">copilot plugins --help</code> on the installed build</td>
+                  </tr>
+                  <tr>
+                    <td>Extension sources</td>
+                    <td>project and user directories</td>
+                    <td><code class="inline">"project" | "user" | "plugin" | "session"</code>, with <code class="inline">extensions.mode</code> gating agent-side management</td>
+                    <td><code class="inline">ExtensionSource</code> / <code class="inline">ExtensionStatus</code> in <code class="inline">sdk/index.d.ts</code>; <code class="inline">extensions.mode</code> values <code class="inline">disabled</code> / <code class="inline">load_only</code> / <code class="inline">load_and_augment</code></td>
+                  </tr>
+                  <tr>
+                    <td>Hook events</td>
+                    <td>prose categories — "session/prompt, pre/post tool, subagent, compaction, and stop"</td>
+                    <td><strong>fifteen exact names</strong>, including <code class="inline">preMcpToolCall</code>, <code class="inline">postToolUseFailure</code>, <code class="inline">userPromptTransformed</code> and <code class="inline">notification</code></td>
+                    <td>a contiguous literal run in <code class="inline">runtime.node</code> matching the hooks reference; the CLI how-to lists only 7</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.claude</code> settings read</td>
+                    <td>framed as a hooks-only subset</td>
+                    <td>same key subset, but consumed by <strong>two</strong> loaders — settings <em>and</em> marketplaces</td>
+                    <td><code class="inline">.claude</code> beside <code class="inline">settings.json</code>/<code class="inline">settings.local.json</code>, and again beside <code class="inline">marketplace</code>/<code class="inline">extraKnownMarketplaces</code></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Raised from documentation-only to package strength (D &rarr; D/S).</strong></p>
+              <ul class="plain">
+                <li><strong><code class="inline">.claude/skills</code> is a real CLI project skill root.</strong> Shipped <code class="inline">copilot skill --help</code> states it verbatim: "Project <code class="inline">.github/skills/</code>, <code class="inline">.agents/skills/</code>, or <code class="inline">.claude/skills/</code>"; "Personal <code class="inline">~/.copilot/skills/</code> or <code class="inline">~/.agents/skills/</code>". <code class="inline">.claude</code>, <code class="inline">.github</code> and <code class="inline">.agents</code> all appear as sibling literals in the runtime's skills module.</li>
+                <li><strong>Skill provenance has an ancestor tier the docs bury:</strong> <code class="inline">SkillSource = "project" | "inherited" | "personal-copilot" | "personal-agents" | "plugin" | "custom" | "builtin"</code>.</li>
+                <li>Repository settings paths are the literal map <code class="inline">{repo: ".github/copilot/settings.json", local: ".github/copilot/settings.local.json"}</code> with the rank map <code class="inline">{user: 0, repo: 1, local: 2}</code>.</li>
+                <li><code class="inline">/etc/github-copilot/policy.d</code>, <code class="inline">.github/lsp.json</code>, <code class="inline">.github/mcp.json</code>, <code class="inline">.mcp.json</code>, <code class="inline">.agent.md</code>, <code class="inline">.github/extensions/</code>, <code class="inline">installed-plugins</code>, <code class="inline">COPILOT_HOME</code>, <code class="inline">COPILOT_SKILLS_DIRS</code> and <code class="inline">COPILOT_CUSTOM_INSTRUCTIONS_DIRS</code> are literals in the shipped build; the eight plugin/marketplace manifest paths are present too, but not uniformly as joined literals — the four marketplace catalog paths are, while the three dotted plugin-manifest paths exist as path components assembled at runtime (see the plugins section).</li>
+                <li><code class="inline">$COPILOT_HOME/hooks</code> and <code class="inline">$COPILOT_HOME/copilot-instructions.md</code> are independently confirmed by the XDG relocation list.</li>
+              </ul>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Second verification pass (2026-08-13).</strong> An independent re-audit against a rebuilt corpus applied <strong>38 verified changes</strong>: <strong>12 claims corrected</strong> (among them the real <code class="inline">~/.copilot</code> description, the "all eight literals" claim, the <code class="inline">copilot plugins</code> per-verb flags, and the two <code class="inline">.claude</code> withdrawals restored to documented status), <strong>18 capabilities added</strong> (largest: the local sandboxing subsystem; also the built-in GitHub MCP server, ACP server mode, self-update, permission settings, <code class="inline">statusLine</code>, per-subagent settings, built-in agents and skills, <code class="inline">copilot mcp</code> / <code class="inline">copilot init</code> / <code class="inline">/env</code> / <code class="inline">/delegate</code> / <code class="inline">/share</code>), <strong>3 missing citations attached</strong>, <strong>2 evidence-basis updates</strong>, and <strong>3 unknowns resolved or narrowed</strong> (U-04 downgraded to a doc gap, the org/enterprise agent delivery contract documented, the session-state directory shape corroborated on disk). Corpus: the installed Homebrew-cask CLI <strong>1.0.79</strong> (help surfaces), cached npm payloads <strong>1.0.73</strong> and <strong>1.0.79</strong> under <code class="inline">~/Library/Caches/copilot/pkg/darwin-arm64/</code> bracketing the 1.0.78 pin — the version-sensitive string greps were re-reproduced in both — the readable cached <code class="inline">~/.copilot/pkg/universal/1.0.40/app.js</code> payload, the real <code class="inline">~/.copilot</code> observed read-only, and current GitHub documentation plus the <code class="inline">github/copilot-cli</code> release notes (fetched 2026-08-13). The 1.0.78 npm install cited by the first pass no longer exists on disk — see the evidence section.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="scopes" data-term>
+            <p class="prompt">ls -d $COPILOT_HOME .github/copilot .github /etc/github-copilot/policy.d</p>
+            <div class="body" data-term-out>
+              <p>Copilot CLI has <strong>eight</strong> distinct places configuration and state can live. Four are authored scopes a person edits, two are generated and must be treated as opaque runtime state, one is administrative, and one is ephemeral.</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col /><col style="width:5rem" /></colgroup>
+                <thead>
+                  <tr><th>Scope</th><th>Location / mechanism</th><th>What lives there</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>User-authored</td>
+                    <td><code class="inline">$COPILOT_HOME/settings.json</code><br /><code class="inline">$COPILOT_HOME/copilot-instructions.md</code><br /><code class="inline">$COPILOT_HOME/instructions/</code><br /><code class="inline">$COPILOT_HOME/agents/</code><br /><code class="inline">$COPILOT_HOME/skills/</code><br /><code class="inline">$COPILOT_HOME/hooks/</code><br /><code class="inline">$COPILOT_HOME/mcp-config.json</code><br /><code class="inline">$COPILOT_HOME/lsp-config.json</code><br /><code class="inline">$COPILOT_HOME/extensions/</code></td>
+                    <td>Personal CLI customization. This is exactly the "User-editable files" list of the directory reference.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Legacy user</td>
+                    <td><code class="inline">$COPILOT_HOME/config.json</code></td>
+                    <td><strong>The legacy user settings file</strong>, whose values shadow the entire matching subtree of <code class="inline">settings.json</code>. The documentation files it under "Automatically managed files" as application state; the shipped build disagrees, and the build governs this version row. See the settings section.</td>
+                    <td><strong>D&ne;S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Generated</td>
+                    <td><code class="inline">$COPILOT_HOME/permissions-config.json</code><br /><code class="inline">$COPILOT_HOME/installed-plugins/</code><br /><code class="inline">$COPILOT_HOME/plugin-data/</code><br /><code class="inline">$COPILOT_HOME/command-history-state/</code><br /><code class="inline">$COPILOT_HOME/mcp-oauth-config/</code><br /><code class="inline">$COPILOT_HOME/mcp-secrets/</code><br /><code class="inline">$COPILOT_HOME/ide/</code><br /><code class="inline">$COPILOT_HOME/logs/</code><br /><code class="inline">$COPILOT_HOME/session-state/</code><br /><code class="inline">$COPILOT_HOME/session-store.db</code></td>
+                    <td>Saved permissions, installed-plugin data, command / MCP / IDE state, logs, full sessions, and the Chronicle index. Created on demand — so absence on any one machine is not evidence against a row.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Platform cache</td>
+                    <td>macOS <code class="inline">~/Library/Caches/copilot</code><br />Linux <code class="inline">$XDG_CACHE_HOME/copilot</code> or <code class="inline">~/.cache/copilot</code><br />Windows <code class="inline">%LOCALAPPDATA%\copilot</code><br />override <code class="inline">COPILOT_CACHE_HOME</code></td>
+                    <td>Generated cache, deliberately <em>outside</em> <code class="inline">$COPILOT_HOME</code>.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Repository</td>
+                    <td><code class="inline">.github/copilot-instructions.md</code><br /><code class="inline">.github/instructions/</code><br /><code class="inline">.github/agents/</code><br /><code class="inline">.github/skills/</code><br /><code class="inline">.github/hooks/</code><br /><code class="inline">.github/extensions/</code><br /><code class="inline">.github/mcp.json</code><br /><code class="inline">.github/lsp.json</code><br /><code class="inline">.github/copilot/settings.json</code><br />root <code class="inline">.mcp.json</code>, <code class="inline">AGENTS.md</code>, <code class="inline">CLAUDE.md</code>, <code class="inline">GEMINI.md</code><br /><code class="inline">.agents/skills</code><br /><code class="inline">.claude/skills</code>, <code class="inline">.claude/agents</code>, <code class="inline">.claude/settings.json</code></td>
+                    <td>Repository-scoped CLI customization, committed and shared. The <code class="inline">.claude</code> set is <strong>exact</strong>, not "selected inputs" — see the cross-read section.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Local / private</td>
+                    <td><code class="inline">.github/copilot/settings.local.json</code><br /><code class="inline">.claude/settings.local.json</code><br /><code class="inline">$COPILOT_HOME/session-state/&lt;session-id&gt;/</code></td>
+                    <td>Gitignored settings plus generated per-session records. Copilot reads <code class="inline">.claude/settings.local.json</code> <strong>project-relative</strong> — Claude Code canonicalizes the same filename to the Git main checkout, so inside a linked worktree the two designate different files.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Managed</td>
+                    <td>MDM / GitHub policies, managed MCP and plugins<br />policy hooks at <code class="inline">/etc/github-copilot/policy.d/*.json</code> (Linux, macOS)<br />or <code class="inline">C:\ProgramData\GitHub\Copilot\policy.d\*.json</code> / <code class="inline">HKLM\Software\Policies\GitHub\Copilot</code> (Windows)</td>
+                    <td>Administrative policy, managed capabilities, and non-disableable hooks.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session</td>
+                    <td>flags and environment, <code class="inline">/agent</code>, <code class="inline">/skills</code>, <code class="inline">--additional-mcp-config</code>, interactive / plan / autopilot modes, <code class="inline">/fleet</code>, <code class="inline">/every</code> and <code class="inline">/after</code>, Remote Control</td>
+                    <td>Ephemeral selection, coordination, scheduling, and remote steering of the still-local CLI process.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>The Generated row undercounts what a real home contains — O.</strong> One machine's <code class="inline">~/.copilot</code> (observed 2026-08-13) held substantially more runtime state than the documented list, all to be treated as opaque: <code class="inline">data.db</code> SQLite (+ <code class="inline">-wal</code>/<code class="inline">-shm</code> and <code class="inline">data.db.pre-update-backup-&lt;version&gt;-&lt;timestamp&gt;</code> files; table names include <code class="inline">accounts</code>, <code class="inline">workspaces</code>, <code class="inline">worktrees</code>, <code class="inline">sessions</code>, <code class="inline">session_automations</code>, <code class="inline">model_providers</code> and <code class="inline">review_threads</code> among 31), <code class="inline">repo-metadata-cache.db</code> (+ <code class="inline">-wal</code>/<code class="inline">-shm</code>), <code class="inline">media-cache/</code>, <code class="inline">prompts/</code>, <code class="inline">run/</code> (<code class="inline">ws.port</code> + <code class="inline">ws.token</code> — by name a local WebSocket control endpoint: inference), <code class="inline">pkg/&lt;platform&gt;/&lt;version&gt;/</code> (self-update payload cache holding <code class="inline">app.js</code>, <code class="inline">schemas/</code>, <code class="inline">builtin-skills/</code> and more), <code class="inline">history-session-state/</code> (<code class="inline">session_&lt;uuid&gt;_&lt;ts&gt;.json</code>), <code class="inline">jb/</code> (JetBrains state) and <code class="inline">vscode.session.metadata.cache.json</code> — the IDE-named entries plausibly written by IDE surfaces sharing <code class="inline">~/.copilot</code> rather than the CLI. None of these appear in the directory reference's automatically-managed list (checked 2026-08-13), so a scanner keying on the documented list must expect and skip unknown siblings rather than misclassify them. Presence proves support here; absence elsewhere proves nothing.</p>
+
+              <p><strong>Self-update is a provenance hazard — S, plus O for the payload cache.</strong> <code class="inline">copilot update [channel]</code> with <code class="inline">stable</code> (default) and <code class="inline">prerelease</code> channels; on-startup auto-update on by default; the <code class="inline">autoUpdate</code> setting (defaults to <code class="inline">true</code>); <code class="inline">COPILOT_AUTO_UPDATE=false</code> or <code class="inline">--no-auto-update</code> to disable; auto-update disabled by default in CI environments (detected via <code class="inline">CI</code>, <code class="inline">BUILD_NUMBER</code>, <code class="inline">RUN_ID</code> or <code class="inline">SYSTEM_COLLECTIONURI</code>); downloaded payloads cached under <code class="inline">$COPILOT_HOME/pkg/&lt;platform&gt;/&lt;version&gt;/</code> (13 historical payloads, 0.0.393&ndash;1.0.40, observed under <code class="inline">pkg/universal/</code> on 2026-08-13). The consequence a scanner must encode: <strong>the running version can differ from what the package manager installed</strong>, so version detection must ask the binary (<code class="inline">copilot --version</code>), never the package manager. Help text verified on binary 1.0.79 and previously on 1.0.73, bracketing the 1.0.78 pin.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong><code class="inline">$COPILOT_HOME</code> and how it resolves — S.</strong> <code class="inline">COPILOT_HOME</code> replaces the CLI's default <code class="inline">~/.copilot</code> root; <code class="inline">COPILOT_CACHE_HOME</code> independently replaces the platform cache. The older <code class="inline">--config-dir</code> flag is deprecated in favour of it — installed help reads <em>"Path to the configuration directory (deprecated: use COPILOT_HOME env var)"</em> — and every consumer of the root resolves the same expression:</p>
+
+              <pre class="block">t?.configDir ?? process.env.COPILOT_HOME ?? join(homedir(), ".copilot")</pre>
+
+              <p><strong>The XDG relocation list is independent corroboration — S.</strong> A relocation routine names the movable payload explicitly, in two groups: <code class="inline">["session-state","session-store.db","command-history-state","command-history-state.json","installed-plugins"]</code> and <code class="inline">["config.json","config","mcp-config","lsp-config","permissions-config","copilot-instructions.md","mcp-oauth-config","hooks"]</code>. That confirms <code class="inline">hooks</code> and <code class="inline">copilot-instructions.md</code> as first-class <code class="inline">$COPILOT_HOME</code> entries, and shows that <code class="inline">config</code>, <code class="inline">mcp-config</code>, <code class="inline">lsp-config</code>, <code class="inline">permissions-config</code> and <code class="inline">mcp-oauth-config</code> also exist in <em>directory</em> form, not only as single files.</p>
+
+              <p><strong>The repository settings rank map — S.</strong> Repository settings are two files with an explicit numeric rank, and the rank is the thing to encode, not the filenames:</p>
+
+              <pre class="block">{repo: ".github/copilot/settings.json", local: ".github/copilot/settings.local.json"}
+{user: 0, repo: 1, local: 2}   // higher wins</pre>
+
+              <p>Rank 2 — <code class="inline">.github/copilot/settings.local.json</code> — is the top of the ordinary file tiers, and it is gitignored by intent. Rank 0, the user tier, is <strong>two</strong> files rather than one, which is what the next-to-last row of the corrections table is about. Repository settings accept only a documented subset of keys; some values are union- or tighten-only, and managed security controls can remain non-overridable regardless of rank — <strong>D</strong>: the configuration-directory reference states "Only the keys listed in the following table are supported at the repository level. Any other keys&mdash;including keys that are valid in the user configuration file&mdash;are silently ignored", lists the 14 supported keys (<code class="inline">companyAnnouncements</code>, <code class="inline">contextTier</code>, <code class="inline">deniedUrls</code>, <code class="inline">disableAllHooks</code>, <code class="inline">disabledMcpServers</code>, <code class="inline">disabledSkills</code>, <code class="inline">effortLevel</code>, <code class="inline">enabledPlugins</code>, <code class="inline">extraKnownMarketplaces</code>, <code class="inline">hooks</code>, <code class="inline">includeCoAuthoredBy</code>, <code class="inline">mergeStrategy</code>, <code class="inline">model</code>, <code class="inline">respectGitignore</code>), and marks per-key semantics Union (add, never remove: <code class="inline">deniedUrls</code>, <code class="inline">disabledMcpServers</code>, <code class="inline">disabledSkills</code>), Tighten-only (<code class="inline">respectGitignore</code>) and Replaced (<code class="inline">model</code>, <code class="inline">effortLevel</code>, <code class="inline">contextTier</code> — applying only when the working directory is trusted).</p>
+            </div>
+          </section>
+
+          <section class="doc" id="precedence" data-term>
+            <p class="prompt">echo 'three directions at once'</p>
+            <div class="body" data-term-out>
+              <p><strong>This is the most important thing on the page.</strong> Precedence in Copilot CLI is <em>capability-specific</em>, and inside this one CLI it points several ways simultaneously. A tool that implements one "nearest wins" rule is wrong in three separate directions, and each wrongness is silent.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    S["skills"] --> S1["FIRST loaded wins&lt;br/&gt;dedup by name"]
+    A["agents"] --> A1["FIRST loaded wins&lt;br/&gt;dedup by ID"]
+    M["MCP servers"] --> M1["LAST loaded wins&lt;br/&gt;overlay merge"]
+    H["hooks"] --> H1["no winner at all&lt;br/&gt;every match runs"]
+    C["settings"] --> C1["ranked user 0, repo 1, local 2"]
+    C1 --> C2["legacy config.json&lt;br/&gt;shadows the user subtree"]
+    I["instructions"] --> I1["no precedence order exists&lt;br/&gt;enumerate, never resolve"]
+    X["one nearest-wins rule"] -.->|inverted| S1
+    X -.->|inverted| A1
+    X -.->|wrong shape| H1
+    X -.->|invents a winner| I1
+
+    class X,C2,I1 warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col style="width:11rem" /><col /><col style="width:5rem" /></colgroup>
+                <thead>
+                  <tr><th>Capability</th><th>Direction</th><th>What that means concretely</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Skills</td>
+                    <td><strong>First loaded wins</strong>, dedup by <strong>name</strong></td>
+                    <td>Project roots are visited before personal ones, so a project skill silently suppresses a same-named personal or plugin skill. The suppressed one is not merged, not renamed, and not reported.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agents</td>
+                    <td><strong>First loaded wins</strong>, dedup by <strong>ID</strong></td>
+                    <td>The <em>user</em> directory is first in the list, so for agents the personal tier wins over the project — the opposite of the skill outcome, from the same "first wins" rule applied to a different order.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>MCP servers</td>
+                    <td><strong>Last loaded wins</strong></td>
+                    <td>Each source is merged as the <em>overriding overlay</em> onto what came before. Within the workspace group, files are sorted root-most first and merged forward — which is precisely what makes "files closer to your working directory take precedence" true, by the opposite mechanism to skills.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Hooks</td>
+                    <td><strong>All run</strong></td>
+                    <td>Sources load policy &rarr; user &rarr; project &rarr; plugins and are <em>combined</em>. When the same event appears in several sources, every entry runs. There is no winner to display. Restrictive pre-tool results dominate the decision.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Settings</td>
+                    <td><strong>Ranked</strong>, with one file out of band</td>
+                    <td><code class="inline">{user: 0, repo: 1, local: 2}</code>, higher wins — except that the legacy <code class="inline">$COPILOT_HOME/config.json</code> sits <em>above both user entries</em> and shadows whole subtrees of <code class="inline">settings.json</code>.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Instructions</td>
+                    <td><strong>None</strong></td>
+                    <td>GitHub states plainly that the CLI "combines their instructions … but does not define a general precedence order between these files", removing only exact duplicates. The merge function itself is native. A browser can enumerate the sources; it cannot compute a winner — <strong>U-05</strong>.</td>
+                    <td><strong>D</strong> / <strong>U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>LSP</td>
+                    <td><strong>Ranked</strong>, project first</td>
+                    <td><code class="inline">.github/lsp.json</code> outranks plugin LSP, which outranks <code class="inline">~/.copilot/lsp-config.json</code>.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">The trap is that two of these look identical from the outside.</span> Skills and agents share the words "first loaded wins" and produce <em>opposite</em> project-versus-personal outcomes, purely because the ordered lists differ. Copying the skill rule onto agents inverts the answer without changing a single word of the description.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="instructions" data-term>
+            <p class="prompt">cat .github/copilot-instructions.md AGENTS.md CLAUDE.md GEMINI.md</p>
+            <div class="body" data-term-out>
+              <p><strong>Sources — D/S.</strong> The instruction inputs are exactly:</p>
+              <ul class="plain">
+                <li><code class="inline">~/.copilot/copilot-instructions.md</code></li>
+                <li>recursive <code class="inline">~/.copilot/instructions/**/*.instructions.md</code></li>
+                <li>repository <code class="inline">.github/copilot-instructions.md</code></li>
+                <li>recursive <code class="inline">.github/instructions/**/*.instructions.md</code> — the repository <code class="inline">.github</code> directory, "but <em>not</em> intermediate directories"</li>
+                <li>compatibility <code class="inline">AGENTS.md</code>, <code class="inline">CLAUDE.md</code>, and <code class="inline">GEMINI.md</code></li>
+                <li>whatever <code class="inline">COPILOT_CUSTOM_INSTRUCTIONS_DIRS</code> adds — a comma-separated list of directories contributing further <code class="inline">AGENTS.md</code> and <code class="inline">*.instructions.md</code> files</li>
+              </ul>
+
+              <p><strong>There is no precedence — D.</strong> GitHub is explicit: Copilot CLI "combines their instructions … but does not define a general precedence order between these files", removing only exact duplicates. This is not a gap in the analysis; it is a published property of the product. A configuration browser must not compute an "effective winner" for instructions. It can only show the combined set. <strong>U-05</strong>.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Advertised, not concatenated — S, corrected.</strong> The earlier reading "all applicable content is combined" is wrong for the two <em>conditional</em> classes. <code class="inline">applyTo</code>-scoped instruction files are rendered to the model as a table with the header <code class="inline">| Pattern | File Path | Description |</code>, introduced by the line <em>"Make sure to acquire the instructions before making any changes to the code"</em> — the model then fetches the body with the <code class="inline">view</code> tool, on demand, if it decides to. Nested <code class="inline">AGENTS.md</code> files <em>below</em> the working directory get their own table, <code class="inline">| Directory | File Path | Description |</code>, introduced by <em>"Here is a list of nested <code class="inline">AGENTS.md</code> files that contain additional agent instructions."</em></p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["discovered instruction sources"] --> B{"conditional?"}
+    B -->|no| C["concatenated into context&lt;br/&gt;exact duplicates removed"]
+    B -->|applyTo globs| D["advertised in a table&lt;br/&gt;Pattern, File Path, Description"]
+    B -->|nested AGENTS.md| E["advertised in a table&lt;br/&gt;Directory, File Path, Description"]
+    D --> F["model fetches the body with view&lt;br/&gt;on demand, or never"]
+    E --> F
+    C --> G["no precedence order exists&lt;br/&gt;enumerate, never compute a winner"]
+
+    class G warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p>So the rule is: <strong>unconditional sources concatenate; conditional ones are lazily acquired.</strong> A configuration browser should not present <code class="inline">applyTo</code> files as always-loaded context — they may never enter the context window at all. Malformed globs are skipped with the warning <em>"ignoring malformed applyTo glob pattern"</em>.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The bundle's taxonomy is stronger than the prose — S.</strong> Each discovered source carries a typed descriptor:</p>
+
+              <table>
+                <colgroup><col style="width:12rem" /><col /></colgroup>
+                <thead><tr><th>Field</th><th>Values / meaning</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">type</code></td><td><code class="inline">"home"</code>, <code class="inline">"repo"</code>, <code class="inline">"model"</code>, <code class="inline">"vscode"</code>, <code class="inline">"nested-agents"</code>, <code class="inline">"child-instructions"</code>, <code class="inline">"plugin"</code></td></tr>
+                  <tr><td><code class="inline">location</code></td><td><code class="inline">"user"</code>, <code class="inline">"repository"</code>, <code class="inline">"working-directory"</code>, <code class="inline">"plugin"</code></td></tr>
+                  <tr><td><code class="inline">applyTo</code></td><td>optional <code class="inline">string[]</code> of globs</td></tr>
+                  <tr><td><code class="inline">defaultDisabled</code>, <code class="inline">description</code></td><td>optional</td></tr>
+                  <tr><td><code class="inline">id</code></td><td>stable, and documented as "used for toggling"</td></tr>
+                </tbody>
+              </table>
+
+              <p>Discovery <em>targets</em> are a separate call returning <code class="inline">InstructionDiscoveryPath { kind: "file" | "directory", location, path, preferredForCreation, projectPath? }</code>, described as "Canonical instruction create/discovery files and directories, in priority order". The discovery-source labels in the binary are <code class="inline">home-copilot</code>, <code class="inline">user-copilot-instructions</code>, <code class="inline">repo-copilot</code>, <code class="inline">cwd-copilot</code>, <code class="inline">vscode-instructions</code>, <code class="inline">vscode-instructions/external</code>, <code class="inline">nested-agents</code> and <code class="inline">child-instructions</code>, with the display prefixes <code class="inline">inherited-</code>, <code class="inline">dynamic-</code>, <code class="inline">model-</code>, <code class="inline"> [external]</code> and <code class="inline"> [discovered]</code>.</p>
+
+              <p class="eli5"><span class="eli5-term">A priority-ordered discovery list is not a precedence order.</span> <code class="inline">InstructionDiscoveryPath</code> orders where a <em>new</em> instruction file should be created and where discovery looks first. It does not rank the content once loaded — the merge function is native and GitHub publishes no order. The two are easy to conflate and the conflation is exactly what <strong>U-05</strong> forbids.</p>
+
+              <p><strong>Two disable mechanisms — D/S.</strong> The <code class="inline">--no-custom-instructions</code> flag ("Disable loading of custom instructions from AGENTS.md and related files") and the interactive <code class="inline">/instructions</code> command ("View and toggle custom instruction files") — the consumer of the descriptor <code class="inline">id</code> documented above as "used for toggling". An effective-configuration card must account for instruction files disabled for the session or toggled off. Verified on installed 1.0.79 help; <code class="inline">/instructions</code> is also in the CLI command reference.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Shape and imports — D.</strong> <code class="inline">*.instructions.md</code> is Markdown with optional YAML <code class="inline">applyTo</code>. The comma-separated globs match <em>files Copilot works on</em> — they are not a directory scope and not a precedence mechanism. <code class="inline">@path</code> imports work in Copilot instructions, in <code class="inline">AGENTS.md</code> and in <code class="inline">CLAUDE.md</code>; for repository instructions they stay repository-confined. They are not a generic feature of every instruction format.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="skills" data-term>
+            <p class="prompt">copilot skill --help</p>
+            <div class="body" data-term-out>
+              <p><strong>Roots, verbatim from the shipped help — S.</strong> <code class="inline">copilot skill --help</code> states them in the product's own words:</p>
+
+              <pre class="block">Project   .github/skills/, .agents/skills/, or .claude/skills/
+Personal  ~/.copilot/skills/ or ~/.agents/skills/
+Plugin    Installed plugins that bundle skills
+Custom    Directories added with `copilot skill add &lt;directory&gt;`</pre>
+
+              <p><strong>The full ordered list — D/S, first loaded wins, dedup by name.</strong> The plugin reference publishes it and the bundle's enum confirms the tiers, including the ancestor tier the how-to pages bury:</p>
+
+              <table>
+                <colgroup><col style="width:3rem" /><col /><col style="width:12rem" /></colgroup>
+                <thead><tr><th>#</th><th>Root</th><th><code class="inline">SkillSource</code></th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>project <code class="inline">.github/skills</code></td><td><code class="inline">project</code></td></tr>
+                  <tr><td>2</td><td>project <code class="inline">.agents/skills</code></td><td><code class="inline">project</code></td></tr>
+                  <tr><td>3</td><td>project <code class="inline">.claude/skills</code></td><td><code class="inline">project</code></td></tr>
+                  <tr><td>4</td><td>the same three at <strong>ancestor</strong> directories — the monorepo / inherited tier</td><td><code class="inline">inherited</code></td></tr>
+                  <tr><td>5</td><td><code class="inline">~/.copilot/skills</code></td><td><code class="inline">personal-copilot</code></td></tr>
+                  <tr><td>6</td><td><code class="inline">~/.agents/skills</code></td><td><code class="inline">personal-agents</code></td></tr>
+                  <tr><td>7</td><td>plugin <code class="inline">skills/</code></td><td><code class="inline">plugin</code></td></tr>
+                  <tr><td>8</td><td><code class="inline">COPILOT_SKILLS_DIRS</code> plus configured <code class="inline">skillDirectories</code></td><td><code class="inline">custom</code></td></tr>
+                </tbody>
+              </table>
+
+              <p>The enum also carries <code class="inline">builtin</code>. Because the rule is <strong>first loaded wins</strong>, a same-named project skill silently suppresses a plugin's — that is documented behavior, not a bug, and it is invisible unless a tool shows the suppressed entry.</p>
+
+              <p><strong>Builtin skills physically ship inside the CLI payload — S.</strong> The bundle resolves a <code class="inline">builtin-skills/</code> directory relative to <code class="inline">app.js</code> — <code class="inline">join(import.meta.dirname, "builtin-skills")</code> — and the payload directory contains e.g. <code class="inline">builtin-skills/customize-cloud-agent/SKILL.md</code>. They are enumerable (<code class="inline">SkillSource</code> <code class="inline">builtin</code>, <code class="inline">plugins list --scope builtin</code>) but not removable: "Skills provided by a plugin or the builtin set cannot be removed this way." The evidence brackets the 1.0.78 pin, which is no longer on disk: the join literal and the on-disk skill are from the cached <code class="inline">@github/copilot 1.0.40</code> payload; the help sentence is from installed CLI 1.0.79.</p>
+
+              <p><strong>Creation targets are a narrower enum — S.</strong> <code class="inline">SkillDiscoveryScope = "project" | "personal-copilot" | "personal-agents" | "custom"</code>, and the bundle states that "the <code class="inline">personal-agents</code> and <code class="inline">custom</code> scopes are never preferred" for creation. So <code class="inline">copilot skill add</code> lands in <code class="inline">~/.copilot/skills</code> for personal scope, or <code class="inline">.github/skills</code> for project scope.</p>
+
+              <p><strong>Shape — D/S.</strong> A skill is a directory containing <code class="inline">SKILL.md</code>. Frontmatter is <code class="inline">name</code> (required, lowercase-hyphenated) and <code class="inline">description</code> (required), plus optional <code class="inline">license</code>, <code class="inline">allowed-tools</code>, <code class="inline">argument-hint</code>, and the loader-visible <code class="inline">userInvocable</code> / <code class="inline">disable-model-invocation</code>.</p>
+
+              <p><strong>Runtime — D/S.</strong> Metadata is advertised in a catalog capped by <code class="inline">SKILL_CHAR_BUDGET</code>; the body is injected only when the model selects the skill or the user invokes it as <code class="inline">/name</code>. Interactive <code class="inline">/skills reload</code> refreshes discovery; <code class="inline">copilot skill list|add|remove</code> manages sources from the terminal.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="agents" data-term>
+            <p class="prompt">ls .github/agents/*.agent.md .claude/agents/*.md ~/.copilot/agents</p>
+            <div class="body" data-term-out>
+              <p><strong>Sources — D/S.</strong> Project <code class="inline">.github/agents/*.agent.md</code> and Claude-compatible <code class="inline">.claude/agents/*.md</code>, user <code class="inline">~/.copilot/agents/</code>, plugin <code class="inline">agents/</code>, and remote organization / enterprise agents.</p>
+
+              <p><strong>The ordered list — D/S.</strong> The plugin reference publishes it under the heading "CUSTOM AGENTS — FIRST LOADED IS USED (dedup by ID)":</p>
+
+              <table>
+                <colgroup><col style="width:3rem" /><col /><col /></colgroup>
+                <thead><tr><th>#</th><th>Root</th><th>Note</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td><code class="inline">~/.copilot/agents/</code></td><td>the personal tier is <strong>first</strong> — this is why agents resolve opposite to skills</td></tr>
+                  <tr><td>2</td><td><code class="inline">&lt;project&gt;/.github/agents/</code></td><td><code class="inline">.agent.md</code> suffix</td></tr>
+                  <tr><td>3</td><td><code class="inline">&lt;parents&gt;/.github/agents/</code></td><td>ancestor tier</td></tr>
+                  <tr><td>4</td><td><code class="inline">&lt;project&gt;/.claude/agents/</code></td><td>plain <code class="inline">.md</code>, Claude-compatible</td></tr>
+                  <tr><td>5</td><td><code class="inline">&lt;parents&gt;/.claude/agents/</code></td><td>ancestor tier</td></tr>
+                  <tr><td>6</td><td>plugin <code class="inline">agents/</code></td><td>install order</td></tr>
+                  <tr><td>7</td><td>remote organization / enterprise</td><td>no local path exists — <strong>U</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p>A same-named project agent or skill silently suppresses a plugin's. <strong>Two file shapes coexist:</strong> <code class="inline">.agent.md</code> under <code class="inline">.github/agents</code> and <code class="inline">~/.copilot/agents</code>, and plain <code class="inline">.md</code> under <code class="inline">.claude/agents</code>. Agent creation writes <code class="inline">&lt;slug&gt;.agent.md</code> into <code class="inline">.github/agents</code> for project scope, or <code class="inline">&lt;configDir&gt;/agents</code> for user scope.</p>
+
+              <p><strong>Frontmatter — S, all literal in the bundle.</strong> <code class="inline">name</code>, <code class="inline">description</code>, <code class="inline">tools</code>, model and MCP selection, <code class="inline">disable-model-invocation</code>, <code class="inline">user-invocable</code>, <code class="inline">reasoning-effort</code>, <code class="inline">deferred-tool-loading</code>, <code class="inline">strict-tools-list</code>. Agent frontmatter may also carry hooks — see the hooks section.</p>
+
+              <p><strong>Runtime — D.</strong> Copilot may infer an agent, or the user may select one with <code class="inline">/agent</code> or <code class="inline">--agent</code>. Work runs in a temporary isolated subagent.</p>
+
+              <p><strong>Per-subagent configuration — S.</strong> The settings key <code class="inline">subagents.agents.&lt;agent-name&gt;</code> holds per-agent <code class="inline">model</code>, <code class="inline">effortLevel</code> and <code class="inline">contextTier</code> selection, each settable to <code class="inline">"inherit"</code> to use the parent session's effective value, configured interactively with <code class="inline">/subagents</code>. This is agent-scoped configuration living in <em>settings files</em>, separate from agent frontmatter. The <code class="inline">app.js</code> schema map additionally carries <code class="inline">autoInvoke</code> (boolean), with <code class="inline">contextTier</code> as the enum <code class="inline">inherit | default | long_context</code>. Verified on installed 1.0.79 help; the literal is present in the 1.0.73 and 1.0.79 payloads, bracketing 1.0.78.</p>
+
+              <p><strong>Built-in agents exist alongside custom ones — S.</strong> <code class="inline">/review</code> ("Run code review agent to analyze changes") and <code class="inline">/rubber-duck</code> ("&hellip; from the rubber duck agent") invoke shipped agents with no root in any authored scope, and <code class="inline">builtin</code> is a first-class scope of <code class="inline">copilot plugins list --scope</code> (<code class="inline">user, repository, working-directory, organization, plugin, builtin, unknown</code>) — though that command's own help states custom agents are not yet covered by it. An inventory built only from the authored agent roots will not explain these entries. Verified on 1.0.79 help; the agent strings are literal in <code class="inline">runtime.node</code> at 1.0.73 and 1.0.79.</p>
+
+              <p class="eli5"><span class="eli5-term">U-04, downgraded on the second pass.</span> The settling evidence U-04 asked for now exists: the CLI-scoped how-to "Invoking custom agents" states that a user-level agent overrides a repository-level agent, which overrides an organization-level agent, which overrides an enterprise-level agent — confirming the plugin reference's direction with the personal tier first and winning. The multi-surface custom-agents page as currently published agrees in direction and merely omits the personal tier, so no inversion stands; what remains is a doc gap, not a conflict (fetched 2026-08-13). The full CLI load order above still rests on the plugin reference — the new sentence settles tier direction only.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="hooks" data-term>
+            <p class="prompt">jq '.hooks' .github/copilot/settings.json ~/.copilot/hooks/*.json</p>
+            <div class="body" data-term-out>
+              <p><strong>Sources and order — D/S.</strong> Hooks load <strong>policy &rarr; user &rarr; project &rarr; plugins</strong> and are <em>combined</em>. When the same event appears in several sources, <strong>all entries run</strong>. There is no winner.</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col /></colgroup>
+                <thead><tr><th>Tier</th><th>Root</th><th>Rules</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Policy</td>
+                    <td><code class="inline">/etc/github-copilot/policy.d/*.json</code> (Linux, macOS — literal in the bundle)<br /><code class="inline">C:\ProgramData\GitHub\Copilot\policy.d\*.json</code> or <code class="inline">HKLM\Software\Policies\GitHub\Copilot</code> (Windows)</td>
+                    <td>Loaded first, in filename order. On POSIX they must be root-owned and non-group/world-writable. They <strong>cannot</strong> be disabled by <code class="inline">disableAllHooks</code>.</td>
+                  </tr>
+                  <tr><td>User</td><td><code class="inline">~/.copilot/hooks/**/*.json</code></td><td>The hook-config enumerator globs <strong>recursively</strong> — <code class="inline">join(hooksDir, "**", "*.json")</code> in the readable 1.0.40 cached payload's <code class="inline">app.js</code>; the same enumerator serves <code class="inline">.github/hooks</code>; recursion unverified at exactly 1.0.78 — so nested layouts such as <code class="inline">~/.copilot/hooks/&lt;name&gt;/hooks.json</code> are loaded, and that nested shape is what the real <code class="inline">~/.copilot</code> contains: five hook directories, each holding <code class="inline">hooks.json</code> plus scripts, zero top-level <code class="inline">*.json</code>. A hook file is <code class="inline">{"version":1,"hooks":{&lt;camelCase event&gt;:[&hellip;]}}</code> — an object keyed by event name, as the hooks reference's example shows. The XDG relocation-list corroboration as a first-class <code class="inline">$COPILOT_HOME</code> entry stands. <strong>D/S/O</strong></td></tr>
+                  <tr><td>Project</td><td><code class="inline">.github/hooks/*.json</code></td><td>Repository-scoped.</td></tr>
+                  <tr><td>Inline</td><td>the <code class="inline">hooks</code> key inside settings, at any settings scope</td><td><code class="inline">copilot help config</code>: "In global <code class="inline">config.json</code> these act as user-level hooks; in repo <code class="inline">settings.json</code> they act as repo-level hooks."</td></tr>
+                  <tr><td>Agent</td><td>agent frontmatter</td><td>Scoped to that agent.</td></tr>
+                  <tr><td>Plugin</td><td><code class="inline">hooks.json</code> or <code class="inline">hooks/hooks.json</code> in the plugin root</td><td>Both layouts are accepted.</td></tr>
+                  <tr><td>Cross-read</td><td><code class="inline">.claude/settings.json</code>, <code class="inline">.claude/settings.local.json</code></td><td>Top-level <code class="inline">hooks</code> is one of exactly five keys Copilot consumes from those files — see the cross-read section.</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>The event set is recoverable exactly — S.</strong> A contiguous enum in <code class="inline">runtime.node</code> reads <code class="inline">preToolUse, preMcpToolCall, postToolUse, postToolUseFailure, userPromptSubmitted, userPromptTransformed, sessionStart, sessionEnd, errorOccurred, agentStop, subagentStop, subagentStart, preCompact, permissionRequest</code>, and a second literal run adds <code class="inline">notification</code> immediately after <code class="inline">permissionRequest</code> — <strong>15 in all</strong>.</p>
+
+              <p><strong>D&ne;S on the count.</strong> The hooks reference documents <strong>14</strong> of them, omitting <code class="inline">preMcpToolCall</code>; the CLI how-to shows only a <strong>7</strong>-event subset. Prefer the reference over the how-to, and treat <code class="inline">preMcpToolCall</code> as build-evidenced but undocumented.</p>
+
+              <p><strong>Handler shapes — D/S.</strong></p>
+              <pre class="block">{"type":"command", bash|powershell, cwd, env, timeoutSec}
+{"type":"http",    url, headers, allowedEnvVars, timeoutSec}</pre>
+              <p>An HTTP hook that declares <code class="inline">allowedEnvVars</code> must use <code class="inline">https://</code> unless <code class="inline">COPILOT_HOOK_ALLOW_LOCALHOST</code> or <code class="inline">COPILOT_HOOK_ALLOW_HTTP_AUTH_HOOKS</code> is set — a deliberate guard against leaking environment values over plaintext. PascalCase Claude-format matchers and a VS Code-compatible shape are both accepted alongside the native camelCase form. <strong>Restrictive pre-tool results dominate.</strong></p>
+
+              <p class="eli5"><span class="eli5-term">Three formats, one registry.</span> Copilot's own camelCase events, Claude's PascalCase matchers and a VS Code-compatible shape all land in the same combined set. A scanner that recognizes only one spelling will under-report a repository that mixes them — and mixing them is exactly what a team migrating between coding agents produces.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="mcp" data-term>
+            <p class="prompt">find . -name '.mcp.json' -o -path '*/.github/mcp.json'</p>
+            <div class="body" data-term-out>
+              <p><strong>The workspace walk, recovered exactly — S.</strong> The filenames are the two-element array <code class="inline">[".mcp.json", ".github/mcp.json"]</code>. Per directory the CLI takes the <strong>first that exists</strong>, so <code class="inline">.mcp.json</code> beats <code class="inline">.github/mcp.json</code> at the same level, and <strong>each visited directory contributes at most one file</strong>. The walk starts at cwd and ascends to the resolved Git root — with linked-worktree resolution — stopping early at any directory that fails the folder-trust predicate unless <code class="inline">COPILOT_ALLOW_ALL=true</code>.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["start at cwd"] --> B{"folder trusted?"}
+    B -->|no| Z["walk stops here&lt;br/&gt;unless COPILOT_ALLOW_ALL is true"]
+    B -->|yes| C{"first existing file here"}
+    C -->|.mcp.json| D["taken&lt;br/&gt;.github/mcp.json ignored at this level"]
+    C -->|.github/mcp.json| F["taken"]
+    C -->|neither| G["this directory contributes nothing"]
+    D --> H["ascend towards the Git root"]
+    F --> H
+    G --> H
+    H --> I["sort root-most first&lt;br/&gt;merge forward as overlays"]
+    I --> J["nearest file wins&lt;br/&gt;because it merges LAST"]
+
+    class Z warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p>Depth 0 — cwd — is tagged <code class="inline">project</code>; everything above is tagged <code class="inline">inherited</code>. The collected files are then sorted <strong>descending by depth</strong>, root-most first, and merged in that order with each newer file as the overriding overlay. That is the mechanism behind the documentation's sentence "files closer to your working directory take precedence": nearest wins because nearest merges <em>last</em>.</p>
+
+              <p><strong>Whole-session order — S, last loaded wins.</strong></p>
+
+              <table>
+                <colgroup><col style="width:3rem" /><col /><col /></colgroup>
+                <thead><tr><th>#</th><th>Source</th><th>Note</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td><code class="inline">~/.copilot/mcp-config.json</code></td><td>user level, lowest</td></tr>
+                  <tr><td>2</td><td>workspace files</td><td>the walk above, itself internally ordered</td></tr>
+                  <tr><td>3</td><td>installed plugins</td><td>plugin <code class="inline">mcpServers</code>, inline or by path</td></tr>
+                  <tr><td>4</td><td><code class="inline">--plugin-dir</code> plugins</td><td>session-supplied plugin roots</td></tr>
+                  <tr><td>5</td><td>ODR</td><td>a Windows registry-declared registry, queried by running its <code class="inline">mcp list</code>. Windows-only, third-party executable, undocumented key and command contract — <strong>U-15</strong></td></tr>
+                  <tr><td>6</td><td><code class="inline">--additional-mcp-config</code></td><td>last and highest; accepts inline JSON or <code class="inline">@file</code></td></tr>
+                </tbody>
+              </table>
+
+              <p>This is <strong>last-loaded-wins</strong> — the opposite direction from skills and agents. Do not generalize one rule across capabilities. Project files may use the <code class="inline">mcpServers</code> wrapper or the bare top-level form.</p>
+
+              <p><strong>Plugin MCP — D/S.</strong> A plugin's <code class="inline">mcpServers</code> may be given <em>inline</em> in the manifest or as a <em>path</em> to a file, and the plugin definition takes precedence.</p>
+
+              <p><strong>The built-in GitHub MCP server is its own tier — D/S.</strong> <code class="inline">github-mcp-server</code> ships inside the CLI, enabled by default with a default CLI tool subset — "The GitHub MCP server is built into Copilot CLI and is already available without any additional configuration". <code class="inline">copilot mcp list</code> groups servers by source <code class="inline">User, Workspace, Plugin, Builtin</code>; the session flags <code class="inline">--disable-builtin-mcps</code> ("currently: github-mcp-server"), <code class="inline">--disable-mcp-server &lt;name&gt;</code>, <code class="inline">--add-github-mcp-tool</code>, <code class="inline">--add-github-mcp-toolset</code> and <code class="inline">--enable-all-github-mcp-tools</code> control it. Its position in the last-loaded-wins merge order is <strong>not evidenced</strong> — the tier is listed here without asserting a rank. Note also <code class="inline">--allow-all-mcp-server-instructions</code>: MCP server initialization instructions enter the system prompt only for allowlisted servers unless that flag is set. Verified on installed 1.0.79.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong><code class="inline">.vscode/mcp.json</code>: removed, not merely unread — S.</strong> The bundle carries its own message:</p>
+
+              <pre class="block">Copilot CLI's incomplete support for .vscode/mcp.json has been removed.
+See https://gh.io/copilotcli-mcpmigrate to migrate to .mcp.json or .github/mcp.json.</pre>
+
+              <p>The only remaining code path <em>detects the file's presence</em> and, if no <code class="inline">.mcp.json</code> or <code class="inline">.github/mcp.json</code> exists anywhere from cwd to the repository root, emits that one-time notice. <code class="inline">.vscode</code> appears nowhere else in <code class="inline">runtime.node</code>. The documentation gives the reason: the file "uses the unsupported top-level key <code class="inline">servers</code>". So the negative is strong — the CLI actively refuses this path — but it is a <strong>detected</strong> refusal, which a scanner may want to surface as a <em>migration hint</em> rather than silence.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="settings" data-term>
+            <p class="prompt">copilot help config</p>
+            <div class="body" data-term-out>
+              <p><strong>The correction that matters most for a scanner — S.</strong> The user tier is <strong>not</strong> just <code class="inline">settings.json</code>. The bundle exposes <code class="inline">loadSettingsFileOnly</code> / <code class="inline">loadSettingsFileForEdit</code> against <code class="inline">&lt;configDir&gt;/settings.json</code> <em>and</em> a separate <code class="inline">loadLegacyConfig</code> against <code class="inline">&lt;configDir&gt;/config.json</code>, and it warns in the product's own words:</p>
+
+              <pre class="block">… is set in your legacy config.json, which takes precedence and shadows the
+entire … subtree … Edit config.json to remove the legacy value, or this change
+will not take effect.</pre>
+
+              <p>The shipped <code class="inline">copilot help config</code> says the same thing from the other side: <em>"In global <code class="inline">config.json</code> these act as user-level hooks; in repo <code class="inline">settings.json</code> they act as repo-level hooks."</em> So <code class="inline">config.json</code> is a <strong>settings layer</strong>, not generated application state — and the shadowing is by <em>subtree</em>, not by leaf.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["built-in defaults"] --> B["MDM and GitHub policy"]
+    B --> C["$COPILOT_HOME/settings.json"]
+    C --> D["$COPILOT_HOME/config.json&lt;br/&gt;LEGACY, shadows the subtree above"]
+    D --> E[".github/copilot/settings.json"]
+    E --> F[".github/copilot/settings.local.json"]
+    F --> G["environment"]
+    G --> H["flags"]
+    C -.->|reading only this file| X["wrong effective user settings"]
+
+    class D,X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:3rem" /><col /><col /><col style="width:5rem" /></colgroup>
+                <thead><tr><th>#</th><th>Layer</th><th>Behavior</th><th>Rank</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>built-ins</td><td>product defaults</td><td>—</td></tr>
+                  <tr><td>2</td><td>MDM / GitHub policy</td><td>administrative; some security controls remain non-overridable at any higher layer</td><td>—</td></tr>
+                  <tr><td>3</td><td><code class="inline">$COPILOT_HOME/settings.json</code></td><td>the obvious user file, JSONC</td><td><code class="inline">user: 0</code></td></tr>
+                  <tr><td>4</td><td><code class="inline">$COPILOT_HOME/config.json</code></td><td><strong>legacy user settings</strong>; shadows the entire matching subtree of layer 3</td><td>above <code class="inline">user: 0</code></td></tr>
+                  <tr><td>5</td><td><code class="inline">.github/copilot/settings.json</code></td><td>repository, committed; documented subset of keys only</td><td><code class="inline">repo: 1</code></td></tr>
+                  <tr><td>6</td><td><code class="inline">.github/copilot/settings.local.json</code></td><td>repository, gitignored</td><td><code class="inline">local: 2</code></td></tr>
+                  <tr><td>7</td><td>environment</td><td>process environment</td><td>—</td></tr>
+                  <tr><td>8</td><td>flags</td><td>highest ordinary layer</td><td>—</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>A scanner that reads only <code class="inline">settings.json</code> will report the wrong effective user settings.</strong> The real <code class="inline">config.json</code> on this machine (re-observed 2026-08-13) is JSONC opening with "<code class="inline">// User settings belong in settings.json</code>" and carries camelCase keys <code class="inline">expAssignmentsCache</code>, <code class="inline">firstLaunchAt</code>, <code class="inline">lastLoggedInUser</code>, <code class="inline">trustedFolders</code> — the first pass's snake_case list (<code class="inline">banner</code>, <code class="inline">render_markdown</code>, &hellip;, <code class="inline">trusted_folders</code>) did not reproduce and is the legacy spelling of the same keys. Treat any observed key list as a shape hint, not as the 1.0.78 schema. <strong>O</strong></p>
+
+              <p class="eli5"><span class="eli5-term">Two files, one tier, and the documentation puts them in different chapters.</span> The directory reference still files <code class="inline">config.json</code> under "Automatically managed files", but its description now concedes the settings history: "Earlier versions of Copilot CLI stored both user settings and application state in config.json. User-editable settings are now located in settings.json. Any user settings in config.json at startup are automatically migrated to settings.json. Application state fields&mdash;such as loggedInUsers, installedPlugins, firstLaunchAt, and staff&mdash;remain in config.json and are not migrated." The conflict persists and sharpens: the docs claim automatic startup <em>migration</em>, while the 1.0.78 build warns that legacy <code class="inline">config.json</code> values "take precedence and shadow the entire &hellip; subtree" and tells the user to edit <code class="inline">config.json</code> to remove them. Both statements are reproduced here; the build governs version row 1.0.78. <strong>D&ne;S</strong> (docs rolling, fetched 2026-08-13, change not datable)</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The local sandboxing subsystem — D/S, added on the second pass.</strong> Absent from the first pass entirely (page grep <code class="inline">sandbox</code> &rarr; 0). Sandbox configuration persists in <code class="inline">settings.json</code> under the <code class="inline">sandbox</code> key, with <code class="inline">sandbox.enabled</code> as the on/off switch, edited via the <code class="inline">/sandbox</code> command — the docs describe a four-tab dialog (General / Auth / Filesystem / Network; the Auth tab is itself a v1.0.79 reorganization) — covering filesystem read/write/deny paths, outbound and local-network allow/block, git/gh credential injection, whether local stdio MCP and LSP subprocesses run sandboxed (remote HTTP/SSE MCP servers never are), macOS keychain access, and a per-command bypass. It is powered by Microsoft Execution Containers (MXC), is in <strong>public preview</strong>, and at binary 1.0.79 the <code class="inline">/sandbox</code> command is registered only when experimental features are on. Enterprise managed settings can enforce a restrictive sandbox floor (v1.0.76, 2026-07-29) and managed sandbox policy can be enforced via macOS/Windows MDM (v1.0.77, 2026-07-30); the pinned v1.0.78 (2026-08-03) added sandbox blocking of shell commands with a bypass option plus the <code class="inline">allowDevToolCaches</code> setting, renamed <code class="inline">allowDevToolAccess</code> in v1.0.79 (2026-08-10, marked breaking — the old key is silently ignored).</p>
+
+              <p><strong>User-authored permission keys and grammar — S.</strong> Settings keys <code class="inline">allowedUrls</code> and <code class="inline">deniedUrls</code> (denial rules take precedence over allow rules) and <code class="inline">trustedFolders</code> ("list of folders where permission to read or execute files has been granted") — the persistence behind the folder-trust predicate the MCP walk leans on; the snake_case <code class="inline">trusted_folders</code> reported from older <code class="inline">config.json</code> files is its legacy spelling. Flag grammar: <code class="inline">--allow-tool</code> / <code class="inline">--deny-tool</code> take <code class="inline">kind(argument)</code> patterns — <code class="inline">shell(command:*?)</code> with <code class="inline">:*</code> matching on the command stem, <code class="inline">write(path?)</code> matching relative paths by trailing path components, <code class="inline">url(domain-or-url?)</code> protocol-aware, and <code class="inline">&lt;mcp-server-name&gt;(tool-name?)</code>; <strong>deny always beats allow</strong>, even <code class="inline">--allow-all-tools</code>. Per-project saved permissions land in the generated <code class="inline">permissions-config.json</code> (already in the Generated row); the <code class="inline">/permissions</code> command ("Switch between permission modes") was added in v1.0.78 (2026-08-03). Help evidence verified on binary 1.0.79 and previously on 1.0.73, bracketing the 1.0.78 pin.</p>
+
+              <p><strong><code class="inline">statusLine</code> is a hook-like arbitrary-command configuration point — S.</strong> Its object carries <code class="inline">type</code> (optional; must be <code class="inline">"command"</code> when set), <code class="inline">command</code> (path to an executable script or a shell command; supports <code class="inline">~</code> and environment-variable expansion; plain commands run under the platform shell — <code class="inline">/bin/sh</code> on Unix-like systems, <code class="inline">cmd.exe</code> on Windows), <code class="inline">padding</code> (spaces to pad each line) and <code class="inline">refreshInterval</code> (1&ndash;2147483 seconds; omitted = refresh on events). The command receives the current session status as JSON on stdin and prints the status line to stdout. Scope: <strong>user tier only</strong> (<code class="inline">settings.json</code> / legacy <code class="inline">config.json</code>) — <code class="inline">statusLine</code> is not in the documented 14-key repository subset, and repository files silently ignore unsupported keys.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="plugins" data-term>
+            <p class="prompt">copilot plugin --help &amp;&amp; copilot plugins --help</p>
+            <div class="body" data-term-out>
+              <p><strong>A plugin can bundle — D/S:</strong> <code class="inline">agents/</code>, <code class="inline">skills/</code>, <code class="inline">commands/</code>, <code class="inline">hooks/</code>, <code class="inline">extensions/</code>, <code class="inline">mcpServers/</code> and <code class="inline">lspServers/</code>. Of the eight manifest and marketplace paths below, the four marketplace catalog paths are joined literals in <code class="inline">runtime.node</code> (<code class="inline">.plugin/marketplace.json</code>, <code class="inline">.github/plugin/marketplace.json</code>, <code class="inline">.claude-plugin/marketplace.json</code>, plus bare <code class="inline">marketplace.json</code>); the three dotted plugin-manifest paths (<code class="inline">.plugin/plugin.json</code>, <code class="inline">.github/plugin/plugin.json</code>, <code class="inline">.claude-plugin/plugin.json</code>) have <strong>zero</strong> joined hits in <code class="inline">app.js</code> and <code class="inline">runtime.node</code> in both builds bracketing the pin (1.0.73 and 1.0.79; 1.0.78 is no longer on disk) and are assembled at runtime from the adjacent component literals <code class="inline">.plugin</code>, <code class="inline">.github/plugin</code>, <code class="inline">.claude-plugin</code> and <code class="inline">plugin.json</code> — present as path components, not as joined literals. The four-path lookup order itself is unaffected. <strong>S</strong></p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col /></colgroup>
+                <thead><tr><th>Lookup</th><th>Order</th><th>Note</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Plugin manifest</td>
+                    <td><code class="inline">.plugin/plugin.json</code><br />root <code class="inline">plugin.json</code><br /><code class="inline">.github/plugin/plugin.json</code><br /><code class="inline">.claude-plugin/plugin.json</code></td>
+                    <td>Four paths, in this order; the Claude layout is fourth and last.</td>
+                  </tr>
+                  <tr>
+                    <td>Marketplace catalog</td>
+                    <td><code class="inline">marketplace.json</code><br /><code class="inline">.plugin/marketplace.json</code><br /><code class="inline">.github/plugin/marketplace.json</code><br /><code class="inline">.claude-plugin/marketplace.json</code></td>
+                    <td>Four paths, same pattern.</td>
+                  </tr>
+                  <tr>
+                    <td>Install store</td>
+                    <td><code class="inline">~/.copilot/installed-plugins/&lt;marketplace&gt;/&lt;plugin&gt;</code><br /><code class="inline">~/.copilot/installed-plugins/_direct/&lt;source-id&gt;/</code></td>
+                    <td>User-local; <code class="inline">_direct</code> is the non-marketplace install path.</td>
+                  </tr>
+                  <tr>
+                    <td>Default marketplaces</td>
+                    <td><code class="inline">copilot-plugins</code> &rarr; <code class="inline">github/copilot-plugins</code><br /><code class="inline">awesome-copilot</code> &rarr; <code class="inline">github/awesome-copilot</code></td>
+                    <td>Both ship <strong>enabled</strong>. A custom marketplace can opt in only through the user's <code class="inline">extraKnownMarketplaces</code> setting.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Plugin hook environment — D/S.</strong> Plugin hooks receive <code class="inline">COPILOT_PLUGIN_ROOT</code> / <code class="inline">COPILOT_PLUGIN_DATA</code>, the bare <code class="inline">PLUGIN_ROOT</code> / <code class="inline">PLUGIN_DATA</code>, and Claude-compatible <code class="inline">CLAUDE_PLUGIN_ROOT</code> / <code class="inline">CLAUDE_PLUGIN_DATA</code>. <code class="inline">CLAUDE_PROJECT_DIR</code> and <code class="inline">COPILOT_PROJECT_DIR</code> are likewise both exported.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>There are TWO plugin CLIs — S, corrected.</strong> This was omitted entirely from the earlier reading, and it changes what a configuration manager can drive.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col /></colgroup>
+                <thead><tr><th>Command</th><th>Verbs on the installed build</th><th>Scope and boundary</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">copilot plugin</code></td>
+                    <td><code class="inline">install</code>, <code class="inline">list</code>, <code class="inline">marketplace</code>, <code class="inline">uninstall</code>, <code class="inline">update</code></td>
+                    <td>Plugin-only lifecycle. <code class="inline">copilot plugin update</code> <strong>does</strong> exist alongside <code class="inline">copilot plugin marketplace update</code> — they are distinct operations.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">copilot plugins</code> (plural)</td>
+                    <td><code class="inline">disable</code>, <code class="inline">enable</code>, <code class="inline">install|add</code>, <code class="inline">list</code>, <code class="inline">marketplace|marketplaces</code>, <code class="inline">remove|rm</code>, <code class="inline">update</code></td>
+                    <td>A <strong>cross-kind</strong> inspector/manager. Its summary spans five kinds — "Inspect plugins, MCP servers, skills, instructions, and language servers" — but management is narrower: <code class="inline">--plugin</code> (default), <code class="inline">--mcp</code> and <code class="inline">--skill</code> exist only on <code class="inline">remove</code>, <code class="inline">enable</code> and <code class="inline">disable</code>; <code class="inline">install</code> supports <code class="inline">--plugin</code> (default) and <code class="inline">--skill</code> (its <code class="inline">--mcp</code> flag is present but marked "not supported here"), with <code class="inline">--scope user|project</code> applying to file/URL <code class="inline">--skill</code> installs only; <code class="inline">update</code> takes no kind flag; <code class="inline">list</code> filters with <code class="inline">--kind</code>/<code class="inline">--scope</code> (+ <code class="inline">--json</code>) instead. Instructions are inspect-only ("discovered from disk and cannot be removed here"); LSPs, agents and hooks are "managed elsewhere". Its own help states the boundary: "MCP servers install from the registry rather than this command", and registries "are configured by policy (not editable here)". Verified on installed 1.0.79; the boundary sentence was already captured from the 1.0.78 help.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Executable CLI extensions — D/S.</strong> These are <em>not</em> plugins and <em>not</em> editor extensions. They live in <code class="inline">.github/extensions/&lt;name&gt;/</code> or <code class="inline">~/.copilot/extensions/&lt;name&gt;/</code>, with an entry file named <code class="inline">extension.mjs</code>, <code class="inline">.cjs</code> or <code class="inline">.js</code>, and they can add tools and slash commands. They require <code class="inline">--experimental</code> or <code class="inline">/experimental on</code>.</p>
+
+              <p>The runtime's own types are wider than those two paths: <code class="inline">ExtensionSource = "project" | "user" | "plugin" | "session"</code> and <code class="inline">ExtensionStatus = "running" | "disabled" | "failed" | "starting"</code>. So plugin-contributed and <em>ephemeral session</em> extensions are first-class sources, and the <code class="inline">extensions.mode</code> setting — <code class="inline">disabled</code> / <code class="inline">load_only</code> / <code class="inline">load_and_augment</code> — governs whether the agent may create or manage them at all. <strong>S</strong></p>
+
+              <p><strong>LSP — D/S.</strong> <code class="inline">.github/lsp.json</code> outranks plugin LSP, which outranks <code class="inline">~/.copilot/lsp-config.json</code>; the bundle's help line reads "Project config: <code class="inline">.github/lsp.json</code>". Server entries carry <code class="inline">command</code> / <code class="inline">bash</code> / <code class="inline">powershell</code>, <code class="inline">args</code>, <code class="inline">rootUri</code>, <code class="inline">fileExtensions</code>, <code class="inline">initializationOptions</code>, <code class="inline">initializationTimeoutMs</code>, and a <code class="inline">disabledServers</code> list. <strong>LSP provides language intelligence, not MCP tools</strong> — the two are separate registries with separate precedence.</p>
+
+              <p class="eli5"><span class="eli5-term">Compatible manifest, incompatible everything else — U-06.</span> Copilot accepting <code class="inline">.claude-plugin/plugin.json</code> does not prove identical root-token expansion, hook matching, MCP trust, or update behavior. Type-specific validation per CLI remains necessary.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="runtime" data-term>
+            <p class="prompt">ls $COPILOT_HOME/session-state $COPILOT_HOME/session-store.db</p>
+            <div class="body" data-term-out>
+              <p><strong>Hosted Copilot Memory — D.</strong> Copilot CLI participates in GitHub-hosted Copilot Memory. It stores repository facts and user preferences, validates facts against cited code, and expires unused entries after <strong>28 days</strong>. It is <em>service state, not a repository file</em>. <strong>U-15:</strong> it has no local contract at all — no path, no cache file, nothing in either binary beyond the <code class="inline">memory</code> toggle and <code class="inline">--enable-memory</code>.</p>
+
+              <p><strong>Session persistence and Chronicle — D.</strong> Every CLI session is recorded beneath <code class="inline">$COPILOT_HOME/session-state/&lt;session-id&gt;/</code>; each directory contains <code class="inline">events.jsonl</code> plus workspace artifacts such as plans, checkpoints and tracked-file state, which is what supports full-session resume. <code class="inline">$COPILOT_HOME/session-store.db</code> is an automatically managed SQLite subset/index for cross-session search and Chronicle. Optional account sync is controlled locally by <code class="inline">remoteExport</code>. <code class="inline">/chronicle</code> generates reports, tips, search, and instruction/skill proposals; <code class="inline">/chronicle reindex</code> rebuilds the database.</p>
+
+              <p><strong>D&ne;S on the subcommand spelling, unchanged on the second pass.</strong> The current how-to spells <code class="inline">cost tips</code> while installed 1.0.78 exposes <code class="inline">cost-tips</code> — and <code class="inline">tips</code> is a separate subcommand (personalized usage tips), not a variant of the cost one; both surfaces list it independently. The command reference now documents the picker as <code class="inline">/chronicle &lt;standup|tips|improve|reindex|skills create|skills review|skills status&gt;</code>: it omits the cost subcommand and <code class="inline">/chronicle search</code>, and adds a documented <code class="inline">/chronicle skills create|review|status</code> family that drafts, reviews and tracks repository skill proposals generated from observed usage. Preserve version provenance rather than normalizing the subcommands (docs fetched 2026-08-13).</p>
+
+              <p><strong>O, now positive corroboration — corrected on the second pass.</strong> The <code class="inline">~/.copilot/session-state/</code> observed on this machine (2026-08-13) holds <strong>448 <code class="inline">&lt;session-id&gt;/</code> directories</strong> alongside 3 leftover flat <code class="inline">&lt;session-id&gt;.jsonl</code> files from the pre-1.0 layout the first pass described. A sample directory contains <code class="inline">events.jsonl</code>, <code class="inline">checkpoints/</code>, <code class="inline">files/</code> and <code class="inline">workspace.yaml</code> (plus a <code class="inline">vscode.metadata.json</code>); 357 of the 448 directories carry <code class="inline">events.jsonl</code> and 406 carry <code class="inline">checkpoints/</code> — matching the documented per-session directory shape, which this observation raises from <strong>D</strong> to <strong>D</strong>-with-local-<strong>O</strong> corroboration. Which pre-1.0.79 builds wrote them is not determinable from names (newest mtime 2026-07-30); the internal record layout stays <strong>U-15</strong>. The event schema does ship, as <code class="inline">schemas/session-events.schema.json</code>.</p>
+
+              <p class="eli5"><span class="eli5-term">This operational history is not Copilot Memory.</span> Chronicle and <code class="inline">session-state/</code> are runtime records of what happened; hosted Memory is learned semantic state held by the service. Same product, different capability, and the words are used interchangeably almost everywhere else.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Autonomy, coordination, scheduling and remote control — D unless a row states otherwise.</strong> None of these define reusable project inheritance; they are session-scoped.</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /></colgroup>
+                <thead><tr><th>Mechanism</th><th>Behavior</th></tr></thead>
+                <tbody>
+                  <tr><td>Modes</td><td>Interactive, plan and autopilot are distinct CLI modes. Documented autopilot stop conditions (<strong>D</strong>): the agent determines the task is complete, a blocking problem, Ctrl+C, or the maximum continuation limit (<code class="inline">--max-autopilot-continues</code>, default 5). The completion signal is the <code class="inline">task_complete</code> literal in the bundle — <strong>S</strong>, not documented (corroborated in the 1.0.40 <code class="inline">app.js</code> payload; the docs say only "the agent determines that the task is complete").</td></tr>
+                  <tr><td><code class="inline">/goal</code></td><td>Experimental. An autopilot alias/objective — <code class="inline">/goal on|off</code>, optional objective and AI-credit cap. <strong>Not</strong> the same thing as Codex Goal state, despite the identical word.</td></tr>
+                  <tr><td><code class="inline">/fleet</code></td><td>Lets the main agent decompose work among parallel subagents. Independent of autopilot.</td></tr>
+                  <tr><td><code class="inline">/every</code> (alias <code class="inline">/loop</code>) and <code class="inline">/after</code></td><td>Experimental. Schedule prompts or user-invocable skills <em>only while their interactive session is running</em>, then restart when that same session resumes. There is no durable cron file.</td></tr>
+                  <tr><td>Remote Control</td><td>Execution stays on the local machine; GitHub.com and GitHub Mobile can view and steer an online interactive session, subject to policy and settings.</td></tr>
+                  <tr><td><code class="inline">/delegate</code></td><td>Cloud handoff — sends the session to GitHub, where Copilot creates a pull request (<code class="inline">--base</code> selects the PR target branch); the docs phrase it "Delegate changes to a remote repository with an AI-generated pull request". The reverse connection also exists: <code class="inline">--connect[=sessionId]</code> attaches the local CLI directly to a remote session or task, and <code class="inline">--resume</code> / <code class="inline">--session-id</code> accept task IDs as well as session IDs. Distinct from Remote Control, which keeps execution on the local machine. <strong>D/S</strong>, 1.0.79 help</td></tr>
+                  <tr><td>ACP server</td><td><code class="inline">copilot --acp</code> starts the CLI as an Agent Client Protocol server (public preview) so third-party editors and clients can drive Copilot CLI as an agent — stdio transport inferred by default, TCP via <code class="inline">--port</code>. The server exposes built-in commands and user-invocable skills, but slash commands that depend on the interactive terminal (picker/dialog/full-screen: <code class="inline">/diff</code>, <code class="inline">/resume</code>, <code class="inline">/theme</code>, <code class="inline">/settings</code>, <code class="inline">/login</code>, <code class="inline">/help</code>, <code class="inline">/tasks</code>, <code class="inline">/undo</code>) are not handled. At this page's pin, the v1.0.78 release notes add ACP token-usage reporting and session closing via the <code class="inline">closeSession</code> request. <strong>D/S</strong></td></tr>
+                  <tr><td><code class="inline">/env</code></td><td>"Show loaded environment details (instructions, MCP servers, skills, agents, hooks, plugins, LSPs, extensions)" — the CLI's own in-session effective-configuration view, and the ground truth a configuration browser's "what the coding agent loads" statement can be validated against. Its non-interactive sibling <code class="inline">copilot plugins list</code> is narrower: its help notes custom agents and session-scoped hooks are not yet covered. <strong>D/S</strong>, 1.0.79 help</td></tr>
+                  <tr><td>Session export</td><td><code class="inline">/share</code> writes the session or research report to a markdown file, HTML file, GitHub gist, or a shareable GitHub link; non-interactively <code class="inline">--share[=path]</code> (default <code class="inline">./copilot-session-&lt;id&gt;.md</code>) and <code class="inline">--share-gist</code>. <strong>D/S</strong>, 1.0.79 help</td></tr>
+                  <tr><td>Worktree sessions</td><td>v1.0.78 — this page's pin — added the experimental <code class="inline">/new-worktree</code> command to create a new worktree and start a new conversation in it; v1.0.79 renamed it to <code class="inline">/worktree new</code> and added a <code class="inline">worktreeBaseRef</code> setting governing <code class="inline">/worktree</code>, <code class="inline">/worktree new</code> and <code class="inline">--worktree</code> (all defaulting to <code class="inline">HEAD</code>) — a settings key a scanner should know. <strong>D</strong>, release notes</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="cross-read" data-term>
+            <p class="prompt">grep -a -o '\.claude[a-z/-]*' runtime.node &#124; sort -u</p>
+            <div class="body" data-term-out>
+              <p>Copilot CLI has <strong>the widest foreign-format reach of any coding agent in the source analysis</strong>, and it is <em>live reading</em>, not import. But <code class="inline">.claude/</code> is not consumed as a unit. Two paths that were previously listed as read locations did not survive the first verification pass; the second pass (2026-08-13) found both stated on current CLI-scoped documentation pages — statements that predate the first pass's cutoff — and restored them at documentation strength.</p>
+
+              <pre class="mermaid">
+flowchart LR
+    A["CLAUDE.md"] --> CLI["copilot CLI 1.0.78"]
+    B[".claude/skills/NAME/SKILL.md"] --> CLI
+    C[".claude/agents/*.md"] --> CLI
+    D[".claude/settings.json&lt;br/&gt;.claude/settings.local.json"] -->|five keys, two loaders| CLI
+    E[".claude-plugin/plugin.json"] --> CLI
+    F[".claude-plugin/marketplace.json"] --> CLI
+    G[".claude/commands/*.md"] -->|documented; skills override commands| CLI
+    H[".claude/CLAUDE.md"] -->|documented; no joined literal| CLI
+</pre>
+
+              <table>
+                <colgroup><col style="width:16rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Foreign artifact</th><th>How Copilot CLI treats it</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">CLAUDE.md</code> (repository root)</td><td>Live compatibility instruction source, concatenated with the unconditional set. <code class="inline">@path</code> imports work inside it.</td><td><strong>D/S</strong></td></tr>
+                  <tr><td><code class="inline">AGENTS.md</code></td><td>Live compatibility instruction source. Files <em>below</em> the working directory are advertised in a table, not concatenated.</td><td><strong>D/S</strong></td></tr>
+                  <tr><td><code class="inline">GEMINI.md</code></td><td>Live compatibility instruction source.</td><td><strong>D</strong></td></tr>
+                  <tr><td><code class="inline">.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>Third project skill root, after <code class="inline">.github/skills</code> and <code class="inline">.agents/skills</code> — and at ancestor directories too, as the <code class="inline">inherited</code> tier. Stated verbatim in <code class="inline">copilot skill --help</code>.</td><td><strong>D/S</strong></td></tr>
+                  <tr><td><code class="inline">.claude/agents/*.md</code></td><td>Fourth and fifth in the agent list, after both <code class="inline">.github/agents</code> tiers, with its own ancestor tier.</td><td><strong>D/S</strong></td></tr>
+                  <tr><td><code class="inline">.claude/settings.json</code><br /><code class="inline">.claude/settings.local.json</code></td><td>Exactly five top-level keys: <code class="inline">companyAnnouncements</code>, <code class="inline">disableAllHooks</code>, <code class="inline">enabledPlugins</code>, <code class="inline">extraKnownMarketplaces</code>, <code class="inline">hooks</code>. Unrelated Claude settings are <strong>not</strong> imported. Consumed by <strong>two</strong> loaders — settings <em>and</em> marketplaces — not hooks alone.</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">.claude-plugin/plugin.json</code></td><td>Fourth of the four accepted manifest paths.</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">.claude-plugin/marketplace.json</code></td><td>One of the four accepted marketplace catalog paths.</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">.agents/skills</code>, <code class="inline">~/.agents/skills</code></td><td>Real skill roots. But <code class="inline">.agents</code> reaches this CLI <strong>only</strong> through <code class="inline">skills</code> — no other <code class="inline">.agents/*</code> subdirectory is documented, in particular not <code class="inline">.agents/agents</code>.</td><td><strong>D/S</strong></td></tr>
+                  <tr><td><code class="inline">.claude/commands/*.md</code></td><td><strong>Documented CLI slash-command tier — restored on the second pass.</strong> The CLI plugin reference's skills loading diagram ends "--- then commands (<code class="inline">.claude/commands/</code>), skills override commands ---" (in the page source since 2026-08-06, before the first pass's cutoff), restoring the withdrawn claim at documentation strength with the documented relation that <strong>skills override commands</strong>. The binary side remains unconfirmed: no joined <code class="inline">.claude/commands</code> literal in <code class="inline">app.js</code> or <code class="inline">runtime.node</code> (checked 1.0.73 and 1.0.79; the 1.0.78 pin is no longer on disk), and a native <code class="inline">skillsGetCommandDirectories</code> entry point means the path may be assembled — a bounded negative, not a conflict. Plugin-supplied <code class="inline">commands/</code> remains separately real.</td><td><strong>D</strong></td></tr>
+                  <tr><td><code class="inline">.claude/CLAUDE.md</code></td><td><strong>Documented CLI read location — restored on the second pass.</strong> The CLI custom-instructions page states "Copilot CLI also uses <code class="inline">.claude/CLAUDE.md</code>" (in the page source since 2026-07-14, before the first pass's cutoff — the earlier "no current CLI page states it" was wrong at research time). The binary side remains unconfirmed: no joined <code class="inline">.claude/CLAUDE.md</code> literal in <code class="inline">app.js</code> or <code class="inline">runtime.node</code> (checked 1.0.73 and 1.0.79), and since <code class="inline">.claude</code> and <code class="inline">CLAUDE.md</code> are independent literals the path may be assembled — the absence is not a conflict. A scanner may treat <code class="inline">.claude/CLAUDE.md</code> as a documented CLI read location.</td><td><strong>D</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Two asymmetries that break a naive edge model — S.</strong></p>
+              <ol class="steps">
+                <li><strong>"Local" resolves differently.</strong> Copilot reads <code class="inline">.claude/settings.local.json</code> <em>project-relative</em>; Claude Code canonicalizes the same filename to the Git <strong>main checkout</strong>. Inside a linked worktree the two coding agents read <strong>different files</strong> under the same name.</li>
+                <li><strong>The same directory name may not be the same directory — U-16.</strong> Claude resolves its own user tree through <code class="inline">$CLAUDE_CONFIG_DIR</code>, falling back to <code class="inline">~/.claude</code>. Whether Copilot honors <code class="inline">CLAUDE_CONFIG_DIR</code> is stated by no primary source, so a relocated Claude home may silently desynchronize this reader and produce confidently wrong provenance.</li>
+              </ol>
+
+              <p class="eli5"><span class="eli5-term">Model the edge, not the folder.</span> Compatibility is assigned <em>per artifact</em>, never to <code class="inline">.claude/</code>, <code class="inline">.agents/</code> or <code class="inline">.github/</code> wholesale. One physical file has zero or more agent-reader relationships, each carrying its own evidence class, walk and ceiling. Editing a Claude file can change Copilot's behavior — that is the very-high-risk row of the change-risk register.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="negatives" data-term>
+            <p class="prompt">grep -a -c '\.prompt\.md' app.js runtime.node</p>
+            <div class="body" data-term-out>
+              <p>These are <strong>proven negatives</strong> at binary strength, not gaps in the research. Each names its extraction method, because an absence is only as strong as the method that looked for it.</p>
+
+              <table>
+                <colgroup><col style="width:14rem" /><col /><col style="width:9rem" /></colgroup>
+                <thead><tr><th>Path</th><th>Finding and method</th><th>What a tool should do</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">.github/prompts/*.prompt.md</code></td>
+                    <td><strong>Does not exist for this CLI.</strong> Zero <code class="inline">.prompt.md</code> literals in <code class="inline">app.js</code> or <code class="inline">runtime.node</code>. GitHub documents prompt files for VS Code and Visual Studio, with JetBrains and Xcode in preview, and its own cheat sheet marks Copilot CLI <em>unsupported</em>. Two independent lines of evidence, one binary and one documentary, agreeing.</td>
+                    <td>Do not scan <code class="inline">.github/prompts</code> as a CLI capability root. Show it as an IDE artifact if shown at all.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.vscode/mcp.json</code></td>
+                    <td><strong>Support was removed</strong>, which is stronger than "not read". The surviving path detects the file only to emit a migration notice, and <code class="inline">.vscode</code> is otherwise absent from <code class="inline">runtime.node</code> entirely.</td>
+                    <td>Surface as a <strong>migration hint</strong>, never as silence and never as a supported source.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.agents/agents</code>, <code class="inline">.agents/commands</code>, <code class="inline">.agents/rules</code></td>
+                    <td><strong>No literal for any of the three</strong> in either shipped binary. <code class="inline">.agents</code> reaches this CLI only through <code class="inline">skills</code>. <code class="inline">.agents/</code> is not a portable capability root: those other children belong to Antigravity.</td>
+                    <td>Never infer a sibling capability from a shared namespace. Every <code class="inline">.agents/&lt;capability&gt;</code> needs its own evidence.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.claude/commands/*.md</code></td>
+                    <td><strong>D</strong> since the second pass — the CLI plugin reference documents it ("--- then commands (<code class="inline">.claude/commands/</code>), skills override commands ---"). The joined-literal absence at 1.0.73 and 1.0.79 stands as a bounded negative on the extraction method, since the path may be assembled. Plugin-supplied <code class="inline">commands/</code> is separately real.</td>
+                    <td>Scan it as a documented CLI slash-command tier; skills override commands.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.claude/CLAUDE.md</code></td>
+                    <td><strong>D</strong> since the second pass — the CLI custom-instructions page states "Copilot CLI also uses <code class="inline">.claude/CLAUDE.md</code>". No joined literal at 1.0.73 or 1.0.79; <code class="inline">.claude</code> and <code class="inline">CLAUDE.md</code> are independent literals, so the absence is bounded, not a conflict.</td>
+                    <td>Scan both root <code class="inline">CLAUDE.md</code> and <code class="inline">.claude/CLAUDE.md</code> as documented read locations.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.github/commands</code>, <code class="inline">.agents/commands</code></td>
+                    <td>Neither is documented as a CLI slash-command root anywhere.</td>
+                    <td>Do not invent a symmetry the product does not have.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">A path with no documented reader is unsupported, not deleted.</span> Represent it as unsupported or unknown rather than removing it merely because this coding agent does not consume it — another on the same disk very likely does.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="installing" data-term>
+            <p class="prompt">copilot skill add &amp;&amp; copilot plugins install --scope project</p>
+            <div class="body" data-term-out>
+              <p>Some Copilot capabilities have an install command. Most are created by writing a file at the shape the loader accepts, in a directory the walk visits. The rows below restate <strong>D/S</strong> claims made elsewhere on this page and carry that blanket class — each path, shape and command traces to the per-capability section that cites it.</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>Capability</th><th>User scope</th><th>Project scope</th><th>Shape that is accepted</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Skill</td>
+                    <td><code class="inline">~/.copilot/skills/&lt;name&gt;/SKILL.md</code> — the <code class="inline">copilot skill add</code> personal target</td>
+                    <td><code class="inline">.github/skills/</code> (creation target), <code class="inline">.agents/skills/</code>, <code class="inline">.claude/skills/</code>, plus the same three at ancestors</td>
+                    <td>Directory containing <code class="inline">SKILL.md</code>; required <code class="inline">name</code> (lowercase-hyphenated) and <code class="inline">description</code></td>
+                  </tr>
+                  <tr>
+                    <td>Agent</td>
+                    <td><code class="inline">~/.copilot/agents/&lt;slug&gt;.agent.md</code></td>
+                    <td><code class="inline">.github/agents/&lt;slug&gt;.agent.md</code>, or Claude-compatible <code class="inline">.claude/agents/*.md</code></td>
+                    <td>Markdown with YAML frontmatter. <code class="inline">/agent</code> writes the <code class="inline">.agent.md</code> form</td>
+                  </tr>
+                  <tr>
+                    <td>Instructions</td>
+                    <td><code class="inline">~/.copilot/copilot-instructions.md</code>, <code class="inline">~/.copilot/instructions/**/*.instructions.md</code></td>
+                    <td><code class="inline">.github/copilot-instructions.md</code>, <code class="inline">.github/instructions/**/*.instructions.md</code>, root <code class="inline">AGENTS.md</code> / <code class="inline">CLAUDE.md</code> / <code class="inline">GEMINI.md</code></td>
+                    <td>Markdown; optional YAML <code class="inline">applyTo</code> globs, which make the file <em>advertised</em> rather than concatenated. Scaffolded by <code class="inline">copilot init</code> ("Initialize Copilot instructions"; docs: "Initialize Copilot custom instructions for this repository") and interactive <code class="inline">/init</code> ("Initialize Copilot instructions for this repository"; docs add "and agentic features") — verified on installed 1.0.79</td>
+                  </tr>
+                  <tr>
+                    <td>Hook</td>
+                    <td><code class="inline">~/.copilot/hooks/*.json</code>, or the <code class="inline">hooks</code> key in <code class="inline">config.json</code></td>
+                    <td><code class="inline">.github/hooks/*.json</code>, the <code class="inline">hooks</code> key in <code class="inline">.github/copilot/settings.json</code>, agent frontmatter, or a plugin's <code class="inline">hooks.json</code></td>
+                    <td>JSON; <code class="inline">command</code> or <code class="inline">http</code> handler, one of the 15 camelCase events. There is no install command</td>
+                  </tr>
+                  <tr>
+                    <td>MCP server</td>
+                    <td><code class="inline">~/.copilot/mcp-config.json</code> — managed from the terminal by <code class="inline">copilot mcp add|get|list|remove</code> ("Add a new MCP server to the user configuration")</td>
+                    <td><code class="inline">.mcp.json</code> or <code class="inline">.github/mcp.json</code> — at most one per directory, <code class="inline">.mcp.json</code> first</td>
+                    <td><code class="inline">mcpServers</code> wrapper or the bare top-level form; session-only through <code class="inline">--additional-mcp-config</code> with inline JSON or <code class="inline">@file</code>. <code class="inline">copilot mcp add</code> takes <code class="inline">--transport stdio|http|sse</code>, <code class="inline">--env KEY=VALUE</code>, <code class="inline">--header</code>, <code class="inline">--timeout &lt;ms&gt;</code> and <code class="inline">--tools</code> — a per-server tool allowlist ("*" for all, comma-separated list, or "" for none; default "*") — so server entries can carry a <code class="inline">tools</code> filter key a scanner should parse (observed in a real <code class="inline">~/.copilot/mcp-config.json</code>). Verified on installed 1.0.79; the add-mcp-servers page shows the same commands and Tools filter</td>
+                  </tr>
+                  <tr>
+                    <td>LSP server</td>
+                    <td><code class="inline">~/.copilot/lsp-config.json</code></td>
+                    <td><code class="inline">.github/lsp.json</code> — outranks both plugin LSP and the user file</td>
+                    <td>Server entries with <code class="inline">command</code> / <code class="inline">bash</code> / <code class="inline">powershell</code>, <code class="inline">args</code>, <code class="inline">rootUri</code>, <code class="inline">fileExtensions</code></td>
+                  </tr>
+                  <tr>
+                    <td>Executable extension</td>
+                    <td><code class="inline">~/.copilot/extensions/&lt;name&gt;/</code></td>
+                    <td><code class="inline">.github/extensions/&lt;name&gt;/</code></td>
+                    <td>Entry file <code class="inline">extension.mjs</code>, <code class="inline">.cjs</code> or <code class="inline">.js</code>; requires <code class="inline">--experimental</code> or <code class="inline">/experimental on</code>, and <code class="inline">extensions.mode</code> gates agent-side management</td>
+                  </tr>
+                  <tr>
+                    <td>Plugin</td>
+                    <td colspan="2"><code class="inline">copilot plugin install</code>, or <code class="inline">copilot plugins install|add</code> with <code class="inline">--plugin</code> (default) or <code class="inline">--skill</code> (<code class="inline">--mcp</code> is present on <code class="inline">install</code> but "not supported here"; <code class="inline">--scope user|project</code> applies to file/URL <code class="inline">--skill</code> installs only). Installs land in <code class="inline">~/.copilot/installed-plugins/</code></td>
+                    <td>A manifest at one of the four accepted paths; a custom marketplace needs the user's <code class="inline">extraKnownMarketplaces</code></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Not documented here on purpose.</span> The source analysis establishes <em>where</em> <code class="inline">extraKnownMarketplaces</code> and <code class="inline">skillDirectories</code> live and which loaders consume them, but it does not publish their object shapes. Nothing on this page invents one. Read the value from an existing settings file rather than trusting a remembered schema. The same applies to the <code class="inline">session-state</code> record layout and the ODR registry contract.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="precedence-table" data-term>
+            <p class="prompt">echo 'precedence and shadowing, per capability'</p>
+            <div class="body" data-term-out>
+              <p>The full per-capability table. Every row is Copilot CLI only; nothing here transfers to the IDE or to another coding agent.</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col /><col style="width:5rem" /></colgroup>
+                <thead>
+                  <tr><th>Capability</th><th>Search boundary and effective order</th><th>Duplicate / merge behavior</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Instructions</td>
+                    <td>User roots, plus repository root / cwd / intermediate sources and file-relevant nested ones; <code class="inline">COPILOT_CUSTOM_INSTRUCTIONS_DIRS</code> adds directories</td>
+                    <td>Unconditional sources concatenate and exact duplicate paths de-duplicate, but <code class="inline">applyTo</code> files and nested <code class="inline">AGENTS.md</code> below the working directory are <strong>advertised in a table and fetched on demand</strong>. GitHub states no general precedence order exists — enumerate, never compute a winner (<strong>U-05</strong>)</td>
+                    <td><strong>D/S/U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Settings</td>
+                    <td>Built-ins &rarr; MDM &rarr; <code class="inline">$COPILOT_HOME/settings.json</code> &rarr; <strong>legacy <code class="inline">$COPILOT_HOME/config.json</code></strong> &rarr; <code class="inline">.github/copilot/settings.json</code> &rarr; <code class="inline">.github/copilot/settings.local.json</code> &rarr; environment &rarr; flags</td>
+                    <td>Later usually wins, but the legacy user file shadows the <strong>entire</strong> corresponding subtree of <code class="inline">settings.json</code>. Repository rank map is <code class="inline">{user: 0, repo: 1, local: 2}</code>; some documented security keys are tighten- or union-only</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Skills</td>
+                    <td>Project <code class="inline">.github/skills</code> &rarr; <code class="inline">.agents/skills</code> &rarr; <code class="inline">.claude/skills</code>, then the same three at ancestors, then <code class="inline">~/.copilot/skills</code> &rarr; <code class="inline">~/.agents/skills</code> &rarr; plugin <code class="inline">skills/</code> &rarr; <code class="inline">COPILOT_SKILLS_DIRS</code> and configured <code class="inline">skillDirectories</code></td>
+                    <td><strong>First loaded wins, dedup by name.</strong> A same-named project skill silently suppresses a plugin's. <code class="inline">.claude/commands</code> is a documented CLI slash-command tier since the second pass — skills override commands; plugin-supplied <code class="inline">commands/</code> is separately proven</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agents</td>
+                    <td><code class="inline">~/.copilot/agents</code> &rarr; project <code class="inline">.github/agents</code> &rarr; ancestor <code class="inline">.github/agents</code> &rarr; project <code class="inline">.claude/agents</code> &rarr; ancestor <code class="inline">.claude/agents</code> &rarr; plugin (install order) &rarr; remote organization / enterprise</td>
+                    <td><strong>First loaded wins, dedup by ID</strong>, so the <em>user</em> tier wins. The residual <strong>U-04</strong> doc gap: the multi-surface non-CLI page omits the personal tier but agrees in direction — no inversion stands (second pass 2026-08-13)</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Hooks</td>
+                    <td>Machine policy first — in filename order, and only when root-owned and non-group/world-writable — then user, project, settings-inline, agent frontmatter and plugin sources</td>
+                    <td><strong>Every matching entry runs.</strong> Policy hooks cannot be switched off by <code class="inline">disableAllHooks</code>; restrictive pre-tool results dominate; 15 events exist in the build and the reference documents 14</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>MCP</td>
+                    <td>Per directory <code class="inline">.mcp.json</code> <strong>then</strong> <code class="inline">.github/mcp.json</code>, first existing only, walking cwd&rarr;Git root with linked-worktree resolution and stopping at the first untrusted directory unless <code class="inline">COPILOT_ALLOW_ALL=true</code>. Whole-session order is user &rarr; workspace &rarr; installed plugins &rarr; <code class="inline">--plugin-dir</code> &rarr; ODR &rarr; <code class="inline">--additional-mcp-config</code></td>
+                    <td><strong>Last loaded wins</strong> — the opposite direction from skills and agents. Inside the workspace group, files sort root-most first and merge forward, which is what makes nearer files win. <code class="inline">.vscode/mcp.json</code> support is removed and its presence only triggers a migration notice</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Plugins / marketplaces</td>
+                    <td>User installation store under <code class="inline">~/.copilot/installed-plugins</code>; four manifest and four marketplace paths; two default marketplaces ship enabled and custom ones need the user's <code class="inline">extraKnownMarketplaces</code></td>
+                    <td><code class="inline">copilot plugin update</code> and <code class="inline">copilot plugin marketplace update</code> both exist and are distinct; a second cross-kind <code class="inline">copilot plugins</code> command manages plugins, MCP servers and skills, while MCP registries are policy-configured and not editable there</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Extensions / LSP</td>
+                    <td>Extension sources are <code class="inline">project</code>, <code class="inline">user</code>, <code class="inline">plugin</code> and <code class="inline">session</code>; LSP is <code class="inline">.github/lsp.json</code> &gt; plugin LSP &gt; <code class="inline">~/.copilot/lsp-config.json</code></td>
+                    <td><code class="inline">extensions.mode</code> (<code class="inline">disabled</code> / <code class="inline">load_only</code> / <code class="inline">load_and_augment</code>) gates whether the agent may create or manage extensions. These are CLI runtime capabilities, not editor extensions</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Hosted memory / sessions</td>
+                    <td>Service-backed memory plus <code class="inline">$COPILOT_HOME</code> session records and generated state</td>
+                    <td>Repository and user learned facts and per-session records are selected by <em>identity</em>, not by ancestor file merging. Hosted memory has <strong>no</strong> local contract, and the 1.0.78 session-state layout is <strong>U-15</strong></td>
+                    <td><strong>D/U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Autopilot / fleet / schedules</td>
+                    <td>Current interactive session and generated session records</td>
+                    <td>Objectives, workers, <code class="inline">/every</code> and <code class="inline">/after</code>, and Remote Control define <strong>no</strong> reusable project inheritance</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="unknowns" data-term>
+            <p class="prompt">grep -n 'U-[0-9]' harness-analysis.md</p>
+            <div class="body" data-term-out>
+              <p>Five section-level unknowns survived the first inspection of the package, and four consolidated <code class="inline">U-</code> numbers touch Copilot. The second pass (2026-08-13) resolved or narrowed three of them — marked in place, with numbering left stable. The rest should not be resolved by guessing: a UI that displays "the active one" for an unresolved winner is inventing it.</p>
+
+              <table>
+                <colgroup><col style="width:5rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>ID</th><th>What is unknown</th><th>What evidence would settle it</th><th>Consequence for a tool</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>U-05</strong></td>
+                    <td><strong>The effective ordering of instruction files.</strong> The bundle assigns each source a <code class="inline">type</code> and <code class="inline">location</code> "used for merge logic", but the merge function itself is native and GitHub states that no precedence exists. <strong>There is no computed winner, and this page does not name one.</strong></td>
+                    <td>A first-party statement of an order, or a readable merge implementation.</td>
+                    <td>Highest-ranked residual risk for Copilot. A browser can enumerate sources; it cannot compute a winner. Show the set.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-04</strong></td>
+                    <td><strong>Downgraded 2026-08-13 — the settling evidence arrived.</strong> The CLI order stands — user &rarr; project <code class="inline">.github</code> &rarr; ancestor <code class="inline">.github</code> &rarr; project <code class="inline">.claude</code> &rarr; ancestor <code class="inline">.claude</code> &rarr; plugin &rarr; remote, first loaded wins, dedup by ID — and the CLI-scoped how-to "Invoking custom agents" now states the tier direction: "a user-level agent overrides a repository-level agent, a repository-level agent overrides an organization-level agent, and an organization-level agent overrides an enterprise-level agent". The multi-surface page as currently published agrees in direction and merely omits the personal tier, so no inversion stands — a residual doc gap, not a standing conflict. The full CLI load order still rests on the plugin reference; the new sentence settles tier direction only.</td>
+                    <td>Settled by the CLI-scoped invoke-custom-agents how-to (fetched 2026-08-13).</td>
+                    <td>Use the CLI order. The residual is cosmetic — the personal tier is absent from the multi-surface page — and no scanner behavior hinges on it.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-06</strong></td>
+                    <td><strong>Plugin format compatibility.</strong> Accepted manifest variants do not prove identical root-token expansion, hook matching, MCP trust, or update behavior.</td>
+                    <td>Per-type documentation or an observed cross-tool install.</td>
+                    <td>Type-specific CLI validation remains necessary. Do not treat a Claude plugin as a proven-working Copilot plugin.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-15</strong></td>
+                    <td><strong>Generated-record and registry contracts.</strong> Three at once: the <code class="inline">session-state/&lt;id&gt;/</code> internal layout at 1.0.78 — partially corroborated 2026-08-13: the real <code class="inline">~/.copilot/session-state</code> holds 448 per-session UUID directories (recurring contents <code class="inline">files/</code> 407, <code class="inline">workspace.yaml</code> 406, <code class="inline">checkpoints/</code> 406, <code class="inline">vscode.metadata.json</code> 362, <code class="inline">events.jsonl</code> 357, <code class="inline">research/</code> 181, plus occasional <code class="inline">session.db</code>, <code class="inline">rewind-snapshots/</code>, <code class="inline">plan.md</code> and an <code class="inline">inuse.&lt;pid&gt;.lock</code>) with the older flat layout surviving only as 3 residual <code class="inline">&lt;id&gt;.jsonl</code> files, corroborating the documented directory shape at <strong>O</strong> strength; the sessions were written by a range of CLI versions, so this does not pin the 1.0.78 layout and the internal record semantics remain opaque; hosted Copilot Memory, which has no local contract at all; and ODR, the Windows registry-declared MCP registry, which shells out to a third-party executable whose key and command contract are undocumented.</td>
+                    <td>A published record schema; any local memory artifact; ODR's registry key and command contract.</td>
+                    <td>Treat session records as opaque: do not parse, do not offer to edit. Do not present hosted Memory as a scannable artifact. Do not model ODR servers as a file source.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-16</strong></td>
+                    <td><strong>Cross-tool <code class="inline">~/.claude</code> resolution.</strong> Claude resolves its user tree through <code class="inline">$CLAUDE_CONFIG_DIR</code>. Whether Copilot honors that variable is stated by no primary source.</td>
+                    <td>A first-party statement, or a <code class="inline">CLAUDE_CONFIG_DIR</code> literal in the Copilot binaries.</td>
+                    <td>A relocated Claude home may silently desynchronize this reader and produce confidently wrong provenance.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U</strong> (§5)</td>
+                    <td><strong>Organization and enterprise agent and skill delivery — narrowed 2026-08-13.</strong> Present as a remote tier in the ordered <em>agents</em> list (the documented skills load order has no remote tier) and in <code class="inline">customAgents.defaultLocalOnly</code>; absent as any local path. The delivery contract for <em>agents</em> is now documented: organization-level agents live in the <code class="inline">/agents</code> directory of the organization's <code class="inline">.github</code> or <code class="inline">.github-private</code> repository; enterprise-level agents in the <code class="inline">/agents</code> directory of the <code class="inline">.github-private</code> repository of an organization designated in enterprise settings. Both are remote repositories, so the tier remains unscannable locally. Skill delivery at these tiers remains undocumented — the same page names no skill locations — so the skills half of the unknown stands.</td>
+                    <td>For skills: an administrative delivery contract, or an observed rollout. For agents: settled by the invoke-custom-agents locations table.</td>
+                    <td>Report the agents tier with its documented remote source; do not claim a local path, and do not report the capability as absent. Partial enumeration exists: <code class="inline">copilot plugins list --scope organization</code> (CLI 1.0.79) accepts <code class="inline">organization</code> as a scope filter and lists every plugin, MCP server, skill, instruction source and language server by scope — so a tool can shell out to enumerate organization-delivered skills even though no scannable local path exists. Custom agents are explicitly not yet covered by that command ("Custom agents and session-scoped hooks are not yet covered"), so for agents the tier stays list-only via documentation.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U</strong> (§5)</td>
+                    <td><strong>Resolved 2026-08-13.</strong> <code class="inline">.claude/commands/*.md</code> and <code class="inline">.claude/CLAUDE.md</code> — both withdrawn at the first pass for want of any path literal or current CLI page — are both <strong>documented CLI read locations</strong>: the CLI custom-instructions page states "Copilot CLI also uses <code class="inline">.claude/CLAUDE.md</code>" (in source since 2026-07-14) and the CLI plugin reference's skills loading diagram ends "--- then commands (<code class="inline">.claude/commands/</code>), skills override commands ---" (in source since 2026-08-06) — both predating the first pass's cutoff, so the withdrawals were research misses. See the cross-read section.</td>
+                    <td>Settled — a current CLI page states each, which is exactly the evidence this row named.</td>
+                    <td>A scanner may treat both as documented CLI read locations. The joined-literal absences at 1.0.73/1.0.79 stand as bounded negatives, not conflicts — both paths may be assembled from independent literals.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-11</strong></td>
+                    <td><strong>Version drift.</strong> Only 1.0.78 was installed at the first pass; rolling GitHub pages expose no per-article revision date and no shared revision boundary across the five coding agents. Second pass 2026-08-13: the cached 1.0.73 and 1.0.79 payloads were compared, bracketing the pin; 1.0.79 (released 2026-08-10) is the current stable and its page-relevant deltas are listed in the evidence section.</td>
+                    <td>Installing and comparing earlier and later builds — partially done on the second pass via the payload bracket.</td>
+                    <td>Treat every claim on this page as bounded to <strong>1.0.78</strong>, build <code class="inline">5037332</code>, with second-pass evidence labeled to the build that produced it.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Which conventions look least stable.</strong> From the change-risk register, keeping only what touches Copilot CLI:</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /></colgroup>
+                <thead><tr><th>Risk</th><th>What can move, and why it hurts</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Very high</strong></td><td><strong>Shared physical artifacts.</strong> Editing or removing <code class="inline">AGENTS.md</code> or <code class="inline">.agents/skills</code> can affect four CLIs with different selection semantics. Copilot concatenates unconditional sources with no precedence at all, while advertising nested ones on demand — a rule none of the other four shares.</td></tr>
+                  <tr><td><strong>Very high</strong></td><td><strong>Cross-reading Claude files.</strong> A Claude-focused change can also alter Copilot behavior. The same physical path can resolve differently per reader: <code class="inline">$CLAUDE_CONFIG_DIR</code> versus a literal <code class="inline">~/.claude</code>, and main-checkout versus project-relative "local".</td></tr>
+                  <tr><td><strong>Very high</strong></td><td><strong>Generated state.</strong> Copilot session and Chronicle records are runtime-owned. Treating them as authored capabilities risks corruption or lost resumability.</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>Effective settings are not one file.</strong> The user tier is <code class="inline">settings.json</code> <em>plus</em> a legacy <code class="inline">config.json</code> that shadows whole subtrees of it. Reading the obvious file yields the wrong effective configuration.</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>Plugin lifecycle.</strong> Two plugin CLIs, a marketplace refresh that is distinct from a plugin update, and policy-configured MCP registries that <code class="inline">copilot plugins</code> explicitly cannot edit.</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>Hook and policy semantics.</strong> Ownership requirements on policy files, three accepted matcher formats, all-run merging, and restrictive-result dominance differ from every sibling coding agent.</td></tr>
+                  <tr><td><strong>Moderate</strong></td><td><strong>Instruction ordering.</strong> "Nearest wins" is simply wrong here — there is no order at all, and two source classes never enter context unless the model asks for them.</td></tr>
+                  <tr><td><strong>Moderate</strong></td><td><strong>Agents and skills.</strong> Similar Markdown filenames conceal incompatible schemas, field support, isolation and duplicate rules across coding agents — and within Copilot, <code class="inline">.agent.md</code> and plain <code class="inline">.md</code> coexist by root.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="sources" data-term>
+            <p class="prompt">cat sources.txt</p>
+            <div class="body" data-term-out>
+              <p>Every URL below was retrieved <strong>2026-08-11</strong> and re-verified — with the second-pass additions fetched fresh — on <strong>2026-08-13</strong>. GitHub's rolling <code class="inline">@latest</code> pages expose no stable article revision date, so documentation claims are applied to the locally bundled CLI <strong>1.0.78</strong>, build <code class="inline">5037332</code>, with second-pass evidence labeled to the build that produced it.</p>
+
+              <div class="grid">
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions">Custom instructions</a><br /><span class="muted">sources, no precedence order</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference">Configuration directory</a><br /><span class="muted">user-editable vs managed files</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills">Skills</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli">Custom agents for the CLI</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/reference/custom-agents-configuration">Custom-agent schema</a><br /><span class="muted">multi-surface — not CLI-scoped</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/reference/hooks-reference">Hooks reference</a><br /><span class="muted">14 of the 15 events</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference">Plugin reference</a><br /><span class="muted">the ordered load lists</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers">MCP setup</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/enterprise-cloud@latest/copilot/concepts/agents/copilot-cli/about-cli-extensions">Executable CLI extensions</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/concepts/agents/copilot-cli/lsp-servers">LSP servers</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/concepts/agents/copilot-memory">Copilot Memory</a><br /><span class="muted">hosted; no local contract</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/concepts/agents/copilot-cli/autopilot">Autopilot</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference">CLI command reference</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/concepts/agents/copilot-cli/fleet">Fleet</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/schedule-prompts">Session scheduling</a><br /><span class="muted">/every and /after</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/concepts/agents/copilot-cli/about-remote-control">Remote Control</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/concepts/agents/copilot-cli/chronicle">Session data and Chronicle</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/chronicle">Using Chronicle</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://gh.io/copilotcli-mcpmigrate">MCP migration notice target</a><br /><span class="muted">the url the binary prints</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/reference/customization-cheat-sheet">Customization cheat sheet</a><br /><span class="muted">multi-surface — prompt-file matrix, AGENT-NAME.md spelling</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/invoke-custom-agents">Invoking custom agents</a><br /><span class="muted">CLI-scoped tier direction; org/enterprise agent locations</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/acp-server">ACP server</a><br /><span class="muted">public preview</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://docs.github.com/en/copilot/how-tos/cloud-and-local-sandboxes/configuring-local-sandbox-settings">Local sandbox settings</a><br /><span class="muted">the /sandbox dialog</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/github/copilot-cli/releases">copilot-cli release notes</a><br /><span class="muted">v1.0.76&ndash;v1.0.79 sandbox, worktree, ACP deltas</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://registry.npmjs.org/@github/copilot">npm registry — @github/copilot</a><br /><span class="muted">dist-tags; 1.0.79 latest at re-verification</span></div>
+              </div>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Package-literal citations.</strong> Non-web primary evidence has no citable URL, so it is registered by version and artifact. Everything marked <strong>S</strong> on this page traces to installed <code class="inline">@github/copilot 1.0.78</code> (build <code class="inline">5037332</code>) at <code class="inline">/usr/local/lib/node_modules/@github/copilot</code> — the bundled 9.2 MB <code class="inline">app.js</code>, the 101 MB Rust <code class="inline">prebuilds/darwin-arm64/runtime.node</code>, or the first-party 1.7 MB <code class="inline">sdk/index.d.ts</code> — or to <code class="inline">--version</code> / <code class="inline">--help</code> / <code class="inline">help &lt;topic&gt;</code> run with <code class="inline">COPILOT_HOME</code> redirected to a scratch directory. <strong>That install no longer exists on disk</strong> (verified 2026-08-13), so these citations are historical; re-verification brackets the pin with the cached 1.0.73 and 1.0.79 payloads or a fresh 1.0.78 install — the second pass re-reproduced the version-sensitive literals below against both cached payloads. The specific literals a re-verification should look for:</p>
+
+              <table>
+                <colgroup><col style="width:14rem" /><col /></colgroup>
+                <thead><tr><th>Claim</th><th>Literal or expression to look for</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">$COPILOT_HOME</code> resolution</td><td><code class="inline">t?.configDir ?? process.env.COPILOT_HOME ?? join(homedir(), ".copilot")</code>; the help line "Path to the configuration directory (deprecated: use COPILOT_HOME env var)"</td></tr>
+                  <tr><td>Movable payload</td><td>The two XDG relocation arrays: <code class="inline">["session-state","session-store.db","command-history-state","command-history-state.json","installed-plugins"]</code> and <code class="inline">["config.json","config","mcp-config","lsp-config","permissions-config","copilot-instructions.md","mcp-oauth-config","hooks"]</code></td></tr>
+                  <tr><td>Legacy settings shadow</td><td><code class="inline">loadLegacyConfig</code> beside <code class="inline">loadSettingsFileOnly</code> / <code class="inline">loadSettingsFileForEdit</code>; the warning "is set in your legacy config.json, which takes precedence and shadows the entire … subtree"; <code class="inline">copilot help config</code></td></tr>
+                  <tr><td>Repository settings rank</td><td><code class="inline">{repo: ".github/copilot/settings.json", local: ".github/copilot/settings.local.json"}</code> with <code class="inline">{user: 0, repo: 1, local: 2}</code></td></tr>
+                  <tr><td>Instruction taxonomy</td><td><code class="inline">InstructionSource</code> with <code class="inline">type</code> / <code class="inline">location</code> / <code class="inline">applyTo</code> / <code class="inline">defaultDisabled</code> / <code class="inline">description</code> / <code class="inline">id</code>; <code class="inline">InstructionDiscoveryPath</code> and its "in priority order" comment; the labels <code class="inline">home-copilot</code>, <code class="inline">user-copilot-instructions</code>, <code class="inline">repo-copilot</code>, <code class="inline">cwd-copilot</code>, <code class="inline">vscode-instructions</code>, <code class="inline">nested-agents</code>, <code class="inline">child-instructions</code></td></tr>
+                  <tr><td>Advertised instructions</td><td>Both table headers — <code class="inline">| Pattern | File Path | Description |</code> and <code class="inline">| Directory | File Path | Description |</code> — plus "Make sure to acquire the instructions before making any changes to the code", "Here is a list of nested AGENTS.md files …", and "ignoring malformed applyTo glob pattern"</td></tr>
+                  <tr><td>Skill roots and provenance</td><td>Shipped <code class="inline">copilot skill --help</code>; <code class="inline">SkillSource = "project" | "inherited" | "personal-copilot" | "personal-agents" | "plugin" | "custom" | "builtin"</code>; <code class="inline">SkillDiscoveryScope</code> and "the personal-agents and custom scopes are never preferred"; <code class="inline">SKILL_CHAR_BUDGET</code></td></tr>
+                  <tr><td>Agents</td><td>The literal <code class="inline">.agent.md</code>; the plugin reference's "CUSTOM AGENTS — FIRST LOADED IS USED (dedup by ID)"; frontmatter keys <code class="inline">reasoning-effort</code>, <code class="inline">deferred-tool-loading</code>, <code class="inline">strict-tools-list</code>; <code class="inline">customAgents.defaultLocalOnly</code></td></tr>
+                  <tr><td>Hook events</td><td>The contiguous run <code class="inline">preToolUse … permissionRequest</code> plus the second run adding <code class="inline">notification</code>; <code class="inline">/etc/github-copilot/policy.d</code>; <code class="inline">COPILOT_HOOK_ALLOW_LOCALHOST</code>, <code class="inline">COPILOT_HOOK_ALLOW_HTTP_AUTH_HOOKS</code></td></tr>
+                  <tr><td>MCP walk</td><td><code class="inline">[".mcp.json",".github/mcp.json"]</code>; <code class="inline">sort((u,g)=&gt;g.depth-u.depth)</code>; the <code class="inline">project</code> / <code class="inline">inherited</code> depth tags; <code class="inline">folderTrustIsTrusted</code>; <code class="inline">COPILOT_ALLOW_ALL</code></td></tr>
+                  <tr><td><code class="inline">.vscode/mcp.json</code></td><td>"Copilot CLI's incomplete support for .vscode/mcp.json has been removed. See https://gh.io/copilotcli-mcpmigrate …"; the absence of <code class="inline">.vscode</code> from <code class="inline">runtime.node</code></td></tr>
+                  <tr><td>Plugin and marketplace paths</td><td>Four marketplace catalog literals — <code class="inline">marketplace.json</code>, <code class="inline">.plugin/marketplace.json</code>, <code class="inline">.github/plugin/marketplace.json</code>, <code class="inline">.claude-plugin/marketplace.json</code>. The three dotted plugin-manifest paths (<code class="inline">.plugin/plugin.json</code>, <code class="inline">.github/plugin/plugin.json</code>, <code class="inline">.claude-plugin/plugin.json</code>) are <strong>not</strong> joined literals in either bracketing build — verify them as the adjacent component-literal run <code class="inline">.plugin</code> / <code class="inline">.github/plugin</code> / <code class="inline">.claude-plugin</code> / <code class="inline">plugin.json</code>, present twice in each <code class="inline">runtime.node</code> (1.0.73 and 1.0.79); <code class="inline">installed-plugins</code>; <code class="inline">COPILOT_PLUGIN_ROOT</code> / <code class="inline">CLAUDE_PLUGIN_ROOT</code></td></tr>
+                  <tr><td>Two plugin CLIs</td><td><code class="inline">copilot plugin --help</code> and <code class="inline">copilot plugins --help</code> on the installed build, including "MCP servers install from the registry rather than this command"</td></tr>
+                  <tr><td>Extensions</td><td><code class="inline">ExtensionSource</code> and <code class="inline">ExtensionStatus</code> in <code class="inline">sdk/index.d.ts</code>; <code class="inline">extensions.mode</code> values <code class="inline">disabled</code> / <code class="inline">load_only</code> / <code class="inline">load_and_augment</code>; <code class="inline">.github/extensions/</code></td></tr>
+                  <tr><td>Cross-read surface</td><td><code class="inline">.claude</code> beside <code class="inline">settings.json</code>/<code class="inline">settings.local.json</code> in the settings loader, and again beside <code class="inline">marketplace</code>/<code class="inline">extraKnownMarketplaces</code> in the marketplace loader; the nine total <code class="inline">.claude</code> occurrences with <strong>no</strong> <code class="inline">CLAUDE.md</code> or <code class="inline">commands</code> adjacency</td></tr>
+                  <tr><td>Bounded negatives</td><td>Zero <code class="inline">.prompt.md</code> literals in <code class="inline">app.js</code> or <code class="inline">runtime.node</code>; no <code class="inline">.agents/agents</code>, <code class="inline">.agents/commands</code> or <code class="inline">.agents/rules</code> literal; <code class="inline">.vscode</code> absent from <code class="inline">runtime.node</code></td></tr>
+                  <tr><td>Environment overrides</td><td><code class="inline">COPILOT_HOME</code>, <code class="inline">COPILOT_CACHE_HOME</code>, <code class="inline">COPILOT_SKILLS_DIRS</code>, <code class="inline">COPILOT_CUSTOM_INSTRUCTIONS_DIRS</code>, <code class="inline">COPILOT_ALLOW_ALL</code></td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>The wider environment surface — S, CLI 1.0.79.</strong> Beyond the five env overrides registered above as 1.0.78 binary literals, the shipped help (<code class="inline">copilot help environment</code>) documents a wider configuration-bearing environment surface a tool should know: <code class="inline">COPILOT_MODEL</code> (model selection, below <code class="inline">--model</code> and the <code class="inline">model</code> setting); the auth precedence chain <code class="inline">COPILOT_GITHUB_TOKEN</code> &rarr; <code class="inline">GH_TOKEN</code> &rarr; <code class="inline">GITHUB_TOKEN</code>; <code class="inline">GH_HOST</code> and <code class="inline">COPILOT_GH_HOST</code> (GHE / data-residency host targeting); <code class="inline">COPILOT_OFFLINE</code> (disables all network access — GitHub authentication, telemetry, web tools, GitHub MCP server, auto-update — and requires <code class="inline">COPILOT_PROVIDER_BASE_URL</code>); the <code class="inline">COPILOT_PROVIDER_*</code> BYOK family (<code class="inline">BASE_URL</code>, <code class="inline">TYPE</code>, <code class="inline">API_KEY</code>, <code class="inline">BEARER_TOKEN</code>, <code class="inline">WIRE_API</code>, <code class="inline">TRANSPORT</code>, <code class="inline">AZURE_API_VERSION</code>, <code class="inline">MODEL_ID</code>, <code class="inline">WIRE_MODEL</code>, <code class="inline">MAX_PROMPT_TOKENS</code>, <code class="inline">MAX_OUTPUT_TOKENS</code>, <code class="inline">HEADERS</code>); and <code class="inline">BASH_ENV</code> sourcing in bash shells, gated by the <code class="inline">bashEnv</code> setting / <code class="inline">--bash-env</code> flag (default <code class="inline">false</code>) — an env-injection point. Labeled to installed CLI 1.0.79; the 1.0.78 pin is no longer on disk.</p>
+
+              <p><strong>Review outcome for Copilot.</strong> First pass: 12 claims corrected, 5 documentation-only claims raised to package strength, several bounded negatives established at binary strength, 5 unknowns standing. No Copilot state was modified by any part of the review, no mutating subcommand was run, and the real configuration was unreachable during the help runs. Where a rolling page and the installed build disagree — <code class="inline">config.json</code>'s classification, the hook-event count, the <code class="inline">cost tips</code> spelling, the multi-surface agent-precedence sentence — both sides are stated on this page and the build governs version row <strong>1.0.78</strong>. The second pass and its corpus are summarized in the corrections section.</p>
+            </div>
+          </section>
+      </div>
+    </main>
+
+    <footer class="status">
+      <span class="status-left"><span class="glow">[configr]</span> GitHub Copilot capability guide</span>
+      <nav class="status-right">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <span class="sep" aria-hidden="true"></span>
+        <details class="dropdown">
+          <summary aria-label="theme">
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span aria-hidden="true">▾</span>
+          </summary>
+          <ul class="dropdown-panel" role="list">
+            <li><button type="button" class="dropdown-item" data-theme-value="warm">warm</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="green">green</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="mono">mono</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="paper">paper</button></li>
+          </ul>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </nav>
+    </footer>
+
+    <script type="module">
+      import { applyStoredTheme, initThemeSwitcher, initDropdowns, initSelects, initTerminal, initAnimToggle, initBurgerNav, initLsNav, initTableScroll, initDiagramZoom, initMinimap, initTooltips } from
+        "https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/runtime/index.js";
+      applyStoredTheme();
+      initThemeSwitcher();
+      initDropdowns();
+      initTerminal();
+      initAnimToggle();
+      initBurgerNav();
+      // The rail's show/hide, and it measures the real header/footer heights into
+      // --ls-nav-top / --ls-nav-bottom so the rail sits BETWEEN the chrome, not under it.
+      initLsNav();
+      // Every table gets a .tablewrap parent, so a table wider than its column scrolls
+      // itself instead of pushing the whole page sideways. Already-wrapped ones are skipped.
+      initTableScroll();
+      // Every <select> gets the estate's dropdown instead of the OS one. Called
+      // unconditionally, beside initTableScroll() and for the same reason: both have no
+      // markup contract, so both are a no-op on a page that has none of their element.
+      initSelects();
+
+      // Mermaid diagrams — themed from the design tokens, re-rendered on theme switch.
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs";
+
+      const diagrams = Array.from(document.querySelectorAll("pre.mermaid"));
+      if (diagrams.length) {
+        // capture the sources before the first render replaces them with SVG
+        for (const node of diagrams) node.dataset.mermaidSource = node.textContent;
+
+        // Renders are serialized: applyStoredTheme() writes data-theme on startup, so an
+        // unguarded observer would kick off a second pass while the first is still
+        // running — two passes mutating the same nodes stack every diagram into one box.
+        let renderPass = 0;
+        let pending = Promise.resolve();
+        let zoomWired = false;
+
+        const renderDiagrams = () => {
+          pending = pending.then(async () => {
+            const pass = (renderPass += 1);
+            const styles = getComputedStyle(document.documentElement);
+            const token = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: "strict",
+              fontFamily: token("--font-mono", "monospace"),
+              flowchart: { htmlLabels: true, useMaxWidth: true },
+              themeVariables: {
+                background: token("--background", "#f5efe2"),
+                primaryColor: token("--card", "#efe7d4"),
+                primaryTextColor: token("--foreground", "#43352a"),
+                primaryBorderColor: token("--border", "#d9cdb6"),
+                secondaryColor: token("--muted", "#ece3cf"),
+                tertiaryColor: token("--muted", "#ece3cf"),
+                lineColor: token("--muted-foreground", "#71614e"),
+                textColor: token("--foreground", "#43352a"),
+                mainBkg: token("--card", "#efe7d4"),
+                nodeBorder: token("--border", "#d9cdb6"),
+                clusterBkg: token("--muted", "#ece3cf"),
+                clusterBorder: token("--border", "#d9cdb6"),
+                edgeLabelBackground: token("--background", "#f5efe2"),
+                titleColor: token("--primary", "#8a4516"),
+              },
+            });
+            // render ids must be unique per pass, or a re-render collides with itself
+            for (const [index, node] of diagrams.entries()) {
+              try {
+                const { svg } = await mermaid.render(`mermaid-svg-${index}-${pass}`, node.dataset.mermaidSource);
+                node.innerHTML = svg;
+                node.dataset.processed = "true";
+              } catch {
+                // a broken diagram falls back to its source — it must never blank the box
+                node.textContent = node.dataset.mermaidSource;
+                node.removeAttribute("data-processed");
+              }
+            }
+            // EVERY DIAGRAM IS ZOOMABLE. Wired ONCE, and after the first render rather than
+            // before it: the opener binds a listener per element and is not idempotent, so
+            // calling it again on the theme re-render would open two overlays per click.
+            if (!zoomWired) {
+              zoomWired = true;
+              initDiagramZoom("pre.mermaid");
+            }
+          });
+          return pending;
+        };
+
+        // Wait for the terminal reveal: a diagram inside a not-yet-revealed
+        // [data-term-out] is visibility:hidden, and Mermaid would size it against a
+        // container it cannot measure properly. With animation off, render at once.
+        if (document.documentElement.classList.contains("anim-off") || window.termContentDone) {
+          void renderDiagrams();
+        } else {
+          window.addEventListener("term:contentdone", () => void renderDiagrams(), { once: true });
+        }
+
+        // re-render with the new palette, but only when the theme actually changed
+        let lastTheme = document.documentElement.dataset.theme;
+        new MutationObserver(() => {
+          const theme = document.documentElement.dataset.theme;
+          if (theme === lastTheme) return;
+          lastTheme = theme;
+          void renderDiagrams();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+      }
+
+      // The minimap builds itself from the sections — one bar each, in the left gutter,
+      // with the scroll-spy built in. No markup and no per-section wiring.
+      initMinimap({ sections: "section.doc" });
+      // The minimap's bars carry `data-tip`, not `title`: the native tooltip waits about a
+      // second and renders in the OS's chrome, which is useless on a strip meant to be
+      // scrubbed. Delegated, so it covers the bars the minimap just built.
+      initTooltips();
+    </script>
+  </body>
+</html>

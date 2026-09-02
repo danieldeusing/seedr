@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude Code capability guide</title>
+    <meta name="description" content="Source-verified reference for the Claude Code CLI 2.1.226: every scope, every capability type, the two inheritance ceilings, cross-tool reading, and the bounded unknowns." />
+    <meta name="theme-color" content="#f5efe2" />
+
+    <!-- pre-paint: apply the saved theme + animation gate before first paint -->
+    <script>
+      (() => {
+        const bg = { warm: "#f5efe2", green: "#020604", mono: "#050505", paper: "#fafafa" };
+        let theme = "warm";
+        try {
+          const stored = localStorage.getItem("theme");
+          if (stored && stored in bg) theme = stored;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg[theme]);
+
+        let animOff = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        try {
+          if (localStorage.getItem("anim") === "off") animOff = true;
+        } catch {}
+        if (animOff) document.documentElement.classList.add("anim-off");
+
+        // The `ls -l` rail is SHOWN by default. A reader who hid it must not watch it
+        // paint and then jump away on every single load, so the state is applied HERE —
+        // the runtime module at the end of <body> runs long after first paint.
+        try {
+          if (localStorage.getItem("ls-nav") === "off") document.documentElement.dataset.lsNav = "off";
+        } catch {}
+      })();
+
+      // Resolution-independent zoom: lay out at a fixed 1920px reference, then scale the
+      // whole view up on wider screens so the empty side-margins never exceed their
+      // 1920-reference proportion (a true zoom of everything, never below 1×). Pre-paint
+      // to avoid a flash.
+      (() => {
+        const REFERENCE_WIDTH = 1920;
+        const applyZoom = () => {
+          document.documentElement.style.zoom = String(Math.max(1, window.innerWidth / REFERENCE_WIDTH));
+        };
+        applyZoom();
+        window.addEventListener("resize", applyZoom);
+      })();
+    </script>
+
+    <!-- The design system, PINNED — and it must be. This page ships the system's own
+         MARKUP (the `ls -l` rail, the fixed footer), so it is coupled to the release that
+         styles them, and the unpinned url cannot promise a release: jsDelivr serves it
+         `max-age=604800` — SEVEN DAYS in the browser, 12h at the edge. The pinned url is
+         served `immutable`, so the bytes always match the markup.
+         `onerror` swaps in a byte-for-byte snapshot of the SAME release, served from the
+         docs site. NOTE the path is site-absolute: it resolves on docs.danieldeusing.de,
+         NOT for a doc opened from disk over file://. -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/dist/danieldeusing-design.min.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.min.css'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/src/fonts.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.fonts.css'"
+    />
+
+    <style>
+      /* Page-only layout. The design system ships the visual identity AND the measurements
+         (--content-w / --content-pad / --fs-*), so every value below is a TOKEN.
+
+         Each one carries a literal fallback on purpose: a doc opened over file:// with no
+         route to the CDN loads no stylesheet at all, and a bare `var(--content-w)` would
+         resolve to nothing there — full-bleed page, collapsed type.
+
+         Note `padding-block` + `padding-inline`, never the `padding` shorthand: the
+         shorthand resets padding-inline and silently drops the left/right margins. */
+      /* design-conformance: a TOKEN declaration with literal fallbacks, not a copy of the
+         system's rule — the sanctioned exception. A doc is meant to open straight off disk
+         over file://, where no stylesheet loads at all and a bare var() resolves to nothing.
+         The literals are what that reader sees; the tokens win everywhere else. */
+      .wrap { max-width: var(--content-w, 78rem); margin-inline: auto;
+              padding-block: 2.5rem 5rem; padding-inline: var(--content-pad, 1.5rem); }
+
+      /* header/footer chrome + nav now ship with the design system (src/chrome.css) */
+
+      /* ONE COLUMN, CENTRED — the same shape every other danieldeusing surface has.
+         `.wrap` above is the whole layout. There is no table-of-contents column: its two
+         real jobs — how long is this, and where am I — moved to the MINIMAP in the left
+         gutter (initMinimap()), which does them in 2rem and is fixed. */
+      .content { min-width: 0; }
+      h1.title { font-size: var(--fs-2xl, 1.7rem); font-weight: 700; margin: 0.4rem 0 0.5rem; }
+      .lede { color: var(--muted-foreground); } /* full width — no max-width cap */
+
+      /* design-conformance: spacing BETWEEN doc sections on this page template, not a restyle
+         of the shared .doc — the system sets its own margin for the standalone case. */
+      section.doc { margin-top: 2.5rem; scroll-margin-top: 4rem; }
+      .body { margin-top: 0.85rem; }
+      .body > * + * { margin-top: 0.75rem; }
+
+      /* content components the generator uses */
+      ol.steps { counter-reset: step; padding: 0; }
+      ol.steps > li { position: relative; padding-left: 2.25rem; margin-top: 0.6rem; counter-increment: step; }
+      ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 1.5rem; text-align: right; color: var(--primary); font-weight: 700; }
+      ul.plain { padding-left: 1.1rem; }
+      ul.plain > li { margin-top: 0.3rem; }
+      .grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+      .pad { padding: 1rem; }
+      .muted { color: var(--muted-foreground); }
+      code.inline { font-family: inherit; background: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.92em; }
+      pre.block { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      /* No table CSS for scrolling or size here on purpose. `initTableScroll()` at the
+         bottom of this file gives every table a `.tablewrap` parent (overflow-x plus a
+         right-edge fade), so a table wider than its column scrolls itself instead of
+         handing the WHOLE PAGE a horizontal scrollbar. The markup contract is therefore
+         nothing: author a plain <table>. Size is the system's too. */
+      table.kv { width: 100%; border-collapse: collapse; }
+      table.kv th, table.kv td { text-align: left; vertical-align: top; padding: 0.4rem 0.75rem 0.4rem 0; border-bottom: 1px solid var(--border); }
+      table.kv th { color: var(--primary); font-weight: 700; white-space: nowrap; }
+
+      /* Mermaid diagrams. Before rendering, the <pre> shows the raw diagram source —
+         so with JS disabled (or if the CDN is unreachable) the page degrades to a
+         readable text diagram instead of an empty box. */
+      pre.mermaid { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      pre.mermaid[data-processed] { white-space: normal; text-align: center; }
+      pre.mermaid svg { max-width: 100%; height: auto; }
+    </style>
+  </head>
+
+  <body>
+    <a href="#top" class="skip-link">skip to content</a>
+    <header class="bar">
+      <!-- top-left: ALWAYS danieldeusing-docs -->
+      <a href="#top" class="brand">
+        <span class="glow">danieldeusing-docs</span>
+        <span class="cursor-block" aria-hidden="true"></span>
+      </a>
+      <button type="button" class="nav-burger" data-nav-toggle aria-label="menu" aria-controls="site-nav" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+      </button>
+      <nav aria-label="site" id="site-nav" class="site-nav">
+      <div class="ls-nav-head">
+        <span class="ls-nav-title prompt">ls -l</span>
+        <button type="button" class="ls-nav-toggle" data-ls-nav-toggle aria-controls="nav" aria-expanded="true" aria-label="show or hide navigation"></button>
+      </div>
+      <!-- The rail is justified here: these five docs are siblings a reader is meant to
+           move between, so there IS somewhere else to go. -->
+      <div class="ls-nav" id="nav">
+        <ul class="ls-panel" role="list">
+          <li><a class="dropdown-item ls-row" href="claude-code.html" aria-current="page" title="Claude Code — claude-code.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Claude Code</span></a></li>
+          <li><a class="dropdown-item ls-row" href="openai-codex.html" title="OpenAI Codex — openai-codex.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenAI Codex</span></a></li>
+          <li><a class="dropdown-item ls-row" href="github-copilot.html" title="GitHub Copilot — github-copilot.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">GitHub Copilot</span></a></li>
+          <li><a class="dropdown-item ls-row" href="opencode.html" title="OpenCode — opencode.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenCode</span></a></li>
+          <li><a class="dropdown-item ls-row" href="google-antigravity.html" title="Google Antigravity"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Antigravity</span></a></li>
+          <li><a class="dropdown-item ls-row" href="cross-tool-matrix.html" title="Cross-tool — cross-tool-matrix.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Cross-tool</span></a></li>
+        </ul>
+      </div>
+      <div class="mobile-footer">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <details class="mobile-theme">
+          <summary>
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span class="mf-chev" aria-hidden="true">▾</span>
+          </summary>
+          <div class="mf-panel">
+            <button type="button" class="dropdown-item" data-theme-value="warm">warm</button>
+            <button type="button" class="dropdown-item" data-theme-value="green">green</button>
+            <button type="button" class="dropdown-item" data-theme-value="mono">mono</button>
+            <button type="button" class="dropdown-item" data-theme-value="paper">paper</button>
+          </div>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </div></nav>
+    </header>
+
+    <main class="wrap" id="top">
+      <div class="content">
+          <p class="prompt">cat configr/docs/harness-analysis.md &#124; sed -n '/## 3. Claude Code/,/## 4./p'</p>
+          <h1 class="title">Claude Code capability guide</h1>
+          <p class="lede">Everything the Claude Code CLI reads, writes, and resolves — scopes, capability types, the two inheritance ceilings, and the bounded unknowns. Verified against the installed <strong>2.1.226</strong> bundle, not against vendor prose: where the shipped binary and a rolling documentation page disagree, the binary governs this version row and both sides are stated.</p>
+
+          <section class="doc" id="overview" data-term>
+            <p class="prompt">echo overview</p>
+            <div class="body" data-term-out>
+              <p>The unit of analysis is the <strong>coding agent&#8217;s command-line executable plus the files and state that executable directly reads, writes, installs, or manages</strong>. CLI-native plugins, marketplaces, TUI features, remote-control entry points, and service-backed memory are in scope. VS Code and other IDE extensions, the desktop application, and web-only surfaces are out of scope even when they share a product name or an artifact path.</p>
+
+              <p>Every claim on this page carries an <strong>evidence class</strong> and a citation. Nothing here is added from memory or from a web search: if the source analysis does not state it, it is not on this page, and where the analysis records an unknown it is reproduced as an unknown with its <code class="inline">U-</code> number.</p>
+
+              <table>
+                <colgroup><col style="width:7rem" /><col /><col style="width:11rem" /></colgroup>
+                <thead>
+                  <tr><th>Class</th><th>Meaning</th><th>Reliability</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>D</strong></td><td>documented — current first-party documentation says this</td><td>rolling; no per-page revision date</td></tr>
+                  <tr><td><strong>S</strong></td><td>source/package-observed — the installed product says this, including path templates, enum runs, error strings, help text and embedded documents recovered read-only from the binary</td><td>strongest for the installed build</td></tr>
+                  <tr><td><strong>O</strong></td><td>disk-observed — a version, path, or shape was seen locally; values and secrets were not inspected</td><td>presence proves support; absence proves nothing</td></tr>
+                  <tr><td><strong>I</strong></td><td>inferred — a bounded conclusion from cited primary evidence, with the basis stated</td><td>only as good as its basis</td></tr>
+                  <tr><td><strong>U</strong></td><td>unknown — primary evidence is absent, self-contradictory, or insufficient</td><td>do not resolve; enumerate instead</td></tr>
+                  <tr><td><strong>D&ne;S</strong></td><td>documentation/source conflict — first-party prose and the installed binary disagree; both are stated and the build wins for its own version row</td><td>versioned, never normalized</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>How the Claude rows were verified.</strong> Installed bundle at <code class="inline">~/.local/share/claude/versions/2.1.226</code> — a single compiled executable whose embedded JavaScript was extracted read-only and searched for path literals and resolver functions — plus <code class="inline">claude --help</code> and <code class="inline">claude --version</code> on the same build. Read-only throughout; no Claude Code state was modified and no mutating subcommand was run. Research cut-off <strong>2026-08-11</strong>. <strong>O/S</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/overview">Claude Code docs</a></p>
+
+              <p><strong>Second-pass evidence basis — O.</strong> On re-verification (<strong>2026-08-13</strong>) the cited 2.1.226 bundle is no longer present on this machine: <code class="inline">~/.local/share/claude/versions/</code> holds <code class="inline">2.1.218</code>, <code class="inline">2.1.220</code> — the active build; <code class="inline">claude --version</code> reports 2.1.220 — and a zero-byte <code class="inline">2.1.222</code>. Every <strong>S</strong> claim re-verified in that pass was checked against the 2.1.220/2.1.218 binaries and the de-bundled source tree; behavior attributed to 2.1.222–2.1.226 — for example messaging "since 2.1.224" — is currently unverifiable against any local binary and remains documentation-class. <strong>O</strong> · <code class="inline">ls -la ~/.local/share/claude/versions/</code>, <code class="inline">readlink ~/.local/bin/claude</code>, <code class="inline">claude --version</code> (2026-08-13)</p>
+
+              <p class="eli5"><span class="eli5-term">Binary evidence is asymmetric.</span> A positive literal hit is strong evidence of support. An absence is only as strong as the extraction method, so every stated negative on this page names its method — "the literal appears only inside the sandbox configuration assembly", "no expression in the bundle joins the home directory to <code class="inline">.mcp.json</code>", and so on.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The five things most often gotten wrong,</strong> each corrected against the bundle and expanded further down:</p>
+              <ul class="plain">
+                <li><strong>There are two ceilings, not one.</strong> Instructions walk to the filesystem root's immediate child with no <code class="inline">$HOME</code> and no repository check; capability directories stop at <code class="inline">$HOME</code> (exclusive) <em>or</em> the repository root (inclusive), whichever comes first. <strong>S</strong></li>
+                <li><strong><code class="inline">~/.claude.json</code> is a resolver result, not a fixed path.</strong> <strong>S</strong></li>
+                <li><strong><code class="inline">~/.mcp.json</code> does not exist as an input.</strong> No expression in the bundle joins the home directory to that filename. <strong>S</strong></li>
+                <li><strong><code class="inline">.claude/hooks/</code> is never scanned</strong> — the joined literal sits in the sandbox write-protect path list (mechanism corrected this pass; the first pass attributed it to watcher cache invalidation), which is not registration either way. <strong>S</strong></li>
+                <li><strong>A skill is only ever a directory containing <code class="inline">SKILL.md</code>.</strong> A loose <code class="inline">.md</code> under <code class="inline">skills/</code> is never loaded. <strong>S</strong></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="doc" id="corrections" data-term>
+            <p class="prompt">git log --oneline review-notes</p>
+            <div class="body" data-term-out>
+              <p>The independent verification pass against the installed bundle <strong>corrected 8 claims</strong>, <strong>raised 7 documentation-only claims to source strength</strong>, <strong>added 3 previously undocumented behaviors</strong>, and left <strong>5 unknowns standing</strong> (two since resolved by the second pass — see the unknowns section). The corrections are the highest-value content here, because each one is a belief that a configuration tool would otherwise encode confidently and wrongly.</p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col /><col style="width:19rem" /></colgroup>
+                <thead>
+                  <tr><th>Claim</th><th>Was</th><th>Now</th><th>Evidence in the bundle</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Capability-directory ceiling</td>
+                    <td>"walk … only to the <strong>repository root</strong>", and this was said to refute <code class="inline">$HOME</code> as a ceiling anywhere</td>
+                    <td><strong>Two ceilings</strong>: <code class="inline">$HOME</code> (exclusive) <em>or</em> the repository root (inclusive), whichever is reached first; filesystem root only when neither applies</td>
+                    <td>Shared helper whose own log line names it <code class="inline">getProjectDirsUpToHome</code>; the <code class="inline">homedir</code> break precedes the collect step, the repo-ceiling break follows it</td>
+                  </tr>
+                  <tr>
+                    <td>Which capabilities share that ceiling</td>
+                    <td>stated per capability (skills, agents, workflows)</td>
+                    <td>one helper, called with the capability name, covering <code class="inline">commands</code>, <code class="inline">agents</code>, <code class="inline">output-styles</code>, <code class="inline">skills</code>, <code class="inline">workflows</code>, <code class="inline">routines</code></td>
+                    <td>generic loader passes the capability name through; the capability list is a literal array in the same module</td>
+                  </tr>
+                  <tr>
+                    <td>Repository ceiling definition</td>
+                    <td>"the repository root"</td>
+                    <td>the repository root, <strong>widened to the session repository</strong> when the start directory's repo is nested inside it (submodule, repo-in-repo)</td>
+                    <td>ceiling helper compares the start dir's Git root against the session Git root and returns the outer root when the former is a strict prefix-child</td>
+                  </tr>
+                  <tr>
+                    <td>Auto-memory project key</td>
+                    <td>"derives from the Git repository"</td>
+                    <td>derives from the Git <strong>main checkout</strong> (linked worktrees resolve through the <code class="inline">gitdir:</code> pointer), falling back to the session project root — <em>not</em> cwd; sanitizer is every non-alphanumeric to <code class="inline">-</code>; keys over 200 characters are truncated and suffixed with a base36 hash</td>
+                    <td>memory-root builder joins <code class="inline">projects</code>/sanitized-root/<code class="inline">memory</code>; sanitizer and 200-char truncation are adjacent literals; the installed settings-schema string still says "sanitized-cwd" (<strong>D&ne;S</strong>)</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.claude.json</code> as a fixed path</td>
+                    <td>treated as the fixed user JSON file</td>
+                    <td>resolver returns <code class="inline">$CLAUDE_CONFIG_DIR/.config.json</code> when present, else <code class="inline">${CLAUDE_CONFIG_DIR &#124;&#124; $HOME}/.claude&lt;oauth-suffix&gt;.json</code></td>
+                    <td>global-config resolver with an <code class="inline">existsSync</code> branch and an OAuth-environment suffix function</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">scheduled_tasks.json</code> scope</td>
+                    <td>presented as project-only generated state</td>
+                    <td>exists at <strong>both</strong> project (<code class="inline">.claude/scheduled_tasks.json</code>) and user (<code class="inline">$CLAUDE_CONFIG_DIR/scheduled_tasks.json</code>) level</td>
+                    <td>relative-path constant plus the user-root registration list</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">claude remote-control</code></td>
+                    <td>listed as an ordinary entry point</td>
+                    <td>real but <strong>hidden</strong>; absent from <code class="inline">--help</code></td>
+                    <td><code class="inline">.command("remote-control", { hidden: true })</code></td>
+                  </tr>
+                  <tr>
+                    <td>Instruction walk endpoint</td>
+                    <td>"to the filesystem root"</td>
+                    <td>to the filesystem root's <strong>immediate child</strong> — a literal <code class="inline">/CLAUDE.md</code> is never read — and <code class="inline">.claude/CLAUDE.md</code> plus <code class="inline">.claude/rules/</code> participate at <em>every</em> ancestor level, not only the project root</td>
+                    <td><code class="inline">while (p !== path.parse(p).root)</code> loop; per-directory read order <code class="inline">CLAUDE.md</code> &rarr; <code class="inline">.claude/CLAUDE.md</code> &rarr; <code class="inline">.claude/rules</code> &rarr; <code class="inline">CLAUDE.local.md</code></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Raised from documentation-only to source strength (D &rarr; D/S).</strong> Skill shape (directory-with-<code class="inline">SKILL.md</code> only, size cap <code class="inline">1e6</code> bytes); <code class="inline">.claude/hooks/</code> is not a registration source; no non-plugin <code class="inline">hooks.json</code> exists; the five hook contributors and the <code class="inline">hookSource</code> rendering; the MCP location map including the absence of <code class="inline">~/.mcp.json</code>; settings precedence as a literal source array; and the managed roots, auto-memory caps, cron seven-day expiry, loader-flag help text and directory-scoped skill variants.</p>
+
+              <p><strong>Undocumented behavior found in the bundle and added.</strong> (1) Linked-worktree instruction skip — ancestors inside the main checkout but outside a nested linked worktree are skipped for <em>Project</em> instructions while their <code class="inline">CLAUDE.local.md</code> still loads. (2) Linked-worktree capability fallback — the main checkout's <code class="inline">.claude/CAP</code> is appended to the project list when the worktree's own entry is absent. (3) <code class="inline">commands</code>, <code class="inline">agents</code>, <code class="inline">output-styles</code> and <code class="inline">routines</code> are scanned with ripgrep <code class="inline">--no-ignore --hidden --follow</code>, so gitignored and hidden <code class="inline">*.md</code> files load — whereas descendant <em>skills</em> discovery skips gitignored skill directories. <strong>S</strong></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Second verification pass (2026-08-13).</strong> An independent re-audit against the artifacts that exist on this machine — the de-bundled source tree plus the installed <strong>2.1.220</strong> and <strong>2.1.218</strong> binaries, with the rolling docs re-fetched — applied <strong>42</strong> verified changes: <strong>11</strong> claims corrected or restated (largest: project-scope <code class="inline">.mcp.json</code> discovery <em>walks</em> ancestors — see the MCP section), <strong>3</strong> claims re-sourced to their proper evidence class, <strong>21</strong> capabilities added (largest: <code class="inline">claudeMdExcludes</code>, single-skill plugins, synced skills), <strong>2</strong> unknowns resolved (server-managed delivery; the keybindings writer), and <strong>5</strong> evidence-basis updates — chief among them that the 2.1.226 bundle this page originally pinned is no longer on disk, so second-pass <strong>S</strong> evidence is labeled 2.1.220/2.1.218 throughout, and that the shipped CLI has meanwhile moved to 2.1.231.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="scopes" data-term>
+            <p class="prompt">ls -d /Library/Application\ Support/ClaudeCode ~/.claude .claude</p>
+            <div class="body" data-term-out>
+              <p>Claude Code has <strong>eight</strong> distinct places configuration and state can live. Five are authored scopes a person edits; three are generated or service-side and must be treated as opaque runtime state.</p>
+
+              <table>
+                <colgroup><col style="width:10rem" /><col /><col /></colgroup>
+                <thead>
+                  <tr><th>Scope</th><th>Location</th><th>What lives there</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Managed / enterprise</td>
+                    <td>macOS <code class="inline">/Library/Application Support/ClaudeCode/</code><br />Linux and WSL <code class="inline">/etc/claude-code/</code><br />Windows <code class="inline">C:\Program Files\ClaudeCode\</code></td>
+                    <td>Exact file contracts are <code class="inline">CLAUDE.md</code>, <code class="inline">managed-settings.json</code>, <code class="inline">managed-settings.d/*.json</code>, <code class="inline">managed-mcp.json</code>, and managed-policy <code class="inline">.claude/skills/</code> and <code class="inline">.claude/agents/</code>, plus server, MDM and registry delivery. <strong>D</strong> · the three-way platform switch returning exactly those three roots, with <code class="inline">managed-settings.d</code> joined beneath it, is a bundle literal <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>User</td>
+                    <td><code class="inline">$CLAUDE_CONFIG_DIR</code> (conventionally <code class="inline">~/.claude/</code>) and parts of the resolved global JSON file</td>
+                    <td><code class="inline">CLAUDE.md</code>, <code class="inline">rules/</code>, <code class="inline">skills/</code>, <code class="inline">agents/</code>, legacy <code class="inline">commands/</code>, <code class="inline">workflows/</code>, <code class="inline">loop.md</code>, <code class="inline">agent-memory/</code>, <code class="inline">output-styles/</code>, <code class="inline">settings.json</code>, hooks, plugins and marketplaces, user MCP, and generated <code class="inline">daemon.log</code>, <code class="inline">daemon/</code>, <code class="inline">teams/</code>, <code class="inline">tasks/</code>, <code class="inline">jobs/</code>. <strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project / shared</td>
+                    <td><code class="inline">CLAUDE.md</code>, <code class="inline">.claude/CLAUDE.md</code>, <code class="inline">.claude/rules/</code>, <code class="inline">.claude/skills/</code>, <code class="inline">.claude/agents/</code>, <code class="inline">.claude/commands/</code>, <code class="inline">.claude/workflows/</code>, <code class="inline">.claude/output-styles/</code>, <code class="inline">.claude/agent-memory/</code>, <code class="inline">.claude/loop.md</code>, <code class="inline">.claude/settings.json</code>, <code class="inline">.mcp.json</code></td>
+                    <td>Repository capabilities, committed and shared with the team. <strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project-local</td>
+                    <td><code class="inline">CLAUDE.local.md</code>; repository-root <code class="inline">.claude/settings.local.json</code> resolved to the main checkout; per-project state inside the resolved global JSON file</td>
+                    <td>Private instructions, settings, hooks and plugin overrides, plus local MCP state. A legacy start-directory settings file can remain a secondary input. <strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Plugin</td>
+                    <td>Plugin root with an optional <code class="inline">.claude-plugin/plugin.json</code></td>
+                    <td>Default component paths work with no manifest at all; a manifest declares identity and points component paths — replacing the default for most fields, adding to it for skills (see the plugins section). Root <code class="inline">bin/</code> and <code class="inline">settings.json</code> are fixed, not redirectable. <strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session / local process</td>
+                    <td>Flags: <code class="inline">--settings</code>, <code class="inline">--setting-sources</code>, <code class="inline">--agents</code>, <code class="inline">--plugin-dir</code>, <code class="inline">--plugin-url</code>, <code class="inline">--mcp-config</code>, <code class="inline">--bare</code>, <code class="inline">--safe-mode</code>, permission mode, Goal and Cron, messaging, Remote Control</td>
+                    <td>Ephemeral loaders and overrides, resumable autonomous state, and optional peer or remote steering of the still-local process. These are activation and loader overrides, <strong>not new persistent scopes</strong>. <strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Generated memory</td>
+                    <td><code class="inline">$CLAUDE_CONFIG_DIR/projects/&lt;sanitized-project-root&gt;/memory/</code></td>
+                    <td>Claude-written auto memory. Key derivation verified in the bundle — see the memory section. <strong>D/S</strong>, v2.1.59+ (the version attribution itself is <strong>U-11</strong>)</td>
+                  </tr>
+                  <tr>
+                    <td>CLI-connected service state</td>
+                    <td><code class="inline">/schedule</code> account routines; <code class="inline">--cloud</code> sessions and named environments</td>
+                    <td>Service-managed triggers and remote execution the CLI can create, target, inspect, or pull local. <strong>No reusable local file contract.</strong> <strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Bounded negative — D:</strong> there is no generic local counterpart for every capability. No documented <code class="inline">.claude/agents.local/</code> or <code class="inline">.claude/skills.local/</code> exists.</p>
+
+              <p><strong>Server-managed delivery — D/S, resolved this pass.</strong> The server-push tier of the managed scope is now first-party documented: Teams/Enterprise server-managed settings are fetched at startup and on authenticated org login, polled hourly, and cached at <code class="inline">~/.claude/remote-settings.json</code> — the salvaged payload only; a raw invalid payload is never persisted. Within the managed tier a configured <code class="inline">policyHelper</code> preempts every other managed source; otherwise the first non-empty source wins, with server-managed checked before endpoint-managed, plus per-key exceptions for the <code class="inline">env</code> block (v2.1.223+, attribution <strong>U-11</strong>) and cross-source lock keys; <code class="inline">forceRemoteSettingsRefresh</code> enforces fail-closed startup. The trap for a provenance scanner is the cache location: <code class="inline">remote-settings.json</code> is <strong>managed</strong>-scope content living under the user config dir. The literals <code class="inline">remote-settings.json</code>, <code class="inline">forceRemoteSettingsRefresh</code> and <code class="inline">policyHelper</code> were re-observed in the installed 2.1.218 and 2.1.220 binaries — builds below the pin, so the machinery predates 2.1.226. <strong>D/S</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/server-managed-settings">server-managed settings</a></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>What the bundle registers under <code class="inline">$CLAUDE_CONFIG_DIR</code> — S.</strong> Directories <code class="inline">rules/</code>, <code class="inline">skills/</code>, <code class="inline">agents/</code>, <code class="inline">commands/</code>, <code class="inline">workflows/</code>, <code class="inline">routines/</code>, <code class="inline">output-styles/</code>, <code class="inline">plugins/</code>, <code class="inline">hooks/</code>, <code class="inline">projects/</code>, <code class="inline">jobs/</code>, <code class="inline">daemon/</code>, <code class="inline">local/</code>, <code class="inline">backups/</code>, <code class="inline">shell-snapshots/</code>, <code class="inline">session-env/</code>, <code class="inline">agent-memory/</code>, <code class="inline">teams/</code>; files <code class="inline">CLAUDE.md</code>, <code class="inline">loop.md</code>, <code class="inline">scheduled_tasks.json</code>, <code class="inline">launch.json</code>, <code class="inline">daemon.json</code>, <code class="inline">daemon.log</code>, <code class="inline">policy-limits.json</code>. Note that <code class="inline">scheduled_tasks.json</code> and <code class="inline">launch.json</code> exist at <strong>both</strong> user and project level — neither is project-only.</p>
+
+              <p class="eli5"><span class="eli5-term">Careful.</span> <code class="inline">hooks/</code> appears in that registration list, and it is still <em>not</em> a hook registry — see the hooks section. Registration under the config dir means the path is known to the process, not that anything enumerates its contents.</p>
+
+              <p><strong><code class="inline">launch.json</code> is classifiable, not opaque — S.</strong> Project <code class="inline">.claude/launch.json</code> is the desktop preview launch configuration — dev-server command plus port — which the desktop's <code class="inline">preview_start</code> tool creates and updates, and the binary carves exactly that path out of the <code class="inline">.claude/</code> write-protection ("Preview launch config is allowed for writing"), at project level only, never <code class="inline">~/.claude/</code>. A scanner should list it as configuration with an unpublished schema — no docs page and no schema literals in the CLI binary (method: <code class="inline">runtimeExecutable</code> byte-search, zero hits) — and the user-root <code class="inline">launch.json</code> entry remains registration only. <strong>S</strong>, binaries 2.1.220/2.1.218</p>
+
+              <p><strong>Generated user-scope state a <code class="inline">~/.claude</code> scanner will meet — D/S.</strong> Beyond the registration list: <code class="inline">file-history/&lt;session&gt;/</code> holds pre-edit snapshots for checkpoint restore, kept for the 100 most recent checkpoints (<strong>D</strong>); <code class="inline">history.jsonl</code> records every typed prompt with timestamp and project path for up-arrow recall, kept until deleted by hand or by purge (<strong>D</strong>); and <code class="inline">sessions/</code>, <code class="inline">plans/</code>, <code class="inline">debug/</code>, <code class="inline">cache/</code> and <code class="inline">.credentials.json</code> are each joined to the config dir in source (<strong>S</strong>). The <code class="inline">cleanupPeriodDays</code> sweep — default 30 days, minimum 1, 0 rejected — age-deletes project transcripts, <code class="inline">file-history/</code>, <code class="inline">plans/</code>, <code class="inline">debug/</code>, <code class="inline">paste-cache/</code>, <code class="inline">image-cache/</code>, <code class="inline">session-env/</code>, <code class="inline">tasks/</code>, <code class="inline">shell-snapshots/</code>, <code class="inline">backups/</code>, <code class="inline">feedback-bundles/</code> and <code class="inline">usage-data/</code>, and spares <code class="inline">sessions/</code> (event-driven cleanup) and auto memory (<code class="inline">projects/&lt;project&gt;/memory/</code>). <code class="inline">claude project purge</code> deletes one project's transcripts and memory, its per-session <code class="inline">tasks/</code>, <code class="inline">debug/</code> and <code class="inline">file-history/</code> entries, matching <code class="inline">history.jsonl</code> lines and the <code class="inline">~/.claude.json</code> project entry — and leaves <code class="inline">shell-snapshots/</code> and <code class="inline">backups/</code> alone as not project-scoped. <strong>D/S</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/claude-directory">directory reference</a></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The user JSON state file is a resolver result — S.</strong> It is <em>not</em> unconditionally <code class="inline">~/.claude.json</code>. The resolver returns <code class="inline">$CLAUDE_CONFIG_DIR/.config.json</code> when that file exists, and otherwise <code class="inline">${CLAUDE_CONFIG_DIR &#124;&#124; $HOME}/.claude&lt;oauth-suffix&gt;.json</code>, where the suffix is empty for production and <code class="inline">-local-oauth</code>, <code class="inline">-staging-oauth</code> or <code class="inline">-custom-oauth</code> for non-production auth targets. A configuration manager must resolve the file rather than hard-coding a path — reading the obvious file yields the wrong effective configuration.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["need the user JSON state file"] --> B{"$CLAUDE_CONFIG_DIR/.config.json exists?"}
+    B -- yes --> C["use $CLAUDE_CONFIG_DIR/.config.json"]
+    B -- no --> D["base = $CLAUDE_CONFIG_DIR&lt;br/&gt;else $HOME"]
+    D --> E{"auth target"}
+    E -- prod --> F["base/.claude.json"]
+    E -- local --> G["base/.claude-local-oauth.json"]
+    E -- staging --> H["base/.claude-staging-oauth.json"]
+    E -- custom --> I["base/.claude-custom-oauth.json"]
+    B -.->|hard-coding ~/.claude.json skips this check| X["reads the wrong file&lt;br/&gt;whenever either branch applies"]
+
+    class X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p>That one file carries three different things at once: the top-level <code class="inline">mcpServers</code> map (user-scope MCP), a <code class="inline">projects</code> map keyed by <strong>normalized absolute path</strong>, and per-project trust and history state. It is a different key space from the <code class="inline">projects/</code> <em>directory</em> under the config dir, which uses the sanitized <code class="inline">-Users-…-repo</code> munge. Two maps, two key formats, same word.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="session-controls" data-term>
+            <p class="prompt">claude --help &#124; grep -A1 'bare\&#124;safe-mode'</p>
+            <div class="body" data-term-out>
+              <p>Session flags restrict or replace loaders for one process. They never create a new persistent scope, and administrative policy can narrow them further. Help text below was re-read verbatim on the installed build.</p>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead>
+                  <tr><th>Control</th><th>Effect</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">--safe-mode</code></td>
+                    <td>Disables authored customizations; help enumerates "CLAUDE.md, skills, plugins, hooks, MCP servers, custom commands and agents, output styles, workflows, custom themes, keybindings, and more". Administrative policy settings still apply. Sets <code class="inline">CLAUDE_CODE_SAFE_MODE=1</code>.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--bare</code></td>
+                    <td>On <strong>2.1.226</strong> help says it skips "hooks, LSP, plugin sync, attribution, auto-memory, background prefetches, keychain reads, and CLAUDE.md auto-discovery", sets <code class="inline">CLAUDE_CODE_SIMPLE=1</code>, and states "Skills still resolve via /skill-name". The newer rolling CLI page instead says bare <em>also</em> skips automatic skill, plugin, and MCP discovery. The installed behavior governs this version row and the disagreement stays visible.</td>
+                    <td><strong>D&ne;S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--disable-slash-commands</code></td>
+                    <td>Described in installed help as exactly "Disable all skills" — no separate mention of commands.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--setting-sources user,project,local</code></td>
+                    <td>Restricts which ordinary settings layers load.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--strict-mcp-config</code></td>
+                    <td>Ignores every MCP source except a supplied <code class="inline">--mcp-config</code>.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--agents &lt;json&gt;</code></td>
+                    <td>Defines session-only agents. They sit at the second-highest agent priority, below managed.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--plugin-dir</code>, <code class="inline">--plugin-url</code></td>
+                    <td>Load session-only plugins from a directory or a URL.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--add-dir</code></td>
+                    <td>An added root contributes exactly <code class="inline">.claude/skills/</code> and <code class="inline">.claude/agents/</code> — confirmed both appear and only these two. Its settings contribute only <code class="inline">enabledPlugins</code> and <code class="inline">extraKnownMarketplaces</code>. Per added directory the gated block reads four paths: <code class="inline">CLAUDE.md</code>, <code class="inline">.claude/CLAUDE.md</code> and <code class="inline">.claude/rules/</code> load whenever <code class="inline">CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1</code>, with <em>no</em> settings-source condition — deliberately, since <code class="inline">--add-dir</code> is an explicit user action and the SDK defaults <code class="inline">settingSources</code> to <code class="inline">[]</code>; only <code class="inline">CLAUDE.local.md</code> additionally requires the local settings source, which is on by default (<strong>D/S</strong>, corrected this pass — the previous sentence wrongly conjoined the local-source condition onto all files and omitted <code class="inline">.claude/CLAUDE.md</code>). Added directories contribute no hooks and no arbitrary settings, commands, workflows or output styles. These exceptions apply only to directories added with the <code class="inline">--add-dir</code> flag or the <code class="inline">/add-dir</code> command: directories granted via the <code class="inline">permissions.additionalDirectories</code> <em>setting</em> grant file access only and load none of this configuration — no skills, no agents, no settings keys (<strong>D</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/permissions#working-directories">permissions: working directories</a>).</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--tools &lt;tools...&gt;</code></td>
+                    <td>Restricts or empties the built-in tool set: <code class="inline">""</code> disables all tools, <code class="inline">default</code> restores all, or a named list such as <code class="inline">Bash,Edit,Read</code>. Help re-read verbatim on installed 2.1.220 (added this pass; the pinned 2.1.226 bundle is no longer on disk).</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">--system-prompt</code>, <code class="inline">--append-system-prompt</code></td>
+                    <td><code class="inline">--system-prompt</code> <em>replaces</em> and <code class="inline">--append-system-prompt</code> <em>appends to</em> the session system prompt — a session-scope instruction override. Replacement is confirmed by <code class="inline">--exclude-dynamic-system-prompt-sections</code> being documented as ignored with <code class="inline">--system-prompt</code>. The <code class="inline">--bare</code> help additionally references <code class="inline">--system-prompt-file</code> / <code class="inline">--append-system-prompt-file</code> variants not shown in top-level help. Installed 2.1.220.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Managed narrowing — D/S.</strong> <code class="inline">strictPluginOnlyCustomization</code> can restrict skills, agents, hooks and MCP to managed and enabled-plugin sources. <code class="inline">disableSideloadFlags</code> rejects session plugin, agent and MCP source flags, with the documented SDK MCP exception. <code class="inline">allowManagedHooksOnly</code> removes non-managed hooks except qualifying force-enabled plugin hooks — and also narrows <code class="inline">statusLine</code>, <code class="inline">fileSuggestion</code> and <code class="inline">subagentStatusLine</code> to managed settings: a managed value runs if one is deployed, otherwise the user's value is skipped without warning — the status line is disabled and <code class="inline">@</code> autocomplete falls back to the built-in file suggestion. The same narrowing also fires when <code class="inline">disableAllHooks</code> is set outside managed settings (<strong>D/S</strong>, policy-gated getters in the 2.1.220 binary · <a class="link-quiet" href="https://code.claude.com/docs/en/settings#hook-configuration">settings: hook configuration</a>).</p>
+
+              <p><strong>Auto permission mode — D/S.</strong> The <code class="inline">autoMode</code> settings block configures the auto permission-mode classifier — prose rule lists <code class="inline">environment</code>, <code class="inline">allow</code>, <code class="inline">soft_deny</code> and <code class="inline">hard_deny</code>, plus <code class="inline">classifyAllShell</code> — and is read <em>only</em> from user settings (<code class="inline">~/.claude/settings.json</code>), managed and server-managed settings, and inline <code class="inline">--settings</code>/SDK JSON; <code class="inline">autoMode</code> in project <code class="inline">.claude/settings.json</code> or <code class="inline">.claude/settings.local.json</code> is deliberately ignored (the local file since 2.1.207, attribution <strong>U-11</strong>), so a scanner must not present project-level <code class="inline">autoMode</code> as effective. Managed via <code class="inline">claude auto-mode config &#124; defaults &#124; critique &#124; reset</code>, where <code class="inline">reset</code> removes the <code class="inline">autoMode</code> section from user settings; the installed build's <code class="inline">--permission-mode</code> choices include the newer <code class="inline">auto</code> and <code class="inline">dontAsk</code> modes. <strong>D/S</strong>, help on 2.1.220 · <a class="link-quiet" href="https://code.claude.com/docs/en/auto-mode-config">auto-mode configuration</a></p>
+            </div>
+          </section>
+
+          <section class="doc" id="instructions" data-term>
+            <p class="prompt">cat CLAUDE.md .claude/CLAUDE.md .claude/rules/*.md CLAUDE.local.md</p>
+            <div class="body" data-term-out>
+              <p><strong>Instructions and rules — D.</strong> <code class="inline">CLAUDE.md</code>, <code class="inline">.claude/CLAUDE.md</code> and <code class="inline">CLAUDE.local.md</code> are Markdown delivered as <em>user instruction context</em>, not enforced policy. <code class="inline">@path</code> imports resolve relative to the containing file and recurse up to <strong>four hops</strong>; parsing ignores code spans and fenced blocks, and external project imports require approval. <code class="inline">.claude/rules/**/*.md</code> is recursive Markdown; an optional YAML <code class="inline">paths</code> glob list activates a rule when Claude reads a matching file, and a rule without <code class="inline">paths</code> is unconditional.</p>
+
+              <p><strong>Effective content differs from disk — D/S.</strong> Block-level HTML comments in <code class="inline">CLAUDE.md</code> files are stripped before the content is injected into context; comments inside code spans and fenced blocks are preserved, inline comments within a paragraph are left intact, and an unclosed <code class="inline">&lt;!--</code> is left in place. A tool that renders what Claude Code actually loads must not assume the bytes on disk are the bytes in context. The comment-span regex is a 2.1.220 bundle literal. <strong>D/S</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/memory#how-claude-md-files-load">memory: how CLAUDE.md files load</a></p>
+
+              <p><strong>Per-ancestor read order — S.</strong> At <em>every</em> ancestor directory the bundle reads, in this order:</p>
+
+              <table>
+                <colgroup><col style="width:4rem" /><col style="width:16rem" /><col /><col style="width:7rem" /></colgroup>
+                <thead>
+                  <tr><th>#</th><th>File or directory</th><th>Note</th><th>Source tier</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td><code class="inline">CLAUDE.md</code></td><td>the plain repository or ancestor file</td><td>Project</td></tr>
+                  <tr><td>2</td><td><code class="inline">.claude/CLAUDE.md</code></td><td>participates at every ancestor level, not only at the project root — this was previously believed to be root-only</td><td>Project</td></tr>
+                  <tr><td>3</td><td><code class="inline">.claude/rules/</code></td><td>recursive</td><td>Project</td></tr>
+                  <tr><td>4</td><td><code class="inline">CLAUDE.local.md</code></td><td>local <em>follows</em> shared within a directory</td><td>Local</td></tr>
+                </tbody>
+              </table>
+
+              <p>Managed contributions — managed <code class="inline">CLAUDE.md</code>, <code class="inline">policySettings.claudeMd</code>, managed rules — and user contributions — <code class="inline">$CLAUDE_CONFIG_DIR/CLAUDE.md</code> and user <code class="inline">rules/</code> — are pushed <em>before</em> the walk and are gated on <code class="inline">projectSettings</code>, <code class="inline">userSettings</code> and <code class="inline">localSettings</code> being enabled sources. Descendant instruction files and matching rules <em>below</em> cwd load lazily when Claude reads a file there. <strong>No discovered parent file is ever wholly shadowed</strong> — the mechanism is concatenation, never replacement. <strong>D/S</strong></p>
+
+              <p><strong><code class="inline">claudeMdExcludes</code> conditions all of the above — D/S.</strong> A settings key valid at any layer — user, project, local, managed; arrays merge across layers — holding glob patterns or absolute paths, matched against absolute file paths (picomatch in the bundle), that exclude specific <code class="inline">CLAUDE.md</code> files and <code class="inline">.claude/rules/</code> files from loading. The exclusion applies only to the User, Project and Local memory types, so managed-policy <code class="inline">CLAUDE.md</code> can never be excluded. This bounds this page's own claims that a <code class="inline">CLAUDE.md</code> in any ancestor is read and that instruction loading is pure concatenation: an exclusion list can remove ancestors from the effective set, so an effective-configuration view must apply it. <strong>D/S</strong>, schema and matcher literals in 2.1.220/2.1.218 · <a class="link-quiet" href="https://code.claude.com/docs/en/memory#exclude-specific-claude-md-files">memory: exclusions</a></p>
+
+              <p class="eli5"><span class="eli5-term">Undocumented, found in the bundle.</span> When the session runs in a <strong>linked worktree physically nested inside its main checkout</strong>, ancestor directories that belong to the main checkout but lie outside the worktree are skipped for <em>Project</em> instructions — but their <code class="inline">CLAUDE.local.md</code> is still read. <strong>S</strong></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Auto memory — D/S/D&ne;S.</strong> The first <strong>200 lines or 25 KB</strong> of <code class="inline">MEMORY.md</code>, whichever comes first, load at startup; topic files load on demand. Both caps are literals in the bundle (<code class="inline">lineCap = 200</code>, <code class="inline">spliceCap = 25000</code>), and the loader reads up to <code class="inline">4 &times; 25000 = 100000</code> bytes from disk before splicing to those caps. Claude reads and writes these files during sessions. On the newest inspectable builds — 2.1.218 and 2.1.220; the pinned 2.1.226 bundle is no longer on disk — the runtime accepts <code class="inline">autoMemoryDirectory</code> from policy &rarr; flag &rarr; trusted local &rarr; trusted project &rarr; user, with project and local honored only after the workspace-trust dialog, matching current docs — while the embedded settings-schema description still says only <code class="inline">projectSettings</code> is ignored ("Ignored if set in projectSettings (checked-in .claude/settings.json) for security"), not project <em>and</em> local. That stale schema conflict stays explicit, re-pinned this pass to 2.1.220.</p>
+
+              <p><strong>Key derivation — S, corrected.</strong> With no override, the memory root is <code class="inline">join(memoryHome, "projects", sanitize(gitMainCheckoutRoot ?? projectRoot), "memory")</code>. <code class="inline">memoryHome</code> is <code class="inline">$CLAUDE_CODE_REMOTE_MEMORY_DIR</code> when set, otherwise <code class="inline">$CLAUDE_CONFIG_DIR</code>. One override sits <em>above</em> the whole derivation — <strong>S</strong>: <code class="inline">CLAUDE_COWORK_MEMORY_PATH_OVERRIDE</code>, when set to a valid absolute path (validated; tilde expansion <em>not</em> accepted, unlike the settings value), overrides the <em>full</em> auto-memory directory, bypassing the <code class="inline">memoryHome/projects/&lt;sanitized-key&gt;/memory</code> derivation entirely. Resolution order: env override &rarr; <code class="inline">autoMemoryDirectory</code> setting &rarr; derived path — a scanner resolving the memory location must check it before the derivation above (resolver literal in 2.1.220/2.1.218).</p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["session cwd"] --> B{"inside a Git repository?"}
+    B -- no --> G["session project root"]
+    B -- yes --> C["walk up for .git"]
+    C --> D{".git is a FILE containing gitdir: ?"}
+    D -- yes --> E["follow it to the MAIN CHECKOUT root&lt;br/&gt;linked worktrees share one memory dir"]
+    D -- no --> F["that repository root"]
+    E --> S["sanitize: every non-alphanumeric becomes -&lt;br/&gt;including . and _"]
+    F --> S
+    G --> S
+    S --> T{"key longer than 200 chars?"}
+    T -- yes --> U["first 200 sanitized chars&lt;br/&gt;+ - + base36 of a 32-bit string hash"]
+    T -- no --> V["key used as is"]
+    U --> W["memoryHome/projects/KEY/memory/"]
+    V --> W
+    W -.->|installed schema still says sanitized-cwd| Z["D vs S conflict on the word cwd"]
+
+    class Z warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p>Three details matter and were previously stated loosely. <strong>(1)</strong> The anchor is the Git <em>main checkout</em>, not the repository the session sits in and not cwd; outside Git it falls back to the session project root. <strong>(2)</strong> The sanitizer is <code class="inline">replace(/[^a-zA-Z0-9]/g, "-")</code>, so <code class="inline">/Users/x/Work/repo</code> becomes <code class="inline">-Users-x-Work-repo</code>. <strong>(3)</strong> Long keys are truncated, <em>not</em> hashed wholesale — above 200 characters the key becomes the first 200 sanitized characters plus a base36 hash suffix. A scanner that assumes a pure 1:1 path-munge will miss long-path projects.</p>
+
+              <p><strong>Reserved runtime subtrees — S.</strong> The auto-memory directory is not just <code class="inline">MEMORY.md</code> plus free-form topic files. The personal-memory key validator refuses to write into four reserved subdirectories — the literal <code class="inline">["team","logs","sessions","proposals"]</code> in 2.1.220 and 2.1.218: <code class="inline">team/</code> is per-project team memory with its own <code class="inline">MEMORY.md</code> entrypoint (feature-gated, and dependent on auto memory being enabled), <code class="inline">logs/YYYY/MM/YYYY-MM-DD.md</code> holds assistant-mode daily logs, and <code class="inline">sessions/</code> and <code class="inline">proposals/</code> are named in the reserved list with no purpose established by the corpus — do not invent one. A memory browser should classify these as runtime-owned subtrees, not user topic files. <strong>S</strong>, binaries 2.1.220/2.1.218</p>
+
+              <p class="eli5"><span class="eli5-term">Two project identities at once.</span> The same <code class="inline">projects/&lt;sanitized-root&gt;</code> key names the session-transcript and <code class="inline">.cast</code> recording directories, but those use the <strong>session cwd</strong>, not the main-checkout anchor. Inside a linked worktree the two keys can differ. <strong>S</strong> — transcripts resolve via <code class="inline">getSessionProjectDir() ?? getProjectDir(getOriginalCwd())</code>, <code class="inline">getProjectDir</code> being <code class="inline">join(projectsDir, sanitizePath(dir))</code>, the same munge, and <code class="inline">.cast</code> recordings via <code class="inline">join(projectsDir, sanitizePath(getOriginalCwd()))</code> with <code class="inline">&lt;sessionId&gt;-&lt;timestamp&gt;.cast</code> filenames, versus auto memory's <code class="inline">findCanonicalGitRoot(getProjectRoot()) ?? getProjectRoot()</code> anchor; the <code class="inline">.cast</code> join is a 2.1.220 binary literal.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Agent memory — D.</strong> An agent declaring <code class="inline">memory: user</code>, <code class="inline">project</code> or <code class="inline">local</code> reads and writes its own <code class="inline">MEMORY.md</code> tree under <code class="inline">~/.claude/agent-memory/&lt;agent&gt;/</code>, <code class="inline">.claude/agent-memory/&lt;agent&gt;/</code> or <code class="inline">.claude/agent-memory-local/&lt;agent&gt;/</code> respectively. This is separate from main-session auto memory, and the agent <code class="inline">memory</code> field has <strong>no effect</strong> when auto memory is globally disabled by <code class="inline">autoMemoryEnabled</code> or <code class="inline">CLAUDE_CODE_DISABLE_AUTO_MEMORY</code>.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="skills" data-term>
+            <p class="prompt">find .claude/skills -name SKILL.md</p>
+            <div class="body" data-term-out>
+              <p><strong>What it is — D/S.</strong> A skill is a <em>directory</em> containing a required Markdown <code class="inline">SKILL.md</code>, optionally accompanied by scripts, examples and resources. YAML frontmatter itself is optional; <code class="inline">description</code> is recommended and otherwise falls back to the first Markdown paragraph. Metadata is discovered first and the body loads only when the model selects it or the user invokes <code class="inline">/name</code> — progressive disclosure.</p>
+
+              <p><strong>The directory-with-<code class="inline">SKILL.md</code> form is the ONLY form — S, bounded negative.</strong> Three independent code paths agree:</p>
+              <ul class="plain">
+                <li>The runtime skills-directory loader filters <code class="inline">readdir</code> entries with <code class="inline">if (!entry.isDirectory() &amp;&amp; !entry.isSymbolicLink()) return null</code> before joining <code class="inline">SKILL.md</code>, so a loose <code class="inline">foo.md</code> sitting directly in <code class="inline">skills/</code> is never a skill.</li>
+                <li>The plugin-component enumerator uses <code class="inline">readdir(...).filter(e =&gt; e.isDirectory()).map(e =&gt; join(dir, e.name, "SKILL.md"))</code> for skills — versus a recursive <code class="inline">*.md</code> walk for commands.</li>
+                <li>The artifact classifier recognises a skill only at the exact four-segment shape <code class="inline">.claude/skills/&lt;name&gt;/SKILL.md</code> and returns <code class="inline">null</code> for anything else beneath <code class="inline">skills/</code>, including deeper nesting.</li>
+              </ul>
+              <p>The filename literal joined is exactly <code class="inline">SKILL.md</code>. Case-insensitive matching (<code class="inline">/^skill\.md$/i</code>) appears only in the <strong>commands</strong> path, where a <code class="inline">SKILL.md</code> inside a command subdirectory renames the command after its directory. A <code class="inline">SKILL.md</code> above <code class="inline">1e6</code> bytes is skipped with a logged warning, and one that is not a regular file is skipped. <strong>A tool that also accepts loose <code class="inline">.md</code> files under <code class="inline">skills/</code> will report capabilities Claude Code will not load.</strong></p>
+
+              <p><strong>Frontmatter fields — D.</strong> <code class="inline">name</code>, <code class="inline">description</code>, <code class="inline">when_to_use</code>, <code class="inline">argument-hint</code>, <code class="inline">arguments</code>, <code class="inline">allowed-tools</code>, <code class="inline">disallowed-tools</code>, <code class="inline">model</code>, <code class="inline">effort</code>, <code class="inline">context</code>, <code class="inline">agent</code>, <code class="inline">background</code>, <code class="inline">paths</code>, <code class="inline">hooks</code>, <code class="inline">shell</code>, <code class="inline">disable-model-invocation</code>, <code class="inline">user-invocable</code>. Current docs (retrieved 2026-08-13) additionally list <code class="inline">metadata</code> — a free-form YAML map, dropped if not a map — <code class="inline">license</code>, and <code class="inline">compatibility</code> — a string of up to 500 characters: Agent Skills (agentskills.io) spec fields Claude Code accepts but does not act on. Skills follow that open standard, and only <code class="inline">name</code>, <code class="inline">description</code>, <code class="inline">license</code>, <code class="inline">compatibility</code>, <code class="inline">metadata</code> and <code class="inline">allowed-tools</code> are portable outside Claude Code. Per this page's convention: none of the three appear in the 2.1.220 skill-frontmatter schema — the newest inspectable binary — so they are docs-current additions. <strong>D</strong></p>
+
+              <table>
+                <colgroup><col style="width:16rem" /><col /></colgroup>
+                <thead><tr><th>Where a skill may live</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>Managed policy<br /><code class="inline">&lt;managed root&gt;/.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>Documented as the highest skill scope. <strong>D</strong></td></tr>
+                  <tr><td>User<br /><code class="inline">$CLAUDE_CONFIG_DIR/skills/&lt;name&gt;/SKILL.md</code></td><td>Resolved through the config dir, never the literal path. <strong>D/S</strong></td></tr>
+                  <tr><td>Project<br /><code class="inline">.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>At every directory the capability walk visits — cwd up to the dual ceiling. Loaded by a directory loader that is <strong>non-recursive</strong>. <strong>D/S</strong></td></tr>
+                  <tr><td>Added directory<br /><code class="inline">&lt;--add-dir root&gt;/.claude/skills/</code></td><td>One of only two capability directories an added root contributes. <strong>S</strong></td></tr>
+                  <tr><td>Plugin <code class="inline">skills/</code></td><td>Namespaced; unaffected by <code class="inline">skillOverrides</code>. <strong>D</strong></td></tr>
+                  <tr><td>Bundled</td><td>Ships with the CLI; <code class="inline">disableBundledSkills</code> disables all of them except <code class="inline">/doctor</code>. <strong>D</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Activation controls — D.</strong> <code class="inline">skillOverrides</code> takes <code class="inline">on</code>, <code class="inline">name-only</code>, <code class="inline">user-invocable-only</code> or <code class="inline">off</code>, is normally written by <code class="inline">/skills</code> into local settings, and does <em>not</em> affect plugin skills. <code class="inline">disableSkillShellExecution</code> blocks dynamic shell injection for user, project, plugin and added-directory skills — but not for managed or bundled ones.</p>
+
+              <p><strong>Synced skills — D, docs-current (post-pin).</strong> Current docs (retrieved 2026-08-13, CLI-current 2.1.231) document skills synced from claude.ai: with <code class="inline">CLAUDE_CODE_SYNC_SKILLS=1</code> set on a non-interactive (<code class="inline">-p</code>) run, Claude Code downloads the account-enabled skills into <code class="inline">~/.claude/skills/synced/</code> — generated state, not authored config — and later local sessions load them from there. The folder name <code class="inline">synced</code> is reserved in the enterprise, personal and project skills locations, in any capitalization. Collision semantics are <em>inverted</em> versus authored skills: a synced skill is <strong>skipped</strong> when its name matches any other command — built-in, bundled, local skill, plugin skill, <code class="inline">.claude/commands/</code> file, or MCP prompt — with Unicode-normalized name comparison; and on local sessions a synced skill's body gets no <code class="inline">!</code> command execution, no <code class="inline">@</code> file attachment, and no <code class="inline">${CLAUDE_PROJECT_DIR}</code>/<code class="inline">${CLAUDE_SESSION_ID}</code> substitution. Version label: the skip/sanitize/no-<code class="inline">!</code>-<code class="inline">@</code> hardening is changelog-dated <strong>2.1.228</strong>, after this page's 2.1.226 pin; the <code class="inline">CLAUDE_CODE_SYNC_SKILLS</code> env-var family already exists in the installed 2.1.218/2.1.220 binaries, but neither contains a <code class="inline">skills/synced</code> path literal, so the on-disk location is <strong>D</strong>, not S, for the pinned row. · <a class="link-quiet" href="https://code.claude.com/docs/en/skills#how-synced-skills-behave">skills: synced</a>, <a class="link-quiet" href="https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md">changelog</a></p>
+
+              <p><strong>Directory-scoped variants — S.</strong> Since 2.1.203 (attribution <strong>U-11</strong>), a same-name skill discovered below startup cwd stays available under a directory-qualified name such as <code class="inline">apps/web:deploy</code>. Unqualified <code class="inline">/deploy</code> invokes the root skill and appends guidance about applicable variants; the bundle emits "Directory-scoped variants of the &quot;NAME&quot; skill exist in this repo" and "The bare name always resolves to this unscoped skill", and on a miss suggests invoking the variant whose directory contains the files being worked on.</p>
+
+              <p><strong>Legacy commands — D.</strong> <code class="inline">.claude/commands/&lt;name&gt;.md</code> remains supported, and a skill wins an unscoped collision against one. Commands are scanned <em>recursively</em> per directory, unlike skills.</p>
+
+              <p class="eli5"><span class="eli5-term">Unknown — U-13.</span> The documented same-name priority "enterprise/managed &rarr; personal &rarr; project &rarr; bundled" was <strong>not observed as name resolution</strong>. The located loader concatenates in the order managed &rarr; user &rarr; project &rarr; added-directory &rarr; legacy commands and then de-duplicates by <strong>resolved real path</strong> — which is also the mechanism behind "symlinks resolving to the same target are deduplicated" — tagging that step as non-resolving. Name-collision resolution happens outside the inspected code paths. A UI that displays "the active one" for two same-named skills is inventing it; enumerate the set instead. Separately, <strong>U-07</strong>: same-name <em>legacy-command</em> resolution across several project ancestors has no located tie-break at all.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="agents" data-term>
+            <p class="prompt">rg --files --hidden --no-ignore --follow --glob '*.md' .claude/agents</p>
+            <div class="body" data-term-out>
+              <p><strong>What it is — D.</strong> An agent is Markdown with YAML frontmatter whose <strong>body replaces the normal Claude Code system prompt</strong> for that agent. Ordinary subagents have isolated context, and any <code class="inline">skills</code> they name are preloaded.</p>
+
+              <p><strong>Fields — D.</strong> <code class="inline">name</code>, <code class="inline">description</code>, <code class="inline">tools</code>, <code class="inline">disallowedTools</code>, <code class="inline">model</code>, <code class="inline">permissionMode</code>, <code class="inline">maxTurns</code>, <code class="inline">skills</code>, <code class="inline">mcpServers</code>, <code class="inline">hooks</code>, <code class="inline">memory</code>, <code class="inline">initialPrompt</code>, <code class="inline">effort</code>, <code class="inline">background</code>, <code class="inline">isolation</code>, <code class="inline">color</code>. <strong>Plugin agents use the same broad form but ignore <code class="inline">hooks</code>, <code class="inline">mcpServers</code> and <code class="inline">permissionMode</code> for security.</strong></p>
+
+              <p><strong>Activation — D.</strong> Natural language can trigger an agent; <code class="inline">@name</code> guarantees a one-off delegation; <code class="inline">--agent</code> makes it session-wide.</p>
+
+              <p><strong>Where and how they load — D/S.</strong> Same-name priority is managed &rarr; session <code class="inline">--agents</code> &rarr; project &rarr; user &rarr; plugin. Every project <code class="inline">.claude/agents/</code> from cwd to the capability ceiling is scanned, and the <strong>closest</strong> project definition wins. Each root is scanned <em>recursively</em> with ripgrep <code class="inline">--files --hidden --follow --no-ignore --glob '*.md'</code> and a JS fallback, so gitignored and hidden files are included and symlinks are followed. A collision <em>inside</em> one recursive directory tree is chosen by unspecified filesystem order. In a linked worktree the main checkout's <code class="inline">.claude/agents/</code> is appended when the worktree has no entry of its own (<strong>S</strong>, undocumented).</p>
+
+              <p>Agents are also one of only two capability directories an <code class="inline">--add-dir</code> root contributes, alongside skills.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="hooks" data-term>
+            <p class="prompt">jq '.hooks' .claude/settings.json</p>
+            <div class="body" data-term-out>
+              <p><strong>What it is — D/S.</strong> Hooks are JSON under the <code class="inline">hooks</code> key in user, project, local or managed settings, in skill or agent frontmatter, or in a plugin's <code class="inline">hooks/hooks.json</code>. Matchers select handlers at lifecycle events; command, HTTP, MCP-tool, prompt and agent handlers exchange structured input and output where supported.</p>
+
+              <p><strong>Exactly five contributors — S.</strong> The matcher-collection function concatenates these, in this order. The settings merge is the <em>only</em> file-reading step; there is no directory scan anywhere in it.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    S1["1 · merged settings hooks&lt;br/&gt;managed to user, one merge"] --> M["matcher collection"]
+    S2["2 · plugin hooks&lt;br/&gt;PLUGIN_ROOT/hooks/hooks.json"] --> M
+    S3["3 · skill frontmatter hooks"] --> M
+    S4["4 · main-thread agent frontmatter"] --> M
+    S5["5 · session / SDK hooks"] --> M
+    N1[".claude/hooks/&lt;br/&gt;write-protected only, never scanned"] -.->|not a source| M
+    N2["project or user hooks.json&lt;br/&gt;does not exist"] -.->|not a source| M
+    M --> G{"policy override?"}
+    G -- allowManagedHooksOnly --> P["policySettings.hooks alone"]
+    G -- disableAllHooks at policy --> Z["nothing at all"]
+    G -- none --> R["all matching handlers run in PARALLEL&lt;br/&gt;outputs merge, restrictive decisions dominate"]
+
+    class N1,N2,Z warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><code class="inline">hookSource</code> is rendered as <code class="inline">plugin:&lt;name&gt;</code>, <code class="inline">skill:&lt;name&gt;</code>, or <code class="inline">settings</code>.</p>
+
+              <p><strong>Event vocabulary — D/S.</strong> The top-level keys of every <code class="inline">hooks</code> map a scanner parses. The 2.1.220 bundle's enum is a 31-element array literal, and the rolling hooks reference documents all 31: <code class="inline">PreToolUse</code>, <code class="inline">PostToolUse</code>, <code class="inline">PostToolUseFailure</code>, <code class="inline">PostToolBatch</code>, <code class="inline">Notification</code>, <code class="inline">UserPromptSubmit</code>, <code class="inline">UserPromptExpansion</code>, <code class="inline">SessionStart</code>, <code class="inline">SessionEnd</code>, <code class="inline">Stop</code>, <code class="inline">StopFailure</code>, <code class="inline">SubagentStart</code>, <code class="inline">SubagentStop</code>, <code class="inline">PreCompact</code>, <code class="inline">PostCompact</code>, <code class="inline">PermissionRequest</code>, <code class="inline">PermissionDenied</code>, <code class="inline">Setup</code>, <code class="inline">TeammateIdle</code>, <code class="inline">TaskCreated</code>, <code class="inline">TaskCompleted</code>, <code class="inline">Elicitation</code>, <code class="inline">ElicitationResult</code>, <code class="inline">ConfigChange</code>, <code class="inline">WorktreeCreate</code>, <code class="inline">WorktreeRemove</code>, <code class="inline">InstructionsLoaded</code>, <code class="inline">CwdChanged</code>, <code class="inline">FileChanged</code>, <code class="inline">DirectoryAdded</code>, <code class="inline">MessageDisplay</code>. <strong>D/S</strong>, array literal in 2.1.220 · <a class="link-quiet" href="https://code.claude.com/docs/en/hooks">hooks reference</a></p>
+
+              <p><strong>Two bounded negatives — S.</strong></p>
+              <ul class="plain">
+                <li><strong><code class="inline">.claude/hooks/</code> is never read.</strong> The bounded negative stands — nothing enumerates or parses its contents as a hook source — but the mechanism is corrected for the verifiable builds: in 2.1.220 and 2.1.218 all <strong>four</strong> occurrences of the joined literal <code class="inline">".claude","hooks"</code> sit inside the <strong>sandbox configuration assembly</strong> — the function that parses <code class="inline">permissions</code> allow/deny rules and <code class="inline">sandbox.network</code>/<code class="inline">filesystem</code> settings, collects the <code class="inline">.git</code> internals <code class="inline">HEAD</code>/<code class="inline">objects</code>/<code class="inline">refs</code>, and returns the sandbox object — covering the launch directory and original cwd, every ancestor of the start directory, and each added root. That is a write-protect/deny path list, not file-watcher cache invalidation; no occurrence in watcher code was found (method: byte-search of the exact-join and slash forms). 2.1.226 could not be re-checked. Either way it is merely a conventional script folder.</li>
+                <li><strong>There is no project-level or user-level <code class="inline">hooks.json</code>.</strong> Every <code class="inline">hooks.json</code> path expression in the bundle is <code class="inline">join(&lt;plugin root&gt;, "hooks", "hooks.json")</code> — three occurrences, all plugin-scoped: the loader, the validator, and a relative constant. A <code class="inline">.claude/hooks.json</code> at project or user level is not a Claude Code contract; hooks at those scopes exist only inside <code class="inline">settings.json</code> and <code class="inline">settings.local.json</code>.</li>
+              </ul>
+
+              <p><strong>Duplicate behavior — D.</strong> Applicable sources merge. The same handler repeated across settings files runs <strong>once</strong>, but an identical handler supplied by a plugin or a skill remains a distinct contribution.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="mcp" data-term>
+            <p class="prompt">claude mcp list</p>
+            <div class="body" data-term-out>
+              <p><strong>Scope to location map — S, bundle-verified.</strong> This is where the largest single misconception lives.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    Q["an MCP server entry"] --> S{"which scope"}
+    S -- user --> A["the resolved global JSON file&lt;br/&gt;TOP-LEVEL mcpServers key"]
+    S -- local --> B["the SAME file&lt;br/&gt;projects[normalized abs main-checkout path].mcpServers"]
+    S -- project --> C[".mcp.json read at EVERY level&lt;br/&gt;cwd up to the filesystem root's child&lt;br/&gt;merged root to cwd, closest wins"]
+    S -- enterprise --> D["MANAGED_ROOT/managed-mcp.json&lt;br/&gt;exclusive administrative set"]
+    S -- claudeai / dynamic / agent --> E["no file contract&lt;br/&gt;agent = agent frontmatter"]
+    C -.->|docs still say project root only| W["D&ne;S — rolling docs name one root file&lt;br/&gt;the binaries walk ancestors"]
+    A -.->|common wrong guess| X["~/.mcp.json&lt;br/&gt;does not exist as an input"]
+
+    class W,X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <ul class="plain">
+                <li><strong><code class="inline">~/.mcp.json</code> does not exist as an input.</strong> No expression in the bundle joins the home directory to <code class="inline">.mcp.json</code>. User MCP is the resolved global JSON file, full stop; the two files are not interchangeable and <code class="inline">.mcp.json</code> is a repository artifact only.</li>
+                <li><strong>The <code class="inline">projects.&lt;key&gt;</code> key is a normalized absolute path</strong>, not the <code class="inline">-Users-…-repo</code> munge used for the <code class="inline">projects/</code> directories. It is <code class="inline">path.normalize(gitMainCheckoutRoot)</code> inside a Git repository, else <code class="inline">path.normalize(path.resolve(cwd))</code> — again anchored on the main checkout, so linked worktrees share one project entry. The default entry shape is <code class="inline">allowedTools</code>, <code class="inline">mcpContextUris</code>, <code class="inline">mcpServers</code>, <code class="inline">enabledMcpjsonServers</code>, <code class="inline">disabledMcpjsonServers</code>, <code class="inline">hasTrustDialogAccepted</code>, <code class="inline">projectOnboardingSeenCount</code>, <code class="inline">hasClaudeMdExternalIncludesApproved</code>, <code class="inline">hasClaudeMdExternalIncludesWarningShown</code>. The bundle's own cleanup copy describes it as "project entry in ~/.claude.json (trust, history, MCP servers)". The per-project entry also carries two <strong>toggle lists</strong> the default shape omits — <strong>D/S</strong>: <code class="inline">disabledMcpServers</code> (opt-out for user-configured servers, plugin servers, claude.ai connectors and default-on built-in servers) and <code class="inline">enabledMcpServers</code> (opt-in for default-off built-ins such as computer-use). Exactly one list is consulted per server, and both are disjoint from <code class="inline">enabledMcpjsonServers</code>/<code class="inline">disabledMcpjsonServers</code>, which govern <code class="inline">.mcp.json</code> approval. Also documented: <code class="inline">disableClaudeAiConnectors</code> (settable in any settings scope) disables all claude.ai connectors, and managed <code class="inline">deniedMcpServers</code> can block individual connectors by name or URL pattern (reader and toggle-writer literals in 2.1.220 · <a class="link-quiet" href="https://code.claude.com/docs/en/mcp#disable-a-server-without-removing-it">MCP: disable without removing</a>).</li>
+                <li><strong>Project <code class="inline">.mcp.json</code> discovery WALKS ancestors — corrected this pass, D&ne;S.</strong> The first pass stated the opposite; the binaries refute it. The effective-config reader builds the directory list from cwd up to the filesystem root's immediate child, reads <code class="inline">.mcp.json</code> at <em>every</em> level, and merges root&rarr;cwd so entries closer to cwd override same-name entries from parents. That walking reader feeds the runtime server assembly, the by-name lookup, the <code class="inline">/mcp</code> panel and the project-server approval flow. A single-location reader does exist, but it serves the <code class="inline">claude mcp add</code>/<code class="inline">remove</code> <em>write</em> path: it joins the current cwd — not the project root — and returns an empty object on <code class="inline">ENOENT</code>. The ancestor <code class="inline">.mcp.json</code> paths assembled up to the filesystem root belong to the sandbox write-protection path list, not a file watcher — the previous "watched for invalidation" reading is withdrawn (method: full enumeration of all 114 <code class="inline">.mcp.json</code> occurrences in 2.1.220). Verified in 2.1.218 and 2.1.220; the pinned 2.1.226 is no longer inspectable, but the older de-bundled source and both installed builds agree on every element. Rolling docs still place <code class="inline">.mcp.json</code> at the project root with no ancestor mention, so <strong>D&ne;S</strong> and the binaries govern.</li>
+              </ul>
+
+              <p><strong>Schema and transports — D.</strong> The root object is <code class="inline">mcpServers</code>. stdio, HTTP, deprecated SSE and WebSocket (<code class="inline">ws</code>) transports declare command, args and env, or URL, headers and auth, as applicable. WebSocket is JSON or <code class="inline">add-json</code> configured, lacks OAuth, and is <em>not</em> accepted by the ordinary <code class="inline">mcp add --transport</code> switch. Runtime exposes tools, prompts and resources.</p>
+
+              <p><strong>Environment-variable expansion — D.</strong> <code class="inline">.mcp.json</code> supports <code class="inline">${VAR}</code> and <code class="inline">${VAR:-default}</code> expansion in <code class="inline">command</code>, <code class="inline">args</code>, <code class="inline">env</code>, <code class="inline">url</code> and <code class="inline">headers</code>. An unset variable without a default still loads the config: the literal <code class="inline">${VAR}</code> text stays in place and <code class="inline">claude mcp list</code> reports a missing-variable warning for that server. A scanner rendering <code class="inline">.mcp.json</code> values therefore displays authored text that can differ from the effective values. <strong>D</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/mcp#environment-variable-expansion-in-mcp-json">MCP: variable expansion</a></p>
+
+              <p><strong>Precedence — D.</strong> Among local, project and user definitions, same-name priority is local &rarr; project &rarr; user and replacement is <strong>whole-server</strong>. Plugin servers and claude.ai connectors are instead de-duplicated against higher-priority entries by matching <strong>endpoint</strong> — URL or command — not merely by name. If <code class="inline">managed-mcp.json</code> exists it is an <strong>exclusive administrative set</strong> rather than another merge layer: users cannot add, change, or extend its servers, and policy allow/deny filters still apply.</p>
+
+              <p><strong>Lifecycle — D.</strong> <code class="inline">claude mcp add</code>, <code class="inline">add-json</code>, <code class="inline">get</code>, <code class="inline">list</code>, <code class="inline">remove</code>, <code class="inline">login</code>, <code class="inline">logout</code>, <code class="inline">reset-project-choices</code>, macOS/WSL <code class="inline">add-from-claude-desktop</code> and <code class="inline">serve</code> manage or expose the lifecycle; interactive <code class="inline">/mcp</code> handles status and auth. Default <code class="inline">--scope local</code> writes per-project state in the global JSON file, <code class="inline">project</code> writes <code class="inline">.mcp.json</code>, and <code class="inline">user</code> writes user state.</p>
+
+              <p class="eli5"><span class="eli5-term">Approval asymmetry.</span> Interactive local sessions approval-gate project <code class="inline">.mcp.json</code>. Print mode, the Agent SDK and cloud sessions <em>cannot show that prompt</em> and load project entries unless settings such as <code class="inline">disabledMcpjsonServers</code> or loader controls block them. <strong>D</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="plugins" data-term>
+            <p class="prompt">cat .claude-plugin/plugin.json</p>
+            <div class="body" data-term-out>
+              <p><strong>The manifest is optional — D/S.</strong> Default component paths are auto-discovered, and a manifest-less plugin derives its name from its directory. When <code class="inline">.claude-plugin/plugin.json</code> is present it can declare identity and point component paths — with three distinct behaviors the docs draw explicitly: <code class="inline">commands</code>, <code class="inline">agents</code>, <code class="inline">workflows</code>, <code class="inline">outputStyles</code>, <code class="inline">experimental.themes</code> and <code class="inline">experimental.monitors</code> <strong>replace</strong> the default directory (list the default explicitly to keep it); the <code class="inline">skills</code> field <strong>adds to</strong> the always-scanned default <code class="inline">skills/</code> — exception: a marketplace entry whose source resolves to the marketplace root, where declared subdirectories replace the default scan; and <code class="inline">hooks</code>, <code class="inline">mcpServers</code> and <code class="inline">lspServers</code> are config-file or inline references with their own merge behavior, not scanned-directory redirects. Root <code class="inline">bin/</code> and root <code class="inline">settings.json</code> are <strong>fixed locations, not redirect fields</strong>.</p>
+
+              <ul class="plain">
+                <li>Plugin settings currently support <code class="inline">agent</code> and <code class="inline">subagentStatusLine</code>. <strong>D</strong></li>
+                <li>Channels and <code class="inline">userConfig</code> are manifest fields. <strong>D</strong></li>
+                <li>Evaluation fixtures use <code class="inline">evals/**/case.yaml</code> and <code class="inline">evals/**/prompt.md</code>, with optional <code class="inline">graders/*.md</code>. <strong>S</strong>, not D — binary-observed only: the paths appear in the installed CLI's <code class="inline">claude plugin eval</code> help and its <code class="inline">case.yaml</code> loader (2.1.220), while no first-party docs page documents them — plugins-reference and <code class="inline">llms.txt</code> carry no evals coverage, and the agentskills.io eval guide linked from the skills docs documents a different format, <code class="inline">evals/evals.json</code> (retrieved 2026-08-13).</li>
+                <li><code class="inline">pluginConfigs</code> user values load only from managed &rarr; <code class="inline">--settings</code> &rarr; user; project and local values are ignored since 2.1.207 (attribution <strong>U-11</strong>), although project and local <code class="inline">enabledPlugins</code> remain valid. <strong>D</strong></li>
+                <li>Installed versions are cached under <code class="inline">~/.claude/plugins</code>. <strong>D</strong></li>
+              </ul>
+
+              <p><strong>Component coverage.</strong> A plugin can supply skills and commands, agents, workflows, hooks, MCP and LSP servers, output styles, settings, and themes, monitors, channels and <code class="inline">bin/</code>. Every one of those is read <em>only as a component of an enabled plugin</em>. <strong>D</strong></p>
+
+              <p><strong>Lifecycle — D/S.</strong> Installed 2.1.226 exposes <code class="inline">plugin details</code>, <code class="inline">enable</code>/<code class="inline">disable</code>, <code class="inline">eval</code>, <code class="inline">init</code>/<code class="inline">new</code>, <code class="inline">install</code>/<code class="inline">list</code>, <code class="inline">marketplace</code>, <code class="inline">prune</code>/<code class="inline">autoremove</code>, <code class="inline">tag</code>, <code class="inline">uninstall</code>/<code class="inline">remove</code>, <code class="inline">update</code> and <code class="inline">validate</code>; <code class="inline">marketplace</code> has <code class="inline">add</code>, <code class="inline">list</code>, <code class="inline">remove</code> and <code class="inline">update</code>. <strong>Catalog refresh, plugin update, runtime reload, disable and uninstall are distinct operations.</strong> Mid-session updates keep the old hook, MCP and LSP paths until <code class="inline">/reload-plugins</code>, and monitors until restart. <code class="inline">claude plugin install</code> takes <code class="inline">-s</code>/<code class="inline">--scope user&#124;project&#124;local</code> (default <code class="inline">user</code>) and <code class="inline">--config key=value</code> for manifest-declared <code class="inline">userConfig</code> values — validated against the schema and stored via the same path as the interactive <code class="inline">/plugin configure</code> flow — and <code class="inline">prune&#124;autoremove</code> removes auto-installed plugin dependencies no longer required by any installed plugin, also reachable per-uninstall as <code class="inline">uninstall --prune</code>: the cleanup verb for the dependency auto-install below. Help text verified on installed 2.1.220, whose verb list matches the pinned 2.1.226 list verbatim. <strong>S</strong></p>
+
+              <p><strong>Automatic update version resolution — D.</strong> In this order: manifest version, marketplace version, source commit SHA, archive digest, then an <code class="inline">unknown</code> cache version for npm sources or local directories outside Git. An unchanged explicit version <em>pins</em> the cached code even if source commits move.</p>
+
+              <p><strong>Dependencies — D.</strong> The manifest also supports a <code class="inline">dependencies</code> field: other plugins, as bare names or <code class="inline">{name, version, marketplace}</code> objects with semver constraints; declared dependencies are resolved and auto-installed at plugin install, with constraints, cross-marketplace allowlisting and tag-based version resolution covered by a dedicated docs page. Separately, Claude Code auto-installs a plugin's Node.js package dependencies into the cached version directory when the plugin root contains <code class="inline">package.json</code> plus a supported lockfile — <code class="inline">bun.lock</code>, <code class="inline">bun.lockb</code>, <code class="inline">npm-shrinkwrap.json</code> or <code class="inline">package-lock.json</code>. <strong>D</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/plugin-dependencies">plugin dependencies</a></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Skills-directory plugins — D.</strong> Any folder beneath <code class="inline">~/.claude/skills/</code> or the launch directory's <code class="inline">.claude/skills/</code> that contains <code class="inline">.claude-plugin/plugin.json</code> loads <em>in place</em> as <code class="inline">&lt;name&gt;@skills-dir</code>, with no marketplace installation. Project instances require workspace trust and are discovered <strong>only from the launch directory's</strong> <code class="inline">.claude/skills/</code> — unlike plain skills and commands, they do not walk ancestor skill directories. Their MCP servers require per-server approval, LSP starts only after trust, and background monitors never load. Personal skills-directory plugins do not carry those project restrictions.</p>
+
+              <p><strong>Single-skill plugins — D/S.</strong> A plugin with a <code class="inline">SKILL.md</code> at its root, no <code class="inline">skills/</code> directory and no <code class="inline">skills</code> manifest field loads as a single-skill plugin (docs: v2.1.142+, attribution <strong>U-11</strong>). The skill's invocation name comes from frontmatter <code class="inline">name</code>, falling back to the install directory name — which for marketplace installs is a version string that changes on every update. A plugin scanner that only enumerates <code class="inline">skills/&lt;name&gt;/SKILL.md</code> misses this form; the loader branch setting the plugin root itself as the skills path when no manifest field is present is a 2.1.220 binary literal. <strong>D/S</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/plugins-reference">plugins reference</a></p>
+            </div>
+          </section>
+
+          <section class="doc" id="workflows" data-term>
+            <p class="prompt">ls .claude/workflows .claude/output-styles</p>
+            <div class="body" data-term-out>
+              <p><strong>Dynamic workflows — D.</strong> JavaScript with top-level <code class="inline">await</code> and an exported <code class="inline">meta.name</code> and <code class="inline">meta.description</code>, saved as user, project or plugin <code class="inline">workflows/*.js</code>. They orchestrate many subagents in an isolated runtime, can resume <strong>only within the same Claude Code session</strong>, and are invoked as slash commands. Workflow subagents always run in <code class="inline">acceptEdits</code> and inherit the workflow tool allowlist; the main mode governs launch prompting, while non-allowlisted shell, web and MCP use can still prompt. Managed or user <code class="inline">disableWorkflows</code>, or <code class="inline">CLAUDE_CODE_DISABLE_WORKFLOWS</code>, removes bundled workflow commands and ultracode activation. Project same-name workflows beat personal ones, and the closest project workflow between repository root and cwd wins.</p>
+
+              <p><strong>Output styles — D.</strong> Markdown with optional <code class="inline">name</code>, <code class="inline">description</code>, <code class="inline">keep-coding-instructions</code>, and plugin-only <code class="inline">force-for-plugin</code>. The selected style <em>appends</em> instructions to the main system prompt. Selection is a settings value, not a property of the style file. <strong>S</strong></p>
+
+              <p><strong>Routines as a capability directory — S, with a gap.</strong> <code class="inline">routines/</code> is registered under <code class="inline">$CLAUDE_CONFIG_DIR</code> and is one of the six capability names served by the shared project-walk helper, scanned as a recursive <code class="inline">*.md</code> pass like commands, agents and output styles. What the analysis does <em>not</em> establish is a file schema: for CLI-managed account routines it states plainly that <strong>no reusable local routine-file schema is published</strong>. Treat the directory as discoverable and its contents as unspecified.</p>
+
+              <p><strong>Terminal customization — D.</strong> <code class="inline">~/.claude/keybindings.json</code> is a live-reloaded user JSON file with a <code class="inline">bindings</code> array of context and action maps. The writer unknown is resolved this pass — <strong>D/S</strong>: current docs document a <code class="inline">/keybindings</code> command that creates or opens the file (<a class="link-quiet" href="https://code.claude.com/docs/en/keybindings">keybindings</a>), and the installed 2.1.220 binary registers a local command <code class="inline">keybindings</code> described as "Open your keyboard shortcuts file" plus a "/keybindings to customize" hint — a build below the 2.1.226 pin, so only the presence question for the exact 2.1.226 bundle stays open, and solely because that bundle is no longer on disk. User and plugin <code class="inline">themes/*.json</code> define terminal color themes. <code class="inline">statusLine</code> and <code class="inline">subagentStatusLine</code> are command objects declared inline in settings and receive JSON on stdin; <code class="inline">/statusline</code> can generate the referenced script. These customize the client UI rather than the model's reusable knowledge.</p>
+
+              <p>Custom tools principally arrive through MCP and plugins. Permission modes govern <em>execution</em>, not capability discovery. <strong>D</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="automation" data-term>
+            <p class="prompt">cat .claude/scheduled_tasks.json ~/.claude/scheduled_tasks.json</p>
+            <div class="body" data-term-out>
+              <p>Six distinct automation surfaces exist, and they are <em>not</em> one portable "workflow" concept. All of the state below is runtime-owned: treating it as authored capability risks corruption or lost resumability.</p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Surface</th><th>Contract</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Goal mode</td>
+                    <td><code class="inline">/goal</code> installs one active session condition, maximum <strong>4,000 characters</strong>. After each turn a separate small tool-less model evaluates the transcript; acceptance clears and records success, rejection starts another turn. Replacing the condition starts a new goal. Resume or continue restores an active condition but resets counters, timing and the token baseline; achieved or cleared goals do not restore. Requires a trusted workspace and hooks, does not broaden permissions, and is unavailable when hooks are disabled or managed-only.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session scheduling</td>
+                    <td><code class="inline">/loop</code> and the <code class="inline">CronCreate</code>, <code class="inline">CronList</code>, <code class="inline">CronDelete</code> tools schedule prompts in the current session. Recurring jobs expire after seven days — the bundle's cron tuning object carries <code class="inline">recurringMaxAgeMs = 604800000</code>, source-confirming the documented figure — and unexpired jobs return only when that session is resumed. The task file is the relative constant <code class="inline">join(".claude", "scheduled_tasks.json")</code> <em>and</em> a registration under <code class="inline">$CLAUDE_CONFIG_DIR</code>, so it exists at <strong>both</strong> scopes. Scheduling <strong>fails</strong> when the project <code class="inline">.claude</code> directory or the task file inside it is a symlink — <strong>D</strong> only, per the docs' <a class="link-quiet" href="https://code.claude.com/docs/en/scheduled-tasks#limitations">Limitations</a>: the refusal was not located in the 2.1.220/2.1.218 binaries (method: proximity scan of every <code class="inline">symlink</code> and <code class="inline">scheduled_tasks</code> literal) nor in the de-bundled cron modules, so the sentence carries documentation strength, not S. <code class="inline">CLAUDE_CODE_DISABLE_CRON=1</code> disables scheduling.</td>
+                    <td><strong>D/S/U</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">loop.md</code></td>
+                    <td>Project <code class="inline">.claude/loop.md</code> overrides user <code class="inline">~/.claude/loop.md</code>, is re-read on the next iteration, and is capped at 25,000 bytes.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Account routines</td>
+                    <td>CLI <code class="inline">/schedule</code> creates recurring service-managed routines and, for accounts in the gradual rollout, one-shot routines; the CLI can list, update and run them. Routines run from fresh clones in a selected cloud environment. Deletion and API-trigger token management remain web-only ("The CLI cannot currently create or revoke tokens"), but GitHub-event triggers can be attached from the CLI on v2.1.225+ — a documentation-attributed boundary, <strong>U-11</strong> pattern; the Claude GitHub App must already be installed. <code class="inline">/schedule</code> is also available under the alias <code class="inline">/routines</code>. A routine is not the same artifact as session <code class="inline">/loop</code>.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agent View</td>
+                    <td><code class="inline">claude agents</code> is a research-preview, machine-global supervisor for independent background sessions. Beneath the config dir it manages <code class="inline">daemon.log</code>, <code class="inline">daemon/roster.json</code>, and <code class="inline">jobs/&lt;id&gt;/state.json</code> plus <code class="inline">jobs/&lt;id&gt;/tmp/</code>; <code class="inline">CLAUDE_JOB_DIR</code> points into a job. A launched job loads ordinary capabilities for its target cwd and defaults edit isolation to <code class="inline">.claude/worktrees/</code>; <code class="inline">worktree.bgIsolation</code> is <code class="inline">worktree</code> (default) or <code class="inline">none</code>. <code class="inline">disableAgentView: true</code> or <code class="inline">CLAUDE_CODE_DISABLE_AGENT_VIEW=1</code> disables it. <code class="inline">--cwd</code> filters and dispatches rather than defining a config scope. Entry points: <code class="inline">--bg</code>/<code class="inline">--background</code> (with <code class="inline">--name</code> and <code class="inline">--exec</code>) starts a background session — see the worktree row below; <code class="inline">/background</code> and its alias <code class="inline">/bg</code> convert the current session; left-arrow on an empty prompt detaches into agent view; and the shell manages sessions via <code class="inline">claude attach &lt;id&gt;</code>, <code class="inline">logs &lt;id&gt;</code>, <code class="inline">stop&#124;kill &lt;id&gt;</code>, <code class="inline">respawn &lt;id&gt; [--all]</code>, <code class="inline">rm &lt;id&gt;</code>, <code class="inline">daemon status&#124;stop</code> and <code class="inline">claude agents --json</code>. On installed 2.1.220 these subcommands exist but are hidden from top-level <code class="inline">--help</code>, dispatched by a pre-parse argv switch (<strong>S</strong>). The rolling CLI reference additionally documents <code class="inline">claude project purge</code> (present in the 2.1.220 binary — see the installing section) and <code class="inline">claude self-hosted-runner</code> (v2.1.224+; zero byte-search hits in the 2.1.220 binary — <strong>D</strong> for this row).</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session worktrees and background start</td>
+                    <td><code class="inline">-w</code>/<code class="inline">--worktree [name]</code> creates a session git worktree managed by Claude Code under <code class="inline">.claude/worktrees/</code> of the repository — generated project-scope state, previously named on this page only as Agent View's <code class="inline">bgIsolation</code> default — optionally with <code class="inline">--tmux</code> (iTerm2 native panes, or <code class="inline">--tmux=classic</code>). Creation runs a safety check that refuses when a repository-committed symlink sits at <code class="inline">.claude</code>, <code class="inline">.claude/worktrees</code> or <code class="inline">.claude/worktrees/&lt;name&gt;</code> — "could redirect worktree creation outside the repository". <code class="inline">--bg</code>/<code class="inline">--background</code> starts the session as a background agent managed via <code class="inline">claude agents</code>. Help and refusal literal verified on installed 2.1.220.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agent teams</td>
+                    <td>Experimental; off unless <code class="inline">CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</code>. Teams are named <code class="inline">session-&lt;first-eight-session-id-chars&gt;</code> and generate <code class="inline">teams/&lt;team&gt;/config.json</code>, <code class="inline">teams/&lt;team&gt;/inboxes/&lt;agent&gt;.json</code> and <code class="inline">tasks/&lt;team&gt;/</code> beneath the config dir; config is removed at session end while tasks can persist under cleanup retention. <code class="inline">teammateMode</code> is <code class="inline">in-process</code> (default), <code class="inline">auto</code>, <code class="inline">tmux</code> or <code class="inline">iterm2</code>. A teammate may name a normal subagent definition, but only its tools and model are honored, its body is appended to normal system instructions, and its <code class="inline">skills</code> and <code class="inline">mcpServers</code> are ignored in favor of normal project and user loading. One team per session, no nested teams, no automatic worktree isolation.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Cross-session messaging — D.</strong> Since 2.1.224, macOS and Linux sessions can use <code class="inline">ListAgents</code> and <code class="inline">SendMessage</code>; payloads are plain text and never transfer history or files. Same-machine delivery uses a per-session Unix socket whose path is runtime state — <code class="inline">/status</code> exposes the peer address and <code class="inline">CLAUDE_CODE_MESSAGING_SOCKET</code> can point to it — while cloud and cross-machine delivery use Anthropic's service or Remote Control. <code class="inline">crossSessionInbound</code> has a special <em>restrictive</em> order: managed, then <code class="inline">--settings</code>, then user, while project and local apply only when stricter (<code class="inline">accept &lt; hold &lt; refuse</code>). Any <code class="inline">isolatePeerMachines: true</code> forces explicit cross-machine approval. This is distinct from teams and from Agent View.</p>
+
+              <p><strong>Channels — D/S.</strong> A channel is a distinct activation surface, not just the plugin manifest field the plugins section lists: an MCP server that declares <code class="inline">capabilities.experimental["claude/channel"]</code> and pushes events into a running session — research preview, registration restricted to an Anthropic-curated allowlist. Session flags <code class="inline">--channels &lt;entries&gt;</code> (entries like <code class="inline">plugin:&lt;name&gt;@&lt;marketplace&gt;</code>) and <code class="inline">--dangerously-load-development-channels</code> (per-entry allowlist bypass after a warning dialog) enable them; the org policy <code class="inline">channelsEnabled</code> gates the feature and <code class="inline">allowedChannelPlugins</code> replaces the default allowlist. Both flags are documented on the rolling CLI reference but absent from the installed 2.1.220 <code class="inline">--help</code>; the flag, policy and allowlist literals are all present in the 2.1.220 binary. <strong>D/S</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/channels-reference">channels reference</a></p>
+
+              <p><strong>Remote and cloud — D/S.</strong> Remote Control (<code class="inline">claude remote-control</code>, <code class="inline">--remote-control</code>, or <code class="inline">/remote-control</code>) keeps the Claude process, files, tools, MCP and project configuration <em>local</em> while an authenticated remote client steers it. <code class="inline">disableRemoteControl</code> works at any settings scope and is typically managed. <code class="inline">remoteControlAtStartup</code> is special: user, <code class="inline">--settings</code> or managed <code class="inline">true</code> is honored and project/local <code class="inline">true</code> is ignored; project/local <code class="inline">false</code> can disable even managed <code class="inline">true</code>, while user <code class="inline">false</code> does not override managed <code class="inline">true</code>. By contrast <code class="inline">--cloud</code> creates or targets a cloud session (<code class="inline">--remote</code> is the deprecated spelling), <code class="inline">/tasks</code> monitors it, <code class="inline">--teleport</code> pulls a cloud session local, and <code class="inline">--resume</code> is local-session only. A selected named cloud-environment service object supplies a setup script, <code class="inline">.env</code>-format variables, a cached filesystem snapshot, and network policy or allowlist. Normally the cloud session clones the pushed branch; when GitHub access is unavailable or <code class="inline">CCR_FORCE_BUNDLE=1</code> is set, the CLI instead uploads full Git history plus uncommitted <strong>tracked</strong> changes, excluding untracked files. Project capabilities present in the clone or bundle can load there, but <strong>local user config is not inherited</strong>.</p>
+
+              <p class="eli5"><span class="eli5-term">Hidden, not absent.</span> <code class="inline">remote-control</code> is registered as <code class="inline">.command("remote-control", { hidden: true })</code>, so it exists and is invocable but never appears in <code class="inline">claude --help</code>. The visible command list on the installed build is <code class="inline">agents, auth, auto-mode, doctor, gateway, import, install, mcp, plugin|plugins, project, setup-token, ultrareview, update|upgrade</code>. <strong>S</strong> · That list is specific to the 2.1.226 build <em>and</em> its feature-flag state, and does not reproduce on this machine's actual build: installed 2.1.220 shows the same list <em>without</em> <code class="inline">import</code>. The import machinery is present in the 2.1.220 binary — the codex <code class="inline">AGENTS.md</code>&rarr;<code class="inline">CLAUDE.md</code> migration table — but <code class="inline">e.command("import")</code> is registered behind the <code class="inline">tengu_import</code> feature flag, <code class="inline">function VIe(){return Ke("tengu_import",!1)}</code>, default false, and is <em>unregistered</em>, not hidden, when the flag is off; the 2.1.226 list may reflect either a later default or that pass's flag state. <strong>S</strong>, 2.1.220</p>
+            </div>
+          </section>
+
+          <section class="doc" id="inheritance" data-term>
+            <p class="prompt">echo 'the two ceilings'</p>
+            <div class="body" data-term-out>
+              <p>This is the single most confusing part of Claude Code and the one most often gotten wrong. Claude's <strong>instruction walk</strong> and its <strong>capability walk</strong> are different loops with different stopping rules, and the capability ceiling is <em>dual</em>. A generic "nearest wins, stop at the repo root" model is wrong in both directions.</p>
+
+              <table>
+                <colgroup><col style="width:19rem" /><col style="width:4rem" /><col /><col style="width:6rem" /><col style="width:7rem" /></colgroup>
+                <thead>
+                  <tr><th>Walk</th><th>Start</th><th>Stops at</th><th><code class="inline">$HOME</code> a ceiling?</th><th>Repo root a ceiling?</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Instructions — <code class="inline">CLAUDE.md</code>, <code class="inline">.claude/CLAUDE.md</code>, <code class="inline">.claude/rules</code>, <code class="inline">CLAUDE.local.md</code></td>
+                    <td>cwd</td>
+                    <td>the filesystem root's <strong>immediate child</strong></td>
+                    <td><strong>No</strong></td>
+                    <td><strong>No</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Capability dirs — <code class="inline">.claude/skills</code>, <code class="inline">agents</code>, <code class="inline">commands</code>, <code class="inline">workflows</code>, <code class="inline">output-styles</code>, <code class="inline">routines</code></td>
+                    <td>cwd</td>
+                    <td><code class="inline">$HOME</code> (exclusive) <em>or</em> the repository root (inclusive), whichever is hit first; else the filesystem root</td>
+                    <td><strong>Yes</strong></td>
+                    <td><strong>Yes</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project <code class="inline">settings.json</code></td>
+                    <td>cwd</td>
+                    <td>a third shape again: read at <code class="inline">join(cwd, ".claude", "settings.json")</code> only — a single directory, <strong>never walked</strong></td>
+                    <td>n/a</td>
+                    <td>n/a</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>The instruction loop — S.</strong> The bundle builds the ancestor list with <code class="inline">let p = cwd; while (p !== path.parse(p).root) { list.push(p); p = path.dirname(p) }</code>, then reverses it so files concatenate root&rarr;cwd. Two precise consequences: there is <strong>no <code class="inline">$HOME</code> check and no repository check</strong> in this loop, so a <code class="inline">CLAUDE.md</code> in any ancestor is read <em>including one above the repository root</em> (subject to <code class="inline">claudeMdExcludes</code> — see the instructions section); and because the loop terminates <em>before</em> pushing the filesystem root, the topmost directory examined is the root's immediate child (<code class="inline">/Users</code> on macOS), so a literal <code class="inline">/CLAUDE.md</code> is never read.</p>
+
+              <p><strong>The capability loop — S.</strong> One shared helper, whose own log message names it <code class="inline">getProjectDirsUpToHome</code>, is used by every project capability directory. The generic loader passes the capability name straight through, so the ceiling is not skills-specific:</p>
+
+              <pre class="block">dir = resolve(startDir)
+loop:
+  if dir === $HOME                       -> stop, WITHOUT collecting $HOME
+  if isDirectory(dir/.claude/CAP)        -> collect it
+  if dir === repositoryCeiling(startDir) -> stop, HAVING collected this level
+  if dirname(dir) === dir                -> stop (filesystem root)
+  dir = dirname(dir)</pre>
+
+              <pre class="mermaid">
+flowchart TD
+    S["dir = resolve of startDir"] --> H{"is dir the $HOME directory?"}
+    H -- yes --> X1["STOP&lt;br/&gt;$HOME is EXCLUSIVE&lt;br/&gt;it is never collected"]
+    H -- no --> C{"dir/.claude/CAP is a directory?"}
+    C -- yes --> K["collect dir/.claude/CAP"]
+    C -- no --> R{"is dir the repository ceiling?"}
+    K --> R
+    R -- yes --> X2["STOP&lt;br/&gt;repo root is INCLUSIVE&lt;br/&gt;this level IS collected"]
+    R -- no --> F{"is dirname of dir the same as dir?"}
+    F -- yes --> X3["STOP at the filesystem root&lt;br/&gt;only when neither ceiling fired"]
+    F -- no --> U["dir = dirname of dir"]
+    U --> H
+
+    class X1 warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <ul class="plain">
+                <li><strong><code class="inline">$HOME</code> is an exclusive ceiling.</strong> The walk halts <em>before</em> it, so <code class="inline">~/.claude/skills</code> is never picked up as a <em>project</em> directory — it is only ever the user scope. Any project living under <code class="inline">$HOME</code>, which is the common case, is bounded by <code class="inline">$HOME</code> even when it is not a Git repository.</li>
+                <li><strong>The repository root is an inclusive ceiling.</strong> That level is collected, then the walk stops.</li>
+                <li><strong>Outside a Git repository and outside <code class="inline">$HOME</code></strong> — for example <code class="inline">/opt/src/thing</code> — neither ceiling fires and the walk runs to the filesystem root.</li>
+                <li><strong>The repository ceiling is not simply "the nearest <code class="inline">.git</code>".</strong> The helper <em>widens</em> it: if the start directory's repository is nested inside the session's repository — a submodule, or a repo-in-repo — the ceiling becomes the <strong>outer session repository root</strong>, not the inner one.</li>
+              </ul>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>One concrete tree, both walks.</strong> Session cwd is <code class="inline">/Users/me/work/repo/apps/web</code>, the repository root is <code class="inline">/Users/me/work/repo</code>, and <code class="inline">$HOME</code> is <code class="inline">/Users/me</code>. The repository ceiling is hit first, so <code class="inline">$HOME</code> never even comes into play for capabilities here.</p>
+
+              <pre class="mermaid">
+flowchart BT
+    CWD["apps/web · cwd&lt;br/&gt;instructions + capabilities"] --> A["repo · repository root&lt;br/&gt;CAPABILITY WALK STOPS HERE&lt;br/&gt;this level IS collected"]
+    A --> B["/Users/me/work&lt;br/&gt;instructions ONLY"]
+    B --> HOME["/Users/me · $HOME&lt;br/&gt;instructions ONLY&lt;br/&gt;read as an ordinary ancestor"]
+    HOME --> USERS["/Users&lt;br/&gt;instructions ONLY&lt;br/&gt;last level examined"]
+    USERS --> ROOT["/ · filesystem root&lt;br/&gt;NEVER read by either walk"]
+
+    class ROOT warn
+    class A ok
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+    classDef ok fill:#8a451622,stroke:#8a4516,stroke-width:2px
+</pre>
+
+              <p>So a <code class="inline">CLAUDE.md</code> sitting in the home directory <em>is</em> read as an ordinary ancestor contribution, while <code class="inline">~/.claude/skills</code> is not a project directory. Both facts follow from the same pair of loops, and they look contradictory only if the two walks are conflated.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>How each capability directory is scanned — S.</strong> Managed contributions come from <code class="inline">&lt;managed root&gt;/.claude/CAP</code>, user from <code class="inline">$CLAUDE_CONFIG_DIR/CAP</code>, project from the walked list.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col /></colgroup>
+                <thead><tr><th>Capability</th><th>Scan style per directory</th><th>Descendant activation</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">skills</code></td><td>own directory loader — directories containing <code class="inline">SKILL.md</code>, <strong>non-recursive</strong></td><td>Yes, lazily; descendant skill discovery <em>skips gitignored</em> skill directories</td></tr>
+                  <tr><td><code class="inline">commands</code></td><td rowspan="4"><strong>recursive</strong> <code class="inline">*.md</code> scan — ripgrep <code class="inline">--files --hidden --follow --no-ignore --glob '*.md'</code> with a JS fallback, so gitignored and hidden files are included and symlinks are followed</td><td>Not promised</td></tr>
+                  <tr><td><code class="inline">agents</code></td><td>Closest project duplicate wins across the walk</td></tr>
+                  <tr><td><code class="inline">output-styles</code></td><td>Not promised</td></tr>
+                  <tr><td><code class="inline">routines</code></td><td>Not promised; file schema unpublished</td></tr>
+                  <tr><td><code class="inline">workflows</code></td><td>Loaded from every <code class="inline">.claude/workflows/</code> on the ceiling&rarr;cwd path</td><td>Closest duplicate wins</td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Undocumented, found in the bundle.</span> In a linked worktree, the <strong>main checkout's</strong> <code class="inline">.claude/CAP</code> is appended to the project list when the worktree's own repository-root entry is absent — so main-checkout skills, agents and commands remain visible from a worktree. <strong>S</strong></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Settings precedence — D/S, confirmed at source strength.</strong> High to low: managed &rarr; CLI <code class="inline">--settings</code> &rarr; local &rarr; project &rarr; user. The bundle stores the source list low&rarr;high as the literal array <code class="inline">["userSettings","projectSettings","localSettings","flagSettings","policySettings"]</code>, which reverses to exactly that order.</p>
+
+              <pre class="mermaid">
+flowchart BT
+    A["user&lt;br/&gt;base dir: $CLAUDE_CONFIG_DIR"] --> B["project&lt;br/&gt;resolve of cwd + .claude/settings.json&lt;br/&gt;ONE directory, never walked"]
+    B --> C["local&lt;br/&gt;.claude/settings.local.json&lt;br/&gt;at the Git MAIN CHECKOUT root"]
+    C --> D["CLI --settings&lt;br/&gt;base dir: the settings file's own directory"]
+    D --> E["managed / policy&lt;br/&gt;first NON-EMPTY administrative tier wins"]
+    L["legacy start-directory local copy&lt;br/&gt;still read; repo-root local wins a shared key&lt;br/&gt;permission rules from BOTH stay active"] -.->|secondary input| C
+
+    class L warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p>Base directories are resolved per source: <code class="inline">userSettings</code> &rarr; <code class="inline">$CLAUDE_CONFIG_DIR</code>; <code class="inline">projectSettings</code> and <code class="inline">policySettings</code> &rarr; <code class="inline">resolve(cwd)</code>; <code class="inline">flagSettings</code> &rarr; the <code class="inline">--settings</code> file's directory; <code class="inline">localSettings</code> &rarr; the canonical Git root. The relative names are <code class="inline">.claude/settings.json</code> and <code class="inline">.claude/settings.local.json</code>.</p>
+
+              <p>Since 2.1.211 (attribution <strong>U-11</strong>), local means <code class="inline">.claude/settings.local.json</code> at the Git repository root, <strong>resolved to the main checkout across worktrees</strong> — the canonicalizer is passed the main-checkout resolver, which confirms the worktree behavior. It falls back to the start directory in three bundle-visible cases: there is no Git root; the resolved root <em>is</em> the home directory; or a directory's ownership cannot be verified on platforms without uid semantics. It also stays under the start directory in Agent SDK sessions.</p>
+
+              <p><strong>Merge semantics — D/S.</strong> Higher scalars replace, objects deep-merge, relevant arrays concatenate and de-duplicate, and permission policy retains restrictive behavior. Managed delivery chooses the first non-empty administrative tier. One bundle-confirmed array exception: <code class="inline">fallbackModel</code> never merges — the highest-precedence file supplies the entire chain, the merge customizer returning the later array for that key before the concat-dedupe step (literal in 2.1.220 and 2.1.218; docs agree the key "does not merge across settings files"). <code class="inline">extraKnownMarketplaces</code> same-name entries still deep-merge <em>field by field</em> on this version row; docs and changelog record that only from <strong>v2.1.228</strong> does a higher-precedence entry replace the same-name entry whole — a fix preventing a redefined entry from inheriting another tier's <code class="inline">source.headers</code> credential. A tool computing effective marketplaces must version-gate that switch — and note that at or below this row the field-by-field merge means a higher-precedence entry can inherit fields, including <code class="inline">headers</code>, it did not set.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="precedence" data-term>
+            <p class="prompt">echo 'precedence and shadowing, per capability'</p>
+            <div class="body" data-term-out>
+              <p>Duplicate behavior is <strong>capability-specific</strong>, and inside Claude Code it points several ways at once: instructions concatenate and never shadow, settings deep-merge, MCP servers replace wholesale, hooks append, and skills de-duplicate by resolved path rather than by name. A single "nearest wins" algorithm is wrong.</p>
+
+              <table>
+                <colgroup><col style="width:10rem" /><col /><col /><col style="width:6rem" /></colgroup>
+                <thead>
+                  <tr><th>Capability</th><th>Search boundary and effective order</th><th>Duplicate / merge behavior</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">CLAUDE.md</code> / <code class="inline">CLAUDE.local.md</code></td>
+                    <td>Managed and user contributors first, then cwd upward to the <strong>filesystem root's immediate child</strong>; no <code class="inline">$HOME</code> check, no repository check; descendants load lazily on file access</td>
+                    <td><strong>Concatenation, never shadowing.</strong> Per directory: <code class="inline">CLAUDE.md</code> &rarr; <code class="inline">.claude/CLAUDE.md</code> &rarr; <code class="inline">.claude/rules/</code> &rarr; <code class="inline">CLAUDE.local.md</code>, at every ancestor. In a linked worktree nested inside its main checkout, main-checkout ancestors are skipped for Project instructions while their <code class="inline">CLAUDE.local.md</code> still loads</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Rules</td>
+                    <td>User <code class="inline">rules/</code>, then project <code class="inline">.claude/rules/</code> at every ancestor of the instruction walk; descendant <code class="inline">paths</code> rules load on matching file access</td>
+                    <td>Applicable rule content accumulates and project comes later than user; a rule without <code class="inline">paths</code> is unconditional</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Skills / legacy commands</td>
+                    <td>Managed, user, then project <code class="inline">.claude/skills</code> from cwd up to <code class="inline">$HOME</code> (exclusive) or the repository root (inclusive), whichever comes first; filesystem root only when neither applies; repository ceiling widens to the session repository for a nested repo or submodule; plus lazy descendants, <code class="inline">--add-dir</code> roots, plugins and bundled skills</td>
+                    <td>Documented priority is managed &gt; user &gt; project &gt; bundled, and a skill beats an unscoped legacy command — but the located loader concatenates managed &rarr; user &rarr; project &rarr; added-dir &rarr; legacy commands and de-duplicates by <strong>resolved real path</strong>, so name-collision resolution is <strong>unknown (U-13)</strong>. Nested same-name variants stay directory-qualified. Legacy-command tie-break across ancestors is <strong>unknown (U-07)</strong></td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agents</td>
+                    <td>Managed &rarr; session <code class="inline">--agents</code> &rarr; every project <code class="inline">.claude/agents</code> from cwd to the same dual ceiling &rarr; user &rarr; plugin; each root scanned recursively with hidden and gitignored files included and symlinks followed</td>
+                    <td>Closest project duplicate wins; a collision inside one recursive tree is filesystem-order <strong>undefined</strong>; in a linked worktree the main checkout's directory is appended when the worktree has none; plugin agents ignore <code class="inline">hooks</code>, <code class="inline">mcpServers</code> and <code class="inline">permissionMode</code></td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Workflows</td>
+                    <td>Every <code class="inline">.claude/workflows/</code> on the same dual-ceiling path, plus user and enabled plugins</td>
+                    <td>Closest project workflow beats a farther project or user duplicate; <code class="inline">disableWorkflows</code> removes bundled workflow commands entirely</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Output styles</td>
+                    <td>User <code class="inline">$CLAUDE_CONFIG_DIR/output-styles</code>, project directories on the same dual-ceiling path, and plugin roots; selected through settings</td>
+                    <td>Selection is a settings value, not a file property; plugin-only <code class="inline">force-for-plugin</code> can constrain that plugin's style</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Settings</td>
+                    <td>Managed &rarr; CLI <code class="inline">--settings</code> &rarr; repo-root local &rarr; legacy start-dir local &rarr; project &rarr; user. Project <code class="inline">settings.json</code> read at <code class="inline">resolve(cwd)/.claude/settings.json</code> only, never walked; local canonicalizes to the Git main checkout with three bundle-visible fallbacks to the start directory</td>
+                    <td>Scalars replace; objects deep-merge; selected arrays concatenate and de-duplicate; repo-root local beats the legacy key while permission rules from both stay active; managed delivery takes the first non-empty administrative tier</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Hooks</td>
+                    <td>Exactly five contributors in order: merged settings <code class="inline">hooks</code>, plugin <code class="inline">hooks/hooks.json</code>, skill frontmatter, main-thread-agent frontmatter, session/SDK. <code class="inline">.claude/hooks/</code> is write-protected by the sandbox path list but never scanned (mechanism corrected this pass), and no project- or user-level <code class="inline">hooks.json</code> exists</td>
+                    <td>A repeated settings-file handler de-duplicates; identical plugin or skill contributions stay distinct; matching handlers run in parallel and restrictive results dominate; <code class="inline">allowManagedHooksOnly</code> collapses the set to policy hooks and <code class="inline">disableAllHooks</code> empties it</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>MCP</td>
+                    <td><code class="inline">user</code> = resolved global JSON file's top-level <code class="inline">mcpServers</code>; <code class="inline">local</code> = <code class="inline">projects[normalized main-checkout path].mcpServers</code> in the same file; <code class="inline">project</code> = <code class="inline">.mcp.json</code> read at every level from cwd to the filesystem root's immediate child, merged root&rarr;cwd (corrected this pass; previously stated as one root location); <code class="inline">enterprise</code> = <code class="inline">&lt;managed root&gt;/managed-mcp.json</code>; plus non-file <code class="inline">claudeai</code>, <code class="inline">dynamic</code> and <code class="inline">agent</code> scopes</td>
+                    <td>local &rarr; project &rarr; user replace the <strong>whole</strong> same-name server; plugin servers and claude.ai connectors de-duplicate against higher-priority entries by <strong>endpoint</strong>; <code class="inline">managed-mcp.json</code> is an exclusive administrative set, not another merge layer; within project scope, entries closer to cwd override same-name entries from parent <code class="inline">.mcp.json</code> files (<strong>D&ne;S</strong> — docs still describe a single root file; binaries 2.1.220/2.1.218 govern)</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Plugins / marketplaces</td>
+                    <td>Managed, user, project and local enablement plus session source flags; <code class="inline">pluginConfigs</code> values load only from managed &rarr; <code class="inline">--settings</code> &rarr; user; skills-directory plugins have narrower discovery</td>
+                    <td>Settings precedence selects enablement and catalogs; cache identity and version control refresh; update, reload, disable and uninstall are distinct operations</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Memory / Goal / Cron / remote state</td>
+                    <td>Auto memory keyed by the sanitized Git main-checkout root beneath <code class="inline">$CLAUDE_CODE_REMOTE_MEMORY_DIR</code> or <code class="inline">$CLAUDE_CONFIG_DIR</code>; agent memory uses explicit physical scopes; Cron state exists at both project and user scope; Goal, session, team and remote records belong to one runtime</td>
+                    <td><strong>Generated state is not inherited as authored config.</strong> Linked worktrees share the main checkout's memory directory while transcripts key on cwd, so the two keys can differ; resumed sessions restore only the documented subset</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="cross-tool" data-term>
+            <p class="prompt">grep -rl 'CLAUDE.md\|.claude/skills' /other/agents</p>
+            <div class="body" data-term-out>
+              <p>Claude's own files are read by other CLIs — but <code class="inline">.claude/</code> is <strong>not</strong> shared as a unit, and the relationship is not a simple edge. Model one physical artifact with zero or more agent-reader relationships, each carrying its own evidence class, walk and ceiling.</p>
+
+              <pre class="mermaid">
+flowchart LR
+    A["CLAUDE.md"] --> CP["GitHub Copilot CLI"]
+    A -->|only if NO AGENTS.md anywhere cwd to worktree| OC["OpenCode"]
+    B[".claude/skills/NAME/SKILL.md"] --> CP
+    B -->|scans recursively, any depth| OC
+    C[".claude/agents/**/*.md"] --> CP
+    D["settings.json + settings.local.json"] -->|exactly FIVE keys| CP
+    E[".claude-plugin/plugin.json"] --> CP
+    E -->|manifest probe order| CX["OpenAI Codex"]
+    F[".claude-plugin/marketplace.json"] --> CP
+    U["~/.claude/CLAUDE.md and ~/.claude/skills"] -->|LITERAL paths, not $CLAUDE_CONFIG_DIR| OC
+    AG["AGENTS.md"] -.->|explicit import, symlink or migration ONLY| CC["Claude Code"]
+
+    class AG warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>Claude does not natively discover <code class="inline">AGENTS.md</code> — D.</strong> A <code class="inline">CLAUDE.md</code> may explicitly <code class="inline">@AGENTS.md</code>, a symlink may point at it, and <code class="inline">/init</code> or <code class="inline">/import</code> can copy information across. Those are explicit indirection and migration, not live discovery. <strong>An import command never creates inheritance</strong>: the resulting artifact must be tracked separately from the foreign source unless the target CLI genuinely live-reads that exact path.</p>
+
+              <p><strong>The Claude&larr;foreign migration inputs, enumerated — D/S.</strong> <code class="inline">/init</code> reads Cursor rules — <code class="inline">.cursor/rules/</code> or <code class="inline">.cursorrules</code> — and Copilot rules in <code class="inline">.github/copilot-instructions.md</code>; with <code class="inline">CLAUDE_CODE_NEW_INIT=1</code> it additionally reads <code class="inline">AGENTS.md</code>, <code class="inline">.devin/rules/</code>, <code class="inline">.windsurf/rules/</code> or <code class="inline">.windsurfrules</code>, and <code class="inline">.clinerules</code>. <code class="inline">/import</code> (v2.1.213+, attribution <strong>U-11</strong>) appends a one-time copy of instruction files such as <code class="inline">AGENTS.md</code> to the matching <code class="inline">CLAUDE.md</code> and carries over MCP servers, commands, subagents and skills. The CLI wrapper <code class="inline">claude import [codex&#124;gemini] [--dry-run] [--yes]</code> starts a session that runs <code class="inline">/import</code>; on 2.1.220 its registration sits behind the <code class="inline">tengu_import</code> feature flag (default off), so it may be absent from <code class="inline">--help</code> — see the automation section. Every listed path literal is present in the 2.1.220 binary. <strong>D/S</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/memory#agents-md">memory: AGENTS.md</a></p>
+
+              <p><strong>D/U:</strong> no first-party evidence shows Claude live-reading <code class="inline">.agents/</code>, <code class="inline">.codex/</code>, <code class="inline">.github/</code> Copilot customizations, <code class="inline">.opencode/</code>, <code class="inline">opencode.json</code>, or <code class="inline">GEMINI.md</code>.</p>
+
+              <table>
+                <colgroup><col style="width:16rem" /><col style="width:8rem" /><col /></colgroup>
+                <thead><tr><th>Claude artifact</th><th>Foreign reader</th><th>How that reader treats it</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">CLAUDE.md</code> (repository / nested)</td><td>Copilot CLI</td><td><code class="inline">R</code> — live read <strong>D</strong></td></tr>
+                  <tr><td><code class="inline">CLAUDE.md</code></td><td>OpenCode</td><td><code class="inline">R</code> only if no <code class="inline">AGENTS.md</code> exists anywhere cwd&rarr;worktree; removed by <code class="inline">OPENCODE_DISABLE_CLAUDE_CODE</code> <strong>S</strong></td></tr>
+                  <tr><td><code class="inline">CLAUDE.md</code></td><td>Codex</td><td><code class="inline">MIG</code>, or <code class="inline">R</code> only where an administrator or user configures it as a fallback filename — not a default</td></tr>
+                  <tr><td><code class="inline">.claude/CLAUDE.md</code></td><td>Copilot CLI</td><td><strong>D</strong> — a documented CLI read location, restored by the second verification pass after the first withdrew it to unverified. No <code class="inline">.claude</code>+<code class="inline">CLAUDE.md</code> adjacency appears in either shipped binary, which bounds the search method rather than the behaviour. See <a class="link-quiet" href="github-copilot.html#cross-read">the Copilot guide</a>, which is authoritative for what Copilot reads</td></tr>
+                  <tr><td><code class="inline">~/.claude/CLAUDE.md</code></td><td>OpenCode</td><td><code class="inline">R</code> as a global fallback when the OpenCode config-dir <code class="inline">AGENTS.md</code> is absent — via the <strong>literal</strong> path <strong>S</strong></td></tr>
+                  <tr><td><code class="inline">CLAUDE.local.md</code>, <code class="inline">.claude/rules/</code></td><td>—</td><td>No foreign reader in the cited source set</td></tr>
+                  <tr><td><code class="inline">.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>Copilot CLI, OpenCode</td><td>Copilot: one of three skill roots (<code class="inline">.github/skills</code> &rarr; <code class="inline">.agents/skills</code> &rarr; <code class="inline">.claude/skills</code>), <strong>first loaded wins, dedup by name</strong>. OpenCode: scanned at every ancestor cwd&rarr;worktree <strong>S</strong></td></tr>
+                  <tr><td><code class="inline">.claude/agents/**/*.md</code></td><td>Copilot CLI</td><td>Read after <code class="inline">.github/agents</code>; whole-session order is user &rarr; project <code class="inline">.github</code> &rarr; ancestor <code class="inline">.github</code> &rarr; project <code class="inline">.claude</code> &rarr; ancestor <code class="inline">.claude</code> &rarr; plugin &rarr; remote, <strong>first loaded wins, dedup by ID</strong> <strong>S</strong></td></tr>
+                  <tr><td><code class="inline">.claude/settings.json</code>, <code class="inline">.claude/settings.local.json</code></td><td>Copilot CLI</td><td><code class="inline">R</code>, exactly five keys: <code class="inline">companyAnnouncements</code>, <code class="inline">disableAllHooks</code>, <code class="inline">enabledPlugins</code>, <code class="inline">extraKnownMarketplaces</code>, <code class="inline">hooks</code> — consumed by <strong>two</strong> loaders, settings <em>and</em> marketplaces, not hooks alone <strong>S</strong></td></tr>
+                  <tr><td><code class="inline">.claude/commands/*.md</code></td><td>Copilot CLI</td><td><strong>D</strong> — restored by the second verification pass: Copilot's own skills page lists the directory, and a skill of the same name overrides the command. No joined path literal appears in the shipped binaries, which bounds the search method rather than the behaviour. See <a class="link-quiet" href="github-copilot.html#cross-read">the Copilot guide</a></td></tr>
+                  <tr><td><code class="inline">.claude-plugin/plugin.json</code></td><td>Copilot CLI, Codex</td><td>Copilot: fourth of four manifest paths. Codex: third in the probe order after root <code class="inline">plugin.json</code> and <code class="inline">.codex-plugin</code> <strong>S</strong></td></tr>
+                  <tr><td><code class="inline">.claude-plugin/marketplace.json</code></td><td>Copilot CLI</td><td>One of four marketplace paths <strong>S</strong></td></tr>
+                  <tr><td>Auto memory, agent memory, Agent View, team, Cron and cloud state</td><td>—</td><td>No foreign reader anywhere in the matrix</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Three asymmetries that break a naive edge model — S.</strong></p>
+              <ol class="steps">
+                <li><strong>The same directory name is not the same directory.</strong> Claude resolves its user tree through <code class="inline">$CLAUDE_CONFIG_DIR</code>, falling back to <code class="inline">~/.claude</code>, while OpenCode's fallbacks are the <em>literal</em> paths <code class="inline">~/.claude/CLAUDE.md</code> and <code class="inline">~/.claude/skills</code>. With <code class="inline">CLAUDE_CONFIG_DIR</code> set, the two coding agents read different files under the same nominal name. Whether Copilot or OpenCode honors that variable is stated by no primary source — <strong>U-16</strong>.</li>
+                <li><strong>"Local" resolves differently.</strong> Claude canonicalizes <code class="inline">.claude/settings.local.json</code> to the Git <strong>main checkout</strong>; Copilot reads it <strong>project-relative</strong>. Inside a linked worktree the two designate different files.</li>
+                <li><strong>Depth differs.</strong> Claude accepts a skill only at the exact four-segment shape <code class="inline">.claude/skills/&lt;name&gt;/SKILL.md</code>, while OpenCode scans <code class="inline">.claude/skills/**/SKILL.md</code>. A nested skill is therefore live for one reader and invisible to the other from one physical directory.</li>
+              </ol>
+            </div>
+          </section>
+
+          <section class="doc" id="installing" data-term>
+            <p class="prompt">claude plugin marketplace add &amp;&amp; claude plugin install</p>
+            <div class="body" data-term-out>
+              <p><strong>Plugins and marketplaces — D/S.</strong> Marketplace catalogs are <code class="inline">.claude-plugin/marketplace.json</code>. Enablement and known catalogs live in <em>settings</em>, not in a separate registry file: <code class="inline">enabledPlugins</code> and <code class="inline">extraKnownMarketplaces</code>.</p>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /><col style="width:12rem" /></colgroup>
+                <thead><tr><th>Command group</th><th>Verbs on installed 2.1.226</th><th>Scope rules</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">claude plugin …</code></td>
+                    <td><code class="inline">details</code>, <code class="inline">enable</code>, <code class="inline">disable</code>, <code class="inline">eval</code>, <code class="inline">init</code>, <code class="inline">new</code>, <code class="inline">install</code>, <code class="inline">list</code>, <code class="inline">marketplace</code>, <code class="inline">prune</code>, <code class="inline">autoremove</code>, <code class="inline">tag</code>, <code class="inline">uninstall</code>, <code class="inline">remove</code>, <code class="inline">update</code>, <code class="inline">validate</code></td>
+                    <td><code class="inline">enabledPlugins</code> is valid at project and local scope; <code class="inline">pluginConfigs</code> values load only from managed &rarr; <code class="inline">--settings</code> &rarr; user</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">claude plugin marketplace …</code></td>
+                    <td><code class="inline">add</code>, <code class="inline">list</code>, <code class="inline">remove</code>, <code class="inline">update</code></td>
+                    <td>Catalogs are selected by settings precedence; catalog refresh and plugin update are distinct operations</td>
+                  </tr>
+                  <tr>
+                    <td>Session-only sources</td>
+                    <td><code class="inline">--plugin-dir</code>, <code class="inline">--plugin-url</code></td>
+                    <td>Rejected outright when <code class="inline">disableSideloadFlags</code> is set</td>
+                  </tr>
+                  <tr>
+                    <td>Install-free</td>
+                    <td>A skills-directory plugin: drop <code class="inline">.claude-plugin/plugin.json</code> into a folder under <code class="inline">~/.claude/skills/</code> or the launch directory's <code class="inline">.claude/skills/</code></td>
+                    <td>Loads in place as <code class="inline">&lt;name&gt;@skills-dir</code>; project instances need workspace trust and come from the launch directory only</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Managed marketplace restrictions — D/S.</strong> Three managed-settings-only keys restrict marketplace sources: <code class="inline">strictKnownMarketplaces</code> — an allowlist of addable sources, where undefined means no restriction and an empty array is complete lockdown including the official Anthropic marketplace; <code class="inline">blockedMarketplaces</code> — a blocklist checked before any network or filesystem operation; and <code class="inline">pluginSuggestionMarketplaces</code> — an allowlist of marketplace names whose plugins may surface as contextual install suggestions. Enforcement runs on marketplace add <em>and</em> on plugin install, update, refresh and auto-update, so a marketplace added before the policy was set can no longer supply plugins. GitHub owner wildcards (<code class="inline">owner/*</code>) are accepted in exactly the first two lists, documented since v2.1.223 (attribution <strong>U-11</strong>). The skills-dir source participates (<strong>S</strong>, 2.1.220 bundle literals): any <code class="inline">strictKnownMarketplaces</code> allowlist blocks the skills-directory scan unless <code class="inline">{"source":"skills-dir"}</code> is allowlisted, and a <code class="inline">blockedMarketplaces</code> skills-dir entry turns the scan off without restricting other marketplaces. <code class="inline">disableSideloadFlags</code> pairs with <code class="inline">strictKnownMarketplaces</code> to also reject session sideload flags. <strong>D/S</strong> · <a class="link-quiet" href="https://code.claude.com/docs/en/plugin-marketplaces#managed-marketplace-restrictions">managed marketplace restrictions</a></p>
+
+              <p><strong>Removal — S.</strong> <code class="inline">claude project purge [path]</code> / <code class="inline">--all</code>, with <code class="inline">--dry-run</code>, <code class="inline">-i</code> (per-item prompt) and <code class="inline">-y</code>, is the sanctioned CLI removal mechanism for generated project state — help text verbatim "Delete all Claude Code state for a project (transcripts, tasks, file history, config entry)", where the config entry is the <code class="inline">projects[key]</code> entry in the resolved global JSON: the purge enumerator lists it as kind <code class="inline">config-key</code> with reason "project entry in ~/.claude.json (trust, history, MCP servers)". Directly relevant to a tool whose mission includes capability removal. <strong>S</strong>, help and enumerator literals on installed 2.1.220</p>
+
+              <p class="eli5"><span class="eli5-term">Not documented here on purpose.</span> The source analysis establishes <em>where</em> <code class="inline">extraKnownMarketplaces</code> lives — in settings, at the scopes above, and as one of the five keys Copilot also reads — but it does <strong>not</strong> publish the object's field shape. Nothing on this page invents it. Read the value from an existing settings file rather than trusting a remembered schema.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Adding the file-based capabilities.</strong> There is no install command for these: you create a file at the shape the loader accepts, in a directory the walk visits.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>Capability</th><th>User scope</th><th>Project scope</th><th>Shape that is accepted</th></tr></thead>
+                <tbody>
+                  <tr><td>Skill</td><td><code class="inline">$CLAUDE_CONFIG_DIR/skills/&lt;name&gt;/SKILL.md</code></td><td><code class="inline">.claude/skills/&lt;name&gt;/SKILL.md</code> at any directory on the capability walk</td><td>A <strong>directory</strong> containing <code class="inline">SKILL.md</code>; nothing else counts; body under <code class="inline">1e6</code> bytes</td></tr>
+                  <tr><td>Agent</td><td><code class="inline">$CLAUDE_CONFIG_DIR/agents/**/*.md</code></td><td><code class="inline">.claude/agents/**/*.md</code></td><td>Markdown with YAML frontmatter; recursive, hidden and gitignored files included</td></tr>
+                  <tr><td>Legacy command</td><td><code class="inline">$CLAUDE_CONFIG_DIR/commands/</code></td><td><code class="inline">.claude/commands/&lt;name&gt;.md</code></td><td>Recursive <code class="inline">*.md</code>; a <code class="inline">SKILL.md</code> inside a command subdirectory renames the command after its directory</td></tr>
+                  <tr><td>Workflow</td><td><code class="inline">$CLAUDE_CONFIG_DIR/workflows/*.js</code></td><td><code class="inline">.claude/workflows/*.js</code></td><td>JavaScript with top-level <code class="inline">await</code> and exported <code class="inline">meta.name</code> / <code class="inline">meta.description</code></td></tr>
+                  <tr><td>Output style</td><td><code class="inline">$CLAUDE_CONFIG_DIR/output-styles/*.md</code></td><td><code class="inline">.claude/output-styles/*.md</code></td><td>Markdown; selection is written into settings</td></tr>
+                  <tr><td>Instruction / rule</td><td><code class="inline">$CLAUDE_CONFIG_DIR/CLAUDE.md</code>, user <code class="inline">rules/</code></td><td><code class="inline">CLAUDE.md</code>, <code class="inline">.claude/CLAUDE.md</code>, <code class="inline">.claude/rules/**/*.md</code>, <code class="inline">CLAUDE.local.md</code></td><td>Markdown; rules may carry a <code class="inline">paths</code> glob list</td></tr>
+                  <tr><td>Hook</td><td colspan="2">The <code class="inline">hooks</code> key inside <code class="inline">settings.json</code> / <code class="inline">settings.local.json</code> at any settings scope, or skill/agent frontmatter, or a plugin's <code class="inline">hooks/hooks.json</code></td><td><strong>Never</strong> a file dropped into <code class="inline">.claude/hooks/</code></td></tr>
+                  <tr><td>MCP server</td><td colspan="2"><code class="inline">claude mcp add</code> / <code class="inline">add-json</code> with <code class="inline">--scope local</code> (default, per-project state in the global JSON file), <code class="inline">--scope project</code> (<code class="inline">.mcp.json</code>) or <code class="inline">--scope user</code></td><td><code class="inline">mcpServers</code> object; WebSocket only through JSON / <code class="inline">add-json</code></td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Two traps when writing files.</span> A skill placed at <code class="inline">.claude/skills/group/name/SKILL.md</code> is <em>not</em> a skill to Claude — the artifact classifier accepts only the exact four-segment shape. And a project <code class="inline">.claude/settings.json</code> placed in a parent directory of cwd is never read, because that file alone is not walked.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="unknowns" data-term>
+            <p class="prompt">grep -n 'U-[0-9]' harness-analysis.md</p>
+            <div class="body" data-term-out>
+              <p>Five section-level unknowns survived inspection of the bundle, and four consolidated <code class="inline">U-</code> numbers touch Claude. None is resolved by guessing: a UI that displays "the active one" for an unresolved winner is inventing it. The second pass (2026-08-13) resolved two from primary evidence — the server-push delivery tier, moved to the scopes section with <strong>U</strong> (§3) below shrunk to the MDM/registry gaps, and the keybindings writer, retagged in the workflows section — with no renumbering; the rest stand.</p>
+
+              <table>
+                <colgroup><col style="width:5rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>ID</th><th>What is unknown</th><th>What evidence would settle it</th><th>Consequence for a tool</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>U-07</strong></td>
+                    <td>Same-name <strong>legacy-command</strong> resolution across several project ancestors. The commands loader shares the ancestor walk, but no explicit tie-break was located in the bundle.</td>
+                    <td>The command-resolution code path, or first-party documentation at the precision the skill, agent, workflow, settings and MCP rules already have.</td>
+                    <td>Enumerate every matching command with its directory; do not name a winner.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-11</strong></td>
+                    <td>Version attributions — "since 2.1.203", "since 2.1.207", "since 2.1.211", "v2.1.59+", "since 2.1.224". The first pass had only 2.1.226 and the second only 2.1.218/2.1.220 — every named boundary falls outside or between the inspected builds, so no boundary was ever compared across builds.</td>
+                    <td>Installing and comparing the named earlier builds.</td>
+                    <td>Treat every "since 2.1.x" on this page as a documentation claim, not a verified boundary.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-13</strong></td>
+                    <td>Same-name <strong>skill</strong> resolution. The documented priority enterprise/managed &rarr; personal &rarr; project &rarr; bundled was not observed as <em>name</em> resolution; the located loader concatenates in that order then de-duplicates by <strong>resolved real path</strong> and tags the step as non-resolving.</td>
+                    <td>The code path that performs name-collision resolution, which sits outside everything inspected.</td>
+                    <td>Highest-ranked residual risk. Enumerate the set of same-named skills; never render one as active.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-16</strong></td>
+                    <td>Cross-tool <code class="inline">~/.claude</code> resolution. Claude resolves its user tree through <code class="inline">$CLAUDE_CONFIG_DIR</code>; OpenCode's compatibility fallbacks are literal paths. Whether Copilot or OpenCode honors <code class="inline">CLAUDE_CONFIG_DIR</code> is stated by no primary source.</td>
+                    <td>A first-party statement, or a literal in the Copilot / OpenCode binaries.</td>
+                    <td>A relocated Claude home may silently desynchronize the foreign readers and produce confidently wrong provenance.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U</strong> (§3)</td>
+                    <td>Managed capability <strong>delivery channels</strong> — narrowed this pass to the <strong>MDM and registry</strong> version-attribution gaps. The server-push tier is resolved: first-party documented, with its machinery (<code class="inline">remote-settings.json</code>, <code class="inline">forceRemoteSettingsRefresh</code>, <code class="inline">policyHelper</code>) present in the 2.1.218/2.1.220 binaries — see the scopes section.</td>
+                    <td>Administrative deployment documentation for MDM and registry delivery, with first-supported CLI versions.</td>
+                    <td>Report the managed roots as paths; the server tier's cache is <code class="inline">~/.claude/remote-settings.json</code> — managed-scope content under the user config dir.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U</strong> (§3)</td>
+                    <td><code class="inline">scheduled_tasks.json</code> <strong>file schema</strong> and durable-restart semantics. The path constant and the jitter/expiry config are present; the record shape is not asserted anywhere readable, and a feature-gated internal durable flag has no public contract.</td>
+                    <td>A published schema, or the serializer in a future build.</td>
+                    <td>Treat the file as opaque generated state at <em>both</em> scopes: do not parse, do not offer to edit, and never install it through a symlink — scheduling fails outright if the directory or the file is one.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Which conventions look least stable.</strong> Ranked from the change-risk register, keeping only what touches Claude:</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /></colgroup>
+                <thead><tr><th>Risk</th><th>What can move, and why it hurts</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Very high</strong></td><td><strong>Cross-read Claude files.</strong> A Claude-focused change can also alter Copilot or OpenCode behavior, while Codex and Antigravity imports create divergent copies. The same physical path can resolve differently per reader — <code class="inline">$CLAUDE_CONFIG_DIR</code> versus a literal <code class="inline">~/.claude</code>, main-checkout versus project-relative "local", four-segment versus recursive skill discovery.</td></tr>
+                  <tr><td><strong>Very high</strong></td><td><strong>Generated state.</strong> Cron, job and team files are runtime-owned. Treating them as authored capabilities risks corruption or lost resumability. Cron state exists at <em>both</em> project and user scope, so a project-only model misses half of it.</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>Effective settings are not one file.</strong> The user JSON state file is a resolver result, not a fixed <code class="inline">~/.claude.json</code>. Reading the obvious file yields the wrong effective configuration.</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>Plugin lifecycle.</strong> Version pinning and reload boundaries need agent- and version-specific handling; mid-session updates keep old hook, MCP and LSP paths until <code class="inline">/reload-plugins</code>.</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>MCP credentials and replacement.</strong> Same-name replacement is whole-server, and endpoint-based de-duplication applies to plugin and connector entries. Copying a server entry mechanically can leak secrets or silently change tools.</td></tr>
+                  <tr><td><strong>Moderate</strong></td><td><strong>Instruction ordering.</strong> "Nearest wins" is simply wrong for the instruction walk, which concatenates and never shadows.</td></tr>
+                  <tr><td><strong>Moderate</strong></td><td><strong>Agents and skills.</strong> Similar Markdown filenames conceal incompatible schemas, field support, isolation and duplicate rules across coding agents.</td></tr>
+                  <tr><td><strong>Lower, not zero</strong></td><td><strong>Terminal presentation.</strong> Keybindings and themes have little cross-tool ownership but still need schema and version validation; the <code class="inline">/keybindings</code> opener is documented and registered in the 2.1.220 binary (resolved this pass — see the workflows section).</td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">A path with no documented reader is unsupported, not deleted.</span> Represent it as unsupported or unknown rather than removing it merely because another coding agent does not consume it.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="sources" data-term>
+            <p class="prompt">cat sources.txt</p>
+            <div class="body" data-term-out>
+              <p>Every URL below was retrieved <strong>2026-08-11</strong> and re-verified <strong>2026-08-13</strong> during the second pass; the cards that pass added were first retrieved 2026-08-13. Rolling pages expose no stable per-page revision date, so documentation claims are applied to installed <strong>2.1.226</strong>; current goal, workflow, messaging, supervision and plugin behavior spans changes introduced across at least 2.1.139–2.1.226.</p>
+
+              <div class="grid">
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/cli-reference">CLI reference</a><br /><span class="muted">flags, loader controls</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/memory">Memory, instructions, rules, auto memory</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/skills">Skills and legacy commands</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/sub-agents">Subagents</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/settings">Settings</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/permissions">Permissions and the additional-directory matrix</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/hooks">Hooks</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/mcp">MCP</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/plugins-reference">Plugins reference</a><br /><span class="muted">incl. skills-directory plugins</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/plugin-marketplaces">Plugin marketplaces</a><br /><span class="muted">incl. <a class="link-quiet" href="https://code.claude.com/docs/en/plugins-reference#version-management">version management</a></span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/claude-directory">Directory reference</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/output-styles">Output styles</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/workflows">Workflows</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/keybindings">Keybindings</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/terminal-config">Terminal configuration and themes</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/statusline">Status line</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/agent-view">Agent View</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/agent-teams">Agent teams</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/goal">Goal mode</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/scheduled-tasks">Session scheduling and loop</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/routines">Account routines</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/cross-session-messaging">Cross-session messaging</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/remote-control">Remote Control</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/claude-code-on-the-web">CLI cloud sessions</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/overview">Overview</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/server-managed-settings">Server-managed settings</a><br /><span class="muted">remote-settings.json cache</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/managed-mcp">Managed MCP</a><br /><span class="muted">managed-mcp.json</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/cloud-environments">Cloud environments</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/channels">Channels</a><br /><span class="muted">incl. <a class="link-quiet" href="https://code.claude.com/docs/en/channels-reference">channels reference</a></span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/auto-mode-config">Auto-mode configuration</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://code.claude.com/docs/en/plugin-dependencies">Plugin dependencies</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md">Claude Code changelog</a><br /><span class="muted">2.1.227–2.1.231 entries</span></div>
+              </div>
+
+              <p><strong>Version drift — D.</strong> The shipped CLI is now <strong>2.1.231</strong> (changelog, fetched 2026-08-13; the pin's research cut-off was 2026-08-11 on 2.1.226). Capability-relevant changes since the pin: synced-skill hardening — no shadowing of local commands or MCP prompts, sanitized labeled descriptions, no <code class="inline">!</code>/<code class="inline">@</code> body execution locally (2.1.228); a fix for session cleanup deleting project memory folder contents (2.1.228); the marketplace-entry settings merge changed to whole-entry merge (2.1.228); plugin marketplace <code class="inline">command</code> sources with per-session re-resolution and <code class="inline">mode: "link"</code> (2.1.229); <code class="inline">ListAgents</code> marking disconnected Remote Control sessions offline and labeling cloud sessions (2.1.229); and, per the routines docs page, the org Routines toggle also hides <code class="inline">/schedule</code> in the CLI from v2.1.227.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Bundle-literal citations.</strong> Non-web primary evidence has no citable URL, so it is registered by version and artifact. Everything marked <strong>S</strong> on this page traces to the installed bundle at <code class="inline">~/.local/share/claude/versions/2.1.226</code> — a single compiled executable whose embedded JavaScript was extracted read-only — or to <code class="inline">claude --help</code> / <code class="inline">--version</code> on the same build. The specific literals a re-verification should look for:</p>
+
+              <p><strong>Second-pass caveat — O (2026-08-13).</strong> The cited artifact no longer exists on this machine: <code class="inline">~/.local/share/claude/versions/</code> holds <code class="inline">2.1.218</code>, <code class="inline">2.1.220</code> (the launcher target; <code class="inline">claude --version</code> = 2.1.220) and a zero-byte <code class="inline">2.1.222</code> — no 2.1.226 (method: <code class="inline">ls</code>, <code class="inline">readlink</code>, <code class="inline">claude --version</code>, <code class="inline">mdfind</code>, <code class="inline">npm ls -g</code>, Homebrew listing). First-pass <strong>S</strong> citations are historically verified but no longer re-checkable as written on the verification machine; every literal the second pass re-verified was re-run against 2.1.220 and 2.1.218 and is labeled with those builds. Archive the bundle alongside the page, or re-pin the S chain to a build that exists on disk, before the next audit.</p>
+
+              <table>
+                <colgroup><col style="width:16rem" /><col /></colgroup>
+                <thead><tr><th>Claim</th><th>Literal or expression to look for</th></tr></thead>
+                <tbody>
+                  <tr><td>Capability ceiling</td><td>The shared helper whose log line names it <code class="inline">getProjectDirsUpToHome</code>; the <code class="inline">homedir</code> break preceding the collect step and the repo-ceiling break following it; the capability-name array in the same module</td></tr>
+                  <tr><td>Repository ceiling widening</td><td>Ceiling helper comparing the start dir's Git root against the session Git root, returning the outer root on a strict prefix-child</td></tr>
+                  <tr><td>Instruction walk</td><td><code class="inline">while (p !== path.parse(p).root)</code>; per-directory read order <code class="inline">CLAUDE.md</code> &rarr; <code class="inline">.claude/CLAUDE.md</code> &rarr; <code class="inline">.claude/rules</code> &rarr; <code class="inline">CLAUDE.local.md</code></td></tr>
+                  <tr><td>Managed roots</td><td>Three-way platform switch returning exactly <code class="inline">/Library/Application Support/ClaudeCode</code>, <code class="inline">C:\Program Files\ClaudeCode</code>, <code class="inline">/etc/claude-code</code>, with <code class="inline">managed-settings.d</code> joined beneath</td></tr>
+                  <tr><td>Global JSON resolver</td><td>The <code class="inline">existsSync</code> branch on <code class="inline">$CLAUDE_CONFIG_DIR/.config.json</code> plus the OAuth-environment suffix function</td></tr>
+                  <tr><td>Auto-memory caps and key</td><td><code class="inline">lineCap = 200</code>, <code class="inline">spliceCap = 25000</code>, read window <code class="inline">100000</code>; memory-root builder joining <code class="inline">projects</code>/sanitized-root/<code class="inline">memory</code>; sanitizer <code class="inline">replace(/[^a-zA-Z0-9]/g, "-")</code> and the adjacent 200-char truncation with base36 hash</td></tr>
+                  <tr><td>Skill shape</td><td><code class="inline">if (!entry.isDirectory() &amp;&amp; !entry.isSymbolicLink()) return null</code>; <code class="inline">readdir(...).filter(e =&gt; e.isDirectory()).map(e =&gt; join(dir, e.name, "SKILL.md"))</code>; the four-segment classifier; the <code class="inline">1e6</code> size cap; <code class="inline">/^skill\.md$/i</code> appearing only in the commands path</td></tr>
+                  <tr><td>Directory-scoped skill variants</td><td>"Directory-scoped variants of the &quot;NAME&quot; skill exist in this repo"; "The bare name always resolves to this unscoped skill"</td></tr>
+                  <tr><td>Hooks</td><td><code class="inline">join(dir, ".claude", "hooks")</code> appearing only inside the <strong>sandbox configuration assembly</strong> — the write-protect path list; four occurrences in 2.1.220/2.1.218, none in watcher code (the first pass misattributed them to watcher registration); all three <code class="inline">hooks.json</code> expressions being <code class="inline">join(&lt;plugin root&gt;, "hooks", "hooks.json")</code>; <code class="inline">hookSource</code> rendering as <code class="inline">plugin:</code> / <code class="inline">skill:</code> / <code class="inline">settings</code>; the 31-element hook-event array literal</td></tr>
+                  <tr><td>MCP</td><td>The scope&rarr;location map; <code class="inline">path.normalize(gitMainCheckoutRoot)</code> for the <code class="inline">projects</code> key; the absence of any home-directory join to <code class="inline">.mcp.json</code>; the cleanup copy "project entry in ~/.claude.json (trust, history, MCP servers)"; the project-scope ancestor walk in the effective-config reader — <code class="inline">while(s!==parse(s).root)</code> pushing each level, then reading <code class="inline">join(a, ".mcp.json")</code> per level, reversed root&rarr;cwd (2.1.220/2.1.218)</td></tr>
+                  <tr><td>Settings precedence</td><td>The literal array <code class="inline">["userSettings","projectSettings","localSettings","flagSettings","policySettings"]</code>; the main-checkout resolver passed to the local canonicalizer</td></tr>
+                  <tr><td>Cron</td><td><code class="inline">join(".claude", "scheduled_tasks.json")</code>; <code class="inline">recurringMaxAgeMs = 604800000</code>; the user-root registration list</td></tr>
+                  <tr><td>Hidden subcommand</td><td><code class="inline">.command("remote-control", { hidden: true })</code>; the visible command list from <code class="inline">--help</code></td></tr>
+                  <tr><td>Added directories</td><td>The <code class="inline">CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1</code> gate and the exact four paths behind it</td></tr>
+                  <tr><td>Capability scanning</td><td>ripgrep invocation <code class="inline">--files --hidden --follow --no-ignore --glob '*.md'</code> with its JS fallback</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Review outcome for Claude Code.</strong> 8 claims corrected, 7 documentation-only claims raised to source strength, 3 previously undocumented behaviors added, 5 unknowns standing after the first pass (two since resolved by the second — see the unknowns section). no Claude Code state was modified by any part of the review and no mutating subcommand was run. Where a rolling page and the installed build disagree — <code class="inline">--bare</code>, the auto-memory schema's "cwd" wording, the <code class="inline">autoMemoryDirectory</code> scope description — both sides are stated on this page and the build governs version row 2.1.226. The second verification pass (2026-08-13) is summarized in the corrections section; its evidence corpus was the de-bundled source tree plus the installed 2.1.220/2.1.218 binaries.</p>
+            </div>
+          </section>
+      </div>
+    </main>
+
+    <footer class="status">
+      <span class="status-left"><span class="glow">[configr]</span> Claude Code capability guide</span>
+      <nav class="status-right">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <span class="sep" aria-hidden="true"></span>
+        <details class="dropdown">
+          <summary aria-label="theme">
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span aria-hidden="true">▾</span>
+          </summary>
+          <ul class="dropdown-panel" role="list">
+            <li><button type="button" class="dropdown-item" data-theme-value="warm">warm</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="green">green</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="mono">mono</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="paper">paper</button></li>
+          </ul>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </nav>
+    </footer>
+
+    <script type="module">
+      import { applyStoredTheme, initThemeSwitcher, initDropdowns, initSelects, initTerminal, initAnimToggle, initBurgerNav, initLsNav, initTableScroll, initDiagramZoom, initMinimap, initTooltips } from
+        "https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/runtime/index.js";
+      applyStoredTheme();
+      initThemeSwitcher();
+      initDropdowns();
+      initTerminal();
+      initAnimToggle();
+      initBurgerNav();
+      // The rail's show/hide, and it measures the real header/footer heights into
+      // --ls-nav-top / --ls-nav-bottom so the rail sits BETWEEN the chrome, not under it.
+      initLsNav();
+      // Every table gets a .tablewrap parent, so a table wider than its column scrolls
+      // itself instead of pushing the whole page sideways. Already-wrapped ones are skipped.
+      initTableScroll();
+      // Every <select> gets the estate's dropdown instead of the OS one. Called
+      // unconditionally, beside initTableScroll() and for the same reason: both have no
+      // markup contract, so both are a no-op on a page that has none of their element.
+      initSelects();
+
+      // Mermaid diagrams — themed from the design tokens, re-rendered on theme switch.
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs";
+
+      const diagrams = Array.from(document.querySelectorAll("pre.mermaid"));
+      if (diagrams.length) {
+        // capture the sources before the first render replaces them with SVG
+        for (const node of diagrams) node.dataset.mermaidSource = node.textContent;
+
+        // Renders are serialized: applyStoredTheme() writes data-theme on startup, so an
+        // unguarded observer would kick off a second pass while the first is still
+        // running — two passes mutating the same nodes stack every diagram into one box.
+        let renderPass = 0;
+        let pending = Promise.resolve();
+        let zoomWired = false;
+
+        const renderDiagrams = () => {
+          pending = pending.then(async () => {
+            const pass = (renderPass += 1);
+            const styles = getComputedStyle(document.documentElement);
+            const token = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: "strict",
+              fontFamily: token("--font-mono", "monospace"),
+              flowchart: { htmlLabels: true, useMaxWidth: true },
+              themeVariables: {
+                background: token("--background", "#f5efe2"),
+                primaryColor: token("--card", "#efe7d4"),
+                primaryTextColor: token("--foreground", "#43352a"),
+                primaryBorderColor: token("--border", "#d9cdb6"),
+                secondaryColor: token("--muted", "#ece3cf"),
+                tertiaryColor: token("--muted", "#ece3cf"),
+                lineColor: token("--muted-foreground", "#71614e"),
+                textColor: token("--foreground", "#43352a"),
+                mainBkg: token("--card", "#efe7d4"),
+                nodeBorder: token("--border", "#d9cdb6"),
+                clusterBkg: token("--muted", "#ece3cf"),
+                clusterBorder: token("--border", "#d9cdb6"),
+                edgeLabelBackground: token("--background", "#f5efe2"),
+                titleColor: token("--primary", "#8a4516"),
+              },
+            });
+            // render ids must be unique per pass, or a re-render collides with itself
+            for (const [index, node] of diagrams.entries()) {
+              try {
+                const { svg } = await mermaid.render(`mermaid-svg-${index}-${pass}`, node.dataset.mermaidSource);
+                node.innerHTML = svg;
+                node.dataset.processed = "true";
+              } catch {
+                // a broken diagram falls back to its source — it must never blank the box
+                node.textContent = node.dataset.mermaidSource;
+                node.removeAttribute("data-processed");
+              }
+            }
+            // EVERY DIAGRAM IS ZOOMABLE. Wired ONCE, and after the first render rather than
+            // before it: the opener binds a listener per element and is not idempotent, so
+            // calling it again on the theme re-render would open two overlays per click.
+            if (!zoomWired) {
+              zoomWired = true;
+              initDiagramZoom("pre.mermaid");
+            }
+          });
+          return pending;
+        };
+
+        // Wait for the terminal reveal: a diagram inside a not-yet-revealed
+        // [data-term-out] is visibility:hidden, and Mermaid would size it against a
+        // container it cannot measure properly. With animation off, render at once.
+        if (document.documentElement.classList.contains("anim-off") || window.termContentDone) {
+          void renderDiagrams();
+        } else {
+          window.addEventListener("term:contentdone", () => void renderDiagrams(), { once: true });
+        }
+
+        // re-render with the new palette, but only when the theme actually changed
+        let lastTheme = document.documentElement.dataset.theme;
+        new MutationObserver(() => {
+          const theme = document.documentElement.dataset.theme;
+          if (theme === lastTheme) return;
+          lastTheme = theme;
+          void renderDiagrams();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+      }
+
+      // The minimap builds itself from the sections — one bar each, in the left gutter,
+      // with the scroll-spy built in. No markup and no per-section wiring.
+      initMinimap({ sections: "section.doc" });
+      // The minimap's bars carry `data-tip`, not `title`: the native tooltip waits about a
+      // second and renders in the OS's chrome, which is useless on a strip meant to be
+      // scrubbed. Delegated, so it covers the bars the minimap just built.
+      initTooltips();
+    </script>
+  </body>
+</html>

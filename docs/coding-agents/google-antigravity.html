@@ -1,0 +1,1800 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Google Antigravity capability guide</title>
+    <meta name="description" content="Binary-verified reference for the Google Antigravity CLI (agy 1.1.11): the split roots, one workspace root with four spellings, the narrowed global skill path, proven workflows at an unpublished path, the published skills.json schema, and every other capability type — with the evidence class on every claim." />
+    <meta name="theme-color" content="#f5efe2" />
+
+    <!-- pre-paint: apply the saved theme + animation gate before first paint -->
+    <script>
+      (() => {
+        const bg = { warm: "#f5efe2", green: "#020604", mono: "#050505", paper: "#fafafa" };
+        let theme = "warm";
+        try {
+          const stored = localStorage.getItem("theme");
+          if (stored && stored in bg) theme = stored;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg[theme]);
+
+        let animOff = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        try {
+          if (localStorage.getItem("anim") === "off") animOff = true;
+        } catch {}
+        if (animOff) document.documentElement.classList.add("anim-off");
+
+        // The `ls -l` rail is SHOWN by default. A reader who hid it must not watch it
+        // paint and then jump away on every single load, so the state is applied HERE —
+        // the runtime module at the end of <body> runs long after first paint.
+        try {
+          if (localStorage.getItem("ls-nav") === "off") document.documentElement.dataset.lsNav = "off";
+        } catch {}
+      })();
+
+      // Resolution-independent zoom: lay out at a fixed 1920px reference, then scale the
+      // whole view up on wider screens so the empty side-margins never exceed their
+      // 1920-reference proportion (a true zoom of everything, never below 1×). Pre-paint
+      // to avoid a flash.
+      (() => {
+        const REFERENCE_WIDTH = 1920;
+        const applyZoom = () => {
+          document.documentElement.style.zoom = String(Math.max(1, window.innerWidth / REFERENCE_WIDTH));
+        };
+        applyZoom();
+        window.addEventListener("resize", applyZoom);
+      })();
+    </script>
+
+    <!-- The design system, PINNED — and it must be. This page ships the system's own
+         MARKUP (the `ls -l` rail, the fixed footer), so it is coupled to the release that
+         styles them, and the unpinned url cannot promise a release: jsDelivr serves it
+         `max-age=604800` — SEVEN DAYS in the browser, 12h at the edge. The pinned url is
+         served `immutable`, so the bytes always match the markup.
+         `onerror` swaps in a byte-for-byte snapshot of the SAME release, served from the
+         docs site. NOTE the path is site-absolute: it resolves on docs.danieldeusing.de,
+         NOT for a doc opened from disk over file://. -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/dist/danieldeusing-design.min.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.min.css'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/src/fonts.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.fonts.css'"
+    />
+
+    <style>
+      /* Page-only layout. The design system ships the visual identity AND the measurements
+         (--content-w / --content-pad / --fs-*), so every value below is a TOKEN.
+
+         Each one carries a literal fallback on purpose: a doc opened over file:// with no
+         route to the CDN loads no stylesheet at all, and a bare `var(--content-w)` would
+         resolve to nothing there — full-bleed page, collapsed type.
+
+         Note `padding-block` + `padding-inline`, never the `padding` shorthand: the
+         shorthand resets padding-inline and silently drops the left/right margins. */
+      /* design-conformance: a TOKEN declaration with literal fallbacks, not a copy of the
+         system's rule — the sanctioned exception. A doc is meant to open straight off disk
+         over file://, where no stylesheet loads at all and a bare var() resolves to nothing.
+         The literals are what that reader sees; the tokens win everywhere else. */
+      .wrap { max-width: var(--content-w, 78rem); margin-inline: auto;
+              padding-block: 2.5rem 5rem; padding-inline: var(--content-pad, 1.5rem); }
+
+      /* header/footer chrome + nav now ship with the design system (src/chrome.css) */
+
+      /* ONE COLUMN, CENTRED — the same shape every other danieldeusing surface has.
+         `.wrap` above is the whole layout. There is no table-of-contents column: its two
+         real jobs — how long is this, and where am I — moved to the MINIMAP in the left
+         gutter (initMinimap()), which does them in 2rem and is fixed. */
+      .content { min-width: 0; }
+      h1.title { font-size: var(--fs-2xl, 1.7rem); font-weight: 700; margin: 0.4rem 0 0.5rem; }
+      .lede { color: var(--muted-foreground); } /* full width — no max-width cap */
+
+      /* design-conformance: spacing BETWEEN doc sections on this page template, not a restyle
+         of the shared .doc — the system sets its own margin for the standalone case. */
+      section.doc { margin-top: 2.5rem; scroll-margin-top: 4rem; }
+      .body { margin-top: 0.85rem; }
+      .body > * + * { margin-top: 0.75rem; }
+
+      /* content components the generator uses */
+      ol.steps { counter-reset: step; padding: 0; }
+      ol.steps > li { position: relative; padding-left: 2.25rem; margin-top: 0.6rem; counter-increment: step; }
+      ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 1.5rem; text-align: right; color: var(--primary); font-weight: 700; }
+      ul.plain { padding-left: 1.1rem; }
+      ul.plain > li { margin-top: 0.3rem; }
+      .grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+      .pad { padding: 1rem; }
+      .muted { color: var(--muted-foreground); }
+      code.inline { font-family: inherit; background: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.92em; }
+      pre.block { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      /* No table CSS for scrolling or size here on purpose. `initTableScroll()` at the
+         bottom of this file gives every table a `.tablewrap` parent (overflow-x plus a
+         right-edge fade), so a table wider than its column scrolls itself instead of
+         handing the WHOLE PAGE a horizontal scrollbar. The markup contract is therefore
+         nothing: author a plain <table>. Size is the system's too. */
+
+      /* Mermaid diagrams. Before rendering, the <pre> shows the raw diagram source —
+         so with JS disabled (or if the CDN is unreachable) the page degrades to a
+         readable text diagram instead of an empty box. */
+      pre.mermaid { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      pre.mermaid[data-processed] { white-space: normal; text-align: center; }
+      pre.mermaid svg { max-width: 100%; height: auto; }
+    </style>
+  </head>
+
+  <body>
+    <a href="#top" class="skip-link">skip to content</a>
+    <header class="bar">
+      <!-- top-left: ALWAYS danieldeusing-docs -->
+      <a href="#top" class="brand">
+        <span class="glow">danieldeusing-docs</span>
+        <span class="cursor-block" aria-hidden="true"></span>
+      </a>
+      <button type="button" class="nav-burger" data-nav-toggle aria-label="menu" aria-controls="site-nav" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+      </button>
+      <nav aria-label="site" id="site-nav" class="site-nav">
+      <div class="ls-nav-head">
+        <span class="ls-nav-title prompt">ls -l</span>
+        <button type="button" class="ls-nav-toggle" data-ls-nav-toggle aria-controls="nav" aria-expanded="true" aria-label="show or hide navigation"></button>
+      </div>
+      <!-- The rail is justified here: these five docs are siblings a reader is meant to
+           move between, so there IS somewhere else to go. -->
+      <div class="ls-nav" id="nav">
+        <ul class="ls-panel" role="list">
+          <li><a class="dropdown-item ls-row" href="claude-code.html" title="Claude Code — claude-code.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Claude Code</span></a></li>
+          <li><a class="dropdown-item ls-row" href="openai-codex.html" title="OpenAI Codex — openai-codex.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenAI Codex</span></a></li>
+          <li><a class="dropdown-item ls-row" href="github-copilot.html" title="GitHub Copilot — github-copilot.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">GitHub Copilot</span></a></li>
+          <li><a class="dropdown-item ls-row" href="opencode.html" title="OpenCode — opencode.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenCode</span></a></li>
+          <li><a class="dropdown-item ls-row" href="google-antigravity.html" aria-current="page" title="Google Antigravity"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Antigravity</span></a></li>
+          <li><a class="dropdown-item ls-row" href="cross-tool-matrix.html" title="Cross-tool — cross-tool-matrix.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Cross-tool</span></a></li>
+        </ul>
+      </div>
+      <div class="mobile-footer">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <details class="mobile-theme">
+          <summary>
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span class="mf-chev" aria-hidden="true">▾</span>
+          </summary>
+          <div class="mf-panel">
+            <button type="button" class="dropdown-item" data-theme-value="warm">warm</button>
+            <button type="button" class="dropdown-item" data-theme-value="green">green</button>
+            <button type="button" class="dropdown-item" data-theme-value="mono">mono</button>
+            <button type="button" class="dropdown-item" data-theme-value="paper">paper</button>
+          </div>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </div></nav>
+    </header>
+
+    <main class="wrap" id="top">
+      <div class="content">
+          <p class="prompt">cat configr/docs/harness-analysis.md &#124; sed -n '/## 6. Google Antigravity/,/## 7./p'</p>
+          <h1 class="title">Google Antigravity capability guide</h1>
+          <p class="lede">Everything the <code class="inline">agy</code> CLI reads, writes, and resolves — the split roots that surprise everyone, one workspace root spelled four ways, a global skill path that is <em>narrowed</em> rather than settled, workflows that provably exist at a path nobody has published, and the richest and least-known part of the product: the <code class="inline">skills.json</code> declared-source schema. Antigravity is <strong>closed source</strong>. But the shipped executable embeds a complete first-party customization manual, so this page is anchored to <strong>installed <code class="inline">agy</code></strong> — <code class="inline">1.1.11</code> (169 MB) at the first pass, re-verified 2026-08-13 against the <code class="inline">1.1.12</code> build (172 MB) that replaced it on disk — and to that manual; where the manual and the public docs pages disagree, the manual governs and both sides are stated. No positive claim comes from memory or a web search; stated negatives name their method — including the 2026-08-13 site-scoped searches — and the two off-domain codelab leads are graded <strong>I</strong>, not D.</p>
+
+          <section class="doc" id="evidence" data-term>
+            <p class="prompt">agy --version &amp;&amp; file ~/.local/bin/agy</p>
+            <div class="body" data-term-out>
+              <p><strong>Closed source is not the same as opaque, and this is the clearest example of the difference.</strong> The official <a class="link-quiet" href="https://github.com/google-antigravity/antigravity-cli">Antigravity CLI repository</a> publishes documentation, examples, and a changelog — <em>not</em> the application source. There is no tag to pin, no loader to read. What the product ships instead is better than most open repositories offer for this purpose: the installed executable carries <strong>a complete first-party customization manual inside it</strong>, and extracts the same text to disk as a built-in skill.</p>
+
+              <p>That manual is the <code class="inline">agy-customizations</code> builtin skill — a <code class="inline">SKILL.md</code> plus <code class="inline">docs/rules.md</code>, <code class="inline">docs/skills.md</code>, <code class="inline">docs/plugins.md</code>, <code class="inline">docs/hooks.md</code>, <code class="inline">docs/mcp_servers.md</code> and <code class="inline">docs/json_configs.md</code>. It lives at <code class="inline">~/.gemini/antigravity-cli/builtin/skills/agy-customizations/</code>, and the same document is recoverable from the executable itself. <strong>S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">Why that outranks the website.</span> The embedded manual is <strong>version-pinned to the build it shipped with</strong>, in a way no rolling documentation page can be. antigravity.google exposes no per-page revision date; the manual inside <code class="inline">agy 1.1.11</code> is, by construction, what <code class="inline">1.1.11</code> believes about itself. Where the two disagree, this page follows the manual and the binary, says so, and keeps both sides on the record rather than silently normalizing one away.</p>
+
+              <pre class="mermaid">
+flowchart LR
+    W["antigravity.google pages&lt;br/&gt;rolling, no revision date"] --> Q{"do the sources agree?"}
+    B["installed agy executable, byte-searched&lt;br/&gt;1.1.11 first pass, 1.1.12 second"] --> Q
+    M["embedded manual&lt;br/&gt;builtin agy-customizations"] --> Q
+    Q -->|they agree| S["stated once, class D/S"]
+    Q -->|they disagree| P["manual and binary govern 1.1.11&lt;br/&gt;both sides kept, versioned"]
+    Q -->|only the website says it| D["class D only&lt;br/&gt;claimed, not proven"]
+
+    class D warn
+    %% Literal hex only: a comma inside var() splits Mermaid's style list and the
+    %% whole diagram fails to parse, falling back to its source silently.
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>Closed source means MORE honest unknowns, not fewer.</strong> A missing loader cannot be read to settle a question, so several questions stay open that an open-source coding agent would close in a minute — which spelling of the workspace root wins, what identity key each capability collides on, where workflows live on disk. None of those is resolved on this page. Where the source analysis records <strong>unknown</strong>, this page reproduces it as unknown, with its <code class="inline">U-</code> number where it has one.</p>
+
+              <table>
+                <colgroup><col style="width:7rem" /><col /><col style="width:12rem" /></colgroup>
+                <thead>
+                  <tr><th>Class</th><th>Meaning</th><th>Reliability</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>D</strong></td><td>documented — a current first-party antigravity.google page says this</td><td>rolling; no per-page revision date</td></tr>
+                  <tr><td><strong>S</strong></td><td>source/package-observed — the installed <code class="inline">agy</code> (<code class="inline">1.1.11</code> at the first pass, <code class="inline">1.1.12</code> at the 2026-08-13 second pass) says this: path templates, protobuf enum runs, log and error strings, help output, or the embedded first-party manual</td><td>strongest available for this build</td></tr>
+                  <tr><td><strong>O</strong></td><td>disk-observed — a version, path, or shape was seen in one real <code class="inline">~/.gemini</code>; values were not inspected beyond top-level key names</td><td>presence proves support; absence proves nothing</td></tr>
+                  <tr><td><strong>I</strong></td><td>inferred — a bounded conclusion from cited primary evidence, with the basis stated</td><td>only as good as its basis</td></tr>
+                  <tr><td><strong>U</strong></td><td>unknown — primary evidence is absent, self-contradictory, or insufficient</td><td>do not resolve; enumerate instead</td></tr>
+                  <tr><td><strong>D&ne;S</strong></td><td>documentation/package conflict — a current page and the shipped manual or binary disagree; both are stated and the installed build governs its own version row</td><td>versioned, never normalized</td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Binary-literal evidence is asymmetric.</span> A positive hit is strong: the string is in the shipped program. A <em>negative</em> is only as strong as the extraction method, so every stated negative on this page names its method. The two that carry weight here are byte-level searches of the full image — <code class="inline">antigravity-cli/skills</code> returns <strong>zero</strong> occurrences (in the 169 MB <code class="inline">1.1.11</code> image, and re-run 2026-08-13: still zero in the 172 MB <code class="inline">1.1.12</code> image), and the flat <code class="inline">&lt;name&gt;.md</code> skill form appears <strong>nowhere</strong> (a <code class="inline">1.1.11</code> result).</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>What was inspected, and how.</strong></p>
+
+              <table>
+                <colgroup><col style="width:14rem" /><col /><col style="width:8rem" /></colgroup>
+                <thead><tr><th>Artifact</th><th>What it is</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">~/.local/bin/agy</code></td>
+                    <td>Installed <code class="inline">agy 1.1.11</code> at the first pass, a 169 MB Mach-O 64-bit arm64 executable — replaced on disk 2026-08-13 by <code class="inline">agy 1.1.12</code> (172,267,536 bytes; replacement mechanism not established), the build behind every second-pass binary claim. Inspected read-only by byte-level search. <strong>No disassembly</strong>, and no execution beyond <code class="inline">--version</code> and <code class="inline">--help</code>.</td>
+                    <td><strong>S/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.gemini/antigravity-cli/builtin/</code></td>
+                    <td>The builtin payload the CLI extracts from itself: three bundled skills — <code class="inline">agy-customizations</code>, <code class="inline">antigravity_guide</code>, <code class="inline">permissioned-github</code> — matching the binary's own <code class="inline">assets/external/skills/…</code> and <code class="inline">assets/shared/skills/…</code> asset paths.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">agy --help</code>, <code class="inline">agy plugin help</code></td>
+                    <td>Run with <code class="inline">HOME</code> redirected to a scratch directory, so the real <code class="inline">~/.gemini</code> could not be written. No Antigravity state was modified by any part of the review.</td>
+                    <td><strong>O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>one real <code class="inline">~/.gemini</code></td>
+                    <td>Read-only observation of one installation's tree. Values were not inspected beyond top-level key names.</td>
+                    <td><strong>O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>antigravity.google docs</td>
+                    <td>Retrieved <strong>2026-08-11</strong>, re-verified <strong>2026-08-13</strong> for the second pass. Several CLI-scoped pages contradict the shipped manual; each conflict is called out where it occurs.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">One mechanism worth knowing before you trust the extracted copy.</span> <code class="inline">builtin/.checksum</code> is how the CLI decides whether to re-extract its builtin payload. A <code class="inline">builtin/</code> directory on disk can therefore <strong>lag the installed binary</strong>. Where this page cites the embedded manual, the same text was also recovered from the executable. <strong>S</strong></p>
+
+              <p><strong>Version boundary.</strong> The first pass inspected installed <code class="inline">agy 1.1.11</code>, with the changelog already describing <code class="inline">1.1.12</code>. The <strong>2026-08-13 second pass</strong> found the binary replaced on disk by <code class="inline">agy 1.1.12</code> — 172,267,536 bytes, replaced 2026-08-13 13:27, mechanism not established — so <code class="inline">1.1.12</code> is no longer one release beyond the inspected build but <em>the installed build</em>, and the <code class="inline">1.1.11</code> image no longer exists on this machine to re-check. Key <code class="inline">1.1.11</code> negatives and positives were re-verified on <code class="inline">1.1.12</code> and hold: <code class="inline">antigravity-cli/skills</code> 0 hits, <code class="inline">.agents/workflows</code> 0 hits, both <code class="inline">skills/{skill_name}/SKILL.md</code> path templates present, <code class="inline">~/.gemini/config</code> present, and the embedded <code class="inline">mcp_servers.md</code> Location section still lists exactly two entries. The <code class="inline">disable-slash-command</code> field is now S-present in the installed image. Claims verifiable only on <code class="inline">1.1.12</code> say so where they stand. <strong>O/D/S</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="corrections" data-term>
+            <p class="prompt">git log --oneline review-notes</p>
+            <div class="body" data-term-out>
+              <p>An independent verification pass against the executable and its embedded manual <strong>corrected 11 claims</strong>, <strong>confirmed 5 unchanged</strong>, and left <strong>6 unknowns standing</strong>. The corrections are the most valuable content on this page: every one of them is a place where the obvious reading of the public documentation is <em>wrong for the shipped CLI</em>, and where a configuration browser built from the docs alone would state something false.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col /><col style="width:17rem" /></colgroup>
+                <thead>
+                  <tr><th>Claim</th><th>Was</th><th>Now</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Workspace root spellings</td>
+                    <td>"Legacy aliases … confirmed per capability, not as a blanket root"</td>
+                    <td><strong>One root with four spellings</strong>: <code class="inline">.agents/</code>, <code class="inline">.agent/</code>, <code class="inline">_agents/</code>, <code class="inline">_agent/</code>. Relative precedence <strong>unknown</strong></td>
+                    <td>Embedded manual: "Path: <code class="inline">.agents/</code> (or <code class="inline">.agent/</code>, <code class="inline">_agents/</code>, <code class="inline">_agent/</code>) at the root of your project"</td>
+                  </tr>
+                  <tr>
+                    <td>Workflows</td>
+                    <td><strong>U</strong> — "no primary evidence establishes … an <code class="inline">agy</code> CLI loader"</td>
+                    <td>Workflows are a <strong>first-class customization kind</strong> at workspace <em>and</em> global scope; only the directory name is unknown</td>
+                    <td><code class="inline">CUSTOMIZATION_FILE_TYPE_WORKFLOWS</code> / <code class="inline">_GLOBAL_WORKFLOWS</code>, <code class="inline">REFRESH_CUSTOMIZATION_TYPE_WORKFLOW</code>, <code class="inline">/workflows</code>, <code class="inline">/global_workflows</code>, <code class="inline">workflows.migrated</code></td>
+                  </tr>
+                  <tr>
+                    <td>Skill frontmatter</td>
+                    <td>"required <code class="inline">description</code>, optional <code class="inline">name</code> defaulting from folder"</td>
+                    <td><strong>Both</strong> <code class="inline">name</code> and <code class="inline">description</code> are required for the CLI</td>
+                    <td>Embedded <code class="inline">docs/skills.md</code>: each marked "(string, required)"</td>
+                  </tr>
+                  <tr>
+                    <td>Global skill shape</td>
+                    <td>Two documented alternates, both <strong>U</strong></td>
+                    <td>Directory + <code class="inline">SKILL.md</code> at both scopes; flat <code class="inline">&lt;name&gt;.md</code> is <strong>documentation-only</strong></td>
+                    <td>Binary templates <code class="inline">{workspace}/.agents/skills/{skill_name}/SKILL.md</code> and <code class="inline">{appDataDir}/skills/{skill_name}/SKILL.md</code>; no flat-form literal exists</td>
+                  </tr>
+                  <tr>
+                    <td>Global skill directory</td>
+                    <td><code class="inline">~/.gemini/config/skills</code> vs <code class="inline">~/.gemini/antigravity-cli/skills</code>, unresolved</td>
+                    <td><code class="inline">~/.gemini/config/</code> is the global customization root; the private-tree path is <strong>absent from the shipped binary</strong></td>
+                    <td><code class="inline">antigravity-cli/skills</code> has <strong>zero</strong> occurrences in the 169 MB <code class="inline">1.1.11</code> image; <code class="inline">~/.gemini/config</code> is a literal; manual says "Global Configuration (Machine-Local): <code class="inline">~/.gemini/config/</code>"</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">skills.json</code> / <code class="inline">plugins.json</code></td>
+                    <td>"full schema is unpublished" (<strong>U</strong>)</td>
+                    <td><strong>Published</strong>: <code class="inline">entries[]</code> / <code class="inline">inherits[]</code> with <code class="inline">path</code>, <code class="inline">include_only</code>, <code class="inline">exclude</code> (regex on directory names) and three-way path resolution</td>
+                    <td>Embedded <code class="inline">docs/json_configs.md</code></td>
+                  </tr>
+                  <tr>
+                    <td>Category order</td>
+                    <td>"does not settle duplicate IDs"</td>
+                    <td>It settles same-<strong>name</strong> conflicts explicitly; what is missing is the per-capability <em>identity key</em></td>
+                    <td>Embedded <code class="inline">SKILL.md</code>: "the higher-priority customization overrides the lower-priority one"</td>
+                  </tr>
+                  <tr>
+                    <td>Hooks</td>
+                    <td>Events and a 30 s timeout only</td>
+                    <td>Grouped-versus-flat shapes per event, matcher regex semantics, <code class="inline">CORTEX_STEP_TYPE_</code> name derivation, <code class="inline">sh -c</code> / <code class="inline">cmd /c</code>, <strong>cwd is the <code class="inline">hooks.json</code> directory</strong>, camelCase payloads</td>
+                    <td>Embedded <code class="inline">docs/hooks.md</code> plus the binary's fuller copy of the same document</td>
+                  </tr>
+                  <tr>
+                    <td>Workspace MCP file</td>
+                    <td>Listed flat alongside the global and plugin files</td>
+                    <td><strong>D only</strong> — the shipped manual documents global and plugin <code class="inline">mcp_config.json</code> and omits <code class="inline">.agents/mcp_config.json</code></td>
+                    <td>Embedded <code class="inline">docs/mcp_servers.md</code> "Location" section lists exactly two entries</td>
+                  </tr>
+                  <tr>
+                    <td>CLI surface</td>
+                    <td>Not stated</td>
+                    <td><code class="inline">agy</code> has <strong>no</strong> <code class="inline">skill</code>, <code class="inline">mcp</code>, <code class="inline">hooks</code> or <code class="inline">schedule</code> subcommand — only <code class="inline">agent(s)</code>, <code class="inline">changelog</code>, <code class="inline">help</code>, <code class="inline">install</code>, <code class="inline">models</code>, <code class="inline">plugin(s)</code>, <code class="inline">update</code></td>
+                    <td><code class="inline">agy --help</code> on the installed build</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">schedule</code> tool</td>
+                    <td><code class="inline">DurationSeconds</code> and <code class="inline">MaxIterations</code></td>
+                    <td><strong>Five</strong> parameters with <strong>three</strong> mutual-exclusion rules</td>
+                    <td>"MaxIterations cannot be used with DurationSeconds"; "TimerCondition cannot be used with CronExpression"; "DurationSeconds and CronExpression are mutually exclusive"</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Confirmed unchanged.</strong> Five claims survived the binary pass exactly as written:</p>
+
+              <ul class="plain">
+                <li><code class="inline">agy plugin</code> really has <strong>no update verb</strong>: <code class="inline">list</code>, <code class="inline">import</code>, <code class="inline">install</code>, <code class="inline">uninstall</code>, <code class="inline">enable</code>, <code class="inline">disable</code>, <code class="inline">validate</code>, <code class="inline">link</code>, <code class="inline">help</code>.</li>
+                <li><code class="inline">agy --version</code> reports <code class="inline">1.1.11</code> — at the first pass; the 2026-08-13 second pass found the binary replaced and reporting <code class="inline">1.1.12</code> (see the version boundary).</li>
+                <li>Hook events are exactly the five <code class="inline">PreToolUse</code>, <code class="inline">PostToolUse</code>, <code class="inline">PreInvocation</code>, <code class="inline">PostInvocation</code>, <code class="inline">Stop</code>.</li>
+                <li><code class="inline">~/.gemini/antigravity-cli/settings.json</code> is the CLI settings file, with <code class="inline">keybindings.json</code> beside it.</li>
+                <li>Sidecars: <code class="inline">&lt;config dir&gt;/sidecars/&lt;id&gt;/sidecar.json</code>, plugin <code class="inline">sidecars/</code>, and <code class="inline">agentapi new-conversation</code> as a cron payload.</li>
+              </ul>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Second verification pass (2026-08-13).</strong> A full re-audit of this page against the then-current corpus: the installed <code class="inline">agy 1.1.12</code> (172,267,536 bytes — the pinned <code class="inline">1.1.11</code> binary was replaced on disk 2026-08-13 and could not be re-checked), the <code class="inline">language_server</code> binary inside the installed <strong>Antigravity.app 2.0.1</strong>, and the antigravity.google docs plus the antigravity-cli changelog, re-retrieved 2026-08-13.</p>
+
+              <table>
+                <colgroup><col style="width:14rem" /><col /></colgroup>
+                <thead><tr><th>Outcome</th><th>Count and content</th></tr></thead>
+                <tbody>
+                  <tr><td>Claims corrected or tightened</td><td><strong>15</strong> — including the flat "no remote-control entry point" negative (a remote-control subsystem exists in the binary), the O-table framing, the <code class="inline">PreToolUse</code> decision enum, the MCP key surface, and the sidecar schema and runtime rows</td></tr>
+                  <tr><td>Additions</td><td><strong>18</strong> — among them built-in subagents, the status line, the settings key inventory, the per-event hook output contracts, rule <code class="inline">@file</code> includes, credential storage, the per-product <code class="inline">.gemini</code> trees, and <code class="inline">.antigravityignore</code></td></tr>
+                  <tr><td>Unknowns resolved</td><td><strong>1</strong> — the rule-frontmatter keys: <code class="inline">trigger:</code> and <code class="inline">glob:</code> are literals in the shipped binary</td></tr>
+                  <tr><td>New S-only behavior enumerated</td><td><strong>1</strong> — <code class="inline">SessionStart</code> hook machinery in the hooks proto, user-reachability unknown</td></tr>
+                  <tr><td>Version re-anchor</td><td><code class="inline">1.1.11</code> &rarr; <code class="inline">1.1.12</code>; the load-bearing 1.1.11 negatives and positives were re-run on 1.1.12 and hold</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="roots" data-term>
+            <p class="prompt">ls -d .agents ~/.gemini/config ~/.gemini/antigravity-cli</p>
+            <div class="body" data-term-out>
+              <p><strong>Antigravity's roots are split across two names that share no prefix, and this is the single fact that most surprises people.</strong> Project configuration lives in <code class="inline">.agents/</code> — a name Antigravity shares with three other coding agents. User configuration lives under <code class="inline">~/.gemini/</code> — a name inherited from the predecessor Gemini CLI. There is no <code class="inline">~/.agents</code>, no <code class="inline">.antigravity</code> in the project, and no single word that covers both halves.</p>
+
+              <p>The user half then splits again. <code class="inline">~/.gemini/config/</code> is the <strong>shared customization root</strong> — the global mirror of <code class="inline">.agents/</code>. <code class="inline">~/.gemini/antigravity-cli/</code> is the <strong>CLI's private application-data tree</strong>: settings, keybindings, the extracted builtins, conversation history, caches. Three trees, three jobs. <strong>D/S/O</strong></p>
+
+              <pre class="mermaid">
+flowchart TD
+    P["project workspace"] --> A[".agents/ &#40;four spellings&#41;&lt;br/&gt;workspace customization root"]
+    A --> A1["skills agents rules plugins&lt;br/&gt;hooks.json skills.json plugins.json"]
+    P --> T["WORKSPACE/.gemini/antigravity-cli/&lt;br/&gt;transcript.jsonl and artifacts/"]
+    H["~/.gemini/"] --> V["GEMINI.md&lt;br/&gt;global instructions"]
+    H --> C["config/&lt;br/&gt;shared customization root"]
+    H --> X["antigravity-cli/&lt;br/&gt;private CLI app data"]
+    C --> C1["skills agents rules plugins sidecars&lt;br/&gt;hooks.json mcp_config.json config.json&lt;br/&gt;skills.json plugins.json projects/"]
+    X --> X1["settings.json keybindings.json&lt;br/&gt;builtin/ conversations/ log/ cache/"]
+    X --> X2["brain/ implicit/ knowledge/&lt;br/&gt;no published contract"]
+
+    class X2 warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col style="width:17rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Scope</th><th>Location</th><th>Capabilities and status</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>User shared</td>
+                    <td><code class="inline">~/.gemini/config/</code></td>
+                    <td>The <strong>global customization root</strong>: skills, agents, rules, plugins, <code class="inline">hooks.json</code>, <code class="inline">mcp_config.json</code>, <code class="inline">sidecars/</code>, <code class="inline">config.json</code>, <code class="inline">skills.json</code>/<code class="inline">plugins.json</code>.</td>
+                    <td><strong>D/S/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>User instructions</td>
+                    <td><code class="inline">~/.gemini/GEMINI.md</code></td>
+                    <td>Global instructions. <strong>No global <code class="inline">~/.gemini/AGENTS.md</code> is documented</strong> — the two filenames are not symmetric at user scope.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>CLI-private app data</td>
+                    <td><code class="inline">~/.gemini/antigravity-cli/</code></td>
+                    <td><code class="inline">settings.json</code>, <code class="inline">keybindings.json</code>, <code class="inline">import_manifest.json</code>, <code class="inline">builtin/</code>, <code class="inline">log/</code>, <code class="inline">conversations/</code>, <code class="inline">cache/</code>, <code class="inline">brain/</code>, <code class="inline">implicit/</code>, <code class="inline">knowledge/</code>, <code class="inline">updater/</code>, <code class="inline">crashes/</code>, <code class="inline">history.jsonl</code>, <code class="inline">installation_id</code>, <code class="inline">conversation_summaries.db</code>.</td>
+                    <td><strong>D/S/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Workspace</td>
+                    <td><code class="inline">.agents/</code> — or <code class="inline">.agent/</code>, <code class="inline">_agents/</code>, <code class="inline">_agent/</code></td>
+                    <td>The workspace customization root. The four spellings are alternates <strong>for the root itself</strong>, not per-capability aliases.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Workspace generated</td>
+                    <td><code class="inline">&lt;workspace&gt;/.gemini/antigravity-cli/</code></td>
+                    <td>Per-conversation <code class="inline">transcript.jsonl</code> and an <code class="inline">artifacts/</code> directory, both handed to hooks. Generated, not authored.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project-specific CLI</td>
+                    <td><code class="inline">~/.gemini/config/projects/&lt;project-id&gt;.json</code></td>
+                    <td>Changelog 1.0.12 says these override global CLI settings for <em>permissions</em>; <code class="inline">default-cli-project.json</code> observed. Key schema unpublished.</td>
+                    <td><strong>S/O/U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session / admin</td>
+                    <td>flags and mode; IAM / admin policy</td>
+                    <td>Session override and administrative controls. <strong>No portable managed filesystem path</strong> exists for Antigravity.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">There is no local/private override scope.</span> Antigravity documents no repository-local <code class="inline">.local</code> analogue — nothing corresponding to <code class="inline">CLAUDE.local.md</code>, <code class="inline">settings.local.json</code>, or a project-private capability tier. Synthesizing one produces a dead file that nothing reads. <strong>D</strong></p>
+
+              <p><strong>The generated <code class="inline">.gemini</code> trees are split per product — S.</strong> The embedded hooks doc names the <code class="inline">&lt;workspace&gt;/.gemini/&lt;product&gt;/</code> directory holding <code class="inline">transcript.jsonl</code> and <code class="inline">artifacts/</code> per product: CLI <code class="inline">antigravity-cli/</code>, Antigravity 2.0 <code class="inline">antigravity/</code>, IDE <code class="inline">antigravity-ide/</code> (verified in <code class="inline">agy 1.1.12</code>). A user-level sibling <code class="inline">~/.gemini/antigravity/</code> tree — <code class="inline">antigravity_state.pbtxt</code>, <code class="inline">brain/</code>, <code class="inline">conversations/</code>, <code class="inline">knowledge/</code>, <code class="inline">skills/</code> — from the installed Antigravity 2.0.1 app was observed on this machine (<strong>O</strong>) and is easy to mistake for the CLI's <code class="inline">antigravity-cli</code> tree. A scanner needs all three names.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>What a generated tree contains — O, reframed by the second pass.</strong> The first pass presented these rows as one real <code class="inline">~/.gemini</code>. The 2026-08-13 re-check found the machine hosting this page does not match them: <code class="inline">~/.gemini/antigravity-cli/</code> does not exist here — and by the <code class="inline">~/.gemini</code> directory mtime (2026-06-12) has been continuously absent since before the 2026-08-11 audit — while <code class="inline">~/.gemini/config/</code> holds only <code class="inline">.migrated</code>, a 0-byte <code class="inline">mcp_config.json</code>, an empty <code class="inline">projects/</code>, and a <code class="inline">sidecars/</code> directory present since 2026-05-21. The rows below match what a fresh <code class="inline">agy</code> run generates in a clean <code class="inline">HOME</code>, and are restated as that. Presence proves support; <em>absence proves nothing</em>, because these trees are created on demand. Values were not inspected beyond top-level key names.</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /></colgroup>
+                <thead><tr><th>Tree</th><th>Observed</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">~/.gemini/config/</code></td>
+                    <td><code class="inline">.migrated</code>, <code class="inline">config.json</code> (single top-level key <code class="inline">userSettings</code>), an <strong>empty</strong> <code class="inline">mcp_config.json</code>, and <code class="inline">projects/default-cli-project.json</code></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.gemini/antigravity-cli/</code></td>
+                    <td><code class="inline">settings.json</code> (single key <code class="inline">trustedWorkspaces</code>), <code class="inline">builtin/{.checksum,keep.txt,skills/}</code>, <code class="inline">bin/</code>, <code class="inline">brain/</code>, <code class="inline">cache/</code>, <code class="inline">conversations/</code>, <code class="inline">crashes/</code>, <code class="inline">implicit/</code>, <code class="inline">knowledge/</code>, <code class="inline">log/</code>, <code class="inline">updater/</code>, <code class="inline">history.jsonl</code>, <code class="inline">installation_id</code>, <code class="inline">jetski_state.pbtxt</code>, <code class="inline">conversation_summaries.db</code></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.gemini/</code></td>
+                    <td>also <code class="inline">google_accounts.json</code> and <code class="inline">oauth_creds.json</code> — the <em>predecessor Gemini CLI's</em> files, not <code class="inline">agy</code>'s auth state; see the credential-storage note in the <a class="link-quiet" href="#generated">generated-state section</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Not present</strong></td>
+                    <td><code class="inline">~/.gemini/config/{skills,agents,plugins,rules,sidecars}</code> and <code class="inline">~/.gemini/config/hooks.json</code> — and, notably, <strong>no <code class="inline">~/.gemini/antigravity-cli/skills</code> or <code class="inline">plugins</code> either</strong>. Neither candidate global skill root existed on this machine, so the observation does not break the tie described in the <a class="link-quiet" href="#global-root">global-root section</a>. <strong>Second-pass correction (2026-08-13):</strong> on the machine hosting this page, <code class="inline">~/.gemini/config/sidecars/</code> <em>does</em> exist (empty, mtime 2026-05-21) — contradicting the first-pass "not present" list — and <code class="inline">~/.gemini/antigravity-cli/</code> does not exist at all. An absence row is an observation of one tree at one time, never a contract.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Built-ins are a real capability root, not decoration — S.</strong> <code class="inline">~/.gemini/antigravity-cli/builtin/skills/</code> holds three bundled skills: <code class="inline">agy-customizations</code> (the manual this page cites), <code class="inline">antigravity_guide</code>, and <code class="inline">permissioned-github</code>. They occupy the "Built-in Customizations" tier of the <a class="link-quiet" href="#precedence-table">category order</a> and are loaded like any other skill.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="spellings" data-term>
+            <p class="prompt">ls -d .agents .agent _agents _agent 2&gt;/dev/null</p>
+            <div class="body" data-term-out>
+              <p><strong>One root, four spellings — and this correction matters more than it looks.</strong> The earlier reading was that <code class="inline">.agent/</code> and friends were <em>legacy aliases confirmed per capability</em>: an alias for skills here, an alias for rules there, each needing its own evidence. The CLI's own embedded manual refutes that in a single sentence:</p>
+
+              <pre class="block">Path: .agents/ (or .agent/, _agents/, _agent/) at the root of your project.</pre>
+
+              <p>All four are <strong>customization roots</strong>. Every capability hangs off whichever spelling exists — skills, agents, rules, plugins, <code class="inline">hooks.json</code>, <code class="inline">skills.json</code>, <code class="inline">plugins.json</code>. A scanner that special-cases <code class="inline">.agent/skills</code> as a legacy skill path, but not <code class="inline">.agent/hooks.json</code>, is modelling the wrong thing. <strong>S</strong></p>
+
+              <pre class="mermaid">
+flowchart LR
+    S1[".agents/"] --> R["ONE workspace&lt;br/&gt;customization root"]
+    S2[".agent/"] --> R
+    S3["_agents/"] --> R
+    S4["_agent/"] --> R
+    R --> C["skills/ agents/ rules/ plugins/&lt;br/&gt;hooks.json skills.json plugins.json"]
+    R --> U["which spelling wins&lt;br/&gt;when two exist: stated nowhere"]
+
+    class U warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>The website reaches the same set piecemeal, which is how the wrong reading arose.</strong> <a class="link-quiet" href="https://www.antigravity.google/docs/rules-workflows">Rules and workflows</a> and <a class="link-quiet" href="https://www.antigravity.google/docs/skills">Skills</a> each describe "backward support for <code class="inline">.agent/…</code>" for their own capability; <a class="link-quiet" href="https://www.antigravity.google/docs/plugins">Plugins</a> separately names <code class="inline">_agents/plugins</code>. Read page by page it looks like a scatter of per-capability aliases. Read in the shipped manual it is one sentence about one root. <strong>D/S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">Precedence among the four is unknown — and it is a real hazard, not a curiosity.</span> Nothing states what happens when a repository contains both <code class="inline">.agents/</code> and <code class="inline">_agents/</code>. Are they merged? Does one win outright? Is the behavior per capability? No first-party source says. A tool must <strong>enumerate every spelling it finds and present them as parallel sources</strong>, never pick a winner and never quietly fold one into the other.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="global-root" data-term>
+            <p class="prompt">ls ~/.gemini/config/skills ~/.gemini/antigravity-cli/skills</p>
+            <div class="body" data-term-out>
+              <p><strong>The global skill path is narrowed, not settled — U-01.</strong> Five first-party sources now bear on it — three public pages found at the first pass, two more added 2026-08-13 — and the binary's zero-hit negative governs the private-tree claims while leaving a residue that honest evidence cannot clear.</p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col style="width:9rem" /></colgroup>
+                <thead><tr><th>Source</th><th>Claim</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><a class="link-quiet" href="https://www.antigravity.google/docs/skills">general skills page</a></td>
+                    <td><code class="inline">~/.gemini/config/skills/&lt;skill&gt;/SKILL.md</code></td>
+                    <td>matches the binary's root and shape</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://www.antigravity.google/docs/ide/skills">IDE skills page</a></td>
+                    <td><code class="inline">~/.gemini/antigravity/skills/&lt;skill&gt;/SKILL.md</code></td>
+                    <td>a different product surface — out of CLI scope</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://www.antigravity.google/docs/cli/plugins">CLI plugins/skills page</a></td>
+                    <td>flat <code class="inline">~/.gemini/antigravity-cli/skills/&lt;name&gt;.md</code>, compiled to global slash commands</td>
+                    <td><strong>both halves refuted</strong> by the binary</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://www.antigravity.google/docs/cli/gcli-migration">CLI migration page</a> <span class="muted">(added 2026-08-13)</span></td>
+                    <td>table row: "Global shared path" changed <code class="inline">~/.gemini/skills/</code> &rarr; <code class="inline">~/.gemini/antigravity-cli/skills/</code></td>
+                    <td>a second CLI-scoped page naming the private tree; the binary negative below still governs</td>
+                  </tr>
+                  <tr>
+                    <td><a class="link-quiet" href="https://codelabs.developers.google.com/getting-started-with-antigravity-skills">Google skills codelab</a> <span class="muted">(added 2026-08-13)</span></td>
+                    <td><code class="inline">~/.gemini/config/skills/</code> for all products — but move skills to <code class="inline">~/.gemini/antigravity-cli/skills/</code> to be seen by "Antigravity CLI"</td>
+                    <td>first-party Google but off antigravity.google — an <strong>I</strong>-class lead, not D</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>What the binary settles — S.</strong> The string <code class="inline">antigravity-cli/skills</code> has <strong>zero occurrences in the 169 MB <code class="inline">1.1.11</code> executable</strong> — re-run 2026-08-13: still zero in the 172 MB <code class="inline">1.1.12</code> image. <code class="inline">~/.gemini/config</code> <em>is</em> a literal in it. The embedded manual states plainly: "Global Configuration (Machine-Local): Path: <code class="inline">~/.gemini/config/</code>". And three independent changelog entries — <strong>1.0.2</strong>, <strong>1.0.8</strong> and <strong>1.1.0</strong> — all record moves <em>toward</em> <code class="inline">~/.gemini/config/</code>: the plugin install path fixed to the shared root, <code class="inline">/hooks</code> fixed to stop writing into the private tree, and the <code class="inline">/agents</code> panel fixed to stop naming the wrong global directory.</p>
+
+              <p><strong>What the binary does not settle — U-01.</strong> The global path template resolves <code class="inline">{appDataDir}</code>, and <code class="inline">appDataDir</code> is a <em>distinct concept</em> from the config dir: a flag describes it as "Path where application data is stored, relative to GeminiDir", and the CLI's application-data directory is <code class="inline">~/.gemini/antigravity-cli/</code> — which is exactly where its <code class="inline">builtin/skills/</code> live. The binary keeps <code class="inline">ConfigDir</code> and the app-data dir as separate concepts, and the template names neither directly. So a global user skill root under the app-data tree <strong>cannot be fully excluded</strong>.</p>
+
+              <pre class="mermaid">
+flowchart LR
+    T["binary template&lt;br/&gt;appDataDir/skills/NAME/SKILL.md"] --> Q{"what does appDataDir&lt;br/&gt;resolve to?"}
+    Q -->|the manual names it| A["~/.gemini/config/skills/&lt;br/&gt;primary candidate"]
+    Q -->|holds builtin/skills/| B["~/.gemini/antigravity-cli/skills/&lt;br/&gt;not excludable"]
+    E1["changelogs 1.0.2, 1.0.8, 1.1.0&lt;br/&gt;all move toward config/"] --> A
+    E2["antigravity-cli/skills&lt;br/&gt;zero hits in 1.1.11 AND 1.1.12"] --> A
+
+    class B warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p class="eli5"><span class="eli5-term">What the shipped CLI appears to use, stated as the inference it is.</span> On the balance of a literal that exists, a literal that does not, an explicit manual sentence, and three changelog corrections all pointing one way, <strong><code class="inline">~/.gemini/config/skills/</code> is the root the shipped CLI appears to use</strong>. That is <strong>I</strong> — a bounded inference from cited evidence — not <strong>S</strong>. A scanner should read <code class="inline">~/.gemini/config/skills/</code> first and <em>may additionally probe</em> <code class="inline">~/.gemini/antigravity-cli/skills/</code>, expecting <code class="inline">SKILL.md</code> directories in either. Present neither as certain.</p>
+
+              <p><strong>The legacy Gemini path is not a live candidate.</strong> <code class="inline">~/.gemini/skills</code> is documented only as the <em>predecessor Gemini CLI</em> location. The migration page documents a <em>successor</em> location for it — the private-tree row in the table above — not merely a relocation duty; its relocate-by-hand instruction covers workspace <code class="inline">.gemini/skills</code> only. It is not documented as still being read. <strong>D</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="instructions" data-term>
+            <p class="prompt">cat GEMINI.md AGENTS.md .agents/rules/*.md</p>
+            <div class="body" data-term-out>
+              <p>Antigravity takes authored context from three places: the global <code class="inline">~/.gemini/GEMINI.md</code>, workspace rules under <code class="inline">.agents/rules/*.md</code>, and directory-scoped <code class="inline">AGENTS.md</code> <em>and</em> <code class="inline">GEMINI.md</code> files. The CLI-scoped <a class="link-quiet" href="https://www.antigravity.google/docs/cli/gcli-migration">Gemini migration page</a> is explicit that <strong>both filenames are parsed</strong> in the active directory, and that the global file is <code class="inline">~/.gemini/GEMINI.md</code> with no global <code class="inline">AGENTS.md</code> counterpart. <strong>D/S</strong></p>
+
+              <p><strong>The assembly rule comes from the shipped guidance, not the website — S.</strong> Relevant instruction and rule files accumulate <strong>from cwd, or from the directory of the file being worked on, upward to the repository root</strong> — the manual's own words, "the folder containing <code class="inline">.git</code>" — and stop there. They are then <strong>deduplicated by resolved file path</strong>, so that "a rule file will never be injected more than once in a single conversation turn, even if it matches multiple trigger conditions". Descendants are not all activated at startup.</p>
+
+              <pre class="mermaid">
+flowchart LR
+    W["cwd, or the file&lt;br/&gt;being worked on"] --> U["walk UPWARD to the repository root&lt;br/&gt;the folder containing .git, then stop"]
+    U --> D["deduplicate by RESOLVED PATH&lt;br/&gt;at most once per turn"]
+    D --> K{"what kind of file?"}
+    K -->|GEMINI.md or AGENTS.md| A["no frontmatter supported&lt;br/&gt;always active for its directory"]
+    K -->|rule: always_on| B["loads unconditionally"]
+    K -->|rule: model_decision| C["progressive disclosure&lt;br/&gt;behaves like a skill"]
+    K -->|rule: glob or manual| E["keys trigger: and glob: are binary literals&lt;br/&gt;the trigger VALUE spellings unpublished"]
+
+    class E warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>Only <code class="inline">always_on</code> loads unconditionally, and that is the whole point of the activation model.</strong> The <a class="link-quiet" href="https://www.antigravity.google/docs/rules-workflows">rules page</a> documents four modes — <strong>Manual</strong> (at-mention), <strong>Always On</strong>, <strong>Model Decision</strong>, and <strong>Glob</strong>. The embedded manual names the underlying values <code class="inline">always_on</code> and <code class="inline">model_decision</code>, and states that <em>only</em> <code class="inline">always_on</code> rules load unconditionally, with <code class="inline">model_decision</code> rules behaving like skills under progressive disclosure. <strong>D/S</strong></p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col style="width:7rem" /></colgroup>
+                <thead><tr><th>Activation</th><th>Behavior</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Always On</strong></td><td>Value <code class="inline">always_on</code>. Loads unconditionally for every turn within its scope — the only rule mode that does.</td><td><strong>S</strong></td></tr>
+                  <tr><td><strong>Model Decision</strong></td><td>Value <code class="inline">model_decision</code>. Metadata is offered; the body loads on demand, exactly like a skill.</td><td><strong>S</strong></td></tr>
+                  <tr><td><strong>Glob</strong></td><td>Documented as a mode — and the frontmatter keys are now settled at binary strength: the executable embeds the default rule template (<code class="inline">trigger: always_on</code>, <code class="inline">glob:</code>, <code class="inline">description:</code> between <code class="inline">---</code> fences), carries <code class="inline">RuleFrontmatter</code> yaml tags <code class="inline">trigger</code> and <code class="inline">glob</code>, and errors with "Invalid rule trigger: %v". The mode key is <code class="inline">trigger:</code>, the glob key is <code class="inline">glob:</code>. What stays unpublished is the <code class="inline">trigger</code> <em>value</em> spelling for this mode. Verified on <code class="inline">1.1.12</code>; the <code class="inline">1.1.11</code> image is gone, though the surrounding manual sentences this page quotes from it are unchanged.</td><td><strong>S / U</strong></td></tr>
+                  <tr><td><strong>Manual</strong></td><td>At-mention only. The mode key is likewise <code class="inline">trigger:</code> (S, from the same template and yaml tags); its <em>value</em> spelling for this mode stays unpublished.</td><td><strong>S / U</strong></td></tr>
+                  <tr><td><code class="inline">GEMINI.md</code> / <code class="inline">AGENTS.md</code></td><td>"Do not support frontmatter and are always active for their directory scope." No mode to set, so no mode to get wrong.</td><td><strong>S</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Rule files carry a 12,000-character limit.</strong> <strong>D</strong></p>
+
+              <p><strong>Rules support an <code class="inline">@file</code> reference mechanism — D/S.</strong> "You can reference other files using @filename in a Rules file." A relative path resolves from the rule file's own location; an absolute <code class="inline">@/path</code> is tried as a true absolute path first and, if missing, workspace-relative. Documented on both the <a class="link-quiet" href="https://www.antigravity.google/docs/rules-workflows">rules-workflows</a> and <a class="link-quiet" href="https://www.antigravity.google/docs/ide/rules">IDE rules</a> pages (retrieved 2026-08-13), and implemented in the shipped binary — <code class="inline">resolveFileIncludes</code> error strings and the <code class="inline">customizations.(*Manager).parseAtMentions</code> symbol, verified on <code class="inline">agy 1.1.12</code>. A tool rendering effective rule content must know includes exist.</p>
+
+              <p><strong>The public docs conflate global rules with the global instructions file — D.</strong> The rules page's only statement about user-scope rules is "Global rules live in ~/.gemini/GEMINI.md and are applied across all workspaces" — and no public page documents <code class="inline">~/.gemini/config/rules/</code>. The embedded manual names only the root <code class="inline">~/.gemini/config/</code> at global scope, and <code class="inline">config/rules</code> is not a literal in the installed binary (0 hits, full-image byte search, <code class="inline">agy 1.1.12</code>). This page therefore carries <code class="inline">~/.gemini/config/rules/*.md</code> as <strong>I</strong> — the manual's global root composed with the workspace layout — with the docs' GEMINI.md-as-global-rules sentence on record as the D side.</p>
+
+              <p class="eli5"><span class="eli5-term">Two things a tool must not do here.</span> First: <strong>same-name rule conflict behavior is unpublished</strong> (<strong>U</strong>). Two <code class="inline">.agents/rules/lint.md</code> files at different levels have no stated winner — enumerate them. Second: <code class="inline">rules.json</code> exists as a literal in the shipped binary, beside <code class="inline">skills.json</code>, <code class="inline">plugins.json</code> and <code class="inline">agents.json</code>, but <strong>neither the embedded manual nor any public page documents its path or schema</strong>. Do not scan for it as a supported contract, and do not parse it if you find one.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="skills" data-term>
+            <p class="prompt">find .agents/skills -name SKILL.md</p>
+            <div class="body" data-term-out>
+              <p><strong>The skill shape is settled at binary strength, and it is a directory.</strong> The executable's own path templates are:</p>
+
+              <pre class="block">{workspace}/.agents/skills/{skill_name}/SKILL.md
+{appDataDir}/skills/{skill_name}/SKILL.md</pre>
+
+              <p>and the embedded manual documents <code class="inline">skills/&lt;skill_name&gt;/SKILL.md</code> with optional <code class="inline">scripts/</code>, <code class="inline">examples/</code>, <code class="inline">resources/</code> and <code class="inline">references/</code> subdirectories beside it. <strong>S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">The flat <code class="inline">&lt;name&gt;.md</code> form is documentation-only — stop offering it.</span> The CLI plugins/skills page describes a flat <code class="inline">~/.gemini/antigravity-cli/skills/&lt;name&gt;.md</code> file compiled into global slash commands. That form <strong>appears nowhere in the 169 MB <code class="inline">1.1.11</code> executable</strong>, which carries only <code class="inline">…/skills/{skill_name}/SKILL.md</code> templates — templates re-confirmed present in the <code class="inline">1.1.12</code> image (2026-08-13). This is a <strong>D&ne;S</strong> the installed build wins outright: a tool that creates a flat skill file creates a file the shipped CLI has no template for.</p>
+
+              <table>
+                <colgroup><col style="width:10rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Frontmatter field</th><th>Contract</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">name</code></td><td><strong>Required.</strong> The embedded <code class="inline">docs/skills.md</code> marks it "(string, required)". This corrects the earlier "optional <code class="inline">name</code> defaulting from the folder", which is the <em>general</em> product page's wording, not the CLI's.</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">description</code></td><td><strong>Required.</strong> Marked "(string, required)" in the same document. It is what progressive disclosure advertises before the body loads.</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">disable-slash-command</code></td><td>Added upstream in <strong>1.1.12</strong> — and now present in the installed build: the 2026-08-13 replacement binary carries the Go struct tag <code class="inline">yaml:&quot;disable-slash-command&quot;</code> for the <code class="inline">SKILL.md</code> frontmatter field. The 1.1.12 embedded manual's "Frontmatter Fields" section still lists only <code class="inline">name</code> and <code class="inline">description</code>, so the field is code-observed, not manual-documented. (The image's other two hits for the substring are the pre-existing plural flag <code class="inline">--disable-slash-commands</code>.)</td><td><strong>D/S</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Where skills are found.</strong> Workspace <code class="inline">.agents/skills/&lt;name&gt;/SKILL.md</code> (and the three alias spellings of that root), the global root discussed in the <a class="link-quiet" href="#global-root">previous section</a>, plugin-supplied <code class="inline">skills/&lt;name&gt;/SKILL.md</code>, the three bundled built-ins, and anything registered through <a class="link-quiet" href="#declared-sources"><code class="inline">skills.json</code></a>. <strong>S</strong></p>
+
+              <p><strong>Skills are also the CLI's slash-command mechanism.</strong> There is no native <code class="inline">.agents/commands</code> directory and none is documented; skills create the slash commands instead. The flag <code class="inline">--disable-slash-commands</code> is described as disabling "slash command and skill expansion in print mode" — one switch for both, because they are one thing. <strong>D/S</strong></p>
+
+              <p><strong>Antigravity does <em>not</em> read <code class="inline">~/.agents/skills</code>.</strong> Codex, Copilot and OpenCode all consume that user-scope directory; Antigravity's user scope is <code class="inline">~/.gemini/</code>, and no first-party source gives it a <code class="inline">~/.agents</code> reader. A bounded negative, scoped to this version row. <strong>D</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="declared-sources" data-term>
+            <p class="prompt">jq . .agents/skills.json .agents/plugins.json</p>
+            <div class="body" data-term-out>
+              <p><strong>This is the richest and least-known part of Antigravity, and until the binary pass it was recorded as unknown.</strong> The shipped manual publishes the whole schema in <code class="inline">docs/json_configs.md</code>. <code class="inline">skills.json</code> and <code class="inline">plugins.json</code> use <strong>one schema</strong> and sit in a customization root — <code class="inline">.agents/</code> in a project, <code class="inline">~/.gemini/config/</code> globally. <strong>S</strong></p>
+
+              <pre class="block">{
+  "inherits": [
+    {
+      "path": "/path/to/shared/skills.json",
+      "include_only": ["linter-skill"],
+      "exclude": ["deprecated-skill"]
+    }
+  ],
+  "entries": [
+    { "path": "path/to/my/project/skills", "exclude": ["experimental-.*"] },
+    { "path": "~/personal-skills" }
+  ]
+}</pre>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Key</th><th>Meaning</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">entries[]</code></td><td>Each <code class="inline">path</code> points at a <strong>customization directory</strong> — a folder of skills, or of plugins, depending on which file this is.</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">inherits[]</code></td><td>Each <code class="inline">path</code> points at <strong>another config file</strong>. Inherited entries <strong>merge with local ones in listed order</strong> — this is composition, not replacement.</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">include_only</code></td><td>A list of <strong>regex patterns matched against directory names</strong>. Only matching directories are taken.</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">exclude</code></td><td>The same, inverted — e.g. <code class="inline">"experimental-.*"</code> drops every directory whose name starts with that prefix.</td><td><strong>S</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">These are regexes over <em>directory names</em>, not globs over paths.</span> <code class="inline">experimental-.*</code> is a regular expression, and it is matched against the name of each candidate directory — not against a full path and not with shell-glob semantics. A tool that renders these as globs, or that anchors them to a path, will describe the wrong set.</p>
+
+              <p><strong>Path resolution is three-way, and the third case is the interesting one.</strong></p>
+
+              <pre class="mermaid">
+flowchart LR
+    P["entries[].path or inherits[].path"] --> Q{"how does it start?"}
+    Q -->|leading slash| A["absolute, used as written"]
+    Q -->|leading tilde slash| B["resolved against the home directory"]
+    Q -->|anything else| C["relative to the REPOSITORY ROOT&lt;br/&gt;the folder containing .git — or the&lt;br/&gt;workspace root when there is no .git"]
+    C --> D["a committed .agents/skills.json&lt;br/&gt;is portable across clones"]
+
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p>A bare relative path resolves <strong>against the repository root</strong> — the folder containing <code class="inline">.git</code>, or <em>the root of the workspace</em> when there is no <code class="inline">.git</code> (the embedded manual's own parenthesis, verified in the <code class="inline">1.1.12</code> copy) — not against the file's own directory and not against cwd. That is precisely what makes a committed <code class="inline">.agents/skills.json</code> portable: every clone resolves <code class="inline">path/to/my/project/skills</code> to the same place regardless of where the repository sits or which subdirectory the session started in. <strong>S</strong></p>
+
+              <p><strong>Where declared sources sit in the load order.</strong> They are their own tier — <em>second</em> at workspace scope and <em>last</em> at global scope, per the <a class="link-quiet" href="#precedence-table">category order</a>. Declared sources therefore do not simply merge into discovery; they rank differently depending on which root declared them.</p>
+
+              <p class="eli5"><span class="eli5-term">Two sibling literals with no schema at all.</span> <code class="inline">agents.json</code> and <code class="inline">rules.json</code> also exist as literals in the shipped binary, beside <code class="inline">skills.json</code> and <code class="inline">plugins.json</code>. Neither has a published path or schema anywhere — not in the manual, not on any page. They stay <strong>U-02</strong>. The second pass widened the bucket: <code class="inline">skills.txt</code>, <code class="inline">agents.txt</code> and <code class="inline">agent.json</code> are also standalone literals (one occurrence each in <code class="inline">agy 1.1.12</code>, so none appears in the embedded manual text), and the binaries separately carry paths-file loader machinery — <code class="inline">loadPathsFile</code> in <code class="inline">agy</code>, <code class="inline">customizations.loadPathsFile</code> / <code class="inline">loadPathsFromFile</code> / <code class="inline">readPathLines</code> in the Antigravity 2.0.1 <code class="inline">language_server</code> — with no evidence linking the filename literals to that loader. Treat all of it as opaque: do not scan for these as supported contracts, do not parse them, and do not offer to edit them.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="workflows" data-term>
+            <p class="prompt">grep -a -o 'CUSTOMIZATION_FILE_TYPE_[A-Z_]*' agy &#124; sort -u</p>
+            <div class="body" data-term-out>
+              <p><strong>Workflows exist. The path does not — U-03.</strong> This is the correction that changes a capability from "absent" to "present at an address nobody published", and the difference matters: a tool that reports Antigravity as having no workflows is stating something false.</p>
+
+              <p>The shipped binary carries workflows as a <strong>first-class customization kind in its own embedded protobuf</strong>. <code class="inline">CustomizationFileType</code> enumerates <code class="inline">RULES</code>, <code class="inline">WORKFLOWS</code>, <code class="inline">GLOBAL_WORKFLOWS</code>, <code class="inline">SKILLS</code>, <code class="inline">GLOBAL_SKILLS</code>, <code class="inline">AGENT</code>, <code class="inline">GLOBAL_AGENT</code>, <code class="inline">PLUGIN</code>, <code class="inline">GLOBAL_PLUGIN</code>, <code class="inline">HOOKS</code>, <code class="inline">MCP</code>. <code class="inline">RefreshCustomizationType</code> enumerates <code class="inline">RULE</code>, <code class="inline">WORKFLOW</code>, <code class="inline">SKILL</code>, <code class="inline">AGENT</code>, <code class="inline">PLUGIN</code>, <code class="inline">HOOKS</code>, <code class="inline">MCP</code>. <strong>S</strong></p>
+
+              <pre class="mermaid">
+flowchart LR
+    E1["CUSTOMIZATION_FILE_TYPE_WORKFLOWS&lt;br/&gt;and _GLOBAL_WORKFLOWS"] --> P["a real customization kind&lt;br/&gt;workspace AND global scope"]
+    E2["/workflows and /global_workflows&lt;br/&gt;UI route tokens"] --> P
+    E3["workflows.migrated&lt;br/&gt;migration marker"] --> P
+    E4["prompt lists slash command, path, description"] --> P
+    P --> L["loaded from PATHS&lt;br/&gt;surfaced as slash commands"]
+    L --> U["directory name unpublished&lt;br/&gt;.agents/workflows is NOT a literal"]
+
+    class U warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p>The binary also carries the UI and route tokens <code class="inline">/workflows</code> and <code class="inline">/global_workflows</code>, the migration marker <code class="inline">workflows.migrated</code>, and a prompt line that reads: "Here is the current list of workflows, along with a description on when to use them. They are provided in - [slash command] (path): [description] format". That sentence establishes three things at once — workflows are loaded from <strong>paths</strong>, they exist at <strong>both scopes</strong>, and they surface as <strong>slash commands</strong>. <strong>S</strong></p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Question</th><th>Answer</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr><td>Does the CLI load workflows?</td><td><strong>Yes</strong> — a first-class kind in the binary's own enums, with a refresh type and migration marker.</td><td><strong>S</strong></td></tr>
+                  <tr><td>At which scopes?</td><td>Workspace <em>and</em> global, distinguished by <code class="inline">WORKFLOWS</code> versus <code class="inline">GLOBAL_WORKFLOWS</code>.</td><td><strong>S</strong></td></tr>
+                  <tr><td>How do they surface?</td><td>As slash commands, listed to the model with a path and a description.</td><td><strong>S</strong></td></tr>
+                  <tr><td><strong>From which directory?</strong></td><td><strong>Unpublished.</strong> No <code class="inline">.agents/workflows</code> literal appears in the binary — re-run 2026-08-13: zero in <code class="inline">agy 1.1.12</code> and in the Antigravity 2.0.1 <code class="inline">language_server</code> — and no antigravity.google page states a workflow path.</td><td><strong>U-03</strong></td></tr>
+                  <tr><td>What the docs offer instead</td><td><a class="link-quiet" href="https://www.antigravity.google/docs/ide/workflows">The IDE workflows page</a> describes authoring them through the Customizations panel only — a UI affordance, not a filesystem contract, and an IDE page rather than a CLI one.</td><td><strong>D</strong></td></tr>
+                  <tr><td>Strongest published lead</td><td>A <a class="link-quiet" href="https://codelabs.developers.google.com/autonomous-ai-developer-pipelines-antigravity">Google-hosted codelab</a> instructs creating <code class="inline">.agents/workflows/startcycle.md</code> and says saving a file inside <code class="inline">.agents/workflows/</code> registers a new command. It is IDE-scoped ("Open the Antigravity IDE"), never mentions <code class="inline">agy</code>, and sits off antigravity.google — an <strong>I</strong>-class lead, not a CLI contract. A tool may scan the candidate directory; it must not present it as certain.</td><td><strong>I</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">The right way to represent this.</span> Neither deny the capability nor invent a path. Show workflows as a supported Antigravity capability whose on-disk location is <strong>unknown for this version</strong>, offer no create-a-workflow action that has to guess a directory, and re-check on the next release — a single published sentence or one new literal closes this.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="agents" data-term>
+            <p class="prompt">ls .agents/agents/*.md ~/.gemini/config/agents</p>
+            <div class="body" data-term-out>
+              <p>Agents are Markdown with frontmatter plus a system-prompt body, in <code class="inline">.agents/agents/&lt;name&gt;.md</code> or <code class="inline">.agents/agents/&lt;name&gt;/agent.md</code> at workspace scope, <code class="inline">~/.gemini/config/agents</code> globally, and inside plugins. <strong>D/S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">The directory is the discovery signal, not the filename suffix.</span> The binary's own path template is <code class="inline">{workspace}/.agents/agents/{agent_name}/</code>, and the CLI command page states that agent files <strong>must sit inside an <code class="inline">agents/</code> subdirectory or they are not discovered</strong>. Unlike Copilot's <code class="inline">.agent.md</code> suffix convention, a bare <code class="inline">foo.md</code> in the right directory is an agent and a perfectly-named file in the wrong directory is not. <strong>S</strong></p>
+
+              <table>
+                <colgroup><col style="width:12rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Aspect</th><th>Contract</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Frontmatter fields</td>
+                    <td><code class="inline">name</code>, <code class="inline">description</code>, <code class="inline">tools</code>, <code class="inline">mainAgent</code>, <code class="inline">subagent</code>, <code class="inline">model</code>, <code class="inline">commandExecutionPolicy</code>, <code class="inline">mcpServers</code>, <code class="inline">skills</code>, <code class="inline">plugins</code>, plus newer <code class="inline">hidden</code> and <code class="inline">inheritMcp</code></td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Selection</td>
+                    <td><code class="inline">/agents</code> and <code class="inline">--agent</code> select a <strong>primary</strong>; <code class="inline">invoke_subagent</code> delegates; <code class="inline">define_subagent</code> creates <strong>session-only</strong> definitions that exist on no disk</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Subagent runtime</td>
+                    <td>Asynchronous and context-isolated; inherits permission, sandbox and workspace scope; may <strong>nest to depth 10</strong></td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Terminal entry point</td>
+                    <td><code class="inline">agy agent</code> and <code class="inline">agy agents</code> list agents from the terminal — <strong>the only capability besides plugins with a non-slash entry point</strong></td>
+                    <td><strong>O/D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Global root correction</td>
+                    <td>Changelog <strong>1.1.0</strong> fixed the <code class="inline">/agents</code> panel naming the wrong global directory, resolving it to <code class="inline">~/.gemini/config/</code> — one of the three corrections that point the global root at the shared tree</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Duplicate identity</td>
+                    <td>The <a class="link-quiet" href="#precedence-table">category order</a> resolves same-<em>name</em> conflicts. Whether an agent's identity is its frontmatter <code class="inline">name</code> or its filename is <strong>unpublished</strong></td>
+                    <td><strong>U</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Built-in subagents are a bundled tier of their own — D/S.</strong> The <a class="link-quiet" href="https://www.antigravity.google/docs/subagents">product subagents page</a> lists three pre-packaged subagents — <code class="inline">research</code> ("Optimized for codebase research…"), <code class="inline">browser</code>, and <code class="inline">self</code> — while the CLI subagents page calls them "built-in agents" without naming them. The installed <code class="inline">agy 1.1.12</code> carries all three as builtin agents-package symbols (<code class="inline">agents.ResearchAgent</code> / <code class="inline">BrowserAgent</code> / <code class="inline">SelfAgent</code>) plus two undocumented siblings, <code class="inline">owl.DeepCoderAgent</code> and <code class="inline">owl.DeepInvestigatorAgent</code> (S-only). The same build carries the <code class="inline">/teamwork-preview</code> multi-agent roster — <code class="inline">teamwork_preview_orchestrator</code> / <code class="inline">critic</code> / <code class="inline">worker</code> / <code class="inline">solver</code> / <code class="inline">implementer</code> / <code class="inline">challenger</code> / <code class="inline">synthesizer</code> — gated by <code class="inline">enable_teamwork_subagent</code> — the binary's own gloss: "Invoke a team of agents to autonomously tackle large projects." — and documented as an Ultra-plan preview on the product subagents page.</p>
+
+              <p><strong><code class="inline">.agents/agents/</code> is an Antigravity-only contract.</strong> Copilot's two shipped binaries contain no <code class="inline">.agents/agents</code> literal at all, OpenCode's tagged source has no loader for it, and neither Claude Code nor Codex documents one. Sharing the parent directory name with three other coding agents buys nothing here. <strong>S</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="hooks" data-term>
+            <p class="prompt">jq 'keys' .agents/hooks.json ~/.gemini/config/hooks.json</p>
+            <div class="body" data-term-out>
+              <p><strong>The hook contract was recovered in full — and at the first pass almost none of it was documented.</strong> The live <a class="link-quiet" href="https://www.antigravity.google/docs/hooks">docs/hooks page</a> — Antigravity 2.0 docs section, v2.8.1, retrieved 2026-08-13; whether it changed after this page's 2026-08-11 sweep cannot be dated, because the docs expose no revision dates — now documents most of it: hook-name top-level keys, the grouped-versus-flat per-event shapes, matcher semantics including <code class="inline">browser_.*</code>, the <code class="inline">enabled</code> field, the 30&nbsp;s timeout default, camelCase payload keys, and the <code class="inline">injectSteps</code> / <code class="inline">terminationBehavior</code> / Stop-decision outputs. Still manual- or binary-only: the <code class="inline">hooks.json</code>-directory cwd, <code class="inline">sh -c</code> / <code class="inline">cmd /c</code> invocation, the <code class="inline">CORTEX_STEP_TYPE_</code> derivation, cross-file merge behavior, the <code class="inline">overwrite</code> output field, and the plugin <code class="inline">hooks.json</code> location. Three locations: global <code class="inline">~/.gemini/config/hooks.json</code>, workspace <code class="inline">.agents/hooks.json</code>, and plugin <code class="inline">&lt;plugin&gt;/hooks.json</code>. <strong>D/S</strong></p>
+
+              <p>The file is a JSON object whose <strong>top-level keys are hook names</strong> — not event names. Each maps to <code class="inline">enabled</code> (default <code class="inline">true</code>) plus event arrays. <strong>S</strong></p>
+
+              <pre class="mermaid">
+flowchart LR
+    F["hooks.json&lt;br/&gt;global, workspace,&lt;br/&gt;or plugin"] --> N["top-level keys are&lt;br/&gt;HOOK NAMES, each with&lt;br/&gt;enabled plus event arrays"]
+    N --> E{"which event?"}
+    E -->|the two tool events| G["GROUPED shape&lt;br/&gt;matcher plus a hooks array"]
+    E -->|the other three| L["FLAT handler list&lt;br/&gt;matcher is ignored"]
+    G --> R["runs via sh -c or cmd /c&lt;br/&gt;cwd is the hooks.json directory"]
+    L --> R
+    R --> M["named hooks merge across files&lt;br/&gt;cross-source order unpublished"]
+
+    class M warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Element</th><th>Contract</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Events</td>
+                    <td>Exactly five: <code class="inline">PreToolUse</code>, <code class="inline">PostToolUse</code>, <code class="inline">PreInvocation</code>, <code class="inline">PostInvocation</code>, <code class="inline">Stop</code> — manual-confirmed again in 1.1.12. Beside them, the 1.1.12 binary carries <code class="inline">SessionStart</code> machinery in the same hooks proto: the <code class="inline">HookArgs</code> oneof has a <code class="inline">GetSessionStartHookArgs</code> variant alongside the five events' args, and <code class="inline">SessionStartHookResult</code> supports <code class="inline">injectSteps</code> — while both the embedded manual and the current docs page still document exactly five <code class="inline">hooks.json</code> events. Whether <code class="inline">SessionStart</code> is user-reachable is unresolved (<strong>U</strong>); re-check on the next manual revision</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Shape per event</td>
+                    <td>The two <strong>tool</strong> events take the grouped form <code class="inline">{ "matcher": …, "hooks": [ … ] }</code>. The other three take a <strong>flat list</strong> of handler objects and ignore <code class="inline">matcher</code> entirely</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Matcher semantics</td>
+                    <td><code class="inline">"*"</code> or <code class="inline">""</code> matches all tools; a bare name matches exactly; <code class="inline">&#124;</code> alternates; and regexes such as <code class="inline">browser_.*</code> are supported</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Tool-name derivation</td>
+                    <td>"Tool names are derived by lowercasing the step type and removing the <code class="inline">CORTEX_STEP_TYPE_</code> prefix" — so the names a matcher must match are computed, not listed anywhere</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Handler object</td>
+                    <td><code class="inline">{ "type": "command", "command": &lt;required&gt;, "timeout": &lt;seconds, default 30&gt; }</code>. <code class="inline">type</code> defaults to <code class="inline">command</code> and is currently the only value</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Execution</td>
+                    <td>Runs via <code class="inline">sh -c</code> on Unix or <code class="inline">cmd /c</code> on Windows; <code class="inline">~</code> expands to home</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Payload</td>
+                    <td>protojson <strong>camelCase</strong> on stdin and stdout, with common fields <code class="inline">conversationId</code>, <code class="inline">workspacePaths</code>, <code class="inline">transcriptPath</code>, <code class="inline">artifactDirectoryPath</code>, <code class="inline">modelName</code></td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Decisions</td>
+                    <td><strong>Versioned.</strong> The 1.1.11 row recorded <code class="inline">decision</code> (<code class="inline">allow</code> / <code class="inline">deny</code> / <code class="inline">ask</code>), <code class="inline">reason</code>, and <code class="inline">permissionOverrides</code> — no longer verifiable, the binary was replaced. The 1.1.12 embedded manual documents <strong>four</strong> values — adding <code class="inline">force_ask</code>, "Always prompt the user, ignoring cached permissions" — plus an optional <code class="inline">overwrite</code> object: key-value pairs shallow-merged top-level into the tool call's arguments before it runs, and the modified call is what executes and is recorded. The 1.1.12 binary's jsonschema tag accepts <strong>five</strong> values, adding <code class="inline">deny_unless_prior_grant</code>, and the current docs page documents the same five ("Denies execution unless the resource was previously approved in a prior user grant") — schema-accepted but absent from the 1.1.12 manual</td>
+                    <td><strong>D&ne;S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Other outputs</td>
+                    <td><code class="inline">PreInvocation</code> and <code class="inline">PostInvocation</code> output <code class="inline">injectSteps</code> — step types <code class="inline">toolCall</code>, <code class="inline">userMessage</code>, <code class="inline">ephemeralMessage</code> (a transient system message). <code class="inline">PostInvocation</code> additionally takes <code class="inline">terminationBehavior</code>: <code class="inline">force_continue</code>, <code class="inline">terminate</code>, or omitted for the default. <code class="inline">Stop</code> output takes <code class="inline">decision: "continue"</code> plus <code class="inline">reason</code> to block stopping — any other value lets the agent stop. <code class="inline">PostToolUse</code> output expects an empty JSON object <code class="inline">{}</code>. The first three are also on the current docs page; the <code class="inline">{}</code> expectation is manual-only (verified in the 1.1.12 manual)</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Limitations</td>
+                    <td>The manual's own "Current Limitations": only <code class="inline">type: "command"</code> is supported — no HTTP or prompt hooks yet — and hooks run <strong>synchronously, blocking the agent loop</strong>. Manual-only</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Merge</td>
+                    <td>Multiple named hooks for one event <strong>merge and run sequentially</strong>. The binary logs "loaded %d named hooks from %d hooks.json file(s)", which confirms multi-file merge directly</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Collision order</td>
+                    <td>Which source wins when the same hook name appears in two files is <strong>unpublished</strong></td>
+                    <td><strong>U</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">The working directory is the <code class="inline">hooks.json</code> directory — and that is a trap.</span> A handler's cwd is <strong>the directory containing its own <code class="inline">hooks.json</code></strong>. So the identical <code class="inline">"command": "./scripts/check.sh"</code> resolves to <code class="inline">.agents/scripts/check.sh</code> in a workspace hook and to <code class="inline">&lt;plugin&gt;/scripts/check.sh</code> in a plugin hook. Copying a hook between scopes silently repoints every relative path in it.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="mcp" data-term>
+            <p class="prompt">jq '.mcpServers' ~/.gemini/config/mcp_config.json</p>
+            <div class="body" data-term-out>
+              <p>MCP servers are declared in <code class="inline">mcp_config.json</code> with a top-level <code class="inline">mcpServers</code> object. The embedded manual documents stdio entries taking <code class="inline">command</code> (required), <code class="inline">args</code>, <code class="inline">env</code>, and remote entries taking <code class="inline">serverUrl</code> — but that is the floor, not the accepted surface (below). The runtime exposes tools, resources and prompts, and <code class="inline">/mcp</code> inspects them. <strong>D/S</strong></p>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /><col style="width:7rem" /></colgroup>
+                <thead><tr><th>Location</th><th>Status</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">~/.gemini/config/mcp_config.json</code></td>
+                    <td>Global. One of exactly two entries in the shipped manual's "Location" section.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">&lt;plugin&gt;/mcp_config.json</code></td>
+                    <td>Plugin-supplied, ingested automatically when the plugin is enabled. The manual's second entry.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.agents/mcp_config.json</code></td>
+                    <td><strong>Documented-only.</strong> Two first-party pages document the workspace file — the <a class="link-quiet" href="https://www.antigravity.google/docs/mcp">main MCP page</a> ("The configuration file is located globally at ~/.gemini/config/mcp_config.json (or locally in your workspace under .agents/mcp_config.json)") and the <a class="link-quiet" href="https://www.antigravity.google/docs/cli/mcp">CLI MCP page</a> ("Workspace local setups: Configured in your active project under .agents/mcp_config.json.") — before the shipped manual's Location section, still exactly two entries in the 1.1.12 copy, demotes it. <strong>Claimed, not package-confirmed.</strong></td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>The accepted key surface is far richer than the manual — D/S.</strong> The installed binary's config structs and its own <code class="inline">exa.cortex_pb.McpServerSpec</code> protobuf carry, beyond the four manual keys: <code class="inline">cwd</code>, <code class="inline">url</code> (an alternate remote key, changelog 1.0.5), <code class="inline">headers</code>, <code class="inline">oauth</code> (<code class="inline">clientId</code>, <code class="inline">clientSecret</code>), <code class="inline">authProviderType</code> (<code class="inline">google_credentials</code> is a literal), <code class="inline">disabled</code>, <code class="inline">disabledTools</code> / <code class="inline">enabledTools</code>, <code class="inline">timeoutSeconds</code> (changelog 1.0.7), and a per-tool <code class="inline">tools</code> map whose entries take <code class="inline">background</code> and <code class="inline">eager</code> — per-tool settings, not server-level keys. At minimum <code class="inline">disabled</code> and the tool filters are load-bearing for a configuration browser: a server can be present-but-disabled with its tools filtered. The current <a class="link-quiet" href="https://www.antigravity.google/docs/mcp">MCP page</a> documents <code class="inline">cwd</code>, <code class="inline">headers</code>, <code class="inline">authProviderType</code>, <code class="inline">oauth</code>, <code class="inline">disabled</code> and <code class="inline">disabledTools</code> (D); the remainder is S. Binary evidence verified on <code class="inline">agy 1.1.12</code>; the <code class="inline">url</code> and timeout fields predate 1.1.11 per the changelog.</p>
+
+              <p class="eli5"><span class="eli5-term">A cross-section tension, recorded rather than resolved.</span> The source analysis lists <code class="inline">.agents/mcp_config.json</code> among Antigravity's contracts in its cross-reading summary while marking that same file documented-only against the shipped manual in the capability section. This page follows <strong>the narrower, package-backed reading</strong> — the same choice the analysis's own matrix sections make. A tool may scan the workspace file; it must not present it as verified.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Aspect</th><th>Contract</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr><td>Startup</td><td>Interactive startup loads servers <strong>in the background</strong> since <strong>1.1.9</strong>; a one-shot invocation waits for them</td><td><strong>D</strong></td></tr>
+                  <tr><td>OAuth tokens</td><td>Documented at <code class="inline">~/.gemini/antigravity/mcp_oauth_tokens.json</code> — an <strong>Antigravity 2.0</strong> path. The filename itself is a bare literal in the installed <code class="inline">agy</code> (a single hit, in a Go string pool beside <code class="inline">transcript_full.jsonl</code> and <code class="inline">MCP_SERVER_INIT_ERROR</code>; verified on 1.1.12), so the CLI does reference the file. Only the <em>parent directory</em> it uses stays unresolved: the documented location comes from a page covering multiple product surfaces, and the binary literal carries no path prefix</td><td><strong>S / U</strong></td></tr>
+                  <tr><td>Duplicate server IDs</td><td>What happens when the global file and a plugin declare the same server name is <strong>documented nowhere</strong></td><td><strong>U</strong></td></tr>
+                  <tr><td>Not a reader</td><td>Root <code class="inline">.mcp.json</code> — shared by Claude Code and Copilot CLI — has no Antigravity reader; there is no compatibility edge. One caveat, the same the <a class="link-quiet" href="#cross-tool">cross-tool section</a> gives <code class="inline">.github</code>/<code class="inline">.vscode</code>: the literal <code class="inline">.mcp.json</code> does occur exactly once in the installed <code class="inline">agy</code> (1.1.12, byte search; zero hits in the Antigravity 2.0.1 <code class="inline">language_server</code>), inside a length-sorted string pool that no first-party source ties to any reader — a single pooled literal must not be read as one</td><td><strong>D/S</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="plugins" data-term>
+            <p class="prompt">agy plugin list &amp;&amp; agy plugin help</p>
+            <div class="body" data-term-out>
+              <p>A plugin is a directory marked by <code class="inline">plugin.json</code>, at project <code class="inline">.agents/plugins/&lt;plugin&gt;/</code> (or the other three workspace-root spellings) and global <code class="inline">~/.gemini/config/plugins/&lt;plugin&gt;/</code>. The shipped manual gives the layout precisely, and it is a <strong>bundle of the other capability types</strong>. <strong>D/S</strong></p>
+
+              <pre class="block">&lt;plugin&gt;/
+  plugin.json            required
+  mcp_config.json        optional
+  hooks.json             optional
+  rules/*.md             optional
+  skills/&lt;skill_name&gt;/SKILL.md   optional</pre>
+
+              <p>An enabled plugin's skills, rules, hooks and MCP servers are all <strong>ingested automatically</strong>, with tools and skills <strong>namespaced on collision</strong>. Plugin agents and sidecars are documented separately (<strong>D</strong>) rather than in that manual layout. <strong>S</strong></p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col /></colgroup>
+                <thead><tr><th>Conflict</th><th>Shipped manual — S</th><th>CLI page — D</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">plugin.json</code> <code class="inline">name</code></td>
+                    <td>"<strong>name</strong> (string, <strong>optional</strong>): The display name of the plugin. If omitted, it defaults to the directory name"</td>
+                    <td>Marks <code class="inline">name</code> <strong>required</strong> and constrains it to <code class="inline">^[a-zA-Z0-9-_]+$</code></td>
+                  </tr>
+                  <tr>
+                    <td>Global plugin root</td>
+                    <td>Shared <code class="inline">~/.gemini/config/plugins/</code>, backed by <strong>three independent changelog corrections</strong>: 1.0.2 fixed the install path to the shared root, 1.0.8 fixed <code class="inline">/hooks</code> writing to the private tree instead of <code class="inline">~/.gemini/config/hooks.json</code>, and 1.1.0 fixed <code class="inline">/agents</code> displaying the wrong global directory</td>
+                    <td>Still names the private <code class="inline">~/.gemini/antigravity-cli/plugins</code></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">How to use those two rows.</span> <strong>Prefer the shipped manual for acceptance and the CLI page for authoring guidance.</strong> Accept a <code class="inline">plugin.json</code> without a <code class="inline">name</code> — the shipped build defaults it from the directory. When <em>writing</em> one, satisfy the stricter page and supply a name matching the regex; it is valid under both readings. For the root: read the shared tree, and note that <strong>old-private compatibility is unknown</strong> — whether a plugin still sitting in the private tree is loaded at all was not established.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The CLI surface, verified on the installed build — O/S.</strong> <code class="inline">agy --help</code> lists exactly <code class="inline">agent</code>, <code class="inline">agents</code>, <code class="inline">changelog</code>, <code class="inline">help</code>, <code class="inline">install</code>, <code class="inline">models</code>, <code class="inline">plugin</code>, <code class="inline">plugins</code>, <code class="inline">update</code>. There is <strong>no <code class="inline">skill</code>, <code class="inline">mcp</code>, <code class="inline">hooks</code> or <code class="inline">schedule</code> subcommand</strong> — those capabilities are reachable only as slash commands inside a session.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Operation</th><th>What exists</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">agy plugin</code> verbs</td>
+                    <td><code class="inline">list</code>, <code class="inline">import</code>, <code class="inline">install</code>, <code class="inline">uninstall</code>, <code class="inline">enable</code>, <code class="inline">disable</code>, <code class="inline">validate</code>, <code class="inline">link</code>, <code class="inline">help</code> — and <strong>no update verb</strong>. <code class="inline">agy update</code> updates the CLI itself, not a plugin</td>
+                    <td><strong>O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Enablement</td>
+                    <td>Stored in the <strong>shared <code class="inline">config.json</code></strong>, and since <strong>1.1.11</strong> seeded once from the manifest (<code class="inline">SeedPluginEnablement</code> in the binary)</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Foreign import</td>
+                    <td><code class="inline">agy plugin import [gemini&#124;claude]</code> <em>converts</em> foreign content. This is <strong>not live <code class="inline">.claude</code> loading</strong>; <code class="inline">~/.gemini/antigravity-cli/import_manifest.json</code> tracks what was imported. Class split: the <code class="inline">gemini</code> half is documented on the migration page (D); the <code class="inline">claude</code> half is help-output-only — no first-party page documents it (S)</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Marketplace</td>
+                    <td>Link, import and install operations exist — per the installed build's help output: <code class="inline">install &lt;target&gt;</code> "supports plugin@marketplace", <code class="inline">link &lt;mp&gt; &lt;target&gt;</code> "Generate link to a marketplace", <code class="inline">import [source]</code>. But no first-party page documents <code class="inline">agy plugin link</code>, a plugin marketplace, or <code class="inline">agy plugin import claude</code> — <a class="link-quiet" href="https://www.antigravity.google/docs/cli/plugins">/docs/cli/plugins</a> documents exactly five verbs (list, install, enable, disable, uninstall) and only local-path install (method: cli/plugins, plugins, cli/reference and cli/gcli-migration fetched 2026-08-13). Help output, not documentation, carries this row</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="sidecars" data-term>
+            <p class="prompt">cat ~/.gemini/config/sidecars/*/sidecar.json</p>
+            <div class="body" data-term-out>
+              <p><strong>Sidecars are Antigravity's durable automation mechanism, and the CLI's scheduling story is split in two.</strong> A sidecar is an authored manifest for a watched auxiliary process; the session <code class="inline">schedule</code> tool is a per-session thing whose persistence nobody has published.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Aspect</th><th>Contract</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Locations</td>
+                    <td>Global <code class="inline">&lt;config dir&gt;/sidecars/&lt;id&gt;/sidecar.json</code> and plugin <code class="inline">&lt;plugin&gt;/sidecars/</code>. <strong>No workspace <code class="inline">.agents/sidecars</code> path is documented</strong></td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Schema</td>
+                    <td>The binary embeds the <strong>full <code class="inline">sidecar.json</code> JSON schema</strong> alongside the prose. Fields: <code class="inline">command</code> <em>or</em> <code class="inline">builtin</code> — mutually exclusive, "One of command or builtin must be set"; <code class="inline">builtin</code> e.g. <code class="inline">"schedule"</code> — plus <code class="inline">args[]</code>, <code class="inline">env{}</code>, <code class="inline">restart_policy</code> (<code class="inline">always</code> | <code class="inline">on-failure</code> | <code class="inline">never</code>, default <code class="inline">always</code>), <code class="inline">description</code>, <code class="inline">display_name</code>. Enablement in the shared <code class="inline">config.json</code> is <code class="inline">sidecars.&lt;id&gt;.{enabled, projectId}</code>; <code class="inline">agentapi</code> offers <code class="inline">send-message &lt;conversation_id&gt; &lt;prompt&gt;</code> beside <code class="inline">new-conversation &lt;prompt&gt;</code>, and a sidecar creating conversations must have <code class="inline">projectId</code> set. Documented on the (non-CLI) sidecars page; the CLI side rests on the binary's <code class="inline">SidecarConfig</code> descriptor with <code class="inline">command</code>/<code class="inline">builtin</code> as a oneof (verified in <code class="inline">agy 1.1.12</code>)</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Runtime data</td>
+                    <td><code class="inline">sidecar_data/&lt;id&gt;/</code> holds a <code class="inline">data/</code> subdirectory for state persisted across invocations — its path exposed to the sidecar as <code class="inline">ANTIGRAVITY_EXECUTABLE_DATA_DIR</code> — a generated <code class="inline">logs/</code> subdirectory with timestamped stdout/stderr, and an <code class="inline">events/</code> subdirectory gaining a timestamped <code class="inline">.json</code> file for <strong>every <code class="inline">agentapi</code> call</strong>. The command runs with cwd set to the individual sidecar's folder. The injected variable is specifically <code class="inline">ANTIGRAVITY_SIDECAR_WEB_PORT</code> — the only <code class="inline">ANTIGRAVITY_SIDECAR_WEB*</code> literal in the binary, injected by the server as an unused port, not passed through. (Verified in <code class="inline">agy 1.1.12</code>; <code class="inline">data/</code>, <code class="inline">logs/</code> and <code class="inline">ANTIGRAVITY_EXECUTABLE_DATA_DIR</code> are also on the sidecars docs page)</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Lifecycle</td>
+                    <td>Shared <code class="inline">config.json</code> enables them; the runtime starts, watches, restarts and terminates them</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Cron payloads</td>
+                    <td>The <code class="inline">schedule</code> builtin accepts a <strong>five-field cron</strong> and can run recurring commands including <code class="inline">agentapi new-conversation &lt;prompt&gt;</code>. The binary's own example is <code class="inline">schedule "0 9 * * *" agentapi new-conversation "hello"</code>. Beyond five-field cron it accepts special descriptors (<code class="inline">@hourly</code>, <code class="inline">@daily</code>) and interval durations (<code class="inline">@every 1h</code>, <code class="inline">@every 30m</code>)</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>CLI support caveat</td>
+                    <td>Sidecars are documented only on the Antigravity 2.0 sidecars page ("Customizations &gt; Sidecars"), which never mentions the CLI or <code class="inline">agy</code> at all — <strong>no first-party page states <code class="inline">agy</code> sidecar support</strong>, so the binary evidence above alone carries the CLI claim</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The session <code class="inline">schedule</code> tool — five parameters, three exclusion rules, one unknown.</strong> Its parameters are <code class="inline">CronExpression</code>, <code class="inline">Prompt</code>, <code class="inline">MaxIterations</code>, <code class="inline">DurationSeconds</code> and <code class="inline">TimerCondition</code>. Three mutual-exclusion rules are stated as literals in the binary, and both counters must be positive integers. <strong>S</strong></p>
+
+              <pre class="block">MaxIterations cannot be used with DurationSeconds
+TimerCondition cannot be used with CronExpression
+DurationSeconds and CronExpression are mutually exclusive</pre>
+
+              <p class="eli5"><span class="eli5-term">U-12: what happens across a restart is unpublished.</span> The tool's <strong>persistence and restart contract</strong> is stated nowhere. Cron-backed sidecars are the distinct, <em>durable</em>, authored mechanism; the session tool is not proven to survive anything. A tool should present sidecars as configuration and the session schedule as ephemeral runtime state until that changes.</p>
+
+              <p><strong>Antigravity has no Goal contract, and no remote-control entry point is documented.</strong> Where Claude Code, Codex and Copilot each expose an autonomous-completion objective and a remote or cloud entry point, no equivalent is documented for <code class="inline">agy</code> on any first-party page — that negative holds (D). The shipped executable, however, does contain a remote-control subsystem: a <code class="inline">--remote-control</code> hostname flag absent from <code class="inline">--help</code> ("Saved CLI remote control hostname from --remote-control flag: %s"), connection and telemetry strings ("Remote control enabled, starting connection", "%s Starting V2 remote control connection to: %s", "[RemoteControl] Failed to update instance metadata: %v"), and settings-shaped keys <code class="inline">remote-control-setting-enabled</code>, <code class="inline">remote-control-proxy-server-url</code>, <code class="inline">remote-control-webrtc-mesh</code>. Undocumented, present in the binary, user-reachability unknown. Observed on <code class="inline">agy 1.1.12</code> — the <code class="inline">1.1.11</code> build this page first pinned was replaced and could not be re-checked, so presence in the 1.1.11 row is unverified. <strong>D/S</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="settings" data-term>
+            <p class="prompt">agy --help &amp;&amp; jq . ~/.gemini/antigravity-cli/settings.json</p>
+            <div class="body" data-term-out>
+              <p>CLI settings live in <code class="inline">~/.gemini/antigravity-cli/settings.json</code> — <strong>sparse: only non-default values are written</strong> — with keybindings in the sibling <code class="inline">keybindings.json</code>. Both are changed by <code class="inline">/config</code>, and command-line flags win for the session. <strong>D/S/O</strong></p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Control</th><th>Contract</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Modes</td>
+                    <td>default, accept-edits, and plan — confirmed by <code class="inline">--mode</code> accepting <code class="inline">accept-edits, plan</code> on the installed build</td>
+                    <td><strong>D/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session permission flags</td>
+                    <td><code class="inline">--sandbox</code> and <code class="inline">--dangerously-skip-permissions</code></td>
+                    <td><strong>O/D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Permission model</td>
+                    <td>allow / ask / deny, resolved <strong><code class="inline">Deny &gt; Ask &gt; Allow</code></strong> — strictest wins, independent of ordinary layer replacement</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Shared config</td>
+                    <td><code class="inline">~/.gemini/config/config.json</code> carries a single top-level <code class="inline">userSettings</code> object, and is also where plugin enablement lives</td>
+                    <td><strong>S/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project settings</td>
+                    <td><code class="inline">~/.gemini/config/projects/&lt;project-id&gt;.json</code>. The default project id <code class="inline">default-cli-project</code> is a literal in the installed executable (a single hit, beside "marshal project: %w"; verified on <code class="inline">agy 1.1.12</code>) — which establishes the id independent of any disk state. The <code class="inline">&lt;project-id&gt;.json</code> filename shape composes that literal with changelog 1.0.12's <code class="inline">projects/</code> directory (I); the first-pass <code class="inline">default-cli-project.json</code> disk sighting no longer reproduces — <code class="inline">~/.gemini/config/projects/</code> is empty on this machine</td>
+                    <td><strong>S/I</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Output formatting</td>
+                    <td>Headless <code class="inline">--output-format text&#124;json&#124;stream-json</code> with <code class="inline">--json-schema</code>. This is <strong>invocation formatting, not an installable output style</strong> — there is no output-style directory in this product. The carrying page is <a class="link-quiet" href="https://www.antigravity.google/docs/cli/headless">CLI headless</a> ("The --output-format flag controls the shape of stdout. It accepts three values"; "Pass --json-schema to constrain the answer to a schema"), added to the sources 2026-08-13 — that page does not document <code class="inline">--disable-slash-commands</code>, whose description continues to rest on <code class="inline">--help</code> output (S)</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Status line</td>
+                    <td>A user-authored, script-backed status line: a <code class="inline">statusLine</code> block in <code class="inline">~/.gemini/antigravity-cli/settings.json</code> — <code class="inline">{"type":"command","command":"&lt;script&gt;"}</code> plus optional <code class="inline">padding</code>, <code class="inline">enabled</code>, <code class="inline">stack_with_default</code> — whose command receives session state as JSON on stdin (<code class="inline">cwd</code>, <code class="inline">conversation_id</code>, <code class="inline">transcript_path</code>, <code class="inline">model</code>, <code class="inline">workspace</code>, <code class="inline">context_window</code>, <code class="inline">agent_state</code>, <code class="inline">vcs</code>, <code class="inline">sandbox</code>, …) and whose stdout is rendered; managed by <code class="inline">/statusline</code>. Documented at <a class="link-quiet" href="https://www.antigravity.google/docs/cli/statusline">/docs/cli/statusline</a>; present since at least 1.0.6 per the changelog (<code class="inline">stack_with_default</code>), i.e. in the pinned 1.1.11; binary literals confirmed in <code class="inline">agy 1.1.12</code></td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>The <code class="inline">settings.json</code> key surface, enumerated — D/S.</strong> <a class="link-quiet" href="https://www.antigravity.google/docs/cli/settings">/docs/cli/settings</a> documents 15 keys with their values: <code class="inline">toolPermission</code> (<code class="inline">request-review</code> | <code class="inline">proceed-in-sandbox</code> | <code class="inline">strict</code> | <code class="inline">always-proceed</code>), <code class="inline">artifactReviewPolicy</code> (<code class="inline">asks-for-review</code> | <code class="inline">agent-decides</code> | <code class="inline">always-proceed</code>), <code class="inline">enableTerminalSandbox</code>, <code class="inline">allowNonWorkspaceAccess</code>, <code class="inline">altScreenMode</code> (<code class="inline">default</code> | <code class="inline">always</code> | <code class="inline">never</code>), <code class="inline">colorScheme</code>, <code class="inline">runningLightSpeed</code>, <code class="inline">verbosity</code>, <code class="inline">editor</code>, <code class="inline">editorMode</code>, <code class="inline">notifications</code>, <code class="inline">useG1Credits</code>, <code class="inline">enableTelemetry</code>, <code class="inline">showTips</code>, <code class="inline">showFeedbackSurvey</code>. Beyond that page: <code class="inline">statusLine</code> (documented on its own page, above) and <code class="inline">copyOnSelect</code> (changelog 1.1.8 only — on no docs page). Three <code class="inline">AGY_*</code> environment variables override settings for a session — <code class="inline">AGY_CLI_DISABLE_LATEX</code>, <code class="inline">AGY_CLI_HIDE_ACCOUNT_INFO</code>, <code class="inline">AGY_CLI_CMD_OUTPUT_PERCENTAGE</code> — documented only in changelog entries 1.0.4 / 1.0.2 / 1.0.11, on no docs page. Every key and variable is a literal in the installed <code class="inline">agy 1.1.12</code>; per the changelog all of them predate the 1.1.11 pin.</p>
+
+              <p class="eli5"><span class="eli5-term">The only published precedence statement for settings is a changelog line, and it is narrower than it looks.</span> Changelog <strong>1.0.12</strong> says project configurations "located in <code class="inline">~/.gemini/config/projects/</code>" take precedence over global settings in <code class="inline">~/.gemini/antigravity-cli/settings.json</code> — and it is <strong>scoped to <em>permission</em> configuration</strong>. No docs page documents a project settings scope at all. Whether the override extends beyond permissions, and what keys the file accepts, are both <strong>unknown</strong>. Treat that file as opaque: do not parse it, do not offer to edit it.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="generated" data-term>
+            <p class="prompt">ls ~/.gemini/antigravity-cli/conversations ~/.gemini/antigravity-cli/brain</p>
+            <div class="body" data-term-out>
+              <p><strong>Several directories in the private tree look like capability roots and are not.</strong> Getting this wrong is the classic way an inventory tool corrupts a coding agent or loses a user's resumability.</p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Path</th><th>What it is</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">conversations/</code> and <code class="inline">conversation_summaries.db</code></td>
+                    <td>Workspace-scoped CLI conversation history, resumed through <code class="inline">/resume</code> and <code class="inline">--continue</code>. This is <strong>operational session state</strong>, not a documented semantic-memory capability</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">brain/</code>, <code class="inline">implicit/</code>, <code class="inline">knowledge/</code></td>
+                    <td>Present in the app-data tree. <code class="inline">brain/</code> and <code class="inline">implicit/</code> have <strong>no published contract of any kind</strong>. For <code class="inline">knowledge/</code> the second pass found active Knowledge-Item machinery in the CLI binary itself ("KI Insertion Hook: extracted %d references: %v", "failed to update modification time for KI %s", <code class="inline">KnowledgeBaseItem</code> protos — <code class="inline">agy 1.1.12</code>), and the <a class="link-quiet" href="https://www.antigravity.google/docs/agent-settings">agent-settings page</a> documents <code class="inline">~/.gemini/antigravity/</code> as containing "Artifacts, Knowledge Items, etc." — an Antigravity 2.0 path, not a CLI one, so its applicability to the CLI's <code class="inline">knowledge/</code> directory is unresolved (the <code class="inline">mcp_oauth_tokens.json</code> treatment). None of the three may be presented as an authored capability root, and no memory feature may be inferred from the names</td>
+                    <td><strong>U / D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">jetski_state.pbtxt</code></td>
+                    <td>Observed; no published contract. Opaque generated state</td>
+                    <td><strong>O/U</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">&lt;workspace&gt;/.gemini/antigravity-cli/</code></td>
+                    <td>Per-conversation <code class="inline">transcript.jsonl</code> and <code class="inline">artifacts/</code>, handed to hooks as <code class="inline">transcriptPath</code> and <code class="inline">artifactDirectoryPath</code>. Generated <em>inside the project</em>, which is easy to mistake for authored configuration</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">import_manifest.json</code></td>
+                    <td>Tracks what <code class="inline">agy plugin import</code> converted. A record of a migration, not a live reader</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">cache/projects.json</code></td>
+                    <td>The CLI's workspace-to-project cache: changelog 1.0.4 — "The CLI now stores workspace-to-project mappings in a centralized <code class="inline">~/.gemini/antigravity-cli/cache/projects.json</code> file", decoupled from per-repo <code class="inline">.antigravitycli</code> directories. The filename has no contiguous literal in the shipped binary (byte-level grep of the 172 MB <code class="inline">agy 1.1.12</code>: zero), so the path is D-class only. A <code class="inline">projects.json</code> observed at the top level of one real <code class="inline">~/.gemini</code> — a single <code class="inline">projects</code> key mapping workspace paths to ids — is a different path and not attributable to <code class="inline">agy</code>. Generated state: enumerate, never parse or edit</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>The teamwork/battle machinery generates coordination files inside <code class="inline">.agents/</code> itself — S.</strong> Orchestrator prompts embedded in the shipped binary instruct agents to write partition result files (<code class="inline">.agents/phase_X_level_00_partition_00_results.json</code>-style), per-segment handoff files (<code class="inline">.agents/segment_&lt;segment_name&gt;/handoff_&lt;candidate_index&gt;.md</code>), and dispatch artifacts (<code class="inline">.agents/ORIGINAL_REQUEST.md</code>, <code class="inline">.agents/&lt;folder&gt;/DISPATCH.md</code>). A scanner enumerating <code class="inline">.agents/</code> may therefore encounter runtime-generated JSON and Markdown that is not authored capability content. Battle mode additionally clones the repository (<code class="inline">battleworkspace.CloneLocalRepo</code>, <code class="inline">BattleClonesBaseDir</code>; "Battle Mode requires at least one commit in the Git repository"). Observed in <code class="inline">agy 1.1.12</code> — the <code class="inline">1.1.11</code> build this page first pinned was replaced and cannot be re-checked.</p>
+
+              <p><strong>Where the CLI keeps its credentials — D/S.</strong> OAuth tokens go to the OS secure keyring — the <a class="link-quiet" href="https://www.antigravity.google/docs/cli/reference">reference page's</a> <code class="inline">/logout</code> entry reads "purge authentication tokens from the secure keyring" — and the 1.1.12 binary logs an explicit file-based token-storage mode used on request or after a recorded keyring timeout ("Using file-based token storage because the caller requested it" / "…because a keyring timeout was recorded within the last %v"). The on-disk path of that file store is unpublished: treat it as opaque, never display it. Changelog 1.1.12 extended the keyring wait from 1&nbsp;s to 5&nbsp;s, and 1.0.1 fixed OAuth token persistence. The <code class="inline">google_accounts.json</code> / <code class="inline">oauth_creds.json</code> seen beside <code class="inline">~/.gemini</code> are the predecessor Gemini CLI's files, not <code class="inline">agy</code>'s auth state.</p>
+
+              <p><strong>There is no confirmed CLI semantic-memory contract for Antigravity.</strong> Where Claude Code and Codex generate learned-memory files and Copilot uses hosted memory, <code class="inline">agy</code> has workspace history and resume — and nothing else that any first-party source calls memory. <strong>D</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="cross-tool" data-term>
+            <p class="prompt">grep -rl 'AGENTS.md&#124;.agents/skills' /other/agents</p>
+            <div class="body" data-term-out>
+              <p><strong>Antigravity shares two file families with other coding agents and owns everything else under <code class="inline">.agents/</code>.</strong> The sharing is per artifact, never per namespace.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["AGENTS.md"] --> S1["SHARED&lt;br/&gt;Codex, Copilot, OpenCode&lt;br/&gt;never Claude Code"]
+    G["GEMINI.md"] --> S2["SHARED&lt;br/&gt;Copilot"]
+    K[".agents/skills"] --> S3["SHARED&lt;br/&gt;Codex, Copilot, OpenCode"]
+    N[".agents/agents, rules,&lt;br/&gt;hooks.json, plugins,&lt;br/&gt;skills.json, plugins.json"] --> S4["ANTIGRAVITY&lt;br/&gt;ONLY"]
+    C["CLAUDE.md, .claude,&lt;br/&gt;.codex, .opencode"] --> S5["no automatic&lt;br/&gt;Antigravity reader"]
+
+    class S5 warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <table>
+                <colgroup><col style="width:14rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Artifact</th><th>Who else reads it, and what does not transfer</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">AGENTS.md</code></td>
+                    <td>A shared live input for <strong>Codex, Copilot, Antigravity and OpenCode</strong> — Claude Code sees it only through an import or symlink. <strong>The file is portable; its effect is not.</strong> Antigravity accumulates cwd&rarr;repository root with resolved-path de-duplication; Codex orders root&rarr;cwd inside a project ceiling; Copilot concatenates unconditional sources with no published precedence; OpenCode loads every match of the winning filename class cwd&rarr;worktree.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">GEMINI.md</code></td>
+                    <td>Read by Antigravity (workspace ancestry <em>and</em> global <code class="inline">~/.gemini/GEMINI.md</code>) <strong>and by Copilot CLI</strong>. Not read by Claude Code, Codex, or OpenCode — OpenCode's absence is source- and binary-confirmed.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.agents/skills/&lt;name&gt;/SKILL.md</code></td>
+                    <td>The <strong>only</strong> shared child of <code class="inline">.agents/</code>: Codex, Copilot, Antigravity and OpenCode all read it, with four different walks. Antigravity additionally reaches it through its three alias root spellings, which the other three do not.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.agents/agents/</code></td>
+                    <td><strong>Antigravity-only.</strong> Copilot's shipped binaries contain no such literal, OpenCode's tagged source has no loader, and Claude Code and Codex document none.</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.agents/rules</code>, <code class="inline">hooks.json</code>, <code class="inline">plugins/</code>, <code class="inline">skills.json</code>, <code class="inline">plugins.json</code>, <code class="inline">mcp_config.json</code></td>
+                    <td>All Antigravity contracts, as are the <code class="inline">.agent/</code>, <code class="inline">_agents/</code>, <code class="inline">_agent/</code> spellings of that root. Codex separately uses two <em>exact</em> marketplace filenames below <code class="inline">.agents/plugins/</code> — a different contract that happens to share a directory.</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.agents/skills</code></td>
+                    <td><strong>Not read by Antigravity</strong>, although Codex, Copilot and OpenCode all read it. Antigravity's user scope is <code class="inline">~/.gemini/</code>.</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Bounded negatives — D/S/U.</strong> No first-party evidence supports automatic loading of <code class="inline">CLAUDE.md</code>, <code class="inline">.claude</code>, <code class="inline">.codex</code>, <code class="inline">.github</code>, <code class="inline">.opencode</code>, or <code class="inline">opencode.json</code>.</p>
+
+              <p class="eli5"><span class="eli5-term">A false positive worth knowing about.</span> <code class="inline">.github</code> and <code class="inline">.vscode</code> <em>do</em> occur as literals in the <code class="inline">agy</code> binary — but in a run alongside <code class="inline">.gitignore</code>-style tokens, consistent with ignore and scan filtering rather than capability discovery. <strong>Treat them as not capability roots.</strong> A byte search that stops at "the string is present" gets this backwards. The same discipline covers <code class="inline">.mcp.json</code>: the literal occurs exactly once in the installed <code class="inline">agy</code> (1.1.12; zero hits in the Antigravity 2.0.1 <code class="inline">language_server</code>), inside a length-sorted string pool whose adjacency carries no semantic information — presence of the string must not be read as a live reader.</p>
+
+              <p><strong><code class="inline">.antigravityignore</code> — S-present, semantics unpublished.</strong> The installed binaries carry the literal once each — <code class="inline">agy 1.1.12</code> and the Antigravity 2.0.1 <code class="inline">language_server</code>, in the identical string-table run beside <code class="inline">changelog_%d.%d.md</code> and "failed to stat uri". No antigravity.google page documents it (method: site-scoped search plus the settings, agent-settings and IDE settings pages, retrieved 2026-08-13; strict mode documents only <code class="inline">.gitignore</code> respect). Enumerate it as an ignore-file name with no published contract — the <code class="inline">.github</code>/<code class="inline">.vscode</code> treatment — and do not present it as a confirmed ignore contract; see the <a class="link-quiet" href="#unknowns">unknowns section</a> for the open semantics question.</p>
+
+              <p><strong>Import is not inheritance.</strong> Gemini extensions and skills, and Claude plugins, may be <em>explicitly</em> imported through <code class="inline">agy plugin import [gemini&#124;claude]</code>, and the conversion is recorded in <code class="inline">import_manifest.json</code>. The converted artifact must be tracked separately from the foreign source: <strong>conversion is not live ownership</strong>. <strong>D</strong></p>
+
+              <p><strong>The binary also carries a Cursor import path the CLI surface does not expose — S.</strong> The shipped <code class="inline">agy 1.1.12</code> embeds the <code class="inline">ImportFromCursor</code> RPC — <code class="inline">/exa.language_server_pb.LanguageServerService/ImportFromCursor</code>, with <code class="inline">ImportFromCursor</code> at 53 occurrences in <code class="inline">agy</code> and the same count in the Antigravity 2.0.1 <code class="inline">language_server</code> — plus a Gemini extension-to-plugin migration string ("Migrating %d extensions to plugin format in %s"). <code class="inline">agy plugin --help</code> exposes only <code class="inline">gemini</code> and <code class="inline">claude</code> as import sources, so whether <code class="inline">ImportFromCursor</code> is reachable from the <code class="inline">agy</code> surface is unresolved: enumerate it, do not assert reachability.</p>
+
+              <p><strong>Vocabulary warning.</strong> The word <em>rule</em> is not portable. Antigravity rules — like Claude Code's — are <strong>instruction context</strong>. Codex <code class="inline">.rules</code> files enforce <strong>shell-command policy</strong>. OpenCode "rules" are instruction documents again. Three products, one word, two entirely different runtime concepts. <strong>D</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="installing" data-term>
+            <p class="prompt">agy plugin install &amp;&amp; agy plugin import claude</p>
+            <div class="body" data-term-out>
+              <p><strong>Only plugins and agents have a terminal entry point.</strong> Everything else is created by writing a file at the shape the loader accepts, in a directory the walk visits — or by registering a directory through <a class="link-quiet" href="#declared-sources"><code class="inline">skills.json</code> / <code class="inline">plugins.json</code></a>.</p>
+
+              <table>
+                <colgroup><col style="width:8rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>Capability</th><th>User scope</th><th>Project scope</th><th>Shape that is accepted</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Instructions</td>
+                    <td><code class="inline">~/.gemini/GEMINI.md</code>. <strong>There is no global <code class="inline">AGENTS.md</code></strong></td>
+                    <td><code class="inline">AGENTS.md</code> or <code class="inline">GEMINI.md</code> at any level cwd&rarr;repository root</td>
+                    <td>Plain Markdown. <strong>No frontmatter support</strong> — always active for its directory scope</td>
+                  </tr>
+                  <tr>
+                    <td>Rule</td>
+                    <td><code class="inline">~/.gemini/config/rules/*.md</code> <strong>(I)</strong></td>
+                    <td><code class="inline">.agents/rules/*.md</code> (or the three alias spellings)</td>
+                    <td>Markdown, 12,000-character cap. Only <code class="inline">always_on</code> loads unconditionally; the keys <code class="inline">trigger:</code> and <code class="inline">glob:</code> are binary-confirmed, while the glob and manual <strong>trigger values are unpublished</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Skill</td>
+                    <td><code class="inline">~/.gemini/config/skills/&lt;name&gt;/SKILL.md</code> — and probe <code class="inline">~/.gemini/antigravity-cli/skills/</code> too (<strong>U-01</strong>)</td>
+                    <td><code class="inline">.agents/skills/&lt;name&gt;/SKILL.md</code></td>
+                    <td>A <strong>directory</strong> containing <code class="inline">SKILL.md</code>, with <strong>both</strong> <code class="inline">name</code> and <code class="inline">description</code> required. Optional <code class="inline">scripts/</code>, <code class="inline">examples/</code>, <code class="inline">resources/</code>, <code class="inline">references/</code>. <strong>Never the flat <code class="inline">&lt;name&gt;.md</code> form</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agent</td>
+                    <td><code class="inline">~/.gemini/config/agents/</code> <strong>(I)</strong></td>
+                    <td><code class="inline">.agents/agents/&lt;name&gt;.md</code> or <code class="inline">.agents/agents/&lt;name&gt;/agent.md</code></td>
+                    <td>Markdown frontmatter plus a system-prompt body. <strong>The enclosing <code class="inline">agents/</code> directory is the discovery signal</strong> — outside it, nothing is found. <code class="inline">agy agent</code> / <code class="inline">agy agents</code> list them</td>
+                  </tr>
+                  <tr>
+                    <td>Hook</td>
+                    <td><code class="inline">~/.gemini/config/hooks.json</code></td>
+                    <td><code class="inline">.agents/hooks.json</code></td>
+                    <td>JSON keyed by <strong>hook name</strong>; grouped <code class="inline">matcher</code>/<code class="inline">hooks</code> for the two tool events, flat lists for the other three. <strong>Relative commands resolve against the file's own directory</strong></td>
+                  </tr>
+                  <tr>
+                    <td>MCP server</td>
+                    <td><code class="inline">~/.gemini/config/mcp_config.json</code></td>
+                    <td><code class="inline">.agents/mcp_config.json</code> — <strong>documented-only</strong>, not package-confirmed</td>
+                    <td>Top-level <code class="inline">mcpServers</code>; stdio <code class="inline">command</code>/<code class="inline">args</code>/<code class="inline">env</code>, or remote <code class="inline">serverUrl</code></td>
+                  </tr>
+                  <tr>
+                    <td>Plugin</td>
+                    <td colspan="2"><code class="inline">agy plugin install</code> / <code class="inline">link</code> / <code class="inline">import</code>, into <code class="inline">~/.gemini/config/plugins/&lt;plugin&gt;/</code>; or a directory at <code class="inline">.agents/plugins/&lt;plugin&gt;/</code>. Enablement lives in the shared <code class="inline">config.json</code></td>
+                    <td>A directory with <code class="inline">plugin.json</code>, optionally bundling <code class="inline">mcp_config.json</code>, <code class="inline">hooks.json</code>, <code class="inline">rules/</code>, <code class="inline">skills/</code>. <strong>No update verb exists</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Declared source</td>
+                    <td><code class="inline">~/.gemini/config/skills.json</code> / <code class="inline">plugins.json</code></td>
+                    <td><code class="inline">.agents/skills.json</code> / <code class="inline">plugins.json</code></td>
+                    <td><code class="inline">entries[]</code> and <code class="inline">inherits[]</code> of <code class="inline">{path, include_only, exclude}</code>. A bare relative path resolves <strong>against the repository root</strong>, which is what makes a committed file portable</td>
+                  </tr>
+                  <tr>
+                    <td>Sidecar</td>
+                    <td><code class="inline">~/.gemini/config/sidecars/&lt;id&gt;/sidecar.json</code>, or bundled in a plugin</td>
+                    <td colspan="2"><strong>No workspace path is documented.</strong> Enabled through the shared <code class="inline">config.json</code>; the runtime starts, watches and restarts it</td>
+                  </tr>
+                  <tr>
+                    <td>Workflow</td>
+                    <td colspan="3"><strong>Capability proven, directory unpublished (U-03).</strong> There is nowhere to tell someone to put the file. Do not guess a path</td>
+                  </tr>
+                  <tr>
+                    <td>Command</td>
+                    <td colspan="3"><strong>Does not exist as a directory.</strong> Skills <em>are</em> the slash-command mechanism — <code class="inline">--disable-slash-commands</code> disables "slash command and skill expansion" as one thing</td>
+                  </tr>
+                  <tr>
+                    <td>Output style</td>
+                    <td colspan="3"><strong>Does not exist.</strong> <code class="inline">--output-format</code> is invocation formatting, not an installable capability</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Per-row evidence classes for the global subpaths.</strong> The user-scope paths marked <strong>(I)</strong> are not binary literals: neither <code class="inline">config/rules</code> nor <code class="inline">config/agents</code> occurs anywhere in the installed executable (full-image byte search, verified on <code class="inline">agy 1.1.12</code> after the pinned 1.1.11 was replaced), and the embedded manual names only the root <code class="inline">~/.gemini/config/</code> at global scope — those rows are composed from the manual's global root plus the workspace layout, or D where a docs page states the path. By contrast <code class="inline">config/mcp_config.json</code> is a binary literal (one hit) and a manual Location entry, so the MCP row's global path keeps D/S.</p>
+
+              <p class="eli5"><span class="eli5-term">Where to put a file so it wins.</span> The workspace root outranks everything except a <em>declared</em> workspace source, so for a capability you want to win, the answer is <strong>discovered in <code class="inline">.agents/</code></strong> — tier 1 of the category order. Global built-ins sit at tier 4, below globally discovered content, which is why a bundled skill can be overridden by a same-named one in <code class="inline">~/.gemini/config/</code>.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="precedence-table" data-term>
+            <p class="prompt">echo 'precedence and shadowing, per capability'</p>
+            <div class="body" data-term-out>
+              <p><strong>Antigravity has one published category order covering every customization kind, and it is a loading priority with an explicit name-conflict rule attached.</strong> The shipped 1.1.11 guidance gives it in five tiers. <strong>S</strong></p>
+
+              <pre class="mermaid">
+flowchart LR
+    A["1 workspace&lt;br/&gt;DISCOVERED"] --> B["2 workspace&lt;br/&gt;DECLARED&lt;br/&gt;skills.json plugins.json"]
+    B --> C["3 global&lt;br/&gt;DISCOVERED"]
+    C --> D["4 BUILT-INS"]
+    D --> E["5 global&lt;br/&gt;DECLARED"]
+    E --> N["same NAME:&lt;br/&gt;higher priority overrides lower"]
+    N --> K["identity KEY per capability&lt;br/&gt;unpublished"]
+
+    class K warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p>The manual attaches this sentence to that order: "If there are naming conflicts (e.g., two skills with the same name), the higher-priority customization overrides the lower-priority one." So the earlier reading — that the order "does not settle duplicate IDs" — was <strong>too pessimistic for names</strong>. <strong>S</strong></p>
+
+              <p class="eli5"><span class="eli5-term">What is still missing is the identity key, and that is the load-bearing gap.</span> The order tells you the winner <em>once you know two things collide</em>. It does not tell you what makes them collide: whether an agent is keyed by frontmatter <code class="inline">name</code> or by filename, whether an MCP server is keyed by its <code class="inline">mcpServers</code> key, whether hooks collide by hook name or by event. None of that is published. <strong>Duplicate identity stays U; duplicate names, once identity is known, resolve by this order.</strong></p>
+
+              <table>
+                <colgroup><col style="width:8rem" /><col /><col /><col style="width:5rem" /></colgroup>
+                <thead>
+                  <tr><th>Capability</th><th>Search boundary and effective order</th><th>Duplicate / merge behavior</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Instructions / rules</td>
+                    <td>cwd, or the directory of the file being worked on, <strong>upward to the repository root</strong> — "the folder containing <code class="inline">.git</code>" — and no further. Global <code class="inline">~/.gemini/GEMINI.md</code> is a separate layer</td>
+                    <td>Relevant files accumulate and <strong>resolved paths de-duplicate</strong>, so one file is injected at most once per conversation turn. Only <code class="inline">always_on</code> rules and frontmatter-less <code class="inline">AGENTS.md</code>/<code class="inline">GEMINI.md</code> load unconditionally; <code class="inline">model_decision</code> rules follow progressive disclosure. <strong>Same-name rule conflict is unpublished</strong></td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Skills</td>
+                    <td>Workspace-discovered &rarr; workspace-declared (<code class="inline">skills.json</code>) &rarr; globally discovered shared &rarr; built-ins &rarr; globally declared</td>
+                    <td>On a <strong>name</strong> conflict the higher-priority customization overrides the lower. The identity key is unpublished. The flat <code class="inline">&lt;name&gt;.md</code> form is documentation-only, so no flat-versus-directory precedence question arises for the CLI</td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agents</td>
+                    <td>Workspace <code class="inline">.agents/agents/</code>, global <code class="inline">~/.gemini/config/agents</code>, plugin agents, and session-only <code class="inline">define_subagent</code> definitions</td>
+                    <td>The same category order resolves same-<strong>name</strong> conflicts; the identity key — frontmatter <code class="inline">name</code> versus filename — is unpublished. The enclosing <code class="inline">agents/</code> directory is the discovery signal</td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Workflows</td>
+                    <td>A first-class customization kind at workspace <strong>and</strong> global scope, loaded from paths and surfaced as slash commands</td>
+                    <td>The capability is proven; the on-disk <strong>directory name is unpublished</strong> and <code class="inline">.agents/workflows</code> is not a literal in the binary. Treat the path as unknown rather than the capability as absent</td>
+                    <td><strong>S / U-03</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Hooks</td>
+                    <td>Global <code class="inline">~/.gemini/config/hooks.json</code>, workspace <code class="inline">.agents/hooks.json</code>, plugin <code class="inline">&lt;plugin&gt;/hooks.json</code>, each keyed by <strong>hook name</strong></td>
+                    <td>Named hooks from several files <strong>merge and run sequentially</strong> — the binary logs how many named hooks came from how many files. A handler's working directory is the directory containing its own <code class="inline">hooks.json</code>, so plugin and workspace hooks resolve relative paths differently. <strong>Cross-source collision order stays unknown</strong></td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>MCP</td>
+                    <td>Global <code class="inline">~/.gemini/config/mcp_config.json</code> and plugin <code class="inline">&lt;plugin&gt;/mcp_config.json</code> are the shipped-manual locations; workspace <code class="inline">.agents/mcp_config.json</code> is documented on the CLI page only</td>
+                    <td><strong>Duplicate server-ID behavior is unpublished.</strong> Interactive startup loads servers in the background since 1.1.9 while a one-shot invocation waits</td>
+                    <td><strong>S / D / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Plugins</td>
+                    <td>Workspace and shared-global discovery plus explicit marketplace, install and import. The private <code class="inline">~/.gemini/antigravity-cli/plugins</code> root of the CLI page contradicts three changelog corrections toward <code class="inline">~/.gemini/config/</code></td>
+                    <td>Enablement lives in the shared <code class="inline">config.json</code> and is seeded once from the manifest since 1.1.11. Import is migration, not live reading. There is <strong>no plugin-update verb</strong>. Duplicate identity semantics unpublished</td>
+                    <td><strong>S / D&ne;S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Settings / permissions</td>
+                    <td>Flags &rarr; <code class="inline">~/.gemini/config/projects/&lt;id&gt;.json</code> &rarr; shared <code class="inline">config.json</code> and private <code class="inline">~/.gemini/antigravity-cli/settings.json</code></td>
+                    <td>The only published precedence statement is changelog 1.0.12 and it is <strong>scoped to permissions</strong>; no docs page documents a project settings scope at all and the key schema is unknown. <code class="inline">Deny &gt; Ask &gt; Allow</code> regardless of ordinary replacement</td>
+                    <td><strong>S/O / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Sidecars / schedules</td>
+                    <td>Enabled shared-global and plugin sidecars, plus the session <code class="inline">schedule</code> tool</td>
+                    <td>Cron sidecars persist as <strong>authored manifests</strong>; three mutual-exclusion rules constrain the session tool, whose persistence and restart behavior is unknown. No workspace <code class="inline">.agents/sidecars</code> path is documented</td>
+                    <td><strong>S / U-12</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Workspace root spelling</td>
+                    <td><code class="inline">.agents/</code>, <code class="inline">.agent/</code>, <code class="inline">_agents/</code>, <code class="inline">_agent/</code> are four spellings of <strong>one</strong> root</td>
+                    <td><strong>Precedence among them when more than one exists is stated nowhere.</strong> Enumerate every spelling present; do not pick a winner</td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Conversation history</td>
+                    <td>Workspace-scoped generated history under the private app-data tree</td>
+                    <td><code class="inline">/resume</code> and <code class="inline">--continue</code> select records. There is <strong>no semantic-memory or ancestor merge contract</strong></td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="unknowns" data-term>
+            <p class="prompt">grep -n 'U-0[123]&#92;&#124;U-12' harness-analysis.md</p>
+            <div class="body" data-term-out>
+              <p>Six section-level unknowns survived inspecting the executable, and four consolidated <code class="inline">U-</code> numbers touch Antigravity — plus one unknown the 2026-08-13 second pass added (<code class="inline">.antigravityignore</code> semantics). None is resolved here. For a closed-source coding agent the honest position is that a missing loader cannot be read — so each row below also names <strong>what evidence would settle it</strong>.</p>
+
+              <table>
+                <colgroup><col style="width:5rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>ID</th><th>What is unknown</th><th>What evidence would settle it</th><th>Consequence for a tool</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>U-01</strong></td>
+                    <td><strong>The global skill directory.</strong> The <em>shape</em> is settled — directory plus <code class="inline">SKILL.md</code> at both scopes, flat form documentation-only. What is open is whether the binary's <code class="inline">{appDataDir}</code> resolves to <code class="inline">~/.gemini/config</code> or <code class="inline">~/.gemini/antigravity-cli</code>. The binary keeps <code class="inline">ConfigDir</code> and the app-data dir as separate concepts and the template names neither.</td>
+                    <td>A published statement of what <code class="inline">appDataDir</code> resolves to for skills, or a literal path template that names a directory directly. An installed skill observed in one tree would also do it.</td>
+                    <td><strong>Scan both.</strong> Read <code class="inline">~/.gemini/config/skills/</code> first, optionally probe <code class="inline">~/.gemini/antigravity-cli/skills/</code>, and present neither as certain.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-02</strong></td>
+                    <td><strong>Declared-source and generated schemas.</strong> <code class="inline">skills.json</code> and <code class="inline">plugins.json</code> are now <em>published</em>. <code class="inline">rules.json</code> and <code class="inline">agents.json</code> remain binary literals with no path, schema or documentation; the 2026-08-13 second pass widened the bucket with <code class="inline">skills.txt</code>, <code class="inline">agents.txt</code> and <code class="inline">agent.json</code> (one occurrence each in <code class="inline">agy 1.1.12</code>) and the separately-observed paths-file loader symbols (<code class="inline">loadPathsFile</code> and kin), with no evidence linking the two; and the <code class="inline">~/.gemini/config/projects/&lt;id&gt;.json</code> key schema is likewise unpublished.</td>
+                    <td>The shipped manual gaining a section for them, or a page documenting the file.</td>
+                    <td>Treat every file in the bucket as <strong>opaque</strong>: do not scan for them as contracts, do not parse, do not offer to edit.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-03</strong></td>
+                    <td><strong>The workflow directory name.</strong> Workflows <em>are</em> a first-class customization kind at workspace and global scope, loaded from paths and surfaced as slash commands. <code class="inline">.agents/workflows</code> is <strong>not</strong> a literal in the binary (re-run 2026-08-13: zero in <code class="inline">agy 1.1.12</code> and the Antigravity 2.0.1 <code class="inline">language_server</code>) and no <em>antigravity.google</em> page states a path. A Google-hosted codelab instructs creating <code class="inline">.agents/workflows/startcycle.md</code> — an IDE-scoped, off-domain lead (<strong>I</strong>), not a CLI contract.</td>
+                    <td>One published sentence, or one new path literal in a later build.</td>
+                    <td><strong>Do not report the capability as absent, and do not invent a path.</strong> Offer no create action that has to guess a directory.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-12</strong></td>
+                    <td><strong>Session scheduling persistence.</strong> The <code class="inline">schedule</code> tool exposes exactly five parameters with three mutual-exclusion rules, but whether a schedule survives restart or resume is unpublished.</td>
+                    <td>A documented persistence contract, or an observed state file for it.</td>
+                    <td>Present cron-backed <strong>sidecars</strong> as the durable authored mechanism and the session tool as ephemeral runtime state.</td>
+                  </tr>
+                  <tr>
+                    <td>&mdash;</td>
+                    <td><strong>Precedence among the four workspace-root spellings.</strong> Nothing states what happens when a repository contains more than one of <code class="inline">.agents/</code>, <code class="inline">.agent/</code>, <code class="inline">_agents/</code>, <code class="inline">_agent/</code>.</td>
+                    <td>A manual sentence, or an observed load order.</td>
+                    <td>Enumerate every spelling as a parallel source. Never fold one into another.</td>
+                  </tr>
+                  <tr>
+                    <td>&mdash;</td>
+                    <td><strong>Per-capability duplicate identity keys.</strong> The category order settles same-<em>name</em> conflicts but never says what a "name" is per capability — frontmatter versus filename, server key versus display name, hook name versus event.</td>
+                    <td>A manual section naming the identity key for each kind.</td>
+                    <td>Do not compute an effective winner across sources. Enumerate the candidates and label the order as name-scoped only.</td>
+                  </tr>
+                  <tr>
+                    <td>&mdash;</td>
+                    <td><strong>Cross-source hook ordering</strong> and <strong>MCP duplicate-ID behavior</strong>. Named hooks provably merge across files; which source wins a name collision is unstated. Duplicate MCP server IDs are documented nowhere.</td>
+                    <td>A stated merge order, or an observed collision.</td>
+                    <td>Show every contributing file. Do not present one hook or one server as "the effective" one.</td>
+                  </tr>
+                  <tr>
+                    <td>&mdash;</td>
+                    <td><strong>Old-private plugin migration</strong>, and the applicability of the Antigravity 2.0 <code class="inline">mcp_oauth_tokens.json</code> path to <code class="inline">agy</code> (the filename itself is now a confirmed bare literal in <code class="inline">agy 1.1.12</code> — only the parent directory stays unresolved). Whether a plugin left in <code class="inline">~/.gemini/antigravity-cli/plugins</code> still loads is unknown.</td>
+                    <td>A changelog entry, or a compatibility statement.</td>
+                    <td>Report a plugin found in the private tree as <em>present, effect unknown</em> — not as installed and not as dead.</td>
+                  </tr>
+                  <tr>
+                    <td>&mdash;</td>
+                    <td><strong><code class="inline">brain/</code>, <code class="inline">implicit/</code>, <code class="inline">knowledge/</code>, <code class="inline">jetski_state.pbtxt</code></strong> — generated state in the app-data tree with no published contract of any kind (for <code class="inline">knowledge/</code>, see the cross-surface Knowledge-Item note in the generated-state section).</td>
+                    <td>Any first-party description at all.</td>
+                    <td>Not authored capability roots. Do not infer a memory feature from a directory name.</td>
+                  </tr>
+                  <tr>
+                    <td>&mdash;</td>
+                    <td><strong><code class="inline">.antigravityignore</code> semantics.</strong> The literal ships in both binaries — <code class="inline">agy 1.1.12</code> and the Antigravity 2.0.1 <code class="inline">language_server</code>, in the identical string-table run — and no antigravity.google page documents it, while official-repo <a class="link-quiet" href="https://github.com/google-antigravity/antigravity-cli/issues/309">issue #309</a> (open, unanswered) reports the CLI <em>not</em> respecting it. Presence S, semantics U.</td>
+                    <td>A docs page, or a maintainer answer on issue #309.</td>
+                    <td>A tool may surface the file; it must not promise the file is honored.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Where these rank against the other coding agents' unknowns.</span> The source analysis ranks residual unknowns by how likely each is to make a tool state something <em>false</em> rather than merely incomplete. Antigravity owns the whole of rank 2 — <strong>"proven capability, unknown path"</strong>, meaning U-03 and U-01: scan both candidate directories, present neither as certain, and do not report the capability as absent. Its generated-state files sit at rank 4: known filenames, unknown records, to be treated as opaque.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Change risk, ranked.</strong> Which of these facts, if a tool encodes them wrongly, causes the most damage:</p>
+
+              <table>
+                <colgroup><col style="width:8rem" /><col /></colgroup>
+                <thead><tr><th>Risk</th><th>What can go wrong</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Very high</strong></td>
+                    <td><strong>Shared physical artifacts.</strong> Editing or removing <code class="inline">AGENTS.md</code> or <code class="inline">.agents/skills</code> can affect <strong>four CLIs with different selection semantics</strong>. One file, four ceilings, four assembly rules.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Very high</strong></td>
+                    <td><strong>Import creates a divergent copy.</strong> <code class="inline">agy plugin import [gemini&#124;claude]</code> converts rather than references. The result must be tracked as its own artifact — a change to the Claude original will not propagate, and nothing warns you.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Very high</strong></td>
+                    <td><strong>Generated state treated as authored.</strong> Conversations, transcripts, artifact directories, <code class="inline">brain/</code>, <code class="inline">implicit/</code>, <code class="inline">knowledge/</code> and the project settings file are runtime-owned. Treating them as capabilities risks corruption or lost resumability.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>High</strong></td>
+                    <td><strong>Plugin lifecycle.</strong> Antigravity has <em>root conflicts</em> between a stale CLI page and three changelog corrections, <strong>no update command at all</strong>, and enablement that lives in a different file from the plugin. "Up to date" is not a computable state here.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>High</strong></td>
+                    <td><strong>Hook semantics.</strong> Sequential execution, matcher regexes over <em>derived</em> tool names, grouped-versus-flat shapes per event, and a working directory that changes with the file's location. Copying a hook between scopes repoints its relative paths silently.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Moderate</strong></td>
+                    <td><strong>The Antigravity contradictions themselves.</strong> Shared-versus-private roots require an explicit version and confidence state in the UI. The <code class="inline">SKILL.md</code>-versus-flat-file question <em>is</em> settled in favor of directories, so a tool should <strong>stop offering the flat shape</strong>; the workspace <code class="inline">mcp_config.json</code> and the workflow directory are the live version-sensitive gaps.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Moderate</strong></td>
+                    <td><strong>Inventing a local scope.</strong> There is no documented repository-local <code class="inline">.local</code> analogue for Antigravity. Synthesizing one produces a dead file.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Lower, not zero</strong></td>
+                    <td><strong>Deleting an unread path.</strong> A path with no documented reader should be represented as <em>unsupported or unknown</em> — not deleted merely because Antigravity does not consume it. Four coding agents share this tree.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">A bounded negative is scoped to its method and its version.</span> "Zero occurrences in the 169 MB executable" is strong evidence about <code class="inline">1.1.11</code> and <strong>no evidence at all</strong> about any other build — which is why the 2026-08-13 second pass re-ran the load-bearing negatives against the replacement 172 MB <code class="inline">1.1.12</code> image: <code class="inline">antigravity-cli/skills</code> and <code class="inline">.agents/workflows</code> are still zero. Every negative on this page carries that scope, and a changelog that already describes the next release is a standing reminder to re-check — the replacement of <code class="inline">1.1.11</code> by <code class="inline">1.1.12</code> on this very machine is that reminder made concrete.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="sources" data-term>
+            <p class="prompt">cat sources.txt</p>
+            <div class="body" data-term-out>
+              <p>Every documentation URL was retrieved <strong>2026-08-11</strong> and re-verified <strong>2026-08-13</strong> during the second pass; cards added by that pass carry the later date. Antigravity CLI pages expose no stable per-page revision date, so package-derived claims are version-bounded to the installed binary — <code class="inline">agy 1.1.11</code> at the first pass, <code class="inline">agy 1.1.12</code> from 2026-08-13 — and cite the artifact rather than a URL.</p>
+
+              <div class="grid">
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/skills">Skills</a><br /><span class="muted">general page — global root</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/ide/skills">IDE skills</a><br /><span class="muted">a different surface</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/plugins">CLI plugins and skills</a><br /><span class="muted">the flat-file claim</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/subagents">Subagents</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/subagents">CLI subagents</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/rules-workflows">Rules and workflows</a><br /><span class="muted">activation modes, 12k cap</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/ide/workflows">IDE workflows</a><br /><span class="muted">panel authoring, no path</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/hooks">Hooks</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/mcp">MCP</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/mcp">CLI MCP</a><br /><span class="muted">the workspace-file claim</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/plugins">Plugins</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/sidecars">Sidecars</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/gcli-migration">Gemini CLI migration</a><br /><span class="muted">both filenames parsed</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/settings">CLI settings</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/modes">CLI modes</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/permissions">CLI permissions</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/conversations">CLI conversations</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/google-antigravity/antigravity-cli/blob/main/CHANGELOG.md">Official CLI changelog</a><br /><span class="muted">1.0.2 / 1.0.8 / 1.0.12 / 1.1.0</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/google-antigravity/antigravity-cli">antigravity-cli repository</a><br /><span class="muted">docs and examples, not source</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/headless">CLI headless</a><br /><span class="muted">--output-format, --json-schema — added 2026-08-13</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/statusline">CLI status line</a><br /><span class="muted">statusLine block — added 2026-08-13</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/cli/reference">CLI reference</a><br /><span class="muted">/logout keyring — added 2026-08-13</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/agent-settings">Agent settings</a><br /><span class="muted">~/.gemini/antigravity/ contents — added 2026-08-13</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://www.antigravity.google/docs/ide/rules">IDE rules</a><br /><span class="muted">@file resolution — added 2026-08-13</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://codelabs.developers.google.com/getting-started-with-antigravity-skills">Skills codelab</a><br /><span class="muted">off-domain first-party — I-class lead, added 2026-08-13</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://codelabs.developers.google.com/autonomous-ai-developer-pipelines-antigravity">Workflows codelab</a><br /><span class="muted">.agents/workflows/ lead, IDE-scoped — added 2026-08-13</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://github.com/google-antigravity/antigravity-cli/issues/309">Issue #309</a><br /><span class="muted">.antigravityignore — open, unanswered; added 2026-08-13</span></div>
+              </div>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The embedded manual — the strongest citation on this page.</strong> It has no URL. Every claim marked <strong>S</strong> that is not a raw literal traces to one of these documents, recovered both from the extracted builtin payload and from the executable itself.</p>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /></colgroup>
+                <thead><tr><th>Document</th><th>What it establishes here</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">builtin/skills/agy-customizations/SKILL.md</code></td>
+                    <td>The five-tier category order and its explicit name-conflict rule; the instruction ancestry walk to the repository root; resolved-path de-duplication; "Global Configuration (Machine-Local): Path: <code class="inline">~/.gemini/config/</code>"; the four workspace-root spellings</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">docs/skills.md</code></td>
+                    <td><code class="inline">skills/&lt;skill_name&gt;/SKILL.md</code> with optional <code class="inline">scripts/</code>, <code class="inline">examples/</code>, <code class="inline">resources/</code>, <code class="inline">references/</code>; <code class="inline">name</code> and <code class="inline">description</code> both "(string, required)"</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">docs/rules.md</code></td>
+                    <td><code class="inline">always_on</code> and <code class="inline">model_decision</code> as the underlying values; only <code class="inline">always_on</code> loading unconditionally; frontmatter-less <code class="inline">GEMINI.md</code>/<code class="inline">AGENTS.md</code> always active for their directory scope</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">docs/json_configs.md</code></td>
+                    <td>The whole <code class="inline">skills.json</code> / <code class="inline">plugins.json</code> schema: <code class="inline">entries[]</code>, <code class="inline">inherits[]</code>, <code class="inline">include_only</code>, <code class="inline">exclude</code> as regexes over directory names, and three-way path resolution</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">docs/hooks.md</code></td>
+                    <td>Hook-name keying, grouped-versus-flat shapes, matcher semantics, <code class="inline">CORTEX_STEP_TYPE_</code> derivation, <code class="inline">sh -c</code>/<code class="inline">cmd /c</code>, the <code class="inline">hooks.json</code>-directory cwd, camelCase payload fields, and the <code class="inline">PreToolUse</code> decision object</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">docs/mcp_servers.md</code></td>
+                    <td>The "Location" section listing <strong>exactly two</strong> entries — global and plugin — which is what demotes the workspace file to <strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">docs/plugins.md</code></td>
+                    <td>The plugin layout, automatic ingestion of skills/rules/hooks/MCP, namespacing on collision, and <code class="inline">name</code> as <em>optional</em> defaulting to the directory name</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Binary-literal citations.</strong> These are strings recovered read-only from the installed <code class="inline">agy</code> executable — <code class="inline">1.1.11</code> at the first pass, <code class="inline">1.1.12</code> (the 2026-08-13 replacement) for every second-pass claim. A positive hit is strong evidence of support; a stated negative names its method.</p>
+
+              <table>
+                <colgroup><col style="width:19rem" /><col /></colgroup>
+                <thead><tr><th>Literal</th><th>What it establishes</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">{workspace}/.agents/skills/{skill_name}/SKILL.md</code><br /><code class="inline">{appDataDir}/skills/{skill_name}/SKILL.md</code></td>
+                    <td>The skill shape at both scopes, and the <code class="inline">{appDataDir}</code> residue behind <strong>U-01</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">{workspace}/.agents/agents/{agent_name}/</code></td>
+                    <td>The agent path template — the enclosing directory as discovery signal</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">CUSTOMIZATION_FILE_TYPE_WORKFLOWS</code><br /><code class="inline">CUSTOMIZATION_FILE_TYPE_GLOBAL_WORKFLOWS</code><br /><code class="inline">REFRESH_CUSTOMIZATION_TYPE_WORKFLOW</code></td>
+                    <td>Workflows as a first-class customization kind at both scopes</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">/workflows</code>, <code class="inline">/global_workflows</code>, <code class="inline">workflows.migrated</code></td>
+                    <td>Route tokens and a migration marker for the same capability</td>
+                  </tr>
+                  <tr>
+                    <td>"loaded %d named hooks from %d hooks.json file(s)"</td>
+                    <td>Multi-file hook merge, confirmed by the program's own log line</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">CORTEX_STEP_TYPE_</code></td>
+                    <td>How tool names a matcher must match are derived</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">SeedPluginEnablement</code></td>
+                    <td>Plugin enablement seeded once from the manifest since 1.1.11</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.gemini/config</code></td>
+                    <td>Present as a literal — one half of the <strong>U-01</strong> balance</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">rules.json</code>, <code class="inline">agents.json</code> — and, from the second pass, <code class="inline">skills.txt</code>, <code class="inline">agents.txt</code>, <code class="inline">agent.json</code> (one occurrence each in <code class="inline">agy 1.1.12</code>)</td>
+                    <td>Present as literals with <strong>no schema, path, or documentation anywhere</strong> — <strong>U-02</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">antigravity-cli/skills</code><br />flat <code class="inline">&lt;name&gt;.md</code> skill form</td>
+                    <td><strong>Stated negatives.</strong> Both return <strong>zero occurrences</strong> in a byte-level search of the full 169 MB <code class="inline">1.1.11</code> image — the method that makes the negative meaningful. <code class="inline">antigravity-cli/skills</code> was re-run 2026-08-13: still zero in the 172 MB <code class="inline">1.1.12</code> image</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.github</code>, <code class="inline">.vscode</code></td>
+                    <td><strong>Present, but not capability roots.</strong> They occur in a run alongside <code class="inline">.gitignore</code>-style tokens, consistent with ignore and scan filtering</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">agy --help</code>, <code class="inline">agy plugin help</code></td>
+                    <td>The complete subcommand surface and the nine plugin verbs — run with <code class="inline">HOME</code> redirected to a scratch directory</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>Review outcome for Antigravity.</strong> 11 claims corrected, 5 confirmed unchanged, 6 unknowns standing. The decisive finding is that this CLI is <strong>not documentation-bound</strong>: it embeds a complete first-party manual that is version-pinned to the shipped build in a way no website page is, and where that manual and antigravity.google disagree, this page follows the manual and says so. No Antigravity state was modified by any part of the review — the executable was searched read-only with no disassembly, help was run with <code class="inline">HOME</code> redirected to a scratch directory, and one real <code class="inline">~/.gemini</code> was read but never written. A second verification pass on 2026-08-13 re-audited the page against <code class="inline">agy 1.1.12</code>, the Antigravity 2.0.1 <code class="inline">language_server</code>, and the re-retrieved docs — its outcome is recorded in the <a class="link-quiet" href="#corrections">corrections section</a>.</p>
+            </div>
+          </section>
+      </div>
+    </main>
+
+    <footer class="status">
+      <span class="status-left"><span class="glow">[configr]</span> Google Antigravity capability guide</span>
+      <nav class="status-right">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <span class="sep" aria-hidden="true"></span>
+        <details class="dropdown">
+          <summary aria-label="theme">
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span aria-hidden="true">▾</span>
+          </summary>
+          <ul class="dropdown-panel" role="list">
+            <li><button type="button" class="dropdown-item" data-theme-value="warm">warm</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="green">green</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="mono">mono</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="paper">paper</button></li>
+          </ul>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </nav>
+    </footer>
+
+    <script type="module">
+      import { applyStoredTheme, initThemeSwitcher, initDropdowns, initSelects, initTerminal, initAnimToggle, initBurgerNav, initLsNav, initTableScroll, initDiagramZoom, initMinimap, initTooltips } from
+        "https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/runtime/index.js";
+      applyStoredTheme();
+      initThemeSwitcher();
+      initDropdowns();
+      initTerminal();
+      initAnimToggle();
+      initBurgerNav();
+      // The rail's show/hide, and it measures the real header/footer heights into
+      // --ls-nav-top / --ls-nav-bottom so the rail sits BETWEEN the chrome, not under it.
+      initLsNav();
+      // Every table gets a .tablewrap parent, so a table wider than its column scrolls
+      // itself instead of pushing the whole page sideways. Already-wrapped ones are skipped.
+      initTableScroll();
+      // Every <select> gets the estate's dropdown instead of the OS one. Called
+      // unconditionally, beside initTableScroll() and for the same reason: both have no
+      // markup contract, so both are a no-op on a page that has none of their element.
+      initSelects();
+
+      // Mermaid diagrams — themed from the design tokens, re-rendered on theme switch.
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs";
+
+      const diagrams = Array.from(document.querySelectorAll("pre.mermaid"));
+      if (diagrams.length) {
+        // capture the sources before the first render replaces them with SVG
+        for (const node of diagrams) node.dataset.mermaidSource = node.textContent;
+
+        // Renders are serialized: applyStoredTheme() writes data-theme on startup, so an
+        // unguarded observer would kick off a second pass while the first is still
+        // running — two passes mutating the same nodes stack every diagram into one box.
+        let renderPass = 0;
+        let pending = Promise.resolve();
+        let zoomWired = false;
+
+        const renderDiagrams = () => {
+          pending = pending.then(async () => {
+            const pass = (renderPass += 1);
+            const styles = getComputedStyle(document.documentElement);
+            const token = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: "strict",
+              fontFamily: token("--font-mono", "monospace"),
+              flowchart: { htmlLabels: true, useMaxWidth: true },
+              themeVariables: {
+                background: token("--background", "#f5efe2"),
+                primaryColor: token("--card", "#efe7d4"),
+                primaryTextColor: token("--foreground", "#43352a"),
+                primaryBorderColor: token("--border", "#d9cdb6"),
+                secondaryColor: token("--muted", "#ece3cf"),
+                tertiaryColor: token("--muted", "#ece3cf"),
+                lineColor: token("--muted-foreground", "#71614e"),
+                textColor: token("--foreground", "#43352a"),
+                mainBkg: token("--card", "#efe7d4"),
+                nodeBorder: token("--border", "#d9cdb6"),
+                clusterBkg: token("--muted", "#ece3cf"),
+                clusterBorder: token("--border", "#d9cdb6"),
+                edgeLabelBackground: token("--background", "#f5efe2"),
+                titleColor: token("--primary", "#8a4516"),
+              },
+            });
+            // render ids must be unique per pass, or a re-render collides with itself
+            for (const [index, node] of diagrams.entries()) {
+              try {
+                const { svg } = await mermaid.render(`mermaid-svg-${index}-${pass}`, node.dataset.mermaidSource);
+                node.innerHTML = svg;
+                node.dataset.processed = "true";
+              } catch {
+                // a broken diagram falls back to its source — it must never blank the box
+                node.textContent = node.dataset.mermaidSource;
+                node.removeAttribute("data-processed");
+              }
+            }
+            // EVERY DIAGRAM IS ZOOMABLE. Wired ONCE, and after the first render rather than
+            // before it: the opener binds a listener per element and is not idempotent, so
+            // calling it again on the theme re-render would open two overlays per click.
+            if (!zoomWired) {
+              zoomWired = true;
+              initDiagramZoom("pre.mermaid");
+            }
+          });
+          return pending;
+        };
+
+        // Wait for the terminal reveal: a diagram inside a not-yet-revealed
+        // [data-term-out] is visibility:hidden, and Mermaid would size it against a
+        // container it cannot measure properly. With animation off, render at once.
+        if (document.documentElement.classList.contains("anim-off") || window.termContentDone) {
+          void renderDiagrams();
+        } else {
+          window.addEventListener("term:contentdone", () => void renderDiagrams(), { once: true });
+        }
+
+        // re-render with the new palette, but only when the theme actually changed
+        let lastTheme = document.documentElement.dataset.theme;
+        new MutationObserver(() => {
+          const theme = document.documentElement.dataset.theme;
+          if (theme === lastTheme) return;
+          lastTheme = theme;
+          void renderDiagrams();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+      }
+
+      // The minimap builds itself from the sections — one bar each, in the left gutter,
+      // with the scroll-spy built in. No markup and no per-section wiring.
+      initMinimap({ sections: "section.doc" });
+      // The minimap's bars carry `data-tip`, not `title`: the native tooltip waits about a
+      // second and renders in the OS's chrome, which is useless on a strip meant to be
+      // scrubbed. Delegated, so it covers the bars the minimap just built.
+      initTooltips();
+    </script>
+  </body>
+</html>

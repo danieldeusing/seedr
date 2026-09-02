@@ -1,0 +1,1460 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenAI Codex capability guide</title>
+    <meta name="description" content="Source-verified reference for the OpenAI Codex CLI 0.147.0: every scope, every capability type, the numeric config-layer precedence, the root-to-cwd instruction walk, plugin manifest order, and the bounded unknowns." />
+    <meta name="theme-color" content="#f5efe2" />
+
+    <!-- pre-paint: apply the saved theme + animation gate before first paint -->
+    <script>
+      (() => {
+        const bg = { warm: "#f5efe2", green: "#020604", mono: "#050505", paper: "#fafafa" };
+        let theme = "warm";
+        try {
+          const stored = localStorage.getItem("theme");
+          if (stored && stored in bg) theme = stored;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg[theme]);
+
+        let animOff = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        try {
+          if (localStorage.getItem("anim") === "off") animOff = true;
+        } catch {}
+        if (animOff) document.documentElement.classList.add("anim-off");
+
+        // The `ls -l` rail is SHOWN by default. A reader who hid it must not watch it
+        // paint and then jump away on every single load, so the state is applied HERE —
+        // the runtime module at the end of <body> runs long after first paint.
+        try {
+          if (localStorage.getItem("ls-nav") === "off") document.documentElement.dataset.lsNav = "off";
+        } catch {}
+      })();
+
+      // Resolution-independent zoom: lay out at a fixed 1920px reference, then scale the
+      // whole view up on wider screens so the empty side-margins never exceed their
+      // 1920-reference proportion (a true zoom of everything, never below 1×). Pre-paint
+      // to avoid a flash.
+      (() => {
+        const REFERENCE_WIDTH = 1920;
+        const applyZoom = () => {
+          document.documentElement.style.zoom = String(Math.max(1, window.innerWidth / REFERENCE_WIDTH));
+        };
+        applyZoom();
+        window.addEventListener("resize", applyZoom);
+      })();
+    </script>
+
+    <!-- The design system, PINNED — and it must be. This page ships the system's own
+         MARKUP (the `ls -l` rail, the fixed footer), so it is coupled to the release that
+         styles them, and the unpinned url cannot promise a release: jsDelivr serves it
+         `max-age=604800` — SEVEN DAYS in the browser, 12h at the edge. The pinned url is
+         served `immutable`, so the bytes always match the markup.
+         `onerror` swaps in a byte-for-byte snapshot of the SAME release, served from the
+         docs site. NOTE the path is site-absolute: it resolves on docs.danieldeusing.de,
+         NOT for a doc opened from disk over file://. -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/dist/danieldeusing-design.min.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.min.css'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/src/fonts.css"
+      onerror="this.onerror=null;this.href='/_design/danieldeusing-design-0.27.0.fonts.css'"
+    />
+
+    <style>
+      /* Page-only layout. The design system ships the visual identity AND the measurements
+         (--content-w / --content-pad / --fs-*), so every value below is a TOKEN.
+
+         Each one carries a literal fallback on purpose: a doc opened over file:// with no
+         route to the CDN loads no stylesheet at all, and a bare `var(--content-w)` would
+         resolve to nothing there — full-bleed page, collapsed type.
+
+         Note `padding-block` + `padding-inline`, never the `padding` shorthand: the
+         shorthand resets padding-inline and silently drops the left/right margins. */
+      /* design-conformance: a TOKEN declaration with literal fallbacks, not a copy of the
+         system's rule — the sanctioned exception. A doc is meant to open straight off disk
+         over file://, where no stylesheet loads at all and a bare var() resolves to nothing.
+         The literals are what that reader sees; the tokens win everywhere else. */
+      .wrap { max-width: var(--content-w, 78rem); margin-inline: auto;
+              padding-block: 2.5rem 5rem; padding-inline: var(--content-pad, 1.5rem); }
+
+      /* header/footer chrome + nav now ship with the design system (src/chrome.css) */
+
+      /* ONE COLUMN, CENTRED — the same shape every other danieldeusing surface has.
+         `.wrap` above is the whole layout. There is no table-of-contents column: its two
+         real jobs — how long is this, and where am I — moved to the MINIMAP in the left
+         gutter (initMinimap()), which does them in 2rem and is fixed. */
+      .content { min-width: 0; }
+      h1.title { font-size: var(--fs-2xl, 1.7rem); font-weight: 700; margin: 0.4rem 0 0.5rem; }
+      .lede { color: var(--muted-foreground); } /* full width — no max-width cap */
+
+      /* design-conformance: spacing BETWEEN doc sections on this page template, not a restyle
+         of the shared .doc — the system sets its own margin for the standalone case. */
+      section.doc { margin-top: 2.5rem; scroll-margin-top: 4rem; }
+      .body { margin-top: 0.85rem; }
+      .body > * + * { margin-top: 0.75rem; }
+
+      /* content components the generator uses */
+      ol.steps { counter-reset: step; padding: 0; }
+      ol.steps > li { position: relative; padding-left: 2.25rem; margin-top: 0.6rem; counter-increment: step; }
+      ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 1.5rem; text-align: right; color: var(--primary); font-weight: 700; }
+      ul.plain { padding-left: 1.1rem; }
+      ul.plain > li { margin-top: 0.3rem; }
+      .grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+      .pad { padding: 1rem; }
+      .muted { color: var(--muted-foreground); }
+      code.inline { font-family: inherit; background: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.92em; }
+      pre.block { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      /* No table CSS for scrolling or size here on purpose. `initTableScroll()` at the
+         bottom of this file gives every table a `.tablewrap` parent (overflow-x plus a
+         right-edge fade), so a table wider than its column scrolls itself instead of
+         handing the WHOLE PAGE a horizontal scrollbar. The markup contract is therefore
+         nothing: author a plain <table>. Size is the system's too. */
+      table.kv { width: 100%; border-collapse: collapse; }
+      table.kv th, table.kv td { text-align: left; vertical-align: top; padding: 0.4rem 0.75rem 0.4rem 0; border-bottom: 1px solid var(--border); }
+      table.kv th { color: var(--primary); font-weight: 700; white-space: nowrap; }
+
+      /* Mermaid diagrams. Before rendering, the <pre> shows the raw diagram source —
+         so with JS disabled (or if the CDN is unreachable) the page degrades to a
+         readable text diagram instead of an empty box. */
+      pre.mermaid { margin: 0; padding: 0.9rem 1rem; overflow-x: auto; font-size: var(--fs-md, 0.86rem); line-height: var(--lh-base, 1.5); background: var(--muted); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
+      pre.mermaid[data-processed] { white-space: normal; text-align: center; }
+      pre.mermaid svg { max-width: 100%; height: auto; }
+    </style>
+  </head>
+
+  <body>
+    <a href="#top" class="skip-link">skip to content</a>
+    <header class="bar">
+      <!-- top-left: ALWAYS danieldeusing-docs -->
+      <a href="#top" class="brand">
+        <span class="glow">danieldeusing-docs</span>
+        <span class="cursor-block" aria-hidden="true"></span>
+      </a>
+      <button type="button" class="nav-burger" data-nav-toggle aria-label="menu" aria-controls="site-nav" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+      </button>
+      <nav aria-label="site" id="site-nav" class="site-nav">
+      <div class="ls-nav-head">
+        <span class="ls-nav-title prompt">ls -l</span>
+        <button type="button" class="ls-nav-toggle" data-ls-nav-toggle aria-controls="nav" aria-expanded="true" aria-label="show or hide navigation"></button>
+      </div>
+      <!-- The rail is justified here: these five docs are siblings a reader is meant to
+           move between, so there IS somewhere else to go. -->
+      <div class="ls-nav" id="nav">
+        <ul class="ls-panel" role="list">
+          <li><a class="dropdown-item ls-row" href="claude-code.html" title="Claude Code — claude-code.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Claude Code</span></a></li>
+          <li><a class="dropdown-item ls-row" href="openai-codex.html" aria-current="page" title="OpenAI Codex — openai-codex.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenAI Codex</span></a></li>
+          <li><a class="dropdown-item ls-row" href="github-copilot.html" title="GitHub Copilot — github-copilot.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">GitHub Copilot</span></a></li>
+          <li><a class="dropdown-item ls-row" href="opencode.html" title="OpenCode — opencode.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">OpenCode</span></a></li>
+          <li><a class="dropdown-item ls-row" href="google-antigravity.html" title="Google Antigravity"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Antigravity</span></a></li>
+          <li><a class="dropdown-item ls-row" href="cross-tool-matrix.html" title="Cross-tool — cross-tool-matrix.html"><span class="ls-perm" aria-hidden="true">-rw-r--r--</span><span class="ls-name">Cross-tool</span></a></li>
+        </ul>
+      </div>
+      <div class="mobile-footer">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <details class="mobile-theme">
+          <summary>
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span class="mf-chev" aria-hidden="true">▾</span>
+          </summary>
+          <div class="mf-panel">
+            <button type="button" class="dropdown-item" data-theme-value="warm">warm</button>
+            <button type="button" class="dropdown-item" data-theme-value="green">green</button>
+            <button type="button" class="dropdown-item" data-theme-value="mono">mono</button>
+            <button type="button" class="dropdown-item" data-theme-value="paper">paper</button>
+          </div>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </div></nav>
+    </header>
+
+    <main class="wrap" id="top">
+      <div class="content">
+          <p class="prompt">cat configr/docs/harness-analysis.md &#124; sed -n '/## 4. OpenAI Codex/,/## 5./p'</p>
+          <h1 class="title">OpenAI Codex capability guide</h1>
+          <p class="lede">Everything the OpenAI Codex CLI reads, writes, and resolves — scopes, capability types, the numeric config-layer precedence, the root&nbsp;&rarr;&nbsp;cwd instruction walk, the inverted plugin-manifest probe, and the bounded unknowns. Verified against the pinned <strong>rust-v0.147.0</strong> source and the installed <strong>codex-cli 0.147.0</strong> package, not against vendor prose: where a rolling documentation page and the shipped build disagree, the build governs this version row and both sides are stated.</p>
+
+          <section class="doc" id="overview" data-term>
+            <p class="prompt">echo overview</p>
+            <div class="body" data-term-out>
+              <p>The unit of analysis is the <strong>coding agent&#8217;s command-line executable plus the files and state that executable directly reads, writes, installs, or manages</strong>. CLI-native plugins, marketplaces, TUI features, remote-control entry points, cloud task submission, and service-backed memory are in scope. IDE extensions, desktop applications, and web-only surfaces are out of scope even when they share a product name or an artifact path.</p>
+
+              <p>Every claim on this page carries an <strong>evidence class</strong> and a citation. Nothing here is added from memory or from a web search: if the source analysis does not state it, it is not on this page, and where the analysis records an unknown it is reproduced as an unknown with its <code class="inline">U-</code> number.</p>
+
+              <table>
+                <colgroup><col style="width:7rem" /><col /><col style="width:11rem" /></colgroup>
+                <thead>
+                  <tr><th>Class</th><th>Meaning</th><th>Reliability</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>D</strong></td><td>documented — current first-party documentation says this</td><td>rolling; no per-page revision date</td></tr>
+                  <tr><td><strong>S</strong></td><td>source/package-observed — exact tagged source says this, or the installed product does, including path templates, enum runs, error and warning strings, help text and embedded documents recovered read-only from the binary</td><td>strongest for the installed build</td></tr>
+                  <tr><td><strong>O</strong></td><td>disk-observed — a version, path, or shape was seen locally; values and secrets were not inspected</td><td>presence proves support; absence proves nothing</td></tr>
+                  <tr><td><strong>I</strong></td><td>inferred — a bounded conclusion from cited primary evidence, with the basis stated</td><td>only as good as its basis</td></tr>
+                  <tr><td><strong>U</strong></td><td>unknown — primary evidence is absent, self-contradictory, or insufficient</td><td>do not resolve; enumerate instead</td></tr>
+                  <tr><td><strong>D&ne;S</strong></td><td>documentation/source conflict — first-party prose and the pinned loader or installed binary disagree; both are stated and the build wins for its own version row</td><td>versioned, never normalized</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>How the Codex rows were verified.</strong> Pinned source <code class="inline">openai/codex</code> at tag <code class="inline">rust-v0.147.0</code> — an annotated tag object that resolves to commit <code class="inline">be6e8eac029b183056b7e4402879f15d2c85f61b</code> with the message "Release 0.147.0", so the pin is <em>confirmed, not assumed</em> — plus the installed <code class="inline">codex-cli 0.147.0</code> binary at <code class="inline">/opt/homebrew/bin/codex</code> &rarr; <code class="inline">/opt/homebrew/Caskroom/codex/0.147.0/bin/codex</code> (219,997,536 bytes — the Homebrew cask; corrected 2026-08-13: <code class="inline">~/.codex/packages/</code> does not exist on the inspected machine and <code class="inline">~/.codex/version.json</code> is stale standalone-updater state), inspected read-only via <code class="inline">strings</code>, byte-level search and <code class="inline">--help</code> only, plus read-only observation of one real <code class="inline">~/.codex</code>. No Codex state was modified and no mutating subcommand was run. Research cut-off <strong>2026-08-11</strong>; re-verified <strong>2026-08-13</strong> against the same pin, the cask binary, re-fetched first-party docs, and <code class="inline">main</code> at <code class="inline">6851fae</code> for drift. <strong>O/S</strong> · <a class="link-quiet" href="https://github.com/openai/codex/tree/be6e8eac029b183056b7e4402879f15d2c85f61b">tagged source</a></p>
+
+              <p class="eli5"><span class="eli5-term">Binary evidence is asymmetric — and Codex proved it.</span> A positive literal hit is strong evidence of support; an absence is only as strong as the extraction method. A <code class="inline">strings</code> pass over the installed 220&nbsp;MB binary appeared to show that <code class="inline">.claude-plugin/marketplace.json</code> was absent, which would have refuted the four-item marketplace order. A byte-level <code class="inline">grep -a -F</code> on the same file found it. <code class="inline">strings</code> extraction is <strong>lossy</strong> on this binary: only its positives were relied on, and this failure mode is recorded here so it is not repeated.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The six things most often gotten wrong,</strong> each corrected against the pinned source or the installed build and expanded further down:</p>
+              <ul class="plain">
+                <li><strong>Managed configuration does <em>not</em> sit on top.</strong> Only the two <em>legacy</em> <code class="inline">managed_config.toml</code> layers (40 and 50) outrank everything, including <code class="inline">-c</code>. Cloud enterprise (15), system (10) and MDM (0) sit <strong>below</strong> the user layers (20/21). Enforcement lives in the parallel <code class="inline">requirements.toml</code> stack, not in config precedence. <strong>S</strong></li>
+                <li><strong>The project walk runs downward.</strong> Codex searches <em>up</em> to find the project root, then orders instructions <strong>root&nbsp;&rarr;&nbsp;cwd</strong>, and the root is a hard ceiling: the resolver's own header says "we do <strong>not</strong> walk past the project root". <strong>S</strong></li>
+                <li><strong>A root <code class="inline">plugin.json</code> is probed FIRST</strong>, not as a last resort — symlink-rejected and <code class="inline">$schema</code>-gated — and when it wins, <code class="inline">.codex-plugin/plugin.json</code> becomes an <strong>overlay</strong> rather than an alternative. <strong>S</strong></li>
+                <li><strong><code class="inline">agents/openai.yaml</code> is optional and fail-open — but not presentation-only.</strong> The loader carries the comment "optional metadata should not block loading SKILL.md" and absence never blocks a skill; but the file also carries <code class="inline">dependencies.tools</code> and a <code class="inline">policy</code> block, and <code class="inline">policy.allow_implicit_invocation: false</code> hides the skill from the model catalog while explicit <code class="inline">$skill</code> invocation still works. Surface it as an implicit-invocation control, never as an enablement control — <code class="inline">[[skills.config]]</code> is that. <strong>D/S</strong></li>
+                <li><strong><code class="inline">$CODEX_HOME/prompts/*.md</code> could not be located at 0.147.0</strong> by four independent checks. Treat it as a documentation-only claim; scanning is harmless, <em>reporting it as a live capability</em> is not. <strong>D/U</strong></li>
+                <li><strong>There is no <code class="inline">config.local.toml</code>.</strong> The filename does not exist anywhere in the repository — Codex has no private-project config counterpart to its shared one. <strong>S</strong></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="doc" id="corrections" data-term>
+            <p class="prompt">git log --oneline review-notes</p>
+            <div class="body" data-term-out>
+              <p>The independent verification pass against the pinned tag and the installed package <strong>corrected 6 claims</strong>, <strong>raised 12 documentation-only claims to source strength</strong>, and left <strong>5 unknowns standing</strong> (the second pass below has since resolved one — the skill catalog budget). The corrections are the highest-value content here, because each one is a belief that a configuration tool would otherwise encode confidently and wrongly.</p>
+
+              <table>
+                <colgroup><col style="width:12rem" /><col /><col /><col style="width:17rem" /></colgroup>
+                <thead>
+                  <tr><th>Claim</th><th>Was</th><th>Now</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Plugin manifest order</td>
+                    <td>Three <code class="inline">.X-plugin/plugin.json</code> paths, with a root <code class="inline">plugin.json</code> accepted "only when" schema-qualified — read as a <em>last resort</em></td>
+                    <td>Root <code class="inline">plugin.json</code> is probed <strong>first</strong> (symlink-rejected, <code class="inline">$schema</code>-gated on <code class="inline">https://agent-plugins.org/schemas/1.0.0/plugin.schema.json</code>); the three-path list is the <em>fallback</em>. When the root manifest wins, <code class="inline">.codex-plugin/plugin.json</code> becomes an <strong>overlay</strong>. A sibling namespace resolver uses only the three-path list, so the two orders genuinely differ</td>
+                    <td><code class="inline">utils/plugins/src/plugin_namespace.rs</code> — <code class="inline">::find_plugin_manifest_path</code> is the root-first probe, <code class="inline">::plugin_namespace_for_root_uri</code> the three-path-only namespace resolver (attribution corrected 2026-08-13)<br /><code class="inline">core-plugins/src/manifest.rs</code></td>
+                  </tr>
+                  <tr>
+                    <td>Managed config precedence</td>
+                    <td>"Managed defaults sit above ordinary values"</td>
+                    <td>Only the two <strong>legacy</strong> <code class="inline">managed_config.toml</code> layers sit on top (40/50, above <code class="inline">-c</code> at 30). <code class="inline">EnterpriseManaged</code> (15), <code class="inline">System</code> (10) and <code class="inline">Mdm</code> (0) sit <strong>below</strong> user (20/21). Enforcement lives in the parallel <code class="inline">requirements.toml</code> stack</td>
+                    <td><code class="inline">config/src/config_layer_source.rs::precedence()</code></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">agents/openai.yaml</code></td>
+                    <td>"can <strong>gate</strong> implicit model invocation and declare interface/dependency metadata"</td>
+                    <td>Optional and <strong>fail-open</strong> — absence yields defaults and never blocks <code class="inline">SKILL.md</code> — but <em>not</em> presentation-only: it deserializes <code class="inline">interface</code> (<code class="inline">display_name</code>, <code class="inline">short_description</code>, icons, <code class="inline">brand_color</code>, <code class="inline">default_prompt</code>), <code class="inline">dependencies.tools</code> (MCP tool dependencies) and <code class="inline">policy</code>. <code class="inline">policy.allow_implicit_invocation</code> defaults true; <code class="inline">false</code> marks the catalog entry <code class="inline">hidden_from_prompt</code> while explicit <code class="inline">$skill</code> invocation still works. Second pass (2026-08-13): the first pass overcorrected — the pre-correction claim was right</td>
+                    <td><code class="inline">ext/skills/src/loader/metadata.rs</code><br /><code class="inline">ext/skills/src/provider/host.rs</code><br /><code class="inline">skills/src/model.rs</code></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">$CODEX_HOME/prompts/*.md</code></td>
+                    <td><strong>D</strong>, stated as an existing deprecated capability root</td>
+                    <td><strong>D/U</strong> — not locatable at 0.147.0 by four independent checks; the binary's <code class="inline">prompts/list</code> and <code class="inline">prompts/get</code> are <strong>MCP protocol method names</strong>, not a filesystem feature</td>
+                    <td>Pinned tree; <code class="inline">core/config.schema.json</code> (93 top-level properties, none <code class="inline">prompts</code>); installed <code class="inline">--help</code>; repo-wide path search</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">[[skills.config]]</code></td>
+                    <td>"can disable a path without deleting it"</td>
+                    <td>Selects a skill by <strong>path or name</strong> (exactly one selector) and sets a required <code class="inline">enabled</code> flag — nothing else; there is <strong>no display-name override</strong>. Warns on a missing selector, on both selectors at once, and on an empty <em>name selector</em> ("ignoring empty skills.config name override" — the string the display-name reading came from). Second pass (2026-08-13): the original "disable a path without deleting it" was correct</td>
+                    <td><code class="inline">config/src/skills_config.rs</code> — <code class="inline">SkillConfig { path, name, enabled }</code>, <code class="inline">deny_unknown_fields</code><br /><code class="inline">core-skills/src/config_rules.rs</code> warning strings, present in the installed binary</td>
+                  </tr>
+                  <tr>
+                    <td>Agent layer set</td>
+                    <td>"User/project/system <code class="inline">.codex</code>-config-folder" (correct) but the merge semantics were understated</td>
+                    <td>Only layers exposing a config folder participate (<strong>System / User / Project</strong>); inline <code class="inline">[agents]</code> is processed before the directory scan so <strong>inline wins in-layer</strong>; and <strong>cross-layer merging is per-field</strong>, with a higher layer inheriting any field it does not set</td>
+                    <td><code class="inline">core/src/config/agent_roles.rs</code><br /><code class="inline">config/src/state.rs</code></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Raised from documentation-only to source strength (D &rarr; D/S).</strong> Twelve claims, each now backed by the pinned tree or the installed build:</p>
+              <ul class="plain">
+                <li><strong>Direction of travel</strong> — upward search to find the root, then root&nbsp;&rarr;&nbsp;cwd ordering with the root as a hard ceiling; stated verbatim in the resolver's module header, implemented as a cwd-upward loop with a <code class="inline">break</code> on the root followed by <code class="inline">dirs.reverse()</code>, and independently corroborated by the config loader's assertion string "project layers are not ordered from root to cwd", recoverable from the installed binary.</li>
+                <li><strong>Global slot</strong> — exactly <code class="inline">$CODEX_HOME/AGENTS.override.md</code> then <code class="inline">$CODEX_HOME/AGENTS.md</code>; fallback filenames cannot reach it, and no byte budget applies. <code class="inline">project_doc_max_bytes</code> defaults to the literal <code class="inline">32 * 1024</code>; the default fallback filename list is <strong>empty</strong>.</li>
+                <li><strong>Override locality</strong> — <code class="inline">AGENTS.override.md</code> suppresses only its own directory's base/fallback, because each directory is probed in its own closure.</li>
+                <li><strong>Project root detection</strong> — default markers <code class="inline">[".git"]</code>; an empty list disables detection (cwd only); no marker found also yields cwd only; project layers are explicitly skipped when reading <code class="inline">project_root_markers</code>, so project config cannot widen its own ceiling.</li>
+                <li><strong>Project <code class="inline">.codex/config.toml</code> is real</strong>, described in the package as "project-local config, hooks, and exec policies" and named <code class="inline">dotCodexFolder</code> in the app-server vocabulary. <code class="inline">config.local.toml</code> does not exist.</li>
+                <li><strong>Trust gating</strong> is keyed off the <code class="inline">[projects]</code> table, and project layers are stripped by a concrete denylist of provider, base-URL, profile, notify and telemetry keys, with a stated rationale.</li>
+                <li><strong>Hooks</strong> — both <code class="inline">hooks.json</code> and inline <code class="inline">[hooks]</code> load together with a warning; the linked-worktree hook redirect is a deliberate, documented <code class="inline">hooks_config_folder()</code> override, not an accident; the event list matches exactly with no extras.</li>
+                <li><strong>Skills</strong> — directory plus <code class="inline">SKILL.md</code> with a hard <code class="inline">description</code> requirement; all seven claimed roots confirmed, with the addition that <code class="inline">.agents/skills</code> is scanned at <strong>every</strong> level from project root to cwd.</li>
+                <li><strong>Memories</strong> — <code class="inline">codex_home.join("memories")</code>, feature key <code class="inline">memories</code>, stage stable, <code class="inline">default_enabled: false</code>; <code class="inline">memories_1.sqlite</code> is a separate database. Re-observed 2026-08-13: the directory exists but is <em>empty</em> on this machine; the generated tree shape is now source-proven instead (see memory &amp; goals).</li>
+                <li><strong>Goals</strong> — <code class="inline">goals_1.sqlite</code>; <code class="inline">sqlite_home</code> &rarr; <code class="inline">CODEX_SQLITE_HOME</code> &rarr; <code class="inline">$CODEX_HOME</code>; <code class="inline">features.goals</code> stable and default-on.</li>
+                <li><strong>MCP</strong> — recursive deep-merge with per-key precedence; <code class="inline">codex mcp</code> exposes exactly six subcommands and <code class="inline">mcp add</code> has no scope flag.</li>
+                <li><strong>Marketplace order</strong> — all four manifest paths confirmed in source <em>and</em> by byte-level search of the installed binary.</li>
+              </ul>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Second verification pass (2026-08-13).</strong> A full re-audit of this page against the same pin plus the live corpus: the <code class="inline">rust-v0.147.0</code> tag worktree (commit <code class="inline">be6e8eac</code>), <code class="inline">main</code> at <code class="inline">6851fae</code> for drift, the installed Homebrew-cask binary <code class="inline">codex-cli 0.147.0</code>, re-fetched first-party docs, and a fresh read-only <code class="inline">~/.codex</code> observation. Outcome:</p>
+              <table>
+                <colgroup><col style="width:15rem" /><col /></colgroup>
+                <thead><tr><th>Result</th><th>Detail</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>17 claims corrected</strong></td><td>Including two corrections of the first pass's <em>own</em> corrections — <code class="inline">agents/openai.yaml</code> and <code class="inline">[[skills.config]]</code>, both re-marked in the table above — plus the project-rules trust gate, the plugin-root <code class="inline">.mcp.json</code> live-read, the <code class="inline">/import</code> Cursor source, the memories "experimental" label, the item-type-enum role, the Windows System config file, and five stale local observations (package path, <code class="inline">~/.codex</code> snapshot, <code class="inline">rules/</code>, <code class="inline">skills/</code>, memories contents)</td></tr>
+                  <tr><td><strong>15 capabilities added</strong></td><td>The <code class="inline">[features]</code> gate, the requirements surface, sessions, <code class="inline">notify</code>, the config instruction channels, MCP credential stores, the ten extra <code class="inline">[memories]</code> keys, marketplace persistence and restriction, remote plugin catalogs, per-plugin MCP overlays, rules shape and amendment, the two extra <code class="inline">[skills]</code> toggles, the bundled-skills path, and managed-hook placement — each in its home section with class and citation</td></tr>
+                  <tr><td><strong>1 unknown resolved</strong></td><td>The skill catalog budget, now <strong>D/S</strong> — both figures are source literals and both warning strings are in the binary</td></tr>
+                  <tr><td><strong>3 sourcing fixes, 1 drift note</strong></td><td>Evidence classes attached to the hand-install table and the goal tools; developer plugin docs added; a drift note for unreleased <code class="inline">main</code> (<code class="inline">PackagedDefaults</code> at precedence &minus;10)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="scopes" data-term>
+            <p class="prompt">ls -d /etc/codex ~/.codex .codex ~/.agents/skills</p>
+            <div class="body" data-term-out>
+              <p>Codex has <strong>seven</strong> distinct places configuration and state can live. Four are authored scopes a person edits; three — plugin caches, service-side task state, and generated memory/goal databases — are runtime-owned and must be treated as opaque.</p>
+
+              <p><strong><code class="inline">$CODEX_HOME</code> defaults to <code class="inline">~/.codex</code>. D</strong> Every user-scope path below is written against that variable, not against the literal directory: a relocated home moves the whole user scope, including the global instruction slot, the deprecated skills root, the plugin cache and — unless <code class="inline">sqlite_home</code> or <code class="inline">CODEX_SQLITE_HOME</code> says otherwise — the goal database.</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col /></colgroup>
+                <thead>
+                  <tr><th>Scope</th><th>Location</th><th>What lives there</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>System / admin</td>
+                    <td>Unix <code class="inline">/etc/codex/</code> — <code class="inline">config.toml</code>, <code class="inline">requirements.toml</code>, <code class="inline">managed_config.toml</code>, <code class="inline">skills/</code>, <code class="inline">agents/</code>, <code class="inline">hooks.json</code>, <code class="inline">rules/</code><br />Windows <code class="inline">%ProgramData%\OpenAI\Codex\config.toml</code> and <code class="inline">requirements.toml</code> — the System layer's config file resolves via <code class="inline">SHGetKnownFolderPath(FOLDERID_ProgramData)</code> with <code class="inline">C:\ProgramData</code> as fallback, and since the layer's config folder is that file's parent, the Windows system capability roots resolve beneath <code class="inline">%ProgramData%\OpenAI\Codex\</code> too — plus <code class="inline">~/.codex/managed_config.toml</code> as the non-Unix legacy managed-config path<br />cloud requirements; macOS MDM domain <code class="inline">com.openai.codex</code></td>
+                    <td>Base config and capabilities, managed defaults, and non-relaxable requirements. The system capability roots are source-observed from the system config folder. <strong>D/S</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/enterprise/managed-configuration">managed configuration</a></td>
+                  </tr>
+                  <tr>
+                    <td>User</td>
+                    <td><code class="inline">$CODEX_HOME/config.toml</code>, <code class="inline">$CODEX_HOME/&lt;profile&gt;.config.toml</code>, <code class="inline">$CODEX_HOME/AGENTS.override.md</code> and <code class="inline">AGENTS.md</code>, <code class="inline">~/.agents/skills/</code>, <code class="inline">$CODEX_HOME/{agents,prompts,rules,memories}/</code>, effective-SQLite-home <code class="inline">goals_1.sqlite</code>, adjacent hooks, personal plugin marketplace</td>
+                    <td>User customization plus generated memory and goal state. <strong>Project fallback filenames do not apply to this global instruction slot.</strong> <strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Project</td>
+                    <td>root&nbsp;&rarr;&nbsp;cwd <code class="inline">.codex/config.toml</code>; exact <code class="inline">AGENTS.override.md</code> / <code class="inline">AGENTS.md</code> / configured fallbacks; <code class="inline">.agents/skills/</code>; <code class="inline">.codex/{skills,agents,rules}/</code>; adjacent hooks; repository marketplace</td>
+                    <td>Trust is <strong>capability-specific</strong>: project config-folder <em>configuration</em>, hooks and exec-policy rules are trust-gated — the loader's disabled reason names "project-local config, hooks, and exec policies" — but instructions load separately, and project <em>skills</em> still load in an untrusted project (the skills walker iterates disabled layers too; corrected 2026-08-13, see <a class="link-quiet" href="#rules">rules</a>). <strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Profile</td>
+                    <td><code class="inline">$CODEX_HOME/&lt;name&gt;.config.toml</code></td>
+                    <td>Overlay selected by <code class="inline">--profile &lt;name&gt;</code>; names allow letters, digits, hyphens and underscores. Since <strong>0.134.0</strong>, legacy <code class="inline">[profiles.&lt;name&gt;]</code> tables and a top-level <code class="inline">profile</code> key are <em>not</em> read for selection. <strong>D</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/config-file/config-advanced">advanced config</a></td>
+                  </tr>
+                  <tr>
+                    <td>Plugin</td>
+                    <td><code class="inline">.codex-plugin/plugin.json</code>, compatible Claude and Cursor manifests, a schema-qualified root <code class="inline">plugin.json</code>, and the installed cache</td>
+                    <td>Live-discovered skills, MCP, apps, hooks and interface metadata, within the Codex-supported field subset. <strong>D/S</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/plugins">plugins</a></td>
+                  </tr>
+                  <tr>
+                    <td>CLI-connected service / runtime</td>
+                    <td><code class="inline">codex cloud</code>, global <code class="inline">--remote</code>, experimental <code class="inline">codex remote-control</code></td>
+                    <td>Cloud task submission, listing and apply; app-server transport; local pairing and daemon state. <strong>No reusable repository schema.</strong> <strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Session</td>
+                    <td><code class="inline">-c key=value</code>, dedicated flags, <code class="inline">--profile</code>, <code class="inline">/goal</code></td>
+                    <td>The highest <em>ordinary</em> overlay, plus chat-scoped Goal mode — still constrained by management. <strong>D</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/cli/reference">CLI reference</a></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">"Highest ordinary" is doing real work in that last row.</span> Session flags sit at precedence 30 — above project, user and system — but <em>below</em> the two legacy managed layers at 40 and 50. A <code class="inline">-c</code> override is not the last word on a managed machine.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>What the installed package calls its own layers — S.</strong> The shipped binary names the config layers <code class="inline">thread</code>, <code class="inline">turn</code>, <code class="inline">system</code>, <code class="inline">project</code>, <code class="inline">mdm</code>, <code class="inline">session_flags</code>, <code class="inline">plugin</code>, <code class="inline">cloud_requirements</code>, <code class="inline">cloud_managed_config</code>, <code class="inline">legacy_managed_config_file</code> and <code class="inline">legacy_managed_config_mdm</code>, and describes <code class="inline">.codex</code> in its own words as <strong>"project-local config, hooks, and exec policies"</strong> — so a project <code class="inline">.codex/</code> folder is a real layer, not an extrapolation. It appears in the app-server layer vocabulary as <code class="inline">dotCodexFolder</code>. Layer path templates present in the package include <code class="inline">/etc/codex/config.toml</code>, <code class="inline">/etc/codex/requirements.toml</code>, <code class="inline">&lt;session-flags&gt;/config.toml</code>, <code class="inline">&lt;legacy-managed-config.toml-mdm&gt;/managed_config.toml</code>, <code class="inline">&lt;managed-requirements&gt;/requirements.toml</code> and <code class="inline">&lt;requirements-composition&gt;/requirements.toml</code>. The <code class="inline">--profile</code> flag's own help text reads "Layer <code class="inline">$CODEX_HOME/&lt;name&gt;.config.toml</code> on top of the base user config", confirming the profile row verbatim.</p>
+
+              <p><strong>The ten-literal item-type vocabulary the binary exposes</strong> — exactly <code class="inline">AGENTS_MD</code>, <code class="inline">CONFIG</code>, <code class="inline">SKILLS</code>, <code class="inline">PLUGINS</code>, <code class="inline">MCP_SERVER_CONFIG</code>, <code class="inline">SUBAGENTS</code>, <code class="inline">HOOKS</code>, <code class="inline">COMMANDS</code>, <code class="inline">MEMORY</code>, <code class="inline">SESSIONS</code> — is the app-server v2 protocol enum <code class="inline">ExternalAgentConfigMigrationItemType</code>: the item-type vocabulary of the <code class="inline">/import</code> external-agent migration flow, <em>not</em> a general capability-root taxonomy, and no loader consumes it. <strong>S.</strong> Within it, <code class="inline">COMMANDS</code> is the migration category for foreign <code class="inline">commands/*.md</code> files, which are imported into Codex <em>skills</em> directories — consistent with, and explaining, the absence of a native prompts/commands loader (see <a class="link-quiet" href="#prompts">prompts</a>).</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>One real <code class="inline">~/.codex</code>, observed read-only — O, snapshot 2026-08-13.</strong> Presence proves support; absence proves nothing, because Codex creates parts of its tree on demand. The second pass re-observed the tree and corrected three drifted rows — <code class="inline">rules/</code>, <code class="inline">archived_sessions/</code> and <code class="inline">packages/</code> are absent, <code class="inline">skills/</code> and <code class="inline">hooks/</code> are populated — and the top-level entry set has been unchanged since 2026-06-08 (directory mtime), so the stale rows were wrong at first publication, not recent deletions.</p>
+
+              <table>
+                <colgroup><col style="width:11rem" /><col /></colgroup>
+                <thead><tr><th>Observation</th><th>Entries</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Present</strong></td>
+                    <td><code class="inline">AGENTS.md</code><br /><code class="inline">config.toml</code><br /><code class="inline">goals_1.sqlite</code><br /><code class="inline">memories/</code> — <strong>empty</strong> — and <code class="inline">memories_1.sqlite</code><br /><code class="inline">skills/</code> — <strong>populated</strong>: nine visible skill directories plus the hidden <code class="inline">.system</code> bundled cache, despite the root's deprecated status (it is also the bundled-cache parent and a live install target, so emptiness was never a safe corollary of deprecation)<br /><code class="inline">plugins/</code> containing <code class="inline">cache/</code><br /><code class="inline">hooks/</code> containing <code class="inline">universal-security-guard.sh</code>, plus <code class="inline">hooks.json</code> (both mtime 2026-05-21 — present but unlisted in the first pass)<br /><code class="inline">sessions/</code>, <code class="inline">sqlite/</code> (<code class="inline">codex-dev.db</code>), <code class="inline">cache/</code>, <code class="inline">log/</code>, <code class="inline">tmp/</code>, <code class="inline">.tmp/</code>, <code class="inline">vendor_imports/</code>, <code class="inline">computer-use/</code><br /><code class="inline">state_5.sqlite</code> — top level, <em>not</em> inside <code class="inline">sqlite/</code> — and <code class="inline">logs_2.sqlite</code><br /><code class="inline">history.jsonl</code>, <code class="inline">session_index.jsonl</code><br /><code class="inline">auth.json</code>, <code class="inline">shell_snapshots/</code>, <code class="inline">version.json</code> (stale standalone-updater state), <code class="inline">installation_id</code>, <code class="inline">models_cache.json</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Also present</strong></td>
+                    <td><code class="inline">~/.agents/skills/</code> exists and is populated</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Not present</strong></td>
+                    <td><code class="inline">~/.codex/agents/</code><br /><code class="inline">~/.codex/prompts/</code><br /><code class="inline">~/.codex/AGENTS.override.md</code><br /><code class="inline">~/.codex/rules/</code> — so no <code class="inline">default.rules</code> either; the first pass listed both as present<br /><code class="inline">~/.codex/archived_sessions/</code> and <code class="inline">~/.codex/packages/</code> — also listed as present by the first pass<br />These are created on demand, so their absence is <em>not</em> evidence against the scope table — but none was confirmed by observation here.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="layers" data-term>
+            <p class="prompt">echo 'numeric config-layer precedence'</p>
+            <div class="body" data-term-out>
+              <p><strong>This section corrects the single most common wrong belief about Codex.</strong> The earlier reading — "managed defaults sit above ordinary values" — is true of <em>two of the four</em> managed layers and false of the other two. The pinned source assigns each layer an explicit <strong>numeric</strong> precedence, and it does not put all managed input on top. <strong>S</strong> · <code class="inline">config/src/config_layer_source.rs::precedence()</code></p>
+
+              <table>
+                <colgroup><col style="width:19rem" /><col style="width:7rem" /><col /></colgroup>
+                <thead>
+                  <tr><th>Layer</th><th>Precedence</th><th>Position</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code class="inline">LegacyManagedConfigTomlFromMdm</code></td><td><strong>50</strong></td><td>above everything, including <code class="inline">-c</code></td></tr>
+                  <tr><td><code class="inline">LegacyManagedConfigTomlFromFile</code></td><td><strong>40</strong></td><td>above everything, including <code class="inline">-c</code></td></tr>
+                  <tr><td><code class="inline">SessionFlags</code> — <code class="inline">-c</code> and flags</td><td><strong>30</strong></td><td>highest <em>ordinary</em> layer</td></tr>
+                  <tr><td><code class="inline">Project</code> — <code class="inline">.codex/config.toml</code></td><td><strong>25</strong></td><td>trust-gated and denylist-stripped</td></tr>
+                  <tr><td><code class="inline">User</code> + selected profile</td><td><strong>21</strong></td><td>the profile overlay</td></tr>
+                  <tr><td><code class="inline">User</code> — <code class="inline">$CODEX_HOME/config.toml</code></td><td><strong>20</strong></td><td>the base user config</td></tr>
+                  <tr><td><code class="inline">EnterpriseManaged</code> — cloud bundle</td><td><strong>15</strong></td><td><strong>below</strong> user</td></tr>
+                  <tr><td><code class="inline">System</code> — <code class="inline">/etc/codex/config.toml</code></td><td><strong>10</strong></td><td><strong>below</strong> user</td></tr>
+                  <tr><td><code class="inline">Mdm</code> — admin managed preferences</td><td><strong>0</strong></td><td><strong>lowest layer of all</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p>So <code class="inline">Mdm</code> and <code class="inline">System</code> are <em>defaults</em> that any user or project value overrides, <code class="inline">EnterpriseManaged</code> likewise, and only the two <strong>legacy</strong> <code class="inline">managed_config.toml</code> layers behave as an override ceiling — and they outrank even <code class="inline">-c</code>. Administrative <em>enforcement</em> is carried by the separate <code class="inline">requirements.toml</code> stack (system &rarr; cloud bundle &rarr; legacy reinterpretation &rarr; MDM), not by config precedence. The blanket claim should not be generalized. <strong>S</strong></p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["LegacyManagedConfigTomlFromMdm&lt;br/&gt;precedence 50"] --> B["LegacyManagedConfigTomlFromFile&lt;br/&gt;precedence 40"]
+    B --> C["SessionFlags: -c and flags&lt;br/&gt;precedence 30"]
+    C --> D["Project .codex/config.toml&lt;br/&gt;precedence 25"]
+    D --> E["User plus selected profile&lt;br/&gt;precedence 21"]
+    E --> F["User config.toml&lt;br/&gt;precedence 20"]
+    F --> G["EnterpriseManaged cloud bundle&lt;br/&gt;precedence 15"]
+    G --> H["System /etc/codex/config.toml&lt;br/&gt;precedence 10"]
+    H --> I["Mdm managed preferences&lt;br/&gt;precedence 0"]
+    R["requirements.toml stack&lt;br/&gt;system, cloud bundle, legacy, MDM"] -.->|constrains the RESULT| C
+    X["believing all managed input wins&lt;br/&gt;true for 40 and 50 only"]
+    I -.-> X
+
+    class A,B ceiling
+    class R ceiling
+    class X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+    classDef ceiling fill:#8a451622,stroke:#8a4516,stroke-width:2px
+</pre>
+
+              <p class="muted">Arrows read "overrides". The two shaded layers at the top are the only ones that outrank a session flag; the shaded box on the right is enforcement, which is a different mechanism from precedence.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The ordinary order in prose — D/S.</strong> High to low: flags and <code class="inline">-c</code> &rarr; project configs root&nbsp;&rarr;&nbsp;cwd (closest wins) &rarr; selected profile &rarr; user &rarr; system &rarr; built-ins. Requirements <em>constrain</em> the result rather than behaving as another ordinary replacement, and an untrusted project config is skipped entirely.</p>
+
+              <p><strong>Trust gating and the project denylist — S.</strong> Trust is keyed off the <code class="inline">[projects]</code> table (a <code class="inline">trust_level</code> field and a trusted-only predicate). Project layers are <em>additionally</em> stripped of a denylist before merging, whatever their trust state:</p>
+
+              <table>
+                <colgroup><col style="width:16rem" /><col /></colgroup>
+                <thead><tr><th>Stripped from project layers</th><th>Why</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">openai_base_url</code><br /><code class="inline">chatgpt_base_url</code><br /><code class="inline">apps_mcp_product_sku</code><br /><code class="inline">model_provider</code><br /><code class="inline">model_providers</code><br />the two experimental realtime base URLs</td>
+                    <td rowspan="2">The source states the rationale directly: <strong>"Project-local config comes from repository contents, so it should not get to choose where a user's credentials are sent or which local commands are run."</strong> This is the concrete form of the provider / auth / profile / notification / telemetry claim in the scope table.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">notify</code><br /><code class="inline">profile</code><br /><code class="inline">profiles</code><br /><code class="inline">otel</code><br /><code class="inline">features.respect_system_proxy</code></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p><strong>No private project layer — S.</strong> Codex has a project-scoped <code class="inline">.codex/config.toml</code> but <strong>no</strong> documented gitignored private-project filename: <code class="inline">config.local.toml</code> does not exist anywhere in the repository. Synthesizing one produces a dead file. <strong>D</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/config-file/config-reference">configuration reference</a></p>
+
+              <p><strong>What <code class="inline">config.toml</code> covers — D.</strong> Model and provider, approvals, sandbox, features, agents, MCP, tools, and UI/telemetry keys.</p>
+
+              <p><strong>The feature-flag system is a capability gate — S.</strong> <code class="inline">config.toml</code> has a top-level <code class="inline">[features]</code> table (schema property <code class="inline">features</code>: "Centralized feature flags (new). Prefer this over individual toggles."). Each feature carries a lifecycle stage — <code class="inline">UnderDevelopment</code>, <code class="inline">Experimental</code>, <code class="inline">Stable</code>, <code class="inline">Deprecated</code>, <code class="inline">Removed</code> — and <code class="inline">codex features list | enable | disable</code> inspects and writes the flags in <code class="inline">config.toml</code>, with the global <code class="inline">--enable</code>/<code class="inline">--disable</code> flags equivalent to <code class="inline">-c features.&lt;name&gt;=true|false</code>. Critically, the <strong>entire plugin system sits behind <code class="inline">features.plugins</code></strong> (stage stable, <code class="inline">default_enabled: true</code>) — the plugin manager early-returns when the flag is off — so a configuration browser reporting plugins must respect that gate, exactly as this page already does for memories, goals and hooks. <strong>S</strong> · <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/features/src/lib.rs">pinned feature registry</a> · <code class="inline">core-plugins/src/manager.rs</code>; verified on the installed binary via <code class="inline">codex features --help</code> and <code class="inline">codex --help</code></p>
+
+              <p class="eli5"><span class="eli5-term">Drift note — main at 6851fae, post-0.147.0, unreleased.</span> A new <code class="inline">ConfigLayerSource::PackagedDefaults</code> layer sits at precedence <strong>&minus;10</strong>, <em>below</em> <code class="inline">Mdm</code> — so "<code class="inline">Mdm</code> is the lowest layer of all" holds for the 0.147.0 row only — and the project denylist gains <code class="inline">responses_api_metadata</code>. Marketplace manifest paths, the eleven hook events, the memories/goals feature defaults, the <code class="inline">[[skills.config]]</code> entry shape and the AGENTS.md resolver header are unchanged on main; the <code class="inline">skills.config</code> rules machinery moved from <code class="inline">core-skills/src/config_rules.rs</code> into <code class="inline">config/src/skills_config.rs</code> with the entry shape intact. <strong>S</strong> · <code class="inline">main@6851fae config/src/config_layer_source.rs</code>, <code class="inline">config/src/loader/mod.rs</code></p>
+            </div>
+          </section>
+
+          <section class="doc" id="instructions" data-term>
+            <p class="prompt">find . -maxdepth 3 -name 'AGENTS*.md'</p>
+            <div class="body" data-term-out>
+              <p><strong>The direction of travel is the single most-misunderstood part of Codex.</strong> Codex searches <em>upward</em> to locate the project root, and then orders the instructions it found <strong>downward, root&nbsp;&rarr;&nbsp;cwd</strong>. Closest content appears <em>later</em>. The project root is a <strong>hard ceiling</strong>, not a starting point. A "walk up from cwd, nearest wins" reading produces exactly the reverse order. <strong>D/S</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">AGENTS.md guide</a> · <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core/src/agents_md.rs">tagged loader</a></p>
+
+              <p><strong>Verified two ways — S.</strong> The instruction resolver's own module header states the algorithm in three numbered steps: determine the project root by walking upwards from cwd until a <code class="inline">project_root_markers</code> entry is found; collect every <code class="inline">AGENTS.md</code> from the project root <strong>down to cwd (inclusive)</strong>; and "we do <strong>not</strong> walk past the project root". The implementation builds the directory list cwd-upward, breaks on <code class="inline">cursor == root</code>, then calls <code class="inline">dirs.reverse()</code> — upward search, downward order. Independently, the config loader carries the assertion message <strong>"project layers are not ordered from root to cwd"</strong>, a literal recoverable from the installed binary, confirming the same invariant for the config stack.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["session starts in cwd"] --> B["GLOBAL slot: $CODEX_HOME/AGENTS.override.md&lt;br/&gt;else $CODEX_HOME/AGENTS.md"]
+    A --> C["walk UP from cwd for a project_root_markers hit&lt;br/&gt;default marker is .git"]
+    C --> D{"marker found?"}
+    D -- no --> E["root = cwd only"]
+    D -- yes --> F["root = that directory"]
+    E --> G["dirs.reverse: emit root to cwd&lt;br/&gt;closest content appears LAST"]
+    F --> G
+    G --> H["hard ceiling: never above the project root"]
+    B --> I["one global prefix&lt;br/&gt;no fallback filenames, no byte budget"]
+    H --> J["project chain&lt;br/&gt;shared 32 KiB budget"]
+    I --> K["initial context"]
+    J --> K
+    X["reading it as cwd-upward nearest-wins&lt;br/&gt;gives exactly the reverse order"]
+    G -.-> X
+
+    class X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The global slot is a separate mechanism — D/S, confirmed at source strength.</strong> Global instruction lookup is exactly <code class="inline">$CODEX_HOME/AGENTS.override.md</code>, then <code class="inline">$CODEX_HOME/AGENTS.md</code>. It is a two-element loop over <code class="inline">[LOCAL_AGENTS_MD_FILENAME, DEFAULT_AGENTS_MD_FILENAME]</code> joined to <code class="inline">codex_home</code>, living in <code class="inline">codex-home/src/instructions/mod.rs</code> — a crate that <strong>re-declares its own private constants and never reads <code class="inline">Config</code></strong>. That is <em>why</em> two things are true and not merely asserted:</p>
+              <ul class="plain">
+                <li><code class="inline">project_doc_fallback_filenames</code> <strong>cannot reach it</strong> — configurable fallback filenames are project-only.</li>
+                <li><strong>No byte budget applies there.</strong> The file is read whole and trimmed; the module contains no <code class="inline">max_bytes</code> and no <code class="inline">truncate</code>.</li>
+              </ul>
+              <p>A distinct error string, <strong>"Failed to read global AGENTS.md instructions from"</strong>, confirms the global read is a separate operation from the project walk. <code class="inline">~/.codex/AGENTS.md</code> is therefore a <em>global prefix</em>, not an ancestor that a project override can replace. <strong>S</strong></p>
+
+              <p><strong>Per-directory selection, and what <code class="inline">AGENTS.override.md</code> actually overrides — D/S.</strong> At each directory in the chain, Codex selects <strong>at most one</strong> non-empty file. The project constants are <code class="inline">DEFAULT_AGENTS_MD_FILENAME = "AGENTS.md"</code> and <code class="inline">LOCAL_AGENTS_MD_FILENAME = "AGENTS.override.md"</code>, and <code class="inline">project_doc_fallback_filenames</code> <strong>defaults to an empty list</strong> — so out of the box there is no third filename at all.</p>
+
+              <pre class="mermaid">
+flowchart LR
+    A["one directory in the chain"] --> B{"AGENTS.override.md&lt;br/&gt;present and non-empty?"}
+    B -- yes --> C["take it&lt;br/&gt;THIS directory only"]
+    B -- no --> D{"AGENTS.md?"}
+    D -- yes --> E["take it"]
+    D -- no --> F{"configured fallback filename?&lt;br/&gt;default list is EMPTY"}
+    F -- yes --> G["take the first match"]
+    F -- no --> H["this directory contributes nothing"]
+    C --> I["append to the chain&lt;br/&gt;until the shared budget runs out"]
+    E --> I
+    G --> I
+    X["believing an override silences the whole chain&lt;br/&gt;it cannot suppress another level"]
+    C -.-> X
+
+    class X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>Override locality is structural, not a rule — S.</strong> Each directory is probed in its own async closure, so the <code class="inline">return</code> on the first hit exits <em>that directory only</em> and cannot suppress another. An <code class="inline">AGENTS.override.md</code> at the repository root replaces the root's own <code class="inline">AGENTS.md</code> and nothing else; a nested directory's files are unaffected.</p>
+
+              <p><strong>The budget — D/S.</strong> Selected <em>project</em> files concatenate into initial context up to <code class="inline">project_doc_max_bytes</code>, whose default is the literal <code class="inline">DEFAULT_PROJECT_DOC_MAX_BYTES = 32 * 1024</code> (32&nbsp;KiB). The budget is <strong>shared across the whole ordered list</strong> — a <code class="inline">remaining</code> counter — and truncation emits "project doc exceeds remaining budget; truncating", a literal also present in the installed binary. That budget does <strong>not</strong> cap the separate global prefix. The installed package independently carries the first-party sentence "respecting normal project-document precedence (<code class="inline">AGENTS.override.md</code>, <code class="inline">AGENTS.md</code>, then configured fallback filenames)".</p>
+
+              <p class="eli5"><span class="eli5-term">A shared budget means order decides who gets truncated.</span> Because the chain is emitted root&nbsp;&rarr;&nbsp;cwd and the counter drains as it goes, it is the <em>closest</em> file — the one a reader most expects to be authoritative — that is truncated first when 32&nbsp;KiB runs out.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Where the ceiling comes from — D/S.</strong> Project-root detection defaults to <code class="inline">.git</code>. Non-project config can set <code class="inline">project_root_markers</code> (for example <code class="inline">.hg</code> or <code class="inline">.sl</code>), and an <strong>empty list disables the parent search entirely</strong>, making cwd the root. If no marker is found, only cwd is checked. Descendants below cwd are not eagerly read.</p>
+
+              <p><strong>A project cannot widen its own ceiling — S.</strong> The self-reference guard is explicit rather than incidental: both the instruction resolver <em>and</em> the skills-root resolver <code class="inline">continue</code> past <code class="inline">ConfigLayerSource::Project</code> layers before reading <code class="inline">project_root_markers</code>. A project <code class="inline">.codex/config.toml</code> therefore cannot redefine the ceiling used to discover it.</p>
+
+              <p><strong>Three config channels bypass <code class="inline">AGENTS.md</code> entirely — S.</strong> <code class="inline">config.toml</code> carries <code class="inline">instructions</code> ("System instructions." — the last fallback for base instructions), <code class="inline">developer_instructions</code> ("inserted as a <code class="inline">developer</code> role message"), and <code class="inline">model_instructions_file</code> — an absolute path whose file contents override the built-in model instructions, which the schema marks <strong>STRONGLY DISCOURAGED</strong>. Resolution order for base instructions: per-invocation override &rarr; <code class="inline">model_instructions_file</code> contents &rarr; <code class="inline">instructions</code>. <strong>S</strong> · <code class="inline">core/src/config/mod.rs</code>, <code class="inline">core/config.schema.json</code></p>
+
+              <p class="eli5"><span class="eli5-term">Unknown — U-14, and it is the one ordering question Codex leaves open.</span> Relative precedence <em>within</em> the project group. The installed binary's assertion implies project layers are ordered root&nbsp;&rarr;&nbsp;cwd low&nbsp;&rarr;&nbsp;high, so the <strong>closest wins</strong> — but the loader's own ascending doc comment lists cwd <code class="inline">config.toml</code> &rarr; tree-parent <code class="inline">.codex/config.toml</code> &rarr; repo-root <code class="inline">.codex/config.toml</code>, which reads the other way. The two were <em>not</em> reconciled. "Closest wins" is retained on the strength of the assertion, but <strong>repo-root-versus-intermediate conflicts remain unresolved</strong>. Do not render a winner for those.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="skills" data-term>
+            <p class="prompt">find .agents/skills .codex/skills -name SKILL.md</p>
+            <div class="body" data-term-out>
+              <p><strong>What it is — D/S.</strong> A skill is a <em>directory</em> package containing <code class="inline">SKILL.md</code>, with required <code class="inline">name</code> and <code class="inline">description</code>. It is discovered by metadata and the body loads only on explicit <code class="inline">$name</code> invocation or model selection. The shape is source-confirmed: <code class="inline">SKILL_FILE_NAME = "SKILL.md"</code>, the parser <strong>rejects a missing <code class="inline">description</code> outright</strong> (<code class="inline">SkillParseError::MissingField("description")</code>), and it length-validates <code class="inline">name</code>. Duplicate names remain separately identifiable. <a class="link-quiet" href="https://learn.chatgpt.com/docs/build-skills">skills</a> · <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/ext/skills/src/host_roots.rs">tagged roots</a></p>
+
+              <p><strong>Every root, and which layer contributes it — S.</strong> The public documentation names project <code class="inline">.agents/skills</code>, user <code class="inline">~/.agents/skills</code> and admin <code class="inline">/etc/codex/skills</code>, with "System" denoting Codex-bundled skills. Exact 0.147.0 source <em>also</em> loads project <code class="inline">.codex/skills</code>, the deprecated <code class="inline">$CODEX_HOME/skills</code>, plugin roots and bundled roots. Results are de-duplicated <strong>by path</strong>.</p>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col style="width:9rem" /><col /></colgroup>
+                <thead><tr><th>Root</th><th>Layer / scope</th><th>Note</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><code class="inline">.agents/skills</code></td>
+                    <td>Project</td>
+                    <td><strong>Joined to every directory between the project root and cwd</strong> — it is not a project-root-only root. Intermediate directories contribute skills exactly the way they contribute instructions. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">.codex/skills</code></td>
+                    <td>Project &rarr; scope <code class="inline">Repo</code></td>
+                    <td>The <code class="inline">Project</code> layer's own config folder. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">~/.agents/skills</code></td>
+                    <td>User</td>
+                    <td>Documented user root; observed present and populated on this machine. <strong>D/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">$CODEX_HOME/skills</code></td>
+                    <td>User &rarr; scope <code class="inline">User</code></td>
+                    <td><strong>Deprecated.</strong> Carries the source comment "Deprecated user skills location … kept for backward compatibility". Re-observed 2026-08-13: <strong>populated</strong> on this machine — nine visible skill directories plus the hidden <code class="inline">.system</code> bundled cache, with mtimes predating the first pass, so the earlier "observed empty" was wrong, not drift. The root is also the bundled-cache parent and a live install target, so emptiness was never a safe corollary of deprecation; the deprecated status rests on the source comment alone. <strong>S/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td><code class="inline">/etc/codex/skills</code></td>
+                    <td>System &rarr; scope <code class="inline">Admin</code></td>
+                    <td>The <code class="inline">System</code> layer's config folder. <strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>bundled system cache</td>
+                    <td>User &rarr; scope <code class="inline">System</code></td>
+                    <td>Codex-bundled skills at <code class="inline">$CODEX_HOME/skills/.system</code>: the binary installs embedded system skills there — clearing and rewriting the directory, with a marker-file fingerprint to skip redundant installs — and <code class="inline">host_roots</code> contributes it via the User layer's config folder with <code class="inline">SkillScope::System</code>. Observed on disk at <code class="inline">~/.codex/skills/.system</code>. <strong>S/O</strong> · <code class="inline">skills/src/lib.rs</code></td>
+                  </tr>
+                  <tr>
+                    <td>plugin roots</td>
+                    <td>Plugin</td>
+                    <td>Loaded with an enabled plugin. <strong>D/S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Layers without a config folder contribute nothing.</span> Per-layer skill roots come from each config layer's own config folder, so <code class="inline">Mdm</code>, <code class="inline">EnterpriseManaged</code>, <code class="inline">SessionFlags</code> and <strong>both</strong> legacy managed layers expose no config folder and therefore contribute <strong>no</strong> skills — even though two of them outrank everything for <em>configuration</em>. Precedence and discovery are different mechanisms here. <strong>S</strong></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong><code class="inline">[[skills.config]]</code> — re-corrected (2026-08-13).</strong> The first pass replaced "disable a path without deleting it" with a display-name override that does not exist. At source, <code class="inline">SkillConfig</code> has exactly three fields — <code class="inline">path</code>, <code class="inline">name</code> and a required <code class="inline">enabled</code> — with <code class="inline">deny_unknown_fields</code>. Each entry selects a skill by path <strong>or</strong> name (exactly one selector; the loader warns and ignores entries with neither or with both) and sets <code class="inline">enabled</code> — the entry's only effect. Later rules override earlier rules for every skill path they select, and a disabled entry adds the path to a disabled set without deleting anything; the docs' own purpose statement is "disable a skill without deleting it", so the <em>original</em> claim was correct. Display names come from the separate <code class="inline">agents/openai.yaml</code> interface metadata, not from here. The third warning, <em>"ignoring empty skills.config name override"</em>, refers to an empty <em>name selector</em> — the string the display-name misreading came from; all three warnings are present in the installed binary. <strong>D/S</strong> · <code class="inline">config/src/skills_config.rs</code>, <code class="inline">core-skills/src/config_rules.rs</code>, <code class="inline">skills/src/policy.rs</code></p>
+
+              <p><strong>The other two <code class="inline">[skills]</code> controls — S.</strong> Beside <code class="inline">[[skills.config]]</code>: <code class="inline">skills.bundled.enabled</code> (default <code class="inline">true</code>; <code class="inline">false</code> removes the bundled system-skills cache root from discovery and skips installing the bundled skills — <code class="inline">/etc/codex/skills</code> and all other roots are unaffected) and <code class="inline">skills.include_instructions</code> (default <code class="inline">true</code>; "Whether turns receive the automatic skills instructions block"). <strong>S</strong> · <code class="inline">config/src/skills_config.rs</code>, <code class="inline">ext/skills/src/host_service.rs</code></p>
+
+              <p><strong><code class="inline">agents/openai.yaml</code> — re-corrected (2026-08-13): fail-open, but not presentation-only.</strong> The file is real — <code class="inline">SKILL_METADATA_PATH = "agents/openai.yaml"</code>, the literal beside the plugin-manifest constants in the installed binary — and the loader is explicitly <strong>fail-open</strong>, carrying the comment <em>"optional metadata should not block loading SKILL.md"</em>: absence never blocks a skill. But the first pass overcorrected when it called the file presentation-only. It deserializes <strong>three</strong> blocks: <code class="inline">interface</code> (<code class="inline">display_name</code>, <code class="inline">short_description</code>, <code class="inline">icon_small</code>, <code class="inline">icon_large</code>, <code class="inline">brand_color</code>, <code class="inline">default_prompt</code> — the quoted "Interface metadata deserialized from…" doc comment sits on this block <em>only</em>), <code class="inline">dependencies.tools</code> (MCP tool dependencies: type, value, description, transport, url), and <code class="inline">policy</code>. <code class="inline">policy.allow_implicit_invocation</code> defaults <code class="inline">true</code>; when <code class="inline">false</code> the catalog entry is marked <code class="inline">hidden_from_prompt</code>, so the skill is not injected into the model context while explicit <code class="inline">$skill</code> invocation still works — the docs state the same. <code class="inline">policy.products</code> is parsed and stored; a source TODO notes product gating is not yet enforced in Codex's own skill selection and injection. <strong>Surface <code class="inline">allow_implicit_invocation</code> as an implicit-invocation control — it is still not an enablement control (<code class="inline">[[skills.config]]</code> is).</strong> <strong>D/S</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/build-skills">skills docs</a> · <code class="inline">ext/skills/src/loader/metadata.rs</code>, <code class="inline">ext/skills/src/provider/host.rs</code>, <code class="inline">skills/src/model.rs</code></p>
+
+              <p><strong>The catalog budget — resolved 2026-08-13, U &rarr; D/S.</strong> The initial skill catalog is budgeted to <strong>2% of the context window</strong> in approximate tokens (<code class="inline">SKILL_METADATA_CONTEXT_WINDOW_PERCENT = 2</code>), falling back to <strong>8,000 characters</strong> when the context size is unknown (<code class="inline">DEFAULT_SKILL_METADATA_CHAR_BUDGET = 8_000</code>); descriptions are capped at 1,024 characters, and an over-budget catalog shortens descriptions with the warning "Skill descriptions were shortened to fit the skills context budget…" or drops them with "Exceeded skills context budget. All skill descriptions were removed and…" — both strings present in the installed 0.147.0 binary. A selected full <code class="inline">SKILL.md</code> still loads. The first pass could not locate either figure; both are literals in <code class="inline">ext/skills/src/render.rs</code>. <strong>D/S</strong></p>
+            </div>
+          </section>
+
+          <section class="doc" id="agents" data-term>
+            <p class="prompt">ls .codex/agents/**/*.toml ~/.codex/agents/**/*.toml</p>
+            <div class="body" data-term-out>
+              <p><strong>What it is — D/S.</strong> A Codex <em>agent role</em> is a TOML subagent declaration. Config-folder <code class="inline">agents/**/*.toml</code> is scanned <strong>recursively</strong> at user, project and system scope, and inline <code class="inline">[agents]</code> tables in <code class="inline">config.toml</code> declare the same thing. <strong>Do not confuse this with instruction-only <code class="inline">AGENTS.md</code></strong> — they share a word and nothing else. <a class="link-quiet" href="https://learn.chatgpt.com/docs/agent-configuration/subagents">subagents</a> · <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core/src/config/agent_roles.rs">pinned agent-role loader</a></p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Aspect</th><th>Behavior</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Participating layers</td>
+                    <td>Not "any layer". Agent roles are read only from layers that expose a config folder — exactly <strong>System</strong> (<code class="inline">/etc/codex</code>), <strong>User</strong> (<code class="inline">$CODEX_HOME</code>) and <strong>Project</strong> (the <code class="inline">.codex</code> folder). <code class="inline">Mdm</code>, <code class="inline">EnterpriseManaged</code>, <code class="inline">SessionFlags</code> and both legacy managed layers contribute <strong>none</strong></td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>In-layer order</td>
+                    <td>Inline <code class="inline">[agents]</code> TOML is processed <strong>before</strong> the <code class="inline">agents/</code> directory scan, so an inline declaration <strong>wins</strong> a same-name collision against a file. The second definition is dropped with the warning "duplicate agent role name … declared in the same config layer"</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Directory scan</td>
+                    <td>A worklist over all subdirectories collecting <code class="inline">*.toml</code>, with the file list <strong>sorted</strong> — hence <code class="inline">agents/**/*.toml</code> and a deterministic <strong>lexicographic tie-break</strong>: recursive discovery keeps the lexicographically first same-name file</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Cross-layer merge</td>
+                    <td>Layers are iterated low&nbsp;&rarr;&nbsp;high and a higher same-name role wins — but it does <strong>not wholly replace</strong> the lower one. The merge copies <em>missing fields down</em> from the existing definition before inserting, so a high-precedence role <strong>inherits any field it does not set</strong>. Merging is per-field</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Identity</td>
+                    <td>The <strong>effective <code class="inline">name</code></strong>, not the filename, is identity</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Fields</td>
+                    <td>A purely discovered standalone file normally provides <code class="inline">name</code>, <code class="inline">developer_instructions</code> and an effective <code class="inline">description</code>; a higher-precedence same-name definition may inherit omitted metadata from a lower layer. A file referenced by <code class="inline">[agents.&lt;name&gt;].config_file</code> can instead use the declaration's name and description and omit those file fields. Normal config — model and reasoning, sandbox and approval, skills, MCP access — may follow</td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Built-in override</td>
+                    <td>A custom <code class="inline">default</code>, <code class="inline">worker</code> or <code class="inline">explorer</code> overrides the corresponding built-in</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Delegation boundary</td>
+                    <td>Delegation gets a <strong>separate context</strong> and returns a result, but the child <strong>reapplies the parent turn's live sandbox and approval overrides</strong>: it cannot use file defaults to broaden current authority, and a noninteractive approval that cannot surface fails back to the parent</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Three different duplicate rules, in one capability.</span> Inline beats file <em>within</em> a layer; lexicographically first wins <em>within</em> a recursive scan; higher layer wins <em>across</em> layers but inherits unset fields from below. A tool that models "agents" with one duplicate rule will be wrong two ways out of three.</p>
+
+              <p><strong>Unknown — U-08.</strong> The custom-agent merging and traversal described here is <em>source-defined at 0.147.0</em>. Its long-term <strong>public guarantee</strong> is not documented with the precision that the AGENTS and config precedence rules are. The behavior is pinned; the contract is not.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="prompts" data-term>
+            <p class="prompt">codex prompts --help&nbsp;&nbsp;&nbsp;# no such subcommand</p>
+            <div class="body" data-term-out>
+              <p><strong>Downgraded to D/U — could not be corroborated in 0.147.0.</strong> Documentation describes <code class="inline">$CODEX_HOME/prompts/*.md</code> as deprecated, user-only <code class="inline">/prompts:&lt;name&gt;</code> templates with an optional <code class="inline">description</code>, an <code class="inline">argument-hint</code> and placeholders, and states that <strong>skills replace this use case</strong>. No project prompt directory is documented. <strong>The "deprecated but still present" half is unverified at this version.</strong> <a class="link-quiet" href="https://learn.chatgpt.com/docs/custom-prompts">custom prompts</a></p>
+
+              <p><strong>Four independent checks came back negative:</strong></p>
+              <table>
+                <colgroup><col style="width:5rem" /><col /><col /></colgroup>
+                <thead><tr><th>#</th><th>Check</th><th>Result</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>The pinned source tree</td><td>No custom-prompts module</td></tr>
+                  <tr><td>2</td><td><code class="inline">codex-rs/core/config.schema.json</code></td><td>Exposes <strong>93</strong> top-level properties, and none of them is <code class="inline">prompts</code></td></tr>
+                  <tr><td>3</td><td>The installed 0.147.0 CLI surface</td><td>No <code class="inline">prompts</code> subcommand</td></tr>
+                  <tr><td>4</td><td>Repo-wide search for the <code class="inline">$CODEX_HOME/prompts</code> path</td><td>Found nothing</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Two near-misses that look like evidence and are not — S.</strong> The <code class="inline">prompts/list</code> and <code class="inline">prompts/get</code> strings recoverable from the binary are <strong>MCP protocol method names</strong>, not a filesystem feature. <code class="inline">CustomPromptView</code> in the TUI is an unrelated review-instruction input.</p>
+
+              <p class="eli5"><span class="eli5-term">Unverified is not disproven.</span> All four checks now hold at the pin (re-run 2026-08-13): grep for <code class="inline">join("prompts")</code>, <code class="inline">prompts_dir</code> and <code class="inline">PROMPTS_DIR</code> over the pinned <code class="inline">codex-rs</code> Rust sources returns zero hits, as does a tree-wide search for <code class="inline">.codex/prompts</code> and <code class="inline">CODEX_HOME/prompts</code> — and the pinned <code class="inline">codex-rs/prompts</code> crate is an internal prompt-template library (apply_patch, compact, goals, permissions_instructions, realtime, review), not a user prompts loader. The docs claim stays uncorroborated, so it remains <strong>D/U — unverified rather than refuted</strong>. Treat <code class="inline">$CODEX_HOME/prompts/*.md</code> as a documentation-only claim until a loader is located, and do not scan for it as a live capability root without confirming on the target version. <strong>Scanning it is harmless; reporting it as a live capability is not.</strong></p>
+
+              <p><strong>The nearest live mechanism is command migration — S.</strong> Eligible <em>other</em> agents' <code class="inline">commands/*.md</code> files are imported into Codex <strong>skills</strong> under a <code class="inline">source-command</code> prefix. That is a conversion at install or import time, not live command-file execution. <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/command_migration/plugin.rs">pinned command migration</a></p>
+            </div>
+          </section>
+
+          <section class="doc" id="hooks" data-term>
+            <p class="prompt">cat .codex/hooks.json .codex/config.toml</p>
+            <div class="body" data-term-out>
+              <p><strong>Two representations, and both load — D/S.</strong> JSON hooks live in a <code class="inline">hooks.json</code> <em>adjacent to a loaded config</em>; inline definitions are TOML <code class="inline">[hooks]</code> tables. If a single layer carries both, the loader pushes the warning <em>"loading hooks from both … prefer a single representation for this layer"</em> and then iterates <strong>both</strong> — neither suppresses the other. Matching files append and matching command handlers launch <strong>concurrently</strong>. <a class="link-quiet" href="https://learn.chatgpt.com/docs/hooks">hooks</a></p>
+
+              <p><strong>The event set, exactly as the installed binary exposes it — S.</strong> Eleven events, with no extras: <code class="inline">PreToolUse</code>, <code class="inline">PermissionRequest</code>, <code class="inline">PostToolUse</code>, <code class="inline">PreCompact</code>, <code class="inline">PostCompact</code>, <code class="inline">SessionStart</code>, <code class="inline">SessionEnd</code>, <code class="inline">UserPromptSubmit</code>, <code class="inline">SubagentStart</code>, <code class="inline">SubagentStop</code>, <code class="inline">Stop</code>.</p>
+
+              <p><strong>Only <code class="inline">command</code> handlers execute at 0.147.0 — D/S.</strong> Parsed future or async handler shapes are <em>not</em> proof that another handler kind runs.</p>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Control</th><th>Effect</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">[features].hooks = false</code></td><td>Hooks default <strong>on</strong>; this disables them — unless requirements pin otherwise</td><td><strong>D</strong></td></tr>
+                  <tr><td>Hash trust gate</td><td>Non-managed <em>command</em> hooks are hash-trust-gated; <code class="inline">/hooks</code> reviews and disables them</td><td><strong>D</strong></td></tr>
+                  <tr><td><code class="inline">--dangerously-bypass-hook-trust</code></td><td><strong>One run only</strong></td><td><strong>D</strong></td></tr>
+                  <tr><td><code class="inline">allow_managed_hooks_only = true</code></td><td>Drops user, project, session and plugin hooks</td><td><strong>D</strong></td></tr>
+                  <tr><td>Managed hooks</td><td>Trusted and <strong>non-disableable</strong> — and declared in the <em>requirements stack</em>, not in any <code class="inline">hooks.json</code>/<code class="inline">[hooks]</code> of the ordinary config layers: the requirements-level <code class="inline">hooks</code> key (<code class="inline">ManagedHooksRequirementsToml</code>) carries inline hook-event tables plus <code class="inline">managed_dir</code> / <code class="inline">windows_managed_dir</code> — the platform-specific directory the inline hook commands' <em>scripts</em> live in (enterprise tooling installs the scripts; Codex does not read hook definitions from that directory) and the source path the handlers are attributed to. Hook events append across requirements layers; conflicting active-platform <code class="inline">managed_dir</code> values fail closed</td><td><strong>D/S</strong> · <code class="inline">config/src/config_requirements.rs</code>, <code class="inline">hooks/src/engine/discovery.rs</code></td></tr>
+                  <tr><td>Plugin hook environment</td><td>Plugin-supplied hooks receive <code class="inline">PLUGIN_ROOT</code> and <code class="inline">PLUGIN_DATA</code>, plus Claude-compatible <code class="inline">CLAUDE_PLUGIN_ROOT</code> and <code class="inline">CLAUDE_PLUGIN_DATA</code></td><td><strong>S</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p><strong><code class="inline">notify</code> is a hook-adjacent executable — S.</strong> A top-level <code class="inline">config.toml</code> key: an argv array ("Optional external command to spawn for end-user notifications") that Codex spawns on agent-turn-complete with a JSON payload appended as the final argument — internally wired as the <code class="inline">legacy_notify</code> hook — which is exactly why project layers are stripped of it by the denylist. <strong>S</strong> · <code class="inline">core/config.schema.json</code>, <code class="inline">hooks/src/legacy_notify.rs</code></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>The linked-worktree redirect is deliberate, not an artifact — S.</strong> In a linked Git worktree, project config layers come from that worktree — but the corresponding project <code class="inline">hooks.json</code> paths are <strong>redirected to matching <code class="inline">.codex/</code> folders in the main checkout</strong>. Main-checkout hooks can therefore load even if the linked worktree has no <code class="inline">config.toml</code> at all.</p>
+
+              <p>Hook discovery calls a dedicated <code class="inline">hooks_config_folder()</code> rather than the ordinary <code class="inline">config_folder()</code>, documented in source as: <em>"Project layers normally use their own config folder. Linked Git worktrees can instead point hook discovery at the matching folder from the root checkout while the rest of the project config still comes from the worktree."</em> The override computes the checkout root and the repo root, returns <code class="inline">None</code> when they are equal — the ordinary case — and otherwise re-roots the directory's relative path under the main checkout plus <code class="inline">.codex</code>.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["project config layer&lt;br/&gt;inside a linked Git worktree"] --> B["config, skills and rules&lt;br/&gt;come from the WORKTREE"]
+    A --> C["hook discovery calls hooks_config_folder"]
+    C --> D{"checkout root equals repo root?"}
+    D -- yes --> E["ordinary checkout&lt;br/&gt;returns None, use the layer's own folder"]
+    D -- no --> F["re-root the relative path&lt;br/&gt;under MAIN checkout plus .codex"]
+    F --> G["main-checkout hooks load&lt;br/&gt;even with no config.toml in the worktree"]
+    X["assuming hooks follow the worktree&lt;br/&gt;misses hooks that actually run"]
+    F -.-> X
+
+    class X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p class="eli5"><span class="eli5-term">Two different roots at once.</span> Inside a linked worktree, a scanner reading "the project layer" gets configuration from one directory tree and hooks from another. Reporting a single project path for both is wrong, and the hooks half is the one that executes commands.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="mcp" data-term>
+            <p class="prompt">codex mcp list</p>
+            <div class="body" data-term-out>
+              <p><strong>User and project MCP config is TOML, not JSON — D/S, confirmed at source strength.</strong> Servers are <code class="inline">[mcp_servers.&lt;id&gt;]</code> tables with either stdio or streamable-HTTP fields. Codex has <strong>no</strong> live reader for a repository-root or user <code class="inline">.mcp.json</code>, <code class="inline">.github/mcp.json</code>, <code class="inline">.vscode/mcp.json</code> or <code class="inline">mcp_config.json</code> — a root <code class="inline">.mcp.json</code> is import-only. Inside an <em>enabled plugin root</em>, however, <code class="inline">.mcp.json</code> IS live-read (corrected 2026-08-13): it is the default MCP-declarations file when the plugin manifest names none — <code class="inline">DEFAULT_MCP_CONFIG_FILE = ".mcp.json"</code>, "the conventional <code class="inline">.mcp.json</code> fallback" — and first-party plugin docs present it as how a plugin distributes an MCP server. A scanner walking plugin directories must treat plugin-root <code class="inline">.mcp.json</code> as live. <strong>S</strong> · <code class="inline">core-plugins/src/loader.rs</code> · <a class="link-quiet" href="https://developers.openai.com/plugins/build/plugins">plugin developer docs</a> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/extend/mcp">MCP</a> · <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/config/src/merge.rs">pinned config merge</a></p>
+
+              <p><strong>Same-ID merge is per key, and the asymmetry matters — S.</strong> Same-ID tables recursively <strong>deep-merge low&nbsp;&rarr;&nbsp;high</strong>. The merge function is documented as <em>"Merge config <code class="inline">overlay</code> into <code class="inline">base</code>, giving <code class="inline">overlay</code> precedence"</em> and recurses per key, inserting only when the base lacks the key. The consequence:</p>
+              <ul class="plain">
+                <li><strong>Tables</strong> merge key by key — an omitted field <em>inherits</em> from the lower layer.</li>
+                <li><strong>Arrays and scalars</strong> — every non-table leaf — are <strong>replaced wholesale</strong> by the higher layer.</li>
+              </ul>
+              <p>So adding one element to an <code class="inline">args</code> array at project scope does not extend the user's array; it replaces it.</p>
+
+              <p><strong>The management surface — S/O, verified on the installed build.</strong> <code class="inline">codex mcp add | get | list | remove | login | logout</code> manages <em>the user entry</em> and the authentication lifecycle in <code class="inline">$CODEX_HOME/config.toml</code>. <code class="inline">codex mcp --help</code> lists exactly those six subcommands, and <code class="inline">codex mcp add --help</code> exposes only <code class="inline">--env</code>, <code class="inline">--url</code>, <code class="inline">--bearer-token-env-var</code>, <code class="inline">--oauth-client-id</code>, <code class="inline">--oauth-resource</code> and the global <code class="inline">-c</code> / <code class="inline">--enable</code> / <code class="inline">--disable</code>.</p>
+
+              <p class="eli5"><span class="eli5-term">The management command has no scope flag.</span> <code class="inline">codex mcp add</code> writes the user config and only the user config. Project config can be authored separately by hand, but the CLI will not put a server there. And the <code class="inline">scopes</code> identifiers visible in the source are <strong>OAuth scopes, not config scopes</strong> — a plausible misreading worth flagging explicitly.</p>
+
+              <p><strong>Credentials — D/S.</strong> An inline <code class="inline">bearer_token</code> is <strong>rejected</strong> in favour of <code class="inline">bearer_token_env_var</code>.</p>
+
+              <p><strong>Credential storage is itself configurable — S.</strong> MCP OAuth credentials are stored per <code class="inline">mcp_oauth_credentials_store</code> (<code class="inline">keyring</code> | <code class="inline">file</code> | <code class="inline">auto</code>; default <code class="inline">auto</code> — the OS keyring if available, else a file in the Codex home), with <code class="inline">mcp_oauth_callback_port</code> / <code class="inline">mcp_oauth_callback_url</code> tuning the local OAuth callback listener. CLI auth credentials follow <code class="inline">cli_auth_credentials_store</code> (default <code class="inline">file</code> — a file in the Codex home, observed as <code class="inline">auth.json</code> | <code class="inline">keyring</code> | <code class="inline">auto</code>). Relevant to any tool that must avoid touching secret stores; all four key names are literal in the installed 0.147.0 binary. <strong>S</strong> · <code class="inline">core/config.schema.json</code></p>
+
+              <p><strong>Unknown — U-08.</strong> The deep-merge behavior is source-defined at 0.147.0; its long-term <em>public guarantee</em> is not documented at the precision of the AGENTS and config precedence rules.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="rules" data-term>
+            <p class="prompt">cat ~/.codex/rules/default.rules</p>
+            <div class="body" data-term-out>
+              <p><strong>Codex "rules" are not instructions — D.</strong> <code class="inline">.codex/rules/*.rules</code> is <strong>execution policy</strong>. This is a genuine false friend: Claude Code's and Antigravity's "rules" are instruction context, Codex's <code class="inline">.rules</code> files enforce execution policy, and OpenCode's "rules" are instruction documents again. Three products, one word, two different runtime concepts. And "shell-command policy" undersells what a rule file can contain: the policy DSL exposes <strong>three</strong> builtins — <code class="inline">prefix_rule</code>, <code class="inline">network_rule</code> (host + protocol + decision + optional justification) and <code class="inline">host_executable</code> — so a rule file carries policy for shell commands <em>and network access</em>. Network rules are source-observed only: the rules doc describes <code class="inline">prefix_rule</code> alone. <strong>D; network scope S</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/agent-configuration/rules">rules</a> · <code class="inline">execpolicy/src/parser.rs</code></p>
+
+              <p><strong>Combination is restrictive, not replacing — D.</strong> <strong>All applicable layers remain active</strong> and the <strong>strictest</strong> conflict result wins. Nothing shadows anything: a permissive project rule cannot loosen a stricter user or system rule. The applicable roots are the system, user and project <code class="inline">rules/</code> directories.</p>
+
+              <p><strong>Shape, and who writes the user file — S.</strong> <code class="inline">.rules</code> files are <strong>Starlark programs</strong> evaluated by a starlark interpreter (builtins <code class="inline">prefix_rule</code> / <code class="inline">network_rule</code> / <code class="inline">host_executable</code>), and <code class="inline">$CODEX_HOME/rules/default.rules</code> is <strong>runtime-amended</strong>: approval decisions append allow-prefix rules and network rules to it under an update lock — the docs confirm the prefix case ("Codex writes to the user layer at <code class="inline">~/.codex/rules/default.rules</code>"). A provenance-aware browser must treat the user <code class="inline">default.rules</code> as partly <em>generated</em>, not purely authored. <strong>S</strong> · <code class="inline">core/src/exec_policy.rs</code>, <code class="inline">core/src/session/mod.rs</code></p>
+
+              <p><strong>Trust — corrected (2026-08-13), D/S.</strong> Project exec-policy rules are <strong>trust-gated</strong> at 0.147.0: untrusted and undecided projects get disabled project layers — the loader's disabled reason names "project-local config, hooks, and exec policies" — and the sole rules loader iterates only <em>enabled</em> layers, so project <code class="inline">.rules</code> do <strong>not</strong> load in an untrusted project. The docs agree: "Project-local rules under <code class="inline">&lt;repo&gt;/.codex/rules/</code> load only when the project <code class="inline">.codex/</code> layer is trusted." The first pass had this backwards. Only project <em>skills</em> still load untrusted — the skills walker iterates all layers including disabled ones; that half is source-observed only, the skills docs carrying no trust statement. Do not model project trust as a single switch. <strong>D/S</strong> · <code class="inline">core/src/exec_policy.rs</code>, <code class="inline">config/src/loader/mod.rs</code>, <code class="inline">ext/skills/src/host_roots.rs</code></p>
+
+              <p><strong>Observed — O, corrected 2026-08-13.</strong> The first pass recorded a real <code class="inline">~/.codex/rules/</code> containing <code class="inline">default.rules</code>; re-observation finds <strong>no <code class="inline">rules/</code> directory</strong> in <code class="inline">~/.codex</code> at all, and the top-level entry set has been unchanged since 2026-06-08 — the row was stale at first publication, not recently deleted. The user file appears only once approvals write it.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="plugins" data-term>
+            <p class="prompt">cat plugin.json .codex-plugin/plugin.json</p>
+            <div class="body" data-term-out>
+              <p><strong>The manifest probe order is inverted from the common assumption — corrected, S.</strong> A root <code class="inline">plugin.json</code> is <strong>not</strong> a last resort. The resolver probes root <code class="inline">plugin.json</code> <strong>first</strong>, <strong>rejects it if it is a symlink</strong>, and accepts it when its <code class="inline">$schema</code> is recognized — <code class="inline">https://agent-plugins.org/schemas/1.0.0/plugin.schema.json</code>, matched against a supported-URI list and the <code class="inline">https://agent-plugins.org/schemas/</code> prefix. Only on a miss does it fall through to the first existing entry of the three-path list. <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/manifest.rs">pinned manifest discovery</a></p>
+
+              <p><strong>And when the root manifest wins, <code class="inline">.codex-plugin/plugin.json</code> is applied as an OVERLAY</strong> — extension namespace <code class="inline">com.openai</code> — rather than as an alternative. The three-path list itself is the source constant <code class="inline">DISCOVERABLE_PLUGIN_MANIFEST_PATHS</code>, documented there as "Ordered plugin manifest paths recognized beneath a plugin root": <code class="inline">.codex-plugin/plugin.json</code>, then <code class="inline">.claude-plugin/plugin.json</code>, then <code class="inline">.cursor-plugin/plugin.json</code>.</p>
+
+              <pre class="mermaid">
+flowchart TD
+    A["plugin root"] --> B{"root plugin.json present?"}
+    B -- no --> F["fall through to the ordered list"]
+    B -- yes --> C{"is it a symlink?"}
+    C -- yes --> F
+    C -- no --> D{"is the $schema recognized?"}
+    D -- no --> F
+    D -- yes --> E["ROOT MANIFEST WINS"]
+    E --> O[".codex-plugin/plugin.json&lt;br/&gt;applied as an OVERLAY, namespace com.openai"]
+    F --> G[".codex-plugin/plugin.json"]
+    G -- missing --> H[".claude-plugin/plugin.json"]
+    H -- missing --> I[".cursor-plugin/plugin.json"]
+    X["treating the root manifest as a last resort&lt;br/&gt;inverts the real order"]
+    B -.-> X
+
+    class E,O ok
+    class X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+    classDef ok fill:#8a451622,stroke:#8a4516,stroke-width:2px
+</pre>
+
+              <p class="eli5"><span class="eli5-term">Two resolvers, two orders — and a scanner must not assume one rule.</span> A <em>sibling</em> resolver that maps a root URI to a namespace uses <strong>only</strong> the three-path list, with no root check at all — that resolver is <code class="inline">plugin_namespace_for_root_uri</code> (attribution corrected 2026-08-13); <code class="inline">find_plugin_manifest_path</code> in the same file is the root-first probe itself — symlink-rejected, <code class="inline">$schema</code>-gated — called by <code class="inline">core-plugins/src/manifest.rs::load_plugin_manifest_with_format</code> before the <code class="inline">.codex-plugin/plugin.json</code> overlay (namespace <code class="inline">com.openai</code>). The two orders genuinely differ inside the same product. <strong>S</strong> · <code class="inline">utils/plugins/src/plugin_namespace.rs</code></p>
+
+              <p><strong>Compatibility is a field subset, not a format alliance — D/S.</strong> Codex live-reads compatible manifests only within its own supported fields: <strong>skills, MCP, apps, hooks and interface metadata</strong>. Accepting a Claude or Cursor manifest layout does not import that product's other semantics.</p>
+
+              <p><strong>Legacy plugin commands are migrated, not executed — S.</strong> Eligible legacy plugin commands are converted at install time into generated skill packages under <code class="inline">.codex-plugin/migrated-command-skills/</code>. This is not live command-file execution.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Marketplace discovery: first existing wins, per root — S/O, confirmed twice.</strong> At each scanned user or repository root, marketplace discovery selects the <strong>first existing</strong> manifest of four, and it does <strong>not merge multiple layouts at one root</strong>. This is the source constant <code class="inline">MARKETPLACE_MANIFEST_RELATIVE_PATHS</code>, consumed by a <code class="inline">find_map</code> that returns on the first path that <code class="inline">is_file()</code>. All four literals are present in the installed 0.147.0 binary on a byte-level search. <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/marketplace.rs">pinned marketplace loader</a></p>
+
+              <pre class="mermaid">
+flowchart LR
+    A["each scanned user&lt;br/&gt;or repository root"] --> B[".agents/plugins/marketplace.json"]
+    B -- missing --> C[".agents/plugins/api_marketplace.json"]
+    C -- missing --> D[".claude-plugin/marketplace.json"]
+    D -- missing --> E[".cursor-plugin/marketplace.json"]
+    B --> F["FIRST existing wins"]
+    C --> F
+    D --> F
+    E --> F
+    X["expecting several layouts&lt;br/&gt;to merge at one root"]
+    F -.-> X
+
+    class X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p class="eli5"><span class="eli5-term">The false negative that was nearly published.</span> A <code class="inline">strings</code> pass over the installed 220&nbsp;MB binary appeared to recover only the two <code class="inline">.agents/plugins/*</code> entries, which would have refuted this four-item order. A byte-level <code class="inline">grep -a -F</code> found all four. The negative was an artifact of the extraction, not of the build.</p>
+
+              <p><strong>Where configured-marketplace state persists — S/O.</strong> <code class="inline">codex plugin marketplace add</code> records a <code class="inline">[marketplaces.&lt;name&gt;]</code> table in the user <code class="inline">$CODEX_HOME/config.toml</code> — schema: "User-level marketplace entries keyed by marketplace name", <code class="inline">MarketplaceConfig</code> fields <code class="inline">source</code>, <code class="inline">source_type</code>, <code class="inline">ref</code>, <code class="inline">sparse_paths</code>, <code class="inline">last_revision</code>, <code class="inline">last_updated</code>. Git marketplace snapshots are cached under <code class="inline">$CODEX_HOME/.tmp/marketplaces/&lt;name&gt;</code>; installs stage in <code class="inline">$CODEX_HOME/.tmp/marketplaces/.staging/</code> and are renamed into place. Local-source marketplaces are recorded in the same table but resolve to their source path — they are not cached. Observed: <code class="inline">~/.codex/.tmp/marketplaces/claude-plugins-official</code>. <strong>S/O</strong> · <code class="inline">core-plugins/src/installed_marketplaces.rs</code>, <code class="inline">core-plugins/src/marketplace_add.rs</code>, <code class="inline">core/config.schema.json</code></p>
+
+              <p><strong><code class="inline">requirements.toml</code> can restrict marketplace sources — S.</strong> <code class="inline">[marketplaces] restrict_to_allowed_sources = true</code> plus <code class="inline">[marketplaces.allowed_sources.&lt;name&gt;]</code> entries whose fields are <code class="inline">source</code> (<code class="inline">git</code> | <code class="inline">host_pattern</code> | <code class="inline">local</code>), <code class="inline">url</code>, <code class="inline">ref</code>, <code class="inline">host_pattern</code> and <code class="inline">path</code> (unknown fields rejected). A non-allowed source is denied during validation — <em>before</em> the install root is created or any clone runs — so an install tool must expect marketplace adds to fail under management. <strong>S</strong> · <code class="inline">config/src/config_requirements.rs</code>, <code class="inline">core-plugins/src/marketplace_add.rs</code></p>
+
+              <p><strong>Plugin search and install also span service-backed remote catalogs, on by default — D/S.</strong> The 0.147.0 changelog entry reads "Install portable Agent Plugins and search across local, personal, workspace, and remote plugin catalogs", and the pinned source defines the remote marketplaces <code class="inline">openai-curated-remote</code>, <code class="inline">created-by-me-remote</code>, <code class="inline">workspace-directory</code> and <code class="inline">workspace-shared-with-me</code> (plus private and unlisted variants), fetched from the ChatGPT service behind the stable, default-enabled features <code class="inline">remote_plugin</code> and <code class="inline">plugin_sharing</code>. A marketplace model covering only user/repo manifest roots and configured Git marketplaces leaves these <code class="inline">/plugins</code> entries unaccounted for. <strong>D/S</strong> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/changelog?type=codex-cli">changelog (0.147.0)</a> · <code class="inline">core-plugins/src/remote.rs</code>, <code class="inline">features/src/lib.rs</code></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Component loading and trust — D.</strong> Enabled plugin skills and MCP servers load <em>with</em> the plugin. <strong>Bundled hooks require separate trust review.</strong> An explicit Claude import copies or migrates other detected assets, and is not a blanket live foreign reader.</p>
+
+              <p><strong>Per-plugin MCP policy overlays — S.</strong> The per-plugin <code class="inline">[plugins."name@marketplace"]</code> entry supports more than <code class="inline">enabled</code>: an <code class="inline">mcp_servers</code> map — "Per-MCP-server policy overlays for MCP servers contributed by this plugin" — so plugin-contributed MCP servers can be policy-tuned per plugin in user config: per-server <code class="inline">enabled</code>, <code class="inline">enabled_tools</code> / <code class="inline">disabled_tools</code> allow- and deny-lists, <code class="inline">default_tools_approval_mode</code>. Transport settings are intentionally excluded — plugin manifests own launch, user config owns enablement and tool policy. Not only enabled/disabled wholesale. <strong>S</strong> · <code class="inline">core/config.schema.json</code> — <code class="inline">PluginConfig</code>, <code class="inline">PluginMcpServerConfig</code></p>
+            </div>
+          </section>
+
+          <section class="doc" id="memory-goals" data-term>
+            <p class="prompt">ls ~/.codex/memories ~/.codex/goals_1.sqlite</p>
+            <div class="body" data-term-out>
+              <p><strong>Both of these are generated state, not authored capabilities.</strong> They are runtime-owned: treating them as editable configuration risks corruption or lost resumability.</p>
+
+              <p><strong>Memories — D/S/O, off by default.</strong> The feature registry says stage <em>stable</em> with <code class="inline">default_enabled: false</code>, and the docs carry no "experimental" label — do not call the feature experimental (corrected 2026-08-13). Local memories sit behind <code class="inline">[features].memories</code>. Eligible <em>idle prior chats</em> are extracted and consolidated in the background into generated files under <code class="inline">$CODEX_HOME/memories</code>. <a class="link-quiet" href="https://learn.chatgpt.com/docs/customization/memories">memories</a></p>
+
+              <table>
+                <colgroup><col style="width:14rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Fact</th><th>Detail</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr><td>Root</td><td>Literally <code class="inline">codex_home.join("memories")</code></td><td><strong>S</strong></td></tr>
+                  <tr><td>Feature key</td><td><code class="inline">memories</code>, stage <em>stable</em>, <code class="inline">default_enabled: false</code></td><td><strong>S</strong></td></tr>
+                  <tr><td>Database</td><td>A separate <code class="inline">memories_1.sqlite</code></td><td><strong>S/O</strong></td></tr>
+                  <tr><td><code class="inline">memories.use_memories</code></td><td>Defaults <strong>true within the feature</strong>; <code class="inline">false</code> skips injecting memory instructions into developer prompts</td><td><strong>S</strong></td></tr>
+                  <tr><td><code class="inline">memories.generate_memories</code></td><td>Defaults <strong>true within the feature</strong>; <code class="inline">false</code> stores new threads with <code class="inline">memory_mode = "disabled"</code></td><td><strong>S</strong></td></tr>
+                  <tr><td>Chat-level <code class="inline">/memories</code></td><td>Choices made in a chat do <strong>not</strong> rewrite global settings</td><td><strong>D</strong></td></tr>
+                  <tr><td>The other ten <code class="inline">[memories]</code> keys</td><td><code class="inline">[memories]</code> carries <strong>12</strong> keys at 0.147.0, not 2. Beyond the two above: <code class="inline">consolidation_model</code>, <code class="inline">extract_model</code>, <code class="inline">dedicated_tools</code>, <code class="inline">disable_on_external_context</code> (marks the thread's <code class="inline">memory_mode</code> "polluted" when external context enters the turn), <code class="inline">max_raw_memories_for_consolidation</code>, <code class="inline">max_rollout_age_days</code>, <code class="inline">max_rollouts_per_startup</code>, <code class="inline">max_unused_days</code>, <code class="inline">min_rate_limit_remaining_percent</code>, <code class="inline">min_rollout_idle_hours</code></td><td><strong>S</strong> · <code class="inline">core/config.schema.json</code></td></tr>
+                  <tr><td>Generated tree shape</td><td><code class="inline">MEMORY.md</code>, <code class="inline">memory_summary.md</code>, <code class="inline">raw_memories.md</code>, <code class="inline">rollout_summaries/</code>, <code class="inline">skills/</code>, <code class="inline">extensions/</code> (ad-hoc notes). Reclassed <strong>O &rarr; S</strong> (2026-08-13): this shape is the runtime's own path taxonomy (<code class="inline">ext/memories/src/metrics.rs::scope_from_path</code>), with the filename literals present in the installed binary — while on the inspected machine <code class="inline">~/.codex/memories/</code> is <strong>empty</strong> (0 entries, dir mtime Mar 8 2026), so no local O observation backs this row</td><td><strong>S</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Memory-backed skills are a live sub-shape.</span> The generated <code class="inline">memories/</code> tree carries a <code class="inline">skills/</code> subtree in the runtime's own path taxonomy — source-proven rather than disk-observed — so this generated tree is not only prose files. Do not model it as a flat set of Markdown documents.</p>
+
+              <p class="eli5"><span class="eli5-term">Two nested defaults, easy to misread.</span> The <em>feature</em> is off by default, while <code class="inline">use_memories</code> and <code class="inline">generate_memories</code> are both on by default <em>inside</em> it. Reporting "memories: enabled" from the inner keys alone states the opposite of the effective behavior.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Goal mode — D/S/O, stable and default-on.</strong> In the interactive Codex CLI, <code class="inline">/goal</code> uses its text as <em>both</em> the first prompt and the completion criterion, <strong>without changing the sandbox or approval boundary</strong>. There is one goal per persisted thread, and ephemeral threads reject goals outright. <a class="link-quiet" href="https://learn.chatgpt.com/docs/long-running-work">long-running work</a></p>
+
+              <table>
+                <colgroup><col style="width:14rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Fact</th><th>Detail</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr><td>Database</td><td><code class="inline">GOALS_DB_FILENAME = "goals_1.sqlite"</code>, present in the observed <code class="inline">~/.codex</code></td><td><strong>S/O</strong></td></tr>
+                  <tr><td>Path resolution</td><td>Literally <code class="inline">cfg.sqlite_home.or(sqlite_home_env).unwrap_or(codex_home)</code> — the documented three-step order <code class="inline">sqlite_home</code> &rarr; <code class="inline">CODEX_SQLITE_HOME</code> &rarr; <code class="inline">$CODEX_HOME</code>. <code class="inline">SQLITE_HOME_ENV = "CODEX_SQLITE_HOME"</code>; empty environment values are treated as unset and relative values resolve against cwd</td><td><strong>S</strong></td></tr>
+                  <tr><td>Feature gate</td><td><code class="inline">features.goals</code> is stage <em>stable</em>, <code class="inline">default_enabled: true</code>. The runtime restores saved-thread goals and <strong>automatically starts another turn</strong> for an active idle goal</td><td><strong>D/S</strong></td></tr>
+                  <tr><td>Model interface</td><td>Model-visible <code class="inline">create_goal</code>, <code class="inline">get_goal</code> and <code class="inline">update_goal</code> tools expose a stricter lifecycle — <code class="inline">update_goal</code> can only mark the existing goal complete or blocked; pause, resume and budget transitions are user- or system-controlled. All three tool names are literal in the installed binary; no first-party doc page fetched 2026-08-13 names them, so the class is S, not D</td><td><strong>S</strong> · <code class="inline">ext/goal/src/spec.rs</code>, <code class="inline">ext/goal/src/tool.rs</code></td></tr>
+                  <tr><td>Sibling databases</td><td><code class="inline">state_5.sqlite</code>, <code class="inline">logs_2.sqlite</code>, <code class="inline">memories_1.sqlite</code>, and a <code class="inline">queue_1.sqlite</code> name in the package</td><td><strong>S/O</strong></td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>No native durable scheduler is proven for Codex.</strong> Goal state is a persisted completion condition per thread, not a cron. <strong>D/S</strong></p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Sessions are a third runtime-owned persistence surface, alongside memories and goals — S.</strong> Rollouts are written to <code class="inline">$CODEX_HOME/sessions/&lt;YYYY&gt;/&lt;MM&gt;/&lt;DD&gt;/rollout-&lt;YYYY-MM-DDThh-mm-ss&gt;-&lt;thread-id&gt;.jsonl</code>; archived sessions move under <code class="inline">$CODEX_HOME/archived_sessions</code>; <code class="inline">$CODEX_HOME/session_index.jsonl</code> indexes them. The CLI manages this state with <code class="inline">resume</code>, <code class="inline">fork</code>, <code class="inline">archive</code>, <code class="inline">delete</code> and <code class="inline">unarchive</code>, each accepting a session id (UUID) or session name. <code class="inline">~/.codex/history.jsonl</code> is governed by the <code class="inline">[history]</code> config table (<code class="inline">persistence</code> default <code class="inline">"save-all"</code>; optional <code class="inline">max_bytes</code> drops the oldest entries once the file exceeds the limit). The binary's own item-type vocabulary names <code class="inline">SESSIONS</code>. <strong>S</strong> · <code class="inline">rollout/src/lib.rs</code>, <code class="inline">rollout/src/recorder.rs</code>, <code class="inline">rollout/src/session_index.rs</code>, <code class="inline">core/config.schema.json</code>; installed <code class="inline">codex --help</code></p>
+            </div>
+          </section>
+
+          <section class="doc" id="runtime" data-term>
+            <p class="prompt">codex cloud --help &amp;&amp; codex remote-control --help</p>
+            <div class="body" data-term-out>
+              <p><strong>Cloud tasks — D/S/O.</strong> Bare <code class="inline">codex cloud</code> opens the task picker. Verified on the installed build: <code class="inline">codex cloud --help</code> lists exactly <code class="inline">exec</code>, <code class="inline">status</code>, <code class="inline">list</code>, <code class="inline">apply</code>, <code class="inline">diff</code>. <a class="link-quiet" href="https://learn.chatgpt.com/docs/developer-commands.md?surface=cli">CLI commands</a> · <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/cloud-tasks/src/cli.rs">pinned cloud-task CLI</a></p>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /></colgroup>
+                <thead><tr><th>Command</th><th>Behavior</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">codex cloud list</code></td><td>Environment, filter, pagination and JSON controls</td></tr>
+                  <tr><td><code class="inline">codex cloud exec --env &lt;id&gt; &lt;query&gt;</code></td><td>Submit a task to a named environment</td></tr>
+                  <tr><td><code class="inline">codex cloud status</code> / <code class="inline">diff</code> / <code class="inline">apply</code></td><td>Inspect and apply, with attempt selection</td></tr>
+                  <tr><td><code class="inline">codex apply &lt;TASK_ID&gt;</code></td><td>Top-level form applying a completed task diff locally. <code class="inline">codex apply --help</code> takes a <strong>required</strong> <code class="inline">&lt;TASK_ID&gt;</code>, confirming it is task-addressed rather than a bare working-tree operation despite its one-line summary</td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Nothing here is a portable file.</span> The CLI selects and reads service-managed environment and task state; it publishes <strong>no local schema for authoring it</strong>. Represent cloud state as operational and authenticated, never as configuration.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Remote transport and control — D/S.</strong> The global <code class="inline">--remote</code> flag connects supported TUI and session commands to <code class="inline">ws://host:port</code>, <code class="inline">wss://host:port</code>, <code class="inline">unix://</code> or <code class="inline">unix://PATH</code> app-server endpoints. <code class="inline">--remote-auth-token-env</code> supplies a token <em>by environment-variable name</em>, and is accepted only for <code class="inline">wss://</code> or loopback <code class="inline">ws://</code> remotes.</p>
+
+              <p>Bare, experimental <code class="inline">codex remote-control</code> runs in the foreground; <code class="inline">start</code> launches its daemon, <code class="inline">stop</code> stops it, and <code class="inline">pair</code> prints a short-lived pairing code. <strong>This is CLI transport and runtime state, not a reusable capability directory.</strong> <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/cli/src/remote_control_cmd.rs">pinned remote-control command</a></p>
+            </div>
+          </section>
+
+          <section class="doc" id="cross-tool" data-term>
+            <p class="prompt">grep -rl 'AGENTS.md&#124;.agents/skills' /other/agents</p>
+            <div class="body" data-term-out>
+              <p><strong>Codex shares exactly two native inputs with other CLIs — D.</strong> <code class="inline">AGENTS.md</code> and <code class="inline">.agents/skills</code>. Everything else that looks shared is either a <em>manifest-format</em> compatibility (plugins and marketplaces) or an explicit <em>migration</em>, which is not inheritance.</p>
+
+              <pre class="mermaid">
+flowchart LR
+    AG["AGENTS.md"] --> CX["OpenAI Codex"]
+    AG --> CP["GitHub Copilot"]
+    AG --> AGY["Antigravity"]
+    AG --> OC["OpenCode"]
+    SK[".agents/skills/NAME/SKILL.md"] --> CX
+    SK --> CP
+    SK --> AGY
+    SK --> OC
+    PM[".claude-plugin/plugin.json"] -->|supported fields only| CX
+    MK[".claude-plugin/marketplace.json"] -->|catalog fallback| CX
+    CL["CLAUDE.md, .claude/skills, .claude/agents&lt;br/&gt;.claude/settings.json, root .mcp.json"] -.->|import or migration ONLY| CX
+    X["treating .claude or .agents&lt;br/&gt;as shared wholesale"]
+    CL -.-> X
+
+    class X warn
+    classDef warn fill:#a02c2c22,stroke:#a02c2c,stroke-width:2px
+</pre>
+
+              <p><strong>The file is portable; the effect is not — D/S.</strong> One physical <code class="inline">AGENTS.md</code> can legitimately serve Codex, Copilot, Antigravity and OpenCode, but the four apply <strong>different ceilings and three different assembly rules</strong>. Codex orders root&nbsp;&rarr;&nbsp;cwd inside a project ceiling; Copilot concatenates unconditional sources with no published precedence while advertising nested ones on demand; Antigravity accumulates cwd&nbsp;&rarr;&nbsp;repository root with resolved-path de-duplication; OpenCode loads every match of the winning filename class. The same is true of <code class="inline">.agents/skills/&lt;name&gt;/SKILL.md</code> — Codex joins it to <em>every</em> directory root&nbsp;&rarr;&nbsp;cwd, Copilot adds an explicit inherited ancestor tier, OpenCode scans every ancestor to the worktree.</p>
+
+              <p><strong><code class="inline">.agents/</code> is not a portable root — D/S.</strong> Only <code class="inline">.agents/skills</code> is shared by those four. <code class="inline">.agents/agents</code>, <code class="inline">.agents/rules</code>, <code class="inline">.agents/hooks.json</code>, <code class="inline">.agents/plugins/&lt;plugin&gt;</code>, <code class="inline">.agents/skills.json</code> and <code class="inline">.agents/plugins.json</code> are <strong>Antigravity</strong> contracts. Codex's two marketplace filenames beneath <code class="inline">.agents/plugins/</code> — <code class="inline">marketplace.json</code> and <code class="inline">api_marketplace.json</code> — are <strong>separate exact Codex contracts</strong>, not a share of that directory.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>What Codex does NOT read.</strong> Bounded negatives from the cited source set — "no first-party CLI reader is documented or found", which is not a promise about future builds:</p>
+
+              <table>
+                <colgroup><col style="width:20rem" /><col style="width:7rem" /><col /></colgroup>
+                <thead><tr><th>Artifact</th><th>Verdict</th><th>Note</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="inline">.claude/skills/&lt;name&gt;/SKILL.md</code><br /><code class="inline">~/.claude/skills/&lt;name&gt;/SKILL.md</code></td><td><strong>MIG</strong></td><td>Explicit import only — accepting a Claude <em>plugin manifest</em> does not make loose Claude skills a native input</td></tr>
+                  <tr><td><code class="inline">.claude/agents/**/*.md</code><br /><code class="inline">~/.claude/agents/**/*.md</code></td><td><strong>MIG</strong></td><td>Import or copy, never live discovery</td></tr>
+                  <tr><td><code class="inline">.claude/commands/*.md</code></td><td><strong>MIG</strong></td><td>Eligible commands are <em>converted into skills</em> under a <code class="inline">source-command</code> prefix</td></tr>
+                  <tr><td><code class="inline">.claude/settings.json</code><br /><code class="inline">.claude/settings.local.json</code></td><td><strong>MIG</strong></td><td>Both filenames appear in the migration crate's inventory, in no live reader</td></tr>
+                  <tr><td><code class="inline">.claude/rules/**/*.md</code></td><td><strong>&mdash;</strong></td><td>Not even in the pinned Claude-migration inventory</td></tr>
+                  <tr><td>Root <code class="inline">.mcp.json</code></td><td><strong>MIG</strong></td><td><code class="inline">/import</code> converts supported entries to TOML; there is no live reader</td></tr>
+                  <tr><td><code class="inline">.github/mcp.json</code>, <code class="inline">.vscode/mcp.json</code></td><td><strong>&mdash;</strong></td><td>Copilot contracts</td></tr>
+                  <tr><td><code class="inline">.github/skills</code>, <code class="inline">~/.copilot/skills</code><br />organization and enterprise skill sources</td><td><strong>&mdash;</strong></td><td>Copilot contracts</td></tr>
+                  <tr><td><code class="inline">.github/agents/*.agent.md</code>, <code class="inline">~/.copilot/agents</code><br /><code class="inline">.agents/agents/&lt;name&gt;.md</code></td><td><strong>&mdash;</strong></td><td>Copilot and Antigravity contracts</td></tr>
+                  <tr><td>Copilot <code class="inline">.plugin/plugin.json</code> and <code class="inline">.github/plugin/plugin.json</code></td><td><strong>&mdash;</strong></td><td>Only a root <code class="inline">plugin.json</code> carrying a recognized Agent Plugins <code class="inline">$schema</code> is read — and it is probed <em>first</em></td></tr>
+                  <tr><td><code class="inline">GEMINI.md</code>, <code class="inline">.github</code> instructions<br /><code class="inline">.opencode</code>, <code class="inline">opencode.json</code></td><td><strong>&mdash;</strong></td><td>No native reader documented. <strong>D/U</strong></td></tr>
+                  <tr><td><code class="inline">CLAUDE.md</code></td><td><strong>MIG / D</strong></td><td><strong>Not a default input.</strong> An administrator or user <em>can</em> add it as a configured instruction fallback filename — remembering that the fallback list is empty by default and never reaches the global slot</td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Migration is not inheritance — D/S.</strong> <code class="inline">/import</code> imports from <strong>Claude Code or Cursor</strong> (corrected 2026-08-13): the 0.147.0 flow detects both sources and prompts "Choose an import source" when both are present — though this version's own slash-menu blurb still names only Claude Code, which is where the earlier narrower claim came from. The external-agent migration crate carries a whole Claude inventory: <code class="inline">CLAUDE.md</code>, <code class="inline">.claude.json</code>, <code class="inline">.claude</code>, <code class="inline">settings.json</code>, <code class="inline">settings.local.json</code>, <code class="inline">enabledPlugins</code>, <code class="inline">extraKnownMarketplaces</code>, <code class="inline">enabledMcpjsonServers</code>, <code class="inline">disabledMcpjsonServers</code>, and marketplace identifiers such as <code class="inline">anthropics/claude-plugins-official</code> and <code class="inline">anthropics/claude-code</code> — and a <strong>Cursor inventory</strong> beside it: <code class="inline">.cursor</code>, <code class="inline">.cursorrules</code>, <code class="inline">cli-config.json</code> / <code class="inline">cli.json</code>, <code class="inline">sandbox.json</code>, <code class="inline">hooks.json</code>, <code class="inline">.cursor-plugin/marketplace.json</code> and Cursor-managed skills. (The ChatGPT desktop app additionally imports from Claude Cowork — out of this page's CLI scope.) That inventory <strong>reinforces</strong> the boundary rather than weakening it: the resulting artifact must be tracked separately from the foreign source unless Codex genuinely live-reads that exact path. <a class="link-quiet" href="https://learn.chatgpt.com/docs/import">import docs</a> · <a class="link-quiet" href="https://learn.chatgpt.com/docs/changelog?type=codex-cli">changelog (0.147.0)</a> · <code class="inline">tui/src/external_agent_config_migration/source.rs</code>, <code class="inline">external-agent-migration/src/source/cur.rs</code></p>
+
+              <p class="eli5"><span class="eli5-term">Model the edge, not a clone.</span> One physical artifact with zero or more agent-reader relationships — each carrying its own evidence class, walk and ceiling — plus capability type, scope and provenance. Do not clone the file into five independent logical artifacts, and do not collapse five readers into one.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="installing" data-term>
+            <p class="prompt">codex plugin marketplace add &amp;&amp; codex plugin add</p>
+            <div class="body" data-term-out>
+              <p><strong>Plugin lifecycle — D/S/O.</strong> Version 0.147.0 exposes <code class="inline">codex plugin add | list | remove</code>, the interactive <code class="inline">/plugins</code> browser, and <code class="inline">codex plugin marketplace add | list | upgrade | remove</code>. Confirmed on the installed build: <code class="inline">codex plugin --help</code> lists exactly <code class="inline">add</code>, <code class="inline">list</code>, <code class="inline">marketplace</code>, <code class="inline">remove</code> — <strong>no <code class="inline">update</code></strong>. <a class="link-quiet" href="https://learn.chatgpt.com/docs/plugins">plugins</a> · <a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/cli/src/main.rs">pinned CLI entrypoint</a></p>
+
+              <table>
+                <colgroup><col style="width:13rem" /><col /><col style="width:6rem" /></colgroup>
+                <thead><tr><th>Operation</th><th>What actually happens</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Install / enable</td>
+                    <td><strong>User-local, always.</strong> <code class="inline">/plugins</code> installs and removes, and toggles <code class="inline">[plugins."name@marketplace"].enabled</code> in the effective <em>user</em> <code class="inline">$CODEX_HOME/config.toml</code> — <strong>even when the marketplace was discovered from the repository</strong></td>
+                    <td><strong>D/S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Update</td>
+                    <td>There is no separate <code class="inline">codex plugin update</code>. Rerunning <code class="inline">plugin add</code> <strong>atomically replaces</strong> a selected plugin</td>
+                    <td><strong>D/S/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Marketplace upgrade</td>
+                    <td><code class="inline">marketplace upgrade</code> refreshes configured Git snapshots <strong>and force-reinstalls configured non-curated plugins</strong> from the refreshed catalogs. Startup <em>also</em> auto-upgrades configured Git marketplaces before the cache refresh</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Marketplace discovery</td>
+                    <td>Per user or repository root, the <strong>first existing</strong> of four manifest paths; layouts are never merged at one root</td>
+                    <td><strong>S/O</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Component activation</td>
+                    <td>Enabled plugin skills and MCP servers load with the plugin; <strong>bundled hooks require separate trust review</strong></td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Two surprises for anyone modelling installs.</span> First, a repository-discovered marketplace still writes <em>user</em> enablement — there is no project-scoped enable. Second, both <code class="inline">marketplace upgrade</code> and plain <strong>startup</strong> can mutate the installed cache without an explicit install command.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Adding capabilities by hand — D/S.</strong> Summary rows: each row restates a claim cited with its full evidence in its own section above. Everything else is authored into a scope directly; Codex has no per-capability install verb beyond plugins — <strong>I</strong>, from the installed CLI surface (<code class="inline">codex --help</code> exposes install verbs only for plugins and marketplaces).</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col /></colgroup>
+                <thead><tr><th>Capability</th><th>Where to put it</th><th>What activates it</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Skill</td>
+                    <td>A directory with <code class="inline">SKILL.md</code> under any live root — project <code class="inline">.agents/skills</code> (at any level root&nbsp;&rarr;&nbsp;cwd) or <code class="inline">.codex/skills</code>, user <code class="inline">~/.agents/skills</code>, admin <code class="inline">/etc/codex/skills</code></td>
+                    <td>Metadata discovery, then explicit <code class="inline">$name</code> or model selection. <code class="inline">name</code> and <code class="inline">description</code> are <strong>required</strong> — a missing description fails the parse</td>
+                  </tr>
+                  <tr>
+                    <td>Agent</td>
+                    <td><code class="inline">agents/**/*.toml</code> in a System, User or Project config folder, or an inline <code class="inline">[agents]</code> table</td>
+                    <td>Discovery by effective <code class="inline">name</code>; delegation creates a separate context</td>
+                  </tr>
+                  <tr>
+                    <td>Hook</td>
+                    <td><code class="inline">hooks.json</code> adjacent to a loaded config, or an inline <code class="inline">[hooks]</code> table</td>
+                    <td>Event match. Non-managed command hooks need <strong>hash trust</strong> via <code class="inline">/hooks</code></td>
+                  </tr>
+                  <tr>
+                    <td>MCP server</td>
+                    <td><code class="inline">codex mcp add</code> writes the user config; project entries are authored by hand into <code class="inline">.codex/config.toml</code></td>
+                    <td>Presence of <code class="inline">[mcp_servers.&lt;id&gt;]</code>; <code class="inline">codex mcp login</code> for OAuth</td>
+                  </tr>
+                  <tr>
+                    <td>Rule</td>
+                    <td><code class="inline">rules/*.rules</code> at system, user or project scope</td>
+                    <td>Always active where applicable; the <strong>strictest</strong> result wins</td>
+                  </tr>
+                  <tr>
+                    <td>Instruction</td>
+                    <td><code class="inline">AGENTS.md</code> anywhere from the project root down to cwd, <code class="inline">AGENTS.override.md</code> to replace one level, <code class="inline">$CODEX_HOME/AGENTS.md</code> for the global prefix</td>
+                    <td>Loaded into initial context; the project chain shares a 32&nbsp;KiB budget</td>
+                  </tr>
+                  <tr>
+                    <td>Foreign config</td>
+                    <td><code class="inline">/import</code> targets Claude Code or Cursor configuration</td>
+                    <td>Copies or converts — the result is a Codex artifact, <strong>not a live link</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc" id="precedence" data-term>
+            <p class="prompt">echo 'precedence and shadowing, per capability'</p>
+            <div class="body" data-term-out>
+              <p>Duplicate behavior is <strong>capability-specific</strong>, and inside Codex it points several ways at once: instructions select one file per directory and concatenate, config layers replace by numeric precedence, MCP tables deep-merge while their arrays replace wholesale, agents merge per field, hooks append, and policy rules take the strictest result. <strong>A single "nearest wins" algorithm is wrong.</strong></p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /><col /><col style="width:6rem" /></colgroup>
+                <thead>
+                  <tr><th>Capability</th><th>Search boundary and effective order</th><th>Duplicate / merge behavior</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Instructions</td>
+                    <td>One global prefix — <code class="inline">$CODEX_HOME/AGENTS.override.md</code>, else <code class="inline">AGENTS.md</code> — then the project chain <strong>root&nbsp;&rarr;&nbsp;cwd</strong>. Upward search finds the root; the root is a hard ceiling; descendants below cwd are not eagerly read</td>
+                    <td>At most <strong>one</strong> non-empty file per directory: override &rarr; base &rarr; configured fallback (default list empty). Closest content appears <strong>last</strong>. The override suppresses only its own directory. Selected project files share a 32&nbsp;KiB budget; the global prefix is uncapped</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Config</td>
+                    <td>Numeric layer precedence: legacy managed <strong>50/40</strong> (above <code class="inline">-c</code>) &rarr; session flags <strong>30</strong> &rarr; project <strong>25</strong> &rarr; user + profile <strong>21/20</strong> &rarr; cloud enterprise <strong>15</strong> &rarr; system <strong>10</strong> &rarr; MDM <strong>0</strong></td>
+                    <td>Higher precedence replaces. Untrusted project config is skipped, and every project layer is stripped by a provider / base-URL / profile / notify / otel denylist. <code class="inline">requirements.toml</code> <em>constrains</em> the result instead of joining the ordering. Within the project group, "closest wins" is <strong>unknown for repo-root-versus-intermediate conflicts (U-14)</strong></td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Skills</td>
+                    <td>Admin <code class="inline">/etc/codex/skills</code>, user <code class="inline">$CODEX_HOME/skills</code> (deprecated), project <code class="inline">.codex/skills</code>, <code class="inline">~/.agents/skills</code>, plus <code class="inline">.agents/skills</code> joined to <strong>every</strong> directory from the project root down to cwd, then plugin and bundled roots</td>
+                    <td>Discovered rather than prompt-concatenated; results de-duplicate <strong>by path</strong> and duplicate <em>names</em> remain separately identifiable. Layers with no config folder contribute none. <code class="inline">[[skills.config]]</code> selects by path or name (exactly one selector) and sets <code class="inline">enabled</code>; later rules override earlier ones, and a disabled entry hides the path without deleting it</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Agents</td>
+                    <td>Only layers exposing a config folder — <strong>System, User, Project</strong> — through recursive <code class="inline">agents/**/*.toml</code> with a sorted file list, plus inline <code class="inline">[agents]</code> in the same layers. Iterated low&nbsp;&rarr;&nbsp;high</td>
+                    <td>Inline beats file <em>in</em> a layer (second dropped with a warning); lexicographically first wins <em>within</em> a recursive scan; a higher layer wins <em>across</em> layers but <strong>inherits every field it does not set</strong>. Public contract is less explicit than the source behavior <strong>(U-08)</strong></td>
+                    <td><strong>S / U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Prompts</td>
+                    <td><code class="inline">$CODEX_HOME/prompts</code> only — and <strong>no loader was located at 0.147.0</strong> by source, schema, CLI-surface or package search</td>
+                    <td>Not applicable while the root itself is unverified. The nearest live mechanism converts other agents' <code class="inline">commands/*.md</code> into skills under a <code class="inline">source-command</code> prefix</td>
+                    <td><strong>D/U</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Hooks</td>
+                    <td><code class="inline">hooks.json</code> adjacent to a loaded config <strong>and</strong> inline <code class="inline">[hooks]</code>, across System, User and Project layers. Linked worktrees deliberately redirect hook discovery to the matching <code class="inline">.codex/</code> folder in the <strong>main checkout</strong></td>
+                    <td><strong>Append, never shadow.</strong> Both representations in one layer load together with a warning; matching files append and matching command handlers run concurrently. Managed hooks are trusted and non-disableable; <code class="inline">allow_managed_hooks_only</code> drops every other source</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Rules</td>
+                    <td>All applicable system and user <code class="inline">.rules</code> directories; project <code class="inline">rules/</code> only when the project layer is trusted (corrected 2026-08-13)</td>
+                    <td><strong>Restrictive intersection:</strong> every applicable layer stays active and the strictest conflict result wins. Nothing is shadowed</td>
+                    <td><strong>D</strong></td>
+                  </tr>
+                  <tr>
+                    <td>MCP</td>
+                    <td>Active TOML layers. CLI management writes only <code class="inline">$CODEX_HOME/config.toml</code> and exposes <strong>no scope flag</strong></td>
+                    <td>Same-ID tables recursively deep-merge low&nbsp;&rarr;&nbsp;high; <strong>tables merge key-by-key while arrays and scalars replace wholesale</strong>; omitted fields inherit. Inline <code class="inline">bearer_token</code> is rejected in favour of <code class="inline">bearer_token_env_var</code></td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Plugins / marketplaces</td>
+                    <td>Root <code class="inline">plugin.json</code> probed <strong>first</strong> (symlink-rejected, <code class="inline">$schema</code>-gated), then <code class="inline">.codex-plugin</code> &rarr; <code class="inline">.claude-plugin</code> &rarr; <code class="inline">.cursor-plugin</code>. Marketplaces take the <strong>first existing</strong> of four paths per root</td>
+                    <td>When the root manifest wins, <code class="inline">.codex-plugin/plugin.json</code> becomes an <strong>overlay</strong> (namespace <code class="inline">com.openai</code>), not an alternative. A sibling namespace resolver uses only the three-path list, so <strong>two orders coexist</strong>. Marketplace layouts never merge at one root. Enablement is user-local; <code class="inline">plugin add</code> replaces atomically</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Memory / Goal / cloud state</td>
+                    <td>Generated <code class="inline">$CODEX_HOME/memories</code> and effective-SQLite-home goal state, keyed to an eligible chat or a persisted thread; service task and environment IDs, or an explicit app-server endpoint plus daemon pairing</td>
+                    <td><strong>Generated state is not inherited as authored config.</strong> <code class="inline">memories</code> is default-off and <code class="inline">goals</code> default-on; ephemeral threads reject goals; cloud and remote state is operational and authenticated, with no portable local schema</td>
+                    <td><strong>S</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">The one-line summary.</span> Precedence in Codex is <em>numeric</em> for configuration, <em>positional</em> for instructions, <em>per-field</em> for agents, <em>per-key</em> for MCP tables and <em>wholesale</em> for their arrays, <em>additive</em> for hooks, and <em>restrictive</em> for rules. Six mechanisms, one product.</p>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>What the requirements stack can constrain — S.</strong> Administrative enforcement lives in <code class="inline">requirements.toml</code>, and its surface is capability-relevant, not just approval ceilings: per-server <code class="inline">mcp_servers</code> requirements; per-plugin <code class="inline">plugins</code> requirements, each with nested MCP-server requirements; the marketplace source restriction (see <a class="link-quiet" href="#plugins">plugins</a>); <code class="inline">feature_requirements</code> — pinning feature flags, which the hooks table alludes to once; <code class="inline">managed_hooks</code>; <code class="inline">exec_policy</code>; <code class="inline">allow_managed_hooks_only</code>; <code class="inline">allow_remote_control</code>; <code class="inline">allowed_login_methods</code> / <code class="inline">allowed_chatgpt_workspaces</code>; plus <code class="inline">approval_policy</code> / <code class="inline">permission_profile</code> / <code class="inline">web_search_mode</code> ceilings and managed <code class="inline">network</code> / <code class="inline">filesystem</code> constraints. A capability browser rendering effective capabilities needs to know each of these can be admin-constrained. <strong>S</strong> · <code class="inline">config/src/config_requirements.rs</code></p>
+            </div>
+          </section>
+
+          <section class="doc" id="unknowns" data-term>
+            <p class="prompt">grep -n 'U-[0-9]' harness-analysis.md</p>
+            <div class="body" data-term-out>
+              <p>Five section-level unknowns survived the first inspection of the pinned tree and the installed package, two of which carry consolidated <code class="inline">U-</code> numbers. The second pass (2026-08-13) <strong>resolved one</strong> — the skill catalog budget — leaving four standing; the resolved row is kept below and marked, so every other <code class="inline">U</code> reference stays stable. None of the rest should be resolved by guessing: a UI that displays "the active one" for an unresolved winner is inventing it.</p>
+
+              <table>
+                <colgroup><col style="width:6rem" /><col /><col /><col /></colgroup>
+                <thead><tr><th>ID</th><th>What is unknown</th><th>What evidence would settle it</th><th>Consequence for a tool</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>U-14</strong></td>
+                    <td>Relative precedence <strong>within the project group</strong>. The installed binary's assertion "project layers are not ordered from root to cwd" implies project layers run root&nbsp;&rarr;&nbsp;cwd low&nbsp;&rarr;&nbsp;high, so the closest wins — but the loader's own ascending doc comment lists cwd <code class="inline">config.toml</code> &rarr; tree-parent <code class="inline">.codex/config.toml</code> &rarr; repo-root <code class="inline">.codex/config.toml</code>, which reads the other way. The two were <strong>not reconciled</strong></td>
+                    <td>Reconciling the assertion against the doc comment in a build, or a first-party statement at the precision the AGENTS ordering already has</td>
+                    <td>"Closest wins" is retained on the strength of the assertion, but <strong>repo-root-versus-intermediate conflicts must not be given a winner</strong>. Ranked fifth of the residual risks: it rests on one assertion string that a comment in the same binary contradicts</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-08</strong></td>
+                    <td><strong>Named-entry contracts.</strong> MCP deep-merge and custom-agent merging/traversal are source-defined at 0.147.0; only their long-term <em>public guarantee</em> is missing</td>
+                    <td>First-party documentation of the merge semantics at the precision of the AGENTS and config precedence rules</td>
+                    <td>The behavior may be relied on for this version row and no further. Carry the version with the claim</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U</strong> (§4)</td>
+                    <td><code class="inline">$CODEX_HOME/prompts/*.md</code> and <code class="inline">/prompts:&lt;name&gt;</code>. Documented, but not locatable at 0.147.0 in the pinned tree, the config schema (93 top-level properties, none <code class="inline">prompts</code>), the installed CLI surface, or the package. The binary's <code class="inline">prompts/list</code> and <code class="inline">prompts/get</code> are <strong>MCP method names</strong></td>
+                    <td>A located loader on a specific version. Second pass (2026-08-13): the negative path search was re-run <em>at the pin</em> and also came back empty, so all four checks now hold at <code class="inline">rust-v0.147.0</code> — still <strong>unverified, not disproven</strong></td>
+                    <td>Scanning the path is harmless; <strong>reporting it as a live capability is not</strong>. Do not present it as a capability root without per-version confirmation</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U</strong> (§4) — <strong>resolved 2026-08-13</strong></td>
+                    <td>The <strong>skill catalog budget</strong> — "at most 2% of context, 8,000 characters when context is unknown". Resolved: both figures are source literals (<code class="inline">SKILL_METADATA_CONTEXT_WINDOW_PERCENT = 2</code>, <code class="inline">DEFAULT_SKILL_METADATA_CHAR_BUDGET = 8_000</code> in <code class="inline">ext/skills/src/render.rs</code>) and both budget-warning strings are in the installed binary</td>
+                    <td>Settled — see the skills section, now <strong>D/S</strong></td>
+                    <td>Both numbers may be relied on for this version row</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U/O</strong> (§4)</td>
+                    <td><code class="inline">~/.codex/agents/</code> and <code class="inline">~/.codex/prompts/</code> were <strong>not present</strong> on the observed machine</td>
+                    <td>Observation on a machine where they have been created, or a loader confirming the user-scope agents root</td>
+                    <td>Absence is not refutation — Codex creates parts of its tree on demand — but neither directory was confirmed by observation. State support from the loader evidence, not from the disk</td>
+                  </tr>
+                  <tr>
+                    <td><strong>U-11</strong></td>
+                    <td><strong>Version drift.</strong> Codex capabilities changed materially in recent point releases, and rolling documentation exposes no shared revision boundary across the five coding agents</td>
+                    <td>Installing and comparing named earlier builds</td>
+                    <td>Every claim on this page is bounded to <strong>0.147.0</strong>. Plugins, memories, hooks and file-backed agents are recent: results require version provenance</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Which conventions look least stable.</strong> Ranked from the change-risk register, keeping only what touches Codex:</p>
+
+              <table>
+                <colgroup><col style="width:9rem" /><col /></colgroup>
+                <thead><tr><th>Risk</th><th>What can move, and why it hurts</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Very high</strong></td><td><strong>Shared physical artifacts.</strong> Editing or removing <code class="inline">AGENTS.md</code> or <code class="inline">.agents/skills</code> can affect four CLIs with different selection semantics — different ceilings, three different assembly rules</td></tr>
+                  <tr><td><strong>Very high</strong></td><td><strong>Cross-reading selected Claude files.</strong> Codex imports create <em>divergent copies</em>: the copy and the source drift silently, and neither side reports the other</td></tr>
+                  <tr><td><strong>Very high</strong></td><td><strong>Generated state.</strong> Codex goals and memories are runtime-owned. Treating them as authored capabilities risks corruption or lost resumability</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>Plugin lifecycle.</strong> Codex hook trust and the manifest-order asymmetry need agent- and version-specific handling — two resolvers with different orders, plus startup-time marketplace refresh that mutates the cache with no command</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>MCP credentials and replacement.</strong> The five CLIs use different files, schemas, auth stores and duplicate-ID behavior. Copying a server entry mechanically can leak secrets or silently change tools</td></tr>
+                  <tr><td><strong>High</strong></td><td><strong>Remote and cloud commands.</strong> Codex distinguishes local remote control from cloud execution. These states are operational, authenticated, and not portable config files</td></tr>
+                  <tr><td><strong>Moderate</strong></td><td><strong>Instruction ordering.</strong> "Nearest wins" is wrong here: the chain is emitted root&nbsp;&rarr;&nbsp;cwd and the closest file appears last, which is also the one a shared budget truncates first</td></tr>
+                  <tr><td><strong>Moderate</strong></td><td><strong>Agents and skills.</strong> Similar names conceal incompatible schemas, field support, isolation and duplicate rules — Codex agents are TOML, everyone else's are Markdown</td></tr>
+                  <tr><td><strong>Moderate</strong></td><td><strong>Local / private scope.</strong> Codex's absence is now <em>source-proven</em>: there is no <code class="inline">config.local.toml</code> anywhere. Synthesizing one produces a dead or misleading file</td></tr>
+                  <tr><td><strong>Moderate</strong></td><td><strong>Withdrawn capabilities.</strong> <code class="inline">$CODEX_HOME/prompts</code> was demoted from a documented reader to unverified at the installed version</td></tr>
+                  <tr><td><strong>Lower, not zero</strong></td><td>A path with no documented reader should be represented as <strong>unsupported or unknown</strong>, not deleted merely because another coding agent does not consume it</td></tr>
+                </tbody>
+              </table>
+
+              <p class="eli5"><span class="eli5-term">Same word, different meaning — four traps in Codex.</span> <strong>Goal</strong>: Codex Goal is one persisted objective per thread, unlike Claude's transcript-evaluated session state or Copilot's autopilot objective. <strong>Rule</strong>: Codex <code class="inline">.rules</code> files enforce execution policy for shell commands and network access, while Claude's and Antigravity's rules are instruction context. <strong>Memory</strong>: Codex uses local generated learned files, unlike Copilot's hosted memory. <strong>Project</strong>: it is a Git discovery ceiling here, a customization scope elsewhere, and a key into generated user state elsewhere again — not a universal inheritance level.</p>
+            </div>
+          </section>
+
+          <section class="doc" id="sources" data-term>
+            <p class="prompt">cat sources.txt</p>
+            <div class="body" data-term-out>
+              <p>Every URL below was retrieved <strong>2026-08-11</strong>, and the second verification pass re-fetched the load-bearing pages <strong>2026-08-13</strong> (import, changelog, build-skills, build-plugins, rules, memories, hooks, and the developer plugin reference). Rolling Learn pages expose no stable per-page revision date, so runtime-sensitive documentation claims were checked against <code class="inline">rust-v0.147.0</code>; rolling product and service claims remain explicitly <strong>D</strong>, not source-pinned.</p>
+
+              <div class="grid">
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">AGENTS.md guide</a><br /><span class="muted">instruction hierarchy</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/build-skills">Skills</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/agent-configuration/subagents">Subagents</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/hooks">Hooks</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/agent-configuration/rules">Rules</a><br /><span class="muted">command-execution policy</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/config-file/config-reference">Configuration reference</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/config-file/config-basic">Basic config</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/config-file/config-advanced">Advanced config</a><br /><span class="muted">profiles</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/enterprise/managed-configuration">Managed configuration</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/extend/mcp">MCP</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/custom-prompts">Custom prompts</a><br /><span class="muted">the D/U claim</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/customization/memories">Memories</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/plugins">Plugins</a><br /><span class="muted">end-user page — manifest paths live in the developer docs below</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/build-plugins">Build plugins</a><br /><span class="muted">developer-facing manifest docs</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://developers.openai.com/plugins/build/plugins">Plugin developer reference</a><br /><span class="muted">manifest, marketplace and cache paths</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/changelog?type=codex-cli">Codex CLI changelog</a><br /><span class="muted">the 0.147.0 entry</span></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/import">Import (Claude Code / Cursor)</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/long-running-work">Goal mode</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/developer-commands.md?surface=cli">CLI command reference</a></div>
+                <div class="card-terminal pad"><a class="link-quiet" href="https://learn.chatgpt.com/docs/cli/reference">CLI reference</a><br /><span class="muted">session flags</span></div>
+              </div>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Commit-pinned source.</strong> Every file below is at tag <code class="inline">rust-v0.147.0</code>, commit <code class="inline">be6e8eac029b183056b7e4402879f15d2c85f61b</code>.</p>
+
+              <table>
+                <colgroup><col style="width:23rem" /><col /></colgroup>
+                <thead><tr><th>File</th><th>What it establishes</th></tr></thead>
+                <tbody>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core/src/agents_md.rs"><code class="inline">codex-rs/core/src/agents_md.rs</code></a></td><td>The AGENTS loader — upward search, <code class="inline">dirs.reverse()</code>, the hard ceiling, per-directory closures</td></tr>
+                  <tr><td><code class="inline">codex-home/src/instructions/mod.rs</code></td><td>The global slot: a two-element loop over private constants, no <code class="inline">Config</code> access, no byte budget</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/ext/skills/src/host_roots.rs"><code class="inline">codex-rs/ext/skills/src/host_roots.rs</code></a></td><td>Skill roots per layer, the <code class="inline">.agents/skills</code> per-directory join, the deprecated-location comment</td></tr>
+                  <tr><td><code class="inline">skills/src/interface.rs</code><br /><code class="inline">ext/skills/src/loader/metadata.rs</code><br /><code class="inline">ext/skills/src/provider/host.rs</code><br /><code class="inline">skills/src/model.rs</code></td><td><code class="inline">agents/openai.yaml</code> — fail-open interface metadata, <code class="inline">dependencies.tools</code> and the <code class="inline">policy.allow_implicit_invocation</code> gate (re-corrected 2026-08-13)</td></tr>
+                  <tr><td><code class="inline">core-skills/src/config_rules.rs</code></td><td><code class="inline">[[skills.config]]</code> path-or-name selection, the required <code class="inline">enabled</code> flag, and its three warnings</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core/src/config/agent_roles.rs"><code class="inline">codex-rs/core/src/config/agent_roles.rs</code></a></td><td>Agent-role layer set, inline-before-scan, sorted worklist, per-field cross-layer merge</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/config/src/state.rs"><code class="inline">codex-rs/config/src/state.rs</code></a></td><td>Config layer state, config folders, the trust and denylist behavior</td></tr>
+                  <tr><td><code class="inline">config/src/config_layer_source.rs::precedence()</code></td><td>The numeric layer precedence — 50/40/30/25/21/20/15/10/0</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/config/src/merge.rs"><code class="inline">codex-rs/config/src/merge.rs</code></a></td><td>The per-key deep merge: tables recurse, arrays and scalars replace</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/manifest.rs"><code class="inline">codex-rs/core-plugins/src/manifest.rs</code></a><br /><code class="inline">utils/plugins/src/plugin_namespace.rs</code> — <code class="inline">::find_plugin_manifest_path</code> (the root-first probe) and <code class="inline">::plugin_namespace_for_root_uri</code> (the three-path-only namespace resolver)</td><td>Root-first probe, symlink rejection, <code class="inline">$schema</code> gate, the overlay, and the second resolver with a different order</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/marketplace.rs"><code class="inline">codex-rs/core-plugins/src/marketplace.rs</code></a></td><td><code class="inline">MARKETPLACE_MANIFEST_RELATIVE_PATHS</code> and the first-existing <code class="inline">find_map</code></td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/command_migration/plugin.rs"><code class="inline">codex-rs/core-plugins/src/command_migration/plugin.rs</code></a></td><td>Command-to-skill migration under the <code class="inline">source-command</code> prefix</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/state/src/sqlite.rs"><code class="inline">codex-rs/state/src/sqlite.rs</code></a><br /><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/state/goals_migrations/0001_thread_goals.sql"><code class="inline">state/goals_migrations/0001_thread_goals.sql</code></a></td><td>The goal database path resolution and the persisted goal schema</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/cli/src/main.rs"><code class="inline">codex-rs/cli/src/main.rs</code></a><br /><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/cloud-tasks/src/cli.rs"><code class="inline">codex-rs/cloud-tasks/src/cli.rs</code></a><br /><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/cli/src/remote_control_cmd.rs"><code class="inline">codex-rs/cli/src/remote_control_cmd.rs</code></a></td><td>The CLI entrypoint, the cloud-task subcommands, and the remote-control command</td></tr>
+                  <tr><td><code class="inline">codex-rs/core/config.schema.json</code></td><td>93 top-level properties, <strong>none</strong> of them <code class="inline">prompts</code>; also the <code class="inline">notify</code>, <code class="inline">instructions</code>, credential-store, <code class="inline">[history]</code>, <code class="inline">[memories]</code>, <code class="inline">marketplaces</code> and <code class="inline">PluginConfig</code> shapes cited by the second pass</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/config/src/config_requirements.rs"><code class="inline">codex-rs/config/src/config_requirements.rs</code></a></td><td>The requirements surface — per-server and per-plugin requirements, marketplace restriction, feature pinning, managed hooks</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/features/src/lib.rs"><code class="inline">codex-rs/features/src/lib.rs</code></a></td><td>The feature registry — lifecycle stages, the plugins / memories / goals / remote-catalog flags and their defaults</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core/src/exec_policy.rs"><code class="inline">codex-rs/core/src/exec_policy.rs</code></a><br /><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/execpolicy/src/parser.rs"><code class="inline">codex-rs/execpolicy/src/parser.rs</code></a></td><td>Rules — the Starlark builtins, the trusted-layer-only loader, and the runtime amendment of user <code class="inline">default.rules</code></td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/loader.rs"><code class="inline">codex-rs/core-plugins/src/loader.rs</code></a><br /><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/remote.rs"><code class="inline">codex-rs/core-plugins/src/remote.rs</code></a><br /><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/core-plugins/src/marketplace_add.rs"><code class="inline">codex-rs/core-plugins/src/marketplace_add.rs</code></a></td><td>Plugin-root <code class="inline">.mcp.json</code> live-read, the remote catalogs, and marketplace add / persist / restriction</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/rollout/src/recorder.rs"><code class="inline">codex-rs/rollout/src/recorder.rs</code></a><br /><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/ext/memories/src/metrics.rs"><code class="inline">codex-rs/ext/memories/src/metrics.rs</code></a><br /><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/ext/skills/src/render.rs"><code class="inline">codex-rs/ext/skills/src/render.rs</code></a></td><td>Sessions rollout paths, the memories path taxonomy, and the skill-catalog budget constants</td></tr>
+                  <tr><td><a class="link-quiet" href="https://github.com/openai/codex/blob/be6e8eac029b183056b7e4402879f15d2c85f61b/codex-rs/app-server-protocol/src/protocol/v2/config.rs"><code class="inline">codex-rs/app-server-protocol/src/protocol/v2/config.rs</code></a></td><td><code class="inline">ExternalAgentConfigMigrationItemType</code> — the ten-literal <code class="inline">/import</code> item-type enum</td></tr>
+                </tbody>
+              </table>
+
+              <hr class="ascii-rule" />
+
+              <p><strong>Package-literal citations.</strong> Non-web primary evidence has no citable URL, so it is registered by version and artifact. Everything marked <strong>S</strong> without a source link traces to the installed <code class="inline">codex-cli 0.147.0</code> binary at <code class="inline">/opt/homebrew/bin/codex</code> &rarr; <code class="inline">/opt/homebrew/Caskroom/codex/0.147.0/bin/codex</code> (219,997,536 bytes — the Homebrew cask; corrected 2026-08-13: <code class="inline">~/.codex/packages/</code> does not exist on this machine, and <code class="inline">~/.codex/version.json</code> is stale standalone-updater state last checked 2026-05-21), inspected read-only via <code class="inline">strings</code>, byte-level search and <code class="inline">--help</code>. Binary-checkable registered literals were re-verified against the cask binary and hold; two entries below — the SKILL.md fail-open comment and the merge doc sentence — are <em>source comments</em> that do not survive compilation, and are cited to the pinned tree, not the package. The specific literals a re-verification should look for:</p>
+
+              <table>
+                <colgroup><col style="width:15rem" /><col /></colgroup>
+                <thead><tr><th>Claim</th><th>Literal or expression to look for</th></tr></thead>
+                <tbody>
+                  <tr><td>Layer vocabulary</td><td>The run <code class="inline">thread, turn, system, project, mdm, session_flags, plugin, cloud_requirements, cloud_managed_config, legacy_managed_config_file, legacy_managed_config_mdm</code>; the phrase "project-local config, hooks, and exec policies"; <code class="inline">dotCodexFolder</code></td></tr>
+                  <tr><td>Direction of travel</td><td>The assertion message <strong>"project layers are not ordered from root to cwd"</strong></td></tr>
+                  <tr><td>Instruction budget</td><td>"project doc exceeds remaining budget; truncating"; <code class="inline">DEFAULT_PROJECT_DOC_MAX_BYTES = 32 * 1024</code></td></tr>
+                  <tr><td>Global slot</td><td>"Failed to read global AGENTS.md instructions from"; the package sentence "respecting normal project-document precedence (<code class="inline">AGENTS.override.md</code>, <code class="inline">AGENTS.md</code>, then configured fallback filenames)"</td></tr>
+                  <tr><td>Skills</td><td><code class="inline">SKILL_FILE_NAME = "SKILL.md"</code>; <code class="inline">SkillParseError::MissingField("description")</code>; "skills.config entry without a path or name selector"; "skills.config entry with both path and name selectors"; "ignoring empty skills.config name override"; <code class="inline">SKILL_METADATA_PATH = "agents/openai.yaml"</code> beside the plugin-manifest constants; "optional metadata should not block loading SKILL.md"</td></tr>
+                  <tr><td>Agents</td><td>"duplicate agent role name … declared in the same config layer"</td></tr>
+                  <tr><td>Hooks</td><td>"loading hooks from both … prefer a single representation for this layer"; the eleven-event run <code class="inline">PreToolUse … Stop</code>; <code class="inline">hooks_config_folder()</code> and its "Linked Git worktrees" comment; <code class="inline">PLUGIN_ROOT</code> / <code class="inline">PLUGIN_DATA</code> / <code class="inline">CLAUDE_PLUGIN_ROOT</code> / <code class="inline">CLAUDE_PLUGIN_DATA</code></td></tr>
+                  <tr><td>MCP</td><td>"Merge config <code class="inline">overlay</code> into <code class="inline">base</code>, giving <code class="inline">overlay</code> precedence"; <code class="inline">codex mcp --help</code> listing exactly six subcommands; <code class="inline">codex mcp add --help</code> exposing five flags plus the globals</td></tr>
+                  <tr><td>Plugins</td><td>The greppable literals are the constants' <strong>values</strong>, not their names — the identifiers <code class="inline">DISCOVERABLE_PLUGIN_MANIFEST_PATHS</code> and <code class="inline">MARKETPLACE_MANIFEST_RELATIVE_PATHS</code> do not survive compilation and grep to zero. Search with <code class="inline">grep -a -F</code>, <strong>not</strong> <code class="inline">strings</code>, for the three plugin-manifest paths <code class="inline">.codex-plugin/plugin.json</code>, <code class="inline">.claude-plugin/plugin.json</code>, <code class="inline">.cursor-plugin/plugin.json</code> and the four marketplace-manifest paths <code class="inline">.agents/plugins/marketplace.json</code>, <code class="inline">.agents/plugins/api_marketplace.json</code>, <code class="inline">.claude-plugin/marketplace.json</code>, <code class="inline">.cursor-plugin/marketplace.json</code> — all seven byte-findable in the installed 0.147.0 binary; plus <code class="inline">https://agent-plugins.org/schemas/1.0.0/plugin.schema.json</code>; <code class="inline">codex plugin --help</code> listing exactly <code class="inline">add, list, marketplace, remove</code></td></tr>
+                  <tr><td>Goals and memories</td><td><code class="inline">GOALS_DB_FILENAME = "goals_1.sqlite"</code>; <code class="inline">SQLITE_HOME_ENV = "CODEX_SQLITE_HOME"</code>; <code class="inline">cfg.sqlite_home.or(sqlite_home_env).unwrap_or(codex_home)</code>; <code class="inline">codex_home.join("memories")</code>; <code class="inline">memory_mode = "disabled"</code>; <code class="inline">memories_1.sqlite</code>, <code class="inline">queue_1.sqlite</code></td></tr>
+                  <tr><td>Profile</td><td>The <code class="inline">--profile</code> help text "Layer <code class="inline">$CODEX_HOME/&lt;name&gt;.config.toml</code> on top of the base user config"</td></tr>
+                  <tr><td>Prompts (negative)</td><td><code class="inline">prompts/list</code> and <code class="inline">prompts/get</code> — confirm these are <strong>MCP method names</strong> before treating them as a filesystem feature; <code class="inline">CustomPromptView</code> is an unrelated review-instruction input</td></tr>
+                  <tr><td>Import item-type enum</td><td><code class="inline">AGENTS_MD, CONFIG, SKILLS, PLUGINS, MCP_SERVER_CONFIG, SUBAGENTS, HOOKS, COMMANDS, MEMORY, SESSIONS</code></td></tr>
+                </tbody>
+              </table>
+
+              <p><strong>Review outcome for Codex.</strong> 6 claims corrected, 12 documentation-only claims raised to source, package, or binary strength, 5 unknowns standing, and one extraction failure recorded so it is not repeated. The tag <code class="inline">rust-v0.147.0</code> resolves to an annotated tag object pointing at commit <code class="inline">be6e8eac029b183056b7e4402879f15d2c85f61b</code>, message "Release 0.147.0" — the pin is confirmed, not assumed. No Codex state was modified by any part of the review and no mutating subcommand was run. A <strong>second verification pass</strong> ran <strong>2026-08-13</strong> against the tag worktree, <code class="inline">main</code> at <code class="inline">6851fae</code>, the installed cask binary, re-fetched docs and a fresh <code class="inline">~/.codex</code> observation — its outcome table sits in the corrections section.</p>
+            </div>
+          </section>
+      </div>
+    </main>
+
+    <footer class="status">
+      <span class="status-left"><span class="glow">[configr]</span> OpenAI Codex capability guide</span>
+      <nav class="status-right">
+        <a class="doc-link" href="https://danieldeusing.de">danieldeusing.de</a>
+        <span class="sep" aria-hidden="true"></span>
+        <details class="dropdown">
+          <summary aria-label="theme">
+            <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"></circle></svg>
+            <span data-theme-label>warm</span>
+            <span aria-hidden="true">▾</span>
+          </summary>
+          <ul class="dropdown-panel" role="list">
+            <li><button type="button" class="dropdown-item" data-theme-value="warm">warm</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="green">green</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="mono">mono</button></li>
+            <li><button type="button" class="dropdown-item" data-theme-value="paper">paper</button></li>
+          </ul>
+        </details>
+        <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="true" aria-label="Toggle animations" data-tip="Toggle animations">
+          <span data-anim-box aria-hidden="true">[x]</span>
+          <span>anim</span>
+        </button>
+      </nav>
+    </footer>
+
+    <script type="module">
+      import { applyStoredTheme, initThemeSwitcher, initDropdowns, initSelects, initTerminal, initAnimToggle, initBurgerNav, initLsNav, initTableScroll, initDiagramZoom, initMinimap, initTooltips } from
+        "https://cdn.jsdelivr.net/npm/@danieldeusing/design@0.41.1/runtime/index.js";
+      applyStoredTheme();
+      initThemeSwitcher();
+      initDropdowns();
+      initTerminal();
+      initAnimToggle();
+      initBurgerNav();
+      // The rail's show/hide, and it measures the real header/footer heights into
+      // --ls-nav-top / --ls-nav-bottom so the rail sits BETWEEN the chrome, not under it.
+      initLsNav();
+      // Every table gets a .tablewrap parent, so a table wider than its column scrolls
+      // itself instead of pushing the whole page sideways. Already-wrapped ones are skipped.
+      initTableScroll();
+      // Every <select> gets the estate's dropdown instead of the OS one. Called
+      // unconditionally, beside initTableScroll() and for the same reason: both have no
+      // markup contract, so both are a no-op on a page that has none of their element.
+      initSelects();
+
+      // Mermaid diagrams — themed from the design tokens, re-rendered on theme switch.
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs";
+
+      const diagrams = Array.from(document.querySelectorAll("pre.mermaid"));
+      if (diagrams.length) {
+        // capture the sources before the first render replaces them with SVG
+        for (const node of diagrams) node.dataset.mermaidSource = node.textContent;
+
+        // Renders are serialized: applyStoredTheme() writes data-theme on startup, so an
+        // unguarded observer would kick off a second pass while the first is still
+        // running — two passes mutating the same nodes stack every diagram into one box.
+        let renderPass = 0;
+        let pending = Promise.resolve();
+        let zoomWired = false;
+
+        const renderDiagrams = () => {
+          pending = pending.then(async () => {
+            const pass = (renderPass += 1);
+            const styles = getComputedStyle(document.documentElement);
+            const token = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: "strict",
+              fontFamily: token("--font-mono", "monospace"),
+              flowchart: { htmlLabels: true, useMaxWidth: true },
+              themeVariables: {
+                background: token("--background", "#f5efe2"),
+                primaryColor: token("--card", "#efe7d4"),
+                primaryTextColor: token("--foreground", "#43352a"),
+                primaryBorderColor: token("--border", "#d9cdb6"),
+                secondaryColor: token("--muted", "#ece3cf"),
+                tertiaryColor: token("--muted", "#ece3cf"),
+                lineColor: token("--muted-foreground", "#71614e"),
+                textColor: token("--foreground", "#43352a"),
+                mainBkg: token("--card", "#efe7d4"),
+                nodeBorder: token("--border", "#d9cdb6"),
+                clusterBkg: token("--muted", "#ece3cf"),
+                clusterBorder: token("--border", "#d9cdb6"),
+                edgeLabelBackground: token("--background", "#f5efe2"),
+                titleColor: token("--primary", "#8a4516"),
+              },
+            });
+            // render ids must be unique per pass, or a re-render collides with itself
+            for (const [index, node] of diagrams.entries()) {
+              try {
+                const { svg } = await mermaid.render(`mermaid-svg-${index}-${pass}`, node.dataset.mermaidSource);
+                node.innerHTML = svg;
+                node.dataset.processed = "true";
+              } catch {
+                // a broken diagram falls back to its source — it must never blank the box
+                node.textContent = node.dataset.mermaidSource;
+                node.removeAttribute("data-processed");
+              }
+            }
+            // EVERY DIAGRAM IS ZOOMABLE. Wired ONCE, and after the first render: the opener
+            // binds a listener per element and is not idempotent, so calling it again on the
+            // theme re-render would open two overlays per click. Re-rendering is safe
+            // regardless — initDiagramZoom CLONES the svg on open.
+            if (!zoomWired) {
+              zoomWired = true;
+              initDiagramZoom("pre.mermaid");
+            }
+          });
+          return pending;
+        };
+
+        // Wait for the terminal reveal: a diagram inside a not-yet-revealed
+        // [data-term-out] is visibility:hidden and cannot be measured properly.
+        if (document.documentElement.classList.contains("anim-off") || window.termContentDone) {
+          void renderDiagrams();
+        } else {
+          window.addEventListener("term:contentdone", () => void renderDiagrams(), { once: true });
+        }
+
+        // re-render with the new palette, but only when the theme actually changed
+        let lastTheme = document.documentElement.dataset.theme;
+        new MutationObserver(() => {
+          const theme = document.documentElement.dataset.theme;
+          if (theme === lastTheme) return;
+          lastTheme = theme;
+          void renderDiagrams();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+      }
+
+      // The minimap builds itself from the sections — one bar each, in the left gutter,
+      // with the scroll-spy built in. No markup and no per-section wiring.
+      initMinimap({ sections: "section.doc" });
+      // The minimap's bars carry `data-tip`, not `title`: the native tooltip waits about a
+      // second and renders in the OS's chrome, which is useless on a strip meant to be
+      // scrubbed. Delegated, so it covers the bars the minimap just built.
+      initTooltips();
+    </script>
+  </body>
+</html>

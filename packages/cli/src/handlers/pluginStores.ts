@@ -661,7 +661,9 @@ const STORES: Partial<Record<CodingAgent, PluginStore>> = {
 export function pluginStoreFor(agent: CodingAgent): PluginStore {
   const store = STORES[canonicalAgent(agent) ?? agent];
   if (!store || !isTypeSupported("plugin", agent)) {
-    throw new Error(`Plugins are not supported for ${CODING_AGENTS[agent].name}`);
+    // `CODING_AGENTS[agent]` is undefined for an id outside the vocabulary, so
+    // naming it directly crashed the guard while it was building its own message.
+    throw new Error(`Plugins are not supported for ${CODING_AGENTS[agent]?.name ?? agent}`);
   }
   return store;
 }

@@ -198,6 +198,61 @@ describe("rule handler", () => {
     });
   });
 
+  describe("edges", () => {
+    // A first-party rule is on disk in the registry checkout, so the content
+    // comes from there rather than from a fetch.
+    it("reads a rule from a local checkout when there is one", async () => {
+      const { getItemSourcePath, fetchItemFile } = await import("../config/registry.js");
+      vi.mocked(getItemSourcePath).mockReturnValue("/registry/rules/no-force-push");
+      vol.mkdirSync("/registry/rules/no-force-push", { recursive: true });
+      vol.writeFileSync("/registry/rules/no-force-push/rule.md", "From the checkout.");
+      const { installRule } = await import("./rule.js");
+
+      await installRule(ruleItem(), ["claude"], "project", "copy", true, PROJECT);
+
+      expect(read(`${PROJECT}/.claude/rules/${SLUG}.md`)).toContain("From the checkout.");
+      expect(vi.mocked(fetchItemFile)).not.toHaveBeenCalled();
+    });
+
+    it("reports a failed write rather than throwing out of the install", async () => {
+      await serveRule();
+      // A directory where the rule file belongs makes the write fail.
+      vol.mkdirSync(`${PROJECT}/.claude/rules/${SLUG}.md`, { recursive: true });
+      const { installRule } = await import("./rule.js");
+
+      const results = await installRule(ruleItem(), ["claude"], "project", "copy", true, PROJECT);
+
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toBeTruthy();
+    });
+
+    it("treats an agent with no rule surface as having nothing to remove or list", async () => {
+      const { uninstallRule, getInstalledRules } = await import("./rule.js");
+      expect(await uninstallRule(SLUG, "nonsense" as never, "project", PROJECT)).toBe(false);
+      expect(await getInstalledRules("nonsense" as never, "project", PROJECT)).toEqual([]);
+    });
+
+    it("names the destination for every agent", async () => {
+      const { ruleDestination } = await import("./ruleTargets.js");
+      expect(ruleDestination("claude", SLUG, "project", PROJECT)).toBe(
+        `${PROJECT}/.claude/rules/${SLUG}.md`
+      );
+      expect(ruleDestination("codex", SLUG, "project", PROJECT)).toBe(`${PROJECT}/AGENTS.md`);
+      expect(() => ruleDestination("nonsense" as never, SLUG, "project", PROJECT)).toThrow(
+        /not supported/
+      );
+    });
+
+    it("installs through the registered handler", async () => {
+      await serveRule();
+      const { ruleHandler } = await import("./rule.js");
+      const results = await ruleHandler.install(ruleItem(), ["claude"], "project", "copy", true, PROJECT);
+      expect(results[0]?.success).toBe(true);
+      expect(await ruleHandler.listInstalled("claude", "project", PROJECT)).toEqual([SLUG]);
+      expect(await ruleHandler.uninstall(SLUG, "claude", "project", PROJECT)).toBe(true);
+    });
+  });
+
   describe("planRule", () => {
     it("names the exact destination per agent and says a section is a merge", async () => {
       await serveRule();

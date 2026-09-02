@@ -77,6 +77,11 @@ export interface PluginStore {
   cachePath: (marketplace: string, name: string, version: string) => Promise<string | null>;
   /** Register the marketplace this plugin is filed under, when the agent has that concept. */
   ensureMarketplace?: (marketplace: string, item: RegistryItem) => Promise<PluginMutation[]>;
+  /**
+   * Shape the staged tree before it is moved into place, for an agent whose
+   * discovery needs a marker the source repository does not carry.
+   */
+  prepareTree?: (contentPath: string, context: { name: string; version: string; item: RegistryItem }) => Promise<void>;
   /** The config writes, in the order they should be applied. */
   mutations: (context: InstallContext) => PluginMutation[];
   listInstalled: (scope: InstallScope, cwd: string) => Promise<string[]>;
@@ -585,6 +590,28 @@ const antigravityStore: PluginStore = {
 
   // Antigravity files plugins by name only — it has no marketplace dimension.
   cachePath: (_marketplace, name) => resolveContained(GEMINI_PLUGINS_DIR, name),
+
+  /**
+   * Antigravity discovers a plugin by a `plugin.json` at the tree ROOT, and
+   * `.claude-plugin/plugin.json` is not a substitute: the cross-tool matrix
+   * marks it a migration path (`agy plugin import claude`), never a reader.
+   * `agy plugin validate` on a Claude-manifest-only tree answers
+   * "missing plugin.json"; with a root manifest it answers "skills: 1 processed".
+   *
+   * Most plugins in the wild ship only the Claude manifest, so without this the
+   * install lands a directory Antigravity refuses — reporting success while the
+   * plugin does nothing. A tree that already carries its own root manifest
+   * (compound-engineering does) is left exactly as it is.
+   */
+  async prepareTree(contentPath, { name, version, item }) {
+    const manifestPath = join(contentPath, "plugin.json");
+    if (await exists(manifestPath)) return;
+    await writeJson(manifestPath, {
+      name,
+      version,
+      ...(item.description ? { description: item.description } : {}),
+    });
+  },
 
   mutations: (context) => [
     {

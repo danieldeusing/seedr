@@ -74,6 +74,9 @@ describe("collectInstalledItems", () => {
       { type: "agent", agent: "claude", slugs: ["reviewer"] },
       { type: "hook", agent: "claude", slugs: ["lint-hook"] },
       { type: "mcp", agent: "claude", slugs: ["playwright"] },
+      // Copilot reads the project `.mcp.json` first in its own precedence
+      // list, so a server there is genuinely present for it as well.
+      { type: "mcp", agent: "copilot", slugs: ["playwright"] },
       { type: "mcp", agent: "codex", slugs: ["github"] },
       { type: "plugin", agent: "claude", slugs: ["proj-plugin"] },
     ]);
@@ -84,6 +87,9 @@ describe("collectInstalledItems", () => {
 
     expect(await collectInstalledItems({ types: ["mcp"], scope: "project", cwd: PROJECT })).toEqual([
       { type: "mcp", agent: "claude", slugs: ["playwright"] },
+      // Copilot reads the project `.mcp.json` first in its own precedence
+      // list, so a server there is genuinely present for it as well.
+      { type: "mcp", agent: "copilot", slugs: ["playwright"] },
       { type: "mcp", agent: "codex", slugs: ["github"] },
     ]);
     expect(await collectInstalledItems({ types: ["skill", "hook"], agents: ["codex"], scope: "project", cwd: PROJECT })).toEqual([
@@ -157,7 +163,7 @@ describe("runList", () => {
     expect(text).toContain("Claude Code");
     expect(text).toContain("OpenAI Codex CLI");
     expect(text).toContain("docx");
-    expect(text).toContain("Total: 8 installed");
+    expect(text).toContain("Total: 9 installed");
     expect(text).toContain(SETTINGS_NOT_DISCOVERABLE);
   });
 

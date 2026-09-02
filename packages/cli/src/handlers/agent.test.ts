@@ -99,6 +99,18 @@ describe("agent handler", () => {
     // loader keys on `.instructions.md`. A plain `.md` there is a different
     // kind of file. The frontmatter is the same name/description shape Claude
     // uses, which is why the content ports unchanged.
+    // Install wrote `<slug>.agent.md` while listing stripped only `.md`, so a
+    // Copilot subagent listed as `<slug>.agent` and `remove` never matched it.
+    it("round-trips install, list and remove for a Copilot subagent", async () => {
+      const { installAgent, getInstalledAgents, uninstallAgent } = await import("./agent.js");
+
+      await installAgent(agentItem(), ["copilot"], "project", "copy", true, PROJECT);
+      expect(await getInstalledAgents("copilot", "project", PROJECT)).toEqual(["test-agent"]);
+
+      expect(await uninstallAgent("test-agent", "copilot", "project", PROJECT)).toBe(true);
+      expect(await getInstalledAgents("copilot", "project", PROJECT)).toEqual([]);
+    });
+
     it("writes a Copilot subagent as <slug>.agent.md under .github/agents", async () => {
       const { installAgent } = await import("./agent.js");
       const results = await installAgent(agentItem(), ["copilot"], "project", "copy", true, PROJECT);

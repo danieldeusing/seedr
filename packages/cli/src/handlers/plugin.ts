@@ -210,6 +210,9 @@ async function installPluginForAgent(
         : await readManifestForPlan(item, store.manifestPaths);
 
       const { name, version } = resolvePluginIdentity(item, pluginJson);
+      if (contentPath && store.prepareTree) {
+        await store.prepareTree(contentPath, { name, version, item });
+      }
       const gitCommitSha = resolveGitCommitSha(item, fetched);
       const pluginId = getPluginId(name, marketplace);
       const cachePath = await store.cachePath(marketplace, name, version);

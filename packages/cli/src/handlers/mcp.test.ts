@@ -241,30 +241,33 @@ describe("mcp handler", () => {
   // schema is the same `mcpServers` map Claude uses, confirmed from a populated
   // config on a real machine.
   describe("copilot adapter", () => {
-    it("writes the mcpServers map to .github/mcp.json in a project", async () => {
+    // The workspace pair is a precedence list, not a choice: Copilot takes the
+    // first of `[.mcp.json, .github/mcp.json]` per directory. Writing the
+    // `.github` spelling to keep Claude's file untouched lost silently whenever
+    // `.mcp.json` existed — which it does as soon as anything is installed for
+    // Claude, or the repository ships one.
+    it("writes to the project .mcp.json Copilot reads first", async () => {
       await serveDefinition(GITHUB_STDIO);
       const { installMcp } = await import("./mcp.js");
 
       const results = await installMcp(mcpItem(), ["copilot"], "project", "copy", true, PROJECT);
 
       expect(results[0]?.success).toBe(true);
-      expect(results[0]?.path).toBe("/my/project/.github/mcp.json");
-      expect(readJsonFile("/my/project/.github/mcp.json").mcpServers.github).toBeDefined();
+      expect(results[0]?.path).toBe("/my/project/.mcp.json");
+      expect(readJsonFile("/my/project/.mcp.json").mcpServers.github).toBeDefined();
+      // Nothing is written where Copilot would never look.
+      expect(vol.existsSync("/my/project/.github/mcp.json")).toBe(false);
     });
 
-    // Copilot also reads `.mcp.json`, which is Claude's file. Sharing it would
-    // make a Copilot uninstall delete Claude's server entry, so seedr writes the
-    // Copilot-specific spelling and leaves Claude's file alone.
-    it("does not touch Claude's .mcp.json", async () => {
+    // `.mcp.json` is the shared project MCP file and both agents read it, so an
+    // entry there belongs to the project rather than to one agent.
+    it("shares the project file with Claude rather than shadowing it", async () => {
       await serveDefinition(GITHUB_STDIO);
-      const { installMcp, uninstallMcp } = await import("./mcp.js");
+      const { installMcp, getInstalledMcpServers } = await import("./mcp.js");
+
       await installMcp(mcpItem(), ["claude"], "project", "copy", true, PROJECT);
 
-      await installMcp(mcpItem(), ["copilot"], "project", "copy", true, PROJECT);
-      expect(await uninstallMcp("github", "copilot", "project", PROJECT)).toBe(true);
-
-      // Claude's entry survives the Copilot removal.
-      expect(readJsonFile("/my/project/.mcp.json").mcpServers.github).toBeDefined();
+      expect(await getInstalledMcpServers("copilot", "project", PROJECT)).toEqual(["github"]);
     });
 
     it("writes the user tier to ~/.copilot/mcp-config.json", async () => {

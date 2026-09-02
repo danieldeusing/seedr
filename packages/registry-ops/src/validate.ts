@@ -362,6 +362,21 @@ function checkProvenance(item: Item, options: ValidateOptions, push: Push): void
     for (const key of ["sourceRevision", "pluginSource", "marketplaceRef"] as const) {
       if (item[key] !== undefined) push(key, "is only allowed on synced (official/community) items");
     }
+    // A first-party plugin cannot work, and the missing provenance is only half
+    // the reason. Every agent's plugin machinery keys on a marketplace, which is
+    // resolved from `marketplaceRef.url ?? externalUrl`: a first-party item
+    // points at the registry repository, which carries no marketplace manifest,
+    // and a fork serving `local://` resolves no repository at all. The install
+    // would succeed and the agent would then report the plugin orphaned.
+    //
+    // Publish the bundle's contents as their own items instead — skills and
+    // rules install on every agent, where a plugin is Claude-shaped packaging.
+    if (item.type === "plugin") {
+      push(
+        "type",
+        'a first-party ("seedr") item cannot be a plugin: plugins resolve through a marketplace, and the registry itself is not one. Add the bundle\'s skills, rules and commands as their own items'
+      );
+    }
   } else if (requireProvenance) {
     if (item.sourceRevision === undefined) push("sourceRevision", 'synced items must carry "sourceRevision"');
     if (item.contentDigest === undefined) push("contentDigest", 'synced items must carry "contentDigest"');

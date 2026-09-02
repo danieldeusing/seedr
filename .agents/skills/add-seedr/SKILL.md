@@ -29,12 +29,21 @@ Infer `ComponentType` from the path. Use the **deepest matching** segment:
 | `/skills/` or file named `SKILL.md` | `skill` |
 | `/hooks/` | `hook` |
 | `/agents/` | `agent` |
-| `/plugins/` or `.claude-plugin/` | `plugin` |
+| `/plugins/` or `.claude-plugin/` | `plugin` — but see the note below |
 | `/mcp/` or `.mcp.json` | `mcp` |
 | `/settings/` or `settings.json` | `settings` |
 | `/commands/` | `command` |
 
 If ambiguous, ask the user with AskUserQuestion.
+
+**A first-party item cannot be a plugin.** The operation refuses `type: "plugin"`
+on a `seedr` item, because a plugin resolves through a marketplace and the
+registry is not one — it would install and the agent would then report it
+orphaned. When a source folder carries `.claude-plugin/`, add its contents as
+their own items instead: the `skills/` become skill items, standing instructions
+become `rule` items, and both install on all five agents where a plugin is
+Claude-shaped packaging. Use `/add-community` for a plugin that genuinely lives
+in someone else's repository.
 
 ### 3. Derive a default slug
 

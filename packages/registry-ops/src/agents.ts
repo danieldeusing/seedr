@@ -74,7 +74,10 @@ export function canonicalAgents(values: readonly unknown[]): CanonicalCodingAgen
 export const AGENT_COMPATIBILITY: Record<ComponentType, CanonicalCodingAgent[]> = {
   skill: ["claude", "copilot", "antigravity", "codex", "opencode"],
   command: ["claude"],
-  agent: ["claude"],
+  // Copilot's subagent files carry the same name/description frontmatter.
+  // OpenCode's do not — theirs use `mode` and a `tools` map — so porting there
+  // needs a frontmatter translation, not a path.
+  agent: ["claude", "copilot"],
   hook: ["claude"],
   plugin: ["claude", "copilot", "antigravity", "codex", "opencode"],
   settings: ["claude"],

@@ -75,7 +75,10 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     // `~/.copilot/skills` is what the CLI itself populates.
     projectRoot: ".github",
     userRoot: join(home, ".copilot"),
-    contentTypes: { skill: SKILL_DIRECTORY },
+    // Subagents are `<name>.agent.md` under `agents/`, with the same
+    // `name` + `description` frontmatter a Claude subagent carries — confirmed
+    // from files on a real machine.
+    contentTypes: { skill: SKILL_DIRECTORY, agent: { path: "agents" } },
   },
   antigravity: ANTIGRAVITY,
   gemini: ANTIGRAVITY,

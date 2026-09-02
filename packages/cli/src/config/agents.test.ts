@@ -83,8 +83,14 @@ describe("agents", () => {
     });
 
     it("should return undefined for unsupported type", () => {
-      const config = getContentTypeConfig("copilot", "agent");
-      expect(config).toBeUndefined();
+      expect(getContentTypeConfig("copilot", "hook")).toBeUndefined();
+    });
+
+    // Subagent files are `<name>.agent.md` under `agents/`, carrying the same
+    // name/description frontmatter a Claude subagent does.
+    it("gives Copilot a subagents directory at both scopes", () => {
+      expect(getContentPath("copilot", "agent", "project", "/project")).toBe("/project/.github/agents");
+      expect(getContentPath("copilot", "agent", "user", "/project")).toBe("/home/testuser/.copilot/agents");
     });
 
     it("resolves hooks to the agent root, the handler owns the merge target", () => {
@@ -161,8 +167,7 @@ describe("agents", () => {
     });
 
     it("should return undefined for unsupported content types", () => {
-      const path = getContentPath("copilot", "agent", "project", PROJECT);
-      expect(path).toBeUndefined();
+      expect(getContentPath("copilot", "hook", "project", PROJECT)).toBeUndefined();
     });
 
     it("should return root for types with empty path", () => {

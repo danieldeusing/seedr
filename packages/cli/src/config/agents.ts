@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { CANONICAL_AGENTS, canonicalAgent } from "@seedr/registry-ops/pure";
@@ -14,6 +15,27 @@ const home = homedir();
  *
  * Read once at module load, which is when a CLI run's environment is fixed.
  */
+/**
+ * Claude Code's user JSON state file, which holds user-scope `mcpServers`.
+ *
+ * It is a resolver result, not a fixed path: `$CLAUDE_CONFIG_DIR/.config.json`
+ * when that file exists, and otherwise `${CLAUDE_CONFIG_DIR || $HOME}/.claude.json`.
+ * Hard-coding the second branch reads the obvious file and writes the wrong
+ * effective configuration on any machine using the first.
+ *
+ * The non-production OAuth suffixes (`-local-oauth`, `-staging-oauth`,
+ * `-custom-oauth`) are deliberately not guessed at: no such file has been
+ * observed, and picking one would be the guessing this repo refuses.
+ */
+export function claudeUserJsonPath(): string {
+  const configDir = process.env.CLAUDE_CONFIG_DIR;
+  if (configDir) {
+    const scoped = join(configDir, ".config.json");
+    if (existsSync(scoped)) return scoped;
+  }
+  return join(configDir || home, ".claude.json");
+}
+
 export const claudeUserRoot = (): string => process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
 
 const SKILL_DIRECTORY: ContentTypeConfig = {
@@ -200,7 +222,7 @@ export function getMcpConfigPath(
   const isUser = scope === "user";
   switch (canonicalAgent(agent) ?? agent) {
     case "claude":
-      return isUser ? join(process.env.CLAUDE_CONFIG_DIR || home, ".claude.json") : join(cwd, ".mcp.json");
+      return isUser ? claudeUserJsonPath() : join(cwd, ".mcp.json");
     case "codex":
       return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
     case "opencode":

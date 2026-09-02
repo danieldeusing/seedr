@@ -123,6 +123,31 @@ describe("agents", () => {
       expect(getAgentRoot("opencode", "project", "/project")).toBe("/project/.opencode");
     });
 
+    // The user JSON state file is a resolver result, not a fixed path:
+    // $CLAUDE_CONFIG_DIR/.config.json when it exists, otherwise
+    // ${CLAUDE_CONFIG_DIR || $HOME}/.claude.json. Hard-coding the second branch
+    // writes user-scope mcpServers into a file Claude Code does not consult.
+    it("resolves the Claude user JSON state file rather than assuming ~/.claude.json", async () => {
+      const previous = process.env.CLAUDE_CONFIG_DIR;
+      try {
+        delete process.env.CLAUDE_CONFIG_DIR;
+        vi.resetModules();
+        let fresh = await import("./agents.js");
+        expect(fresh.getMcpConfigPath("claude", "user", "/project")).toBe("/home/testuser/.claude.json");
+
+        // Relocated, with no .config.json present: the second branch, rooted at
+        // the variable rather than at $HOME.
+        process.env.CLAUDE_CONFIG_DIR = "/elsewhere/claude";
+        vi.resetModules();
+        fresh = await import("./agents.js");
+        expect(fresh.getMcpConfigPath("claude", "user", "/project")).toBe("/elsewhere/claude/.claude.json");
+      } finally {
+        if (previous === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+        else process.env.CLAUDE_CONFIG_DIR = previous;
+        vi.resetModules();
+      }
+    });
+
     // Containers, multi-account setups and the Agent SDK all relocate Claude's
     // user tree. Writing to ~/.claude there reports success and installs where
     // Claude Code never looks.

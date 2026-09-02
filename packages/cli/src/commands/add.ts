@@ -373,7 +373,22 @@ export async function runAdd(name: string | undefined, options: AddOptions, cwd:
   // The plan is a read-only description; nothing is written before the install call.
   if (options.dryRun) {
     ui.info("Dry run - no files will be written");
-    printPlan("Would write:", await planInstall(handler, item, agents, scope, method, cwd));
+    const planned = await planInstall(handler, item, agents, scope, method, cwd);
+    printPlan("Would write:", planned);
+
+    // A plan that ends "Dry run complete" for a command that would exit 1 is
+    // worse than no plan. Without --force, an existing destination is refused,
+    // so say which ones and exit the way the real run would.
+    const blocked = decideForce(options) ? [] : planned.filter((change) => change.kind === "modify");
+    if (blocked.length > 0) {
+      ui.warn(
+        `${blocked.length} destination(s) already exist and would be refused without --force:`
+      );
+      for (const change of blocked) console.log(chalk.gray(`    ${change.path}`));
+      ui.outro("Dry run complete - the real run would fail without --force");
+      return 1;
+    }
+
     ui.outro("Dry run complete");
     return 0;
   }

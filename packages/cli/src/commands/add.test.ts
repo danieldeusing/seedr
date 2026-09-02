@@ -281,6 +281,39 @@ describe("runAdd", () => {
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ slug: TEST_SKILL, type: "skill", tool: "claude", scope: "project", version: "dev" });
   });
 
+  // A dry run that ends "Dry run complete" and exits 0 for a command that would
+  // exit 1 is worse than no dry run. Without --force an existing destination is
+  // refused, so the plan has to say so and match the real verdict.
+  it("dry-run fails the way the real run would when a destination already exists", async () => {
+    const { runAdd } = await import("./add.js");
+    vol.mkdirSync(`${CLAUDE_SKILL_DIR}`, { recursive: true });
+    vol.writeFileSync(`${CLAUDE_SKILL_DIR}/SKILL.md`, "mine");
+    const logSpy = vi.mocked(console.log);
+    const before = snapshotVolume();
+
+    const exitCode = await runAdd(TEST_SKILL, { ...BASE_OPTIONS, agents: "claude", dryRun: true }, PROJECT);
+
+    expect(exitCode).toBe(1);
+    // Still a dry run: nothing written.
+    expect(snapshotVolume()).toBe(before);
+    const output = logSpy.mock.calls.map((call) => call.join(" ")).join("\n");
+    expect(output).toContain(CLAUDE_SKILL_DIR);
+  });
+
+  it("dry-run succeeds for the same command with --force", async () => {
+    const { runAdd } = await import("./add.js");
+    vol.mkdirSync(`${CLAUDE_SKILL_DIR}`, { recursive: true });
+    vol.writeFileSync(`${CLAUDE_SKILL_DIR}/SKILL.md`, "mine");
+
+    const exitCode = await runAdd(
+      TEST_SKILL,
+      { ...BASE_OPTIONS, agents: "claude", dryRun: true, force: true },
+      PROJECT
+    );
+
+    expect(exitCode).toBe(0);
+  });
+
   it("dry-run prints the exact plan and performs no writes and no telemetry", async () => {
     const { runAdd } = await import("./add.js");
     const before = snapshotVolume();

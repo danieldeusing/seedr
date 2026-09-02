@@ -16,7 +16,9 @@ export type SourceState =
   /** Both moved. Copying across overwrites the work done here; leaving it strands the source. */
   | "diverged"
   /** The recorded path is not there any more. Adopt the item, or point it elsewhere. */
-  | "missing";
+  | "missing"
+  /** The origin is recorded but the item is not in this checkout — another branch, or removed. Switch back, or forget it. */
+  | "orphaned";
 
 export interface SourceStatus {
   state: SourceState;

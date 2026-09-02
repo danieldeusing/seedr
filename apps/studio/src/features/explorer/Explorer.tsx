@@ -3,7 +3,7 @@ import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, isFirstParty, typeDirName } from "@seedr/registry-ops/pure";
 import { RepoMenu } from "./RepoMenu";
 import { useStudio } from "./store";
-import { ArrowDownToLine, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderX, GitBranch, GitCompareArrows, Pencil, PencilLine, Plus, Rows3, Settings } from "lucide-react";
+import { ArrowDownToLine, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderX, GitBranch, GitCompareArrows, Pencil, PencilLine, Plus, Rows3, Settings, Unlink } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { Input } from "@/core/ui/Input";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
@@ -61,6 +61,7 @@ const SOURCE_MARK: Record<string, { icon: typeof Pencil; tone: string; tip: stri
   edited: { icon: PencilLine, tone: "text-primary", tip: "Edited here since the last copy from its source folder" },
   diverged: { icon: GitCompareArrows, tone: "text-destructive", tip: "The source folder and this item have each changed" },
   missing: { icon: FolderX, tone: "text-destructive", tip: "The source folder it was copied from is gone" },
+  orphaned: { icon: Unlink, tone: "text-amber-400", tip: "Its source folder is remembered, but the item is not in this checkout — another branch, or removed" },
 };
 
 /** The mark for one row, or undefined when it has nothing to answer for. */

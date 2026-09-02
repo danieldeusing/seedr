@@ -5,7 +5,7 @@ import { applyOp } from "./ops/apply.js";
 import { itemStateHash } from "./hash.js";
 import { sourceDigest } from "./localSource.js";
 import { localSourceOf, sourceStatus } from "./localSources.js";
-import { repoRootOf } from "./fsPaths.js";
+import { itemDir, repoRootOf } from "./fsPaths.js";
 import { readItem } from "./read.js";
 import { LONG, makeRegistry } from "./test/fixtures.js";
 import { makeTempDir } from "./test/tempDir.js";
@@ -80,6 +80,19 @@ describe("where a local item came from", () => {
 
     const found = status(registry, "origin-skill");
     expect(found.state).toBe("missing");
+    expect(found.path).toBe(source);
+  });
+
+  test("an item that is not in this checkout is orphaned, and does not throw", () => {
+    const registry = makeRegistry();
+    const source = makeSource();
+    applyOp(registry, addOp(source));
+
+    // The record is machine-local and outlives a branch switch; the item dir does not.
+    rmSync(itemDir(registry, "skill", "origin-skill"), { recursive: true, force: true });
+
+    const found = status(registry, "origin-skill");
+    expect(found.state).toBe("orphaned");
     expect(found.path).toBe(source);
   });
 

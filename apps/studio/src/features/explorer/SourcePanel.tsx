@@ -22,6 +22,7 @@ const WORDING: Record<SourceStatus["state"], { label: string; tone: string; deta
   edited: { label: "changed here", tone: "text-primary", detail: "This copy has been edited and the folder has not. Copying across would undo that work." },
   diverged: { label: "both have changed", tone: "text-destructive", detail: "The folder and this copy have each been edited. Copying across keeps the folder's version and loses the edits made here." },
   missing: { label: "source is gone", tone: "text-destructive", detail: "The folder is no longer there. Adopt the item to stop looking for it." },
+  orphaned: { label: "item not in this checkout", tone: "text-amber-400", detail: "This checkout remembers where the item came from, but the item itself is not here — it lives on another branch, or was removed. Switch back, or adopt it to forget the folder." },
 };
 
 export function SourcePanel({ item }: { item: StudioItem }) {

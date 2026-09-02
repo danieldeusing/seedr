@@ -94,6 +94,11 @@ export const localSourceOf = (repoRoot: string, type: ComponentType, slug: strin
 export function sourceStatus(repoRoot: string, registryDir: string, type: ComponentType, slug: string): SourceStatus {
   const entry = localSourceOf(repoRoot, type, slug);
   if (!entry) return { state: "none" };
+  // The record is machine-local and outlives a branch switch, so it can name an
+  // item that is not in this checkout. That is a different problem from a
+  // vanished source, and it must not throw: the all-items pass maps over every
+  // record, and one orphan would take every other item's status down with it.
+  if (!existsSync(itemDir(registryDir, type, slug))) return { state: "orphaned", path: entry.path, recorded: entry.sourceDigest, current: null };
   if (!existsSync(entry.path)) return { state: "missing", path: entry.path, recorded: entry.sourceDigest, current: null };
 
   // Hashing the source costs a `git check-ignore` — one process, and by far the

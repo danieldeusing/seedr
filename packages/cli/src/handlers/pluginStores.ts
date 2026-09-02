@@ -6,7 +6,14 @@ import { promisify } from "node:util";
 import type { CodingAgent, InstallScope } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
 import { canonicalAgent } from "@seedr/registry-ops/pure";
-import { claudeUserRoot, getSettingsPath, CODING_AGENTS } from "../config/agents.js";
+import {
+  claudeUserRoot,
+  codexUserRoot,
+  copilotUserRoot,
+  openCodeUserConfigDir,
+  getSettingsPath,
+  CODING_AGENTS,
+} from "../config/agents.js";
 import { isTypeSupported } from "../config/compatibility.js";
 import { getEffectiveSourceRevision, parseGitHubRepo } from "../config/source.js";
 import { exists, removePathEntry, resolveContained } from "../utils/fs.js";
@@ -77,6 +84,11 @@ export interface PluginStore {
   cachePath: (marketplace: string, name: string, version: string) => Promise<string | null>;
   /** Register the marketplace this plugin is filed under, when the agent has that concept. */
   ensureMarketplace?: (marketplace: string, item: RegistryItem) => Promise<PluginMutation[]>;
+  /**
+   * Shape the staged tree before it is moved into place, for an agent whose
+   * discovery needs a marker the source repository does not carry.
+   */
+  prepareTree?: (contentPath: string, context: { name: string; version: string; item: RegistryItem }) => Promise<void>;
   /** The config writes, in the order they should be applied. */
   mutations: (context: InstallContext) => PluginMutation[];
   listInstalled: (scope: InstallScope, cwd: string) => Promise<string[]>;
@@ -314,7 +326,7 @@ const claudeStore: PluginStore = {
 // GitHub Copilot CLI — ~/.copilot
 // ---------------------------------------------------------------------------
 
-const COPILOT_DIR = join(home, ".copilot");
+const COPILOT_DIR = copilotUserRoot();
 export const COPILOT_SETTINGS_PATH = join(COPILOT_DIR, "settings.json");
 export const COPILOT_PLUGINS_DIR = join(COPILOT_DIR, "installed-plugins");
 
@@ -382,7 +394,7 @@ const copilotStore: PluginStore = {
 // OpenAI Codex CLI — ~/.codex/config.toml
 // ---------------------------------------------------------------------------
 
-const CODEX_DIR = join(home, ".codex");
+const CODEX_DIR = codexUserRoot();
 export const CODEX_CONFIG_PATH = join(CODEX_DIR, "config.toml");
 export const CODEX_CACHE_DIR = join(CODEX_DIR, "plugins", "cache");
 
@@ -485,7 +497,7 @@ interface OpenCodeConfig {
 
 export function openCodeConfigPath(scope: InstallScope, cwd: string): string {
   return scope === "user"
-    ? join(home, ".config", "opencode", "opencode.json")
+    ? join(openCodeUserConfigDir(), "opencode.json")
     : join(cwd, "opencode.json");
 }
 
@@ -585,6 +597,28 @@ const antigravityStore: PluginStore = {
 
   // Antigravity files plugins by name only — it has no marketplace dimension.
   cachePath: (_marketplace, name) => resolveContained(GEMINI_PLUGINS_DIR, name),
+
+  /**
+   * Antigravity discovers a plugin by a `plugin.json` at the tree ROOT, and
+   * `.claude-plugin/plugin.json` is not a substitute: the cross-tool matrix
+   * marks it a migration path (`agy plugin import claude`), never a reader.
+   * `agy plugin validate` on a Claude-manifest-only tree answers
+   * "missing plugin.json"; with a root manifest it answers "skills: 1 processed".
+   *
+   * Most plugins in the wild ship only the Claude manifest, so without this the
+   * install lands a directory Antigravity refuses — reporting success while the
+   * plugin does nothing. A tree that already carries its own root manifest
+   * (compound-engineering does) is left exactly as it is.
+   */
+  async prepareTree(contentPath, { name, version, item }) {
+    const manifestPath = join(contentPath, "plugin.json");
+    if (await exists(manifestPath)) return;
+    await writeJson(manifestPath, {
+      name,
+      version,
+      ...(item.description ? { description: item.description } : {}),
+    });
+  },
 
   mutations: (context) => [
     {

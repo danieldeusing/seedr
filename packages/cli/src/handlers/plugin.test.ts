@@ -754,6 +754,48 @@ describe("plugin handler", () => {
       expect(manifest.imports[0]).toMatchObject({ name: "my-plugin", source: "seedr" });
     });
 
+    // Antigravity discovers a plugin by a `plugin.json` at the tree ROOT.
+    // `.claude-plugin/plugin.json` is a migration path (`agy plugin import
+    // claude`), never a reader: `agy plugin validate` on a Claude-manifest-only
+    // tree answers "missing plugin.json". Without this the install reported
+    // success and Antigravity saw no plugin at all.
+    it("writes a root plugin.json for Antigravity when the tree has none", async () => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["antigravity"], "project", "copy", true, PROJECT);
+
+      const manifest = readJsonFile(`${GEMINI_PLUGINS_DIR}/my-plugin/plugin.json`);
+      expect(manifest.name).toBe("my-plugin");
+      expect(manifest.version).toBe("2.1.0");
+    });
+
+    it("leaves a plugin's own root manifest alone", async () => {
+      const { fetchItemToDestination } = await import("../config/registry.js");
+      vi.mocked(fetchItemToDestination).mockImplementation(async (_item: RegistryItem, dest: string) => {
+        vol.mkdirSync(`${dest}/.claude-plugin`, { recursive: true });
+        vol.writeFileSync(`${dest}/.claude-plugin/plugin.json`, JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+        vol.writeFileSync(`${dest}/plugin.json`, JSON.stringify({ name: "my-plugin", version: "9.9.9", ours: true }));
+        return { sourceRevision: SHA, contentDigest: "f".repeat(64), files: ["plugin.json"] };
+      });
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["antigravity"], "project", "copy", true, PROJECT);
+
+      expect(readJsonFile(`${GEMINI_PLUGINS_DIR}/my-plugin/plugin.json`).ours).toBe(true);
+    });
+
+    // Only Antigravity needs the marker; nothing else should gain a file its
+    // source repository never had.
+    it("does not add a root plugin.json for other agents", async () => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["codex"], "project", "copy", true, PROJECT);
+
+      expect(vol.existsSync(`${CODEX_CACHE_DIR}/${MARKETPLACE}/my-plugin/2.1.0/plugin.json`)).toBe(false);
+    });
+
     it("prefers the agent's own manifest when the repository ships one", async () => {
       await serveDownloadWith(".codex-plugin/plugin.json", { name: "my-plugin", version: "9.9.9" });
       const { installPlugin } = await import("./plugin.js");

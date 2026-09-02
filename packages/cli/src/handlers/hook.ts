@@ -7,7 +7,7 @@ import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
 import type { HookTrigger, RegistryItem } from "@seedr/shared";
 import { brand } from "../utils/ui.js";
 import { getItem, getItemSourcePath, fetchItemToDestination } from "../config/registry.js";
-import { getSettingsPath, CODING_AGENTS } from "../config/agents.js";
+import { getSettingsPath, CODING_AGENTS, claudeUserRoot } from "../config/agents.js";
 import {
   assertDirectoryWithin,
   assertOverwritable,
@@ -50,9 +50,16 @@ function getScopeRoot(scope: InstallScope, cwd: string): string {
 
 /**
  * Get the hooks directory path based on scope.
+ *
+ * At user scope this has to be the same tree the settings file it registers
+ * into lives in. `getSettingsPath` resolves that through `$CLAUDE_CONFIG_DIR`,
+ * so hard-coding `~/.claude/hooks` here put the script in one tree and its
+ * registration in another whenever the variable was set.
  */
 function getHooksDir(scope: InstallScope, cwd: string): string {
-  return join(getScopeRoot(scope, cwd), ".claude", "hooks");
+  return scope === "user"
+    ? join(claudeUserRoot(), "hooks")
+    : join(getScopeRoot(scope, cwd), ".claude", "hooks");
 }
 
 /**

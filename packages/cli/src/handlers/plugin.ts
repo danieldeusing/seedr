@@ -93,7 +93,10 @@ async function readManifestForPlan(
       // Try the next manifest in the preference order.
     }
   }
-  throw new Error(`No plugin manifest for "${item.slug}" (looked for ${manifestPaths.join(", ")})`);
+  // The install treats a missing manifest as non-fatal and falls back to the
+  // item's own slug, so the plan must too — throwing here aborted `--dry-run`
+  // for a plugin the real install places without complaint.
+  return {};
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +213,9 @@ async function installPluginForAgent(
         : await readManifestForPlan(item, store.manifestPaths);
 
       const { name, version } = resolvePluginIdentity(item, pluginJson);
+      if (contentPath && store.prepareTree) {
+        await store.prepareTree(contentPath, { name, version, item });
+      }
       const gitCommitSha = resolveGitCommitSha(item, fetched);
       const pluginId = getPluginId(name, marketplace);
       const cachePath = await store.cachePath(marketplace, name, version);

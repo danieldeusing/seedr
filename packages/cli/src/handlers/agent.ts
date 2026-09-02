@@ -141,10 +141,14 @@ export async function getInstalledAgents(
     return [];
   }
 
+  // Strip the suffix this agent actually writes. Copilot's is `.agent.md`, so
+  // stripping `.md` left the slug as `<slug>.agent`, and `remove` — which
+  // resolves the destination through `subagentFileName` — could never match it.
+  const suffix = subagentFileName(agent, "");
   const files = await readdir(destDir);
   return files
-    .filter((f) => f.endsWith(".md"))
-    .map((f) => f.replace(".md", ""));
+    .filter((file) => file.endsWith(suffix))
+    .map((file) => file.slice(0, -suffix.length));
 }
 
 export async function planAgent(

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { CANONICAL_AGENTS, canonicalAgent } from "@seedr/registry-ops/pure";
@@ -14,6 +15,46 @@ const home = homedir();
  *
  * Read once at module load, which is when a CLI run's environment is fixed.
  */
+/**
+ * Claude Code's user JSON state file, which holds user-scope `mcpServers`.
+ *
+ * It is a resolver result, not a fixed path: `$CLAUDE_CONFIG_DIR/.config.json`
+ * when that file exists, and otherwise `${CLAUDE_CONFIG_DIR || $HOME}/.claude.json`.
+ * Hard-coding the second branch reads the obvious file and writes the wrong
+ * effective configuration on any machine using the first.
+ *
+ * The non-production OAuth suffixes (`-local-oauth`, `-staging-oauth`,
+ * `-custom-oauth`) are deliberately not guessed at: no such file has been
+ * observed, and picking one would be the guessing this repo refuses.
+ */
+export function claudeUserJsonPath(): string {
+  const configDir = process.env.CLAUDE_CONFIG_DIR;
+  if (configDir) {
+    const scoped = join(configDir, ".config.json");
+    if (existsSync(scoped)) return scoped;
+  }
+  return join(configDir || home, ".claude.json");
+}
+
+/**
+ * Each agent's user configuration root, honouring the relocation variable it
+ * documents. `~/.copilot` and friends are the convention, not the rule, and
+ * writing to the convention on a machine that has moved the tree reports
+ * success while installing where the CLI never looks — the same failure this
+ * file already guards against for Claude.
+ *
+ * Antigravity is deliberately absent: agy 1.1.12 exposes no config-root
+ * override, so there is nothing to honour.
+ */
+export const copilotUserRoot = (): string => process.env.COPILOT_HOME || join(home, ".copilot");
+
+export const codexUserRoot = (): string => process.env.CODEX_HOME || join(home, ".codex");
+
+/** OpenCode's global config directory: its own override, then XDG, then the default. */
+export const openCodeUserConfigDir = (): string =>
+  process.env.OPENCODE_CONFIG_DIR ||
+  (process.env.XDG_CONFIG_HOME ? join(process.env.XDG_CONFIG_HOME, "opencode") : join(home, ".config", "opencode"));
+
 export const claudeUserRoot = (): string => process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
 
 const SKILL_DIRECTORY: ContentTypeConfig = {
@@ -74,7 +115,7 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     // the two are not the same spelling. `~/.github/skills` is read by nothing;
     // `~/.copilot/skills` is what the CLI itself populates.
     projectRoot: ".github",
-    userRoot: join(home, ".copilot"),
+    userRoot: copilotUserRoot(),
     // Subagents are `<name>.agent.md` under `agents/`, with the same
     // `name` + `description` frontmatter a Claude subagent carries — confirmed
     // from files on a real machine.
@@ -86,14 +127,19 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     name: "OpenAI Codex CLI",
     shortName: "codex",
     projectRoot: ".codex",
-    userRoot: join(home, ".codex"),
+    userRoot: codexUserRoot(),
     contentTypes: { skill: SKILL_DIRECTORY },
   },
   opencode: {
     name: "OpenCode",
     shortName: "opencode",
+    // `~/.opencode` is the LEGACY user directory. The global config directory
+    // is `~/.config/opencode`, which is where this package already writes
+    // `opencode.json` and `AGENTS.md` — splitting one agent across two roots
+    // made `list` and `remove` diverge, and creating `~/.opencode` on a machine
+    // that had none adds a capability directory ranked above every project one.
     projectRoot: ".opencode",
-    userRoot: join(home, ".opencode"),
+    userRoot: openCodeUserConfigDir(),
     contentTypes: { skill: SKILL_DIRECTORY },
   },
 };
@@ -184,7 +230,7 @@ export function getMcpPath(
  * - claude:   `<cwd>/.mcp.json` / `~/.claude.json`
  * - codex:    `<cwd>/.codex/config.toml` / `~/.codex/config.toml`
  * - opencode: `<cwd>/opencode.json` / `~/.config/opencode/opencode.json`
- * - copilot:  `<cwd>/.github/mcp.json` / `~/.copilot/mcp-config.json`
+ * - copilot:  `<cwd>/.mcp.json` (shared, and the one Copilot reads first) / `~/.copilot/mcp-config.json`
  *
  * Antigravity is still not listed. Its file name is documented
  * (`~/.gemini/config/mcp_config.json`) but the shipped manual omits the
@@ -200,18 +246,27 @@ export function getMcpConfigPath(
   const isUser = scope === "user";
   switch (canonicalAgent(agent) ?? agent) {
     case "claude":
-      return isUser ? join(process.env.CLAUDE_CONFIG_DIR || home, ".claude.json") : join(cwd, ".mcp.json");
+      return isUser ? claudeUserJsonPath() : join(cwd, ".mcp.json");
     case "codex":
-      return isUser ? join(home, ".codex", "config.toml") : join(cwd, ".codex", "config.toml");
+      return isUser ? join(codexUserRoot(), "config.toml") : join(cwd, ".codex", "config.toml");
     case "opencode":
-      return isUser ? join(home, ".config", "opencode", "opencode.json") : join(cwd, "opencode.json");
+      return isUser ? join(openCodeUserConfigDir(), "opencode.json") : join(cwd, "opencode.json");
     case "copilot":
       // `copilot mcp --help` names three sources: `~/.copilot/mcp-config.json`
       // for the user, and `.mcp.json` OR `.github/mcp.json` for the workspace.
-      // `.github/mcp.json` is the one that does not collide with Claude's
-      // `.mcp.json` — sharing that file would make a Copilot uninstall delete
-      // Claude's server entry.
-      return isUser ? join(home, ".copilot", "mcp-config.json") : join(cwd, ".github", "mcp.json");
+      //
+      // The workspace pair is a PRECEDENCE list, not a choice: per directory
+      // Copilot takes the first that exists, so `.mcp.json` shadows
+      // `.github/mcp.json` entirely whenever both are present. Writing the
+      // `.github` spelling to avoid sharing Claude's file therefore lost
+      // silently — the install reported success, `copilot mcp get <name>`
+      // answered "not found", and a later removal emptied a file Copilot had
+      // never opened.
+      //
+      // `.mcp.json` is the shared project MCP file by design, and both agents
+      // read it. Sharing it is the honest model: an entry there is the
+      // project's, and removing it removes it for every agent that reads it.
+      return isUser ? join(copilotUserRoot(), "mcp-config.json") : join(cwd, ".mcp.json");
     default:
       // copilot and antigravity: the mcp handler refuses these before ever
       // resolving a path (MCP_UNSUPPORTED_REASONS in config/compatibility.ts).

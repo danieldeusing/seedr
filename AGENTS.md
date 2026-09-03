@@ -254,7 +254,10 @@ A desktop capability manager for a seedr checkout, wearing the estate look on co
 structure: an overlay title bar (the strip IS the macOS title bar), and a searchable
 explorer with collapsible type groups whose rows show ownership (pencil = first-party/editable,
 eye = synced/read-only) and the supported agents' brand marks — a footer dropdown flips the
-rows to the text form (`rw-` · `cgaxo`), next to the theme dropdown. Each item's detail
+rows to the text form (`rw-` · `cgaxo`), next to the theme dropdown. The explorer header's
+refresh button checks every synced capability against its source through `registry-op.ts
+upstream-status` — the daily sync's question, asked by hand — and marks the ones the next
+sync would change. Each item's detail
 pairs a resizable, collapsible metadata pane (stacking on narrow panes) with a Monaco file
 preview (self-hosted, read-only) offering syntax, formatted-markdown and plain views; a
 file's right-click menu carries "open with default app" and the view modes. Everything

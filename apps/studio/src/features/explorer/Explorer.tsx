@@ -3,7 +3,7 @@ import type { CanonicalCodingAgent, ComponentType } from "@seedr/shared";
 import { AGENT_LABELS, ALL_TYPES, CANONICAL_AGENTS, canonicalAgents, isFirstParty, typeDirName } from "@seedr/registry-ops/pure";
 import { RepoMenu } from "./RepoMenu";
 import { useStudio } from "./store";
-import { ArrowDownToLine, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderX, GitBranch, GitCompareArrows, Pencil, PencilLine, Plus, Rows3, Settings, Unlink } from "lucide-react";
+import { ArrowDownToLine, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, CloudAlert, CloudDownload, FolderX, GitBranch, GitCompareArrows, Pencil, PencilLine, Plus, RefreshCw, Rows3, Settings, Unlink } from "lucide-react";
 import { IconButton } from "@/core/ui/IconButton";
 import { Input } from "@/core/ui/Input";
 import { CodingAgentIcon } from "@/core/CodingAgentIcon";
@@ -12,6 +12,7 @@ import { ThemeMenu } from "@/core/ThemeMenu";
 import { countByType, type StudioItem } from "./registry";
 import { NO_OPS, useCanMutate } from "./repoCapability";
 import type { Selection } from "./store";
+import type { UpstreamStatus } from "@/api/registryCli";
 
 interface ExplorerProps {
   items: StudioItem[];
@@ -56,18 +57,47 @@ export function sourceMode(sourceType: string | undefined): { text: string; edit
  * origin: an unmarked row means there is nothing to answer for, which is most
  * of them.
  */
-const SOURCE_MARK: Record<string, { icon: typeof Pencil; tone: string; tip: string }> = {
-  behind: { icon: ArrowDownToLine, tone: "text-amber-400", tip: "The source folder has changed — this item is behind it" },
+interface RowMark {
+  icon: typeof Pencil;
+  tone: string;
+  tip: string;
+}
+
+/** The tone of a mark that asks for attention without anything being wrong yet. */
+const ATTENTION_TONE = "text-amber-400";
+
+const SOURCE_MARK: Record<string, RowMark> = {
+  behind: { icon: ArrowDownToLine, tone: ATTENTION_TONE, tip: "The source folder has changed — this item is behind it" },
   edited: { icon: PencilLine, tone: "text-primary", tip: "Edited here since the last copy from its source folder" },
   diverged: { icon: GitCompareArrows, tone: "text-destructive", tip: "The source folder and this item have each changed" },
   missing: { icon: FolderX, tone: "text-destructive", tip: "The source folder it was copied from is gone" },
-  orphaned: { icon: Unlink, tone: "text-amber-400", tip: "Its source folder is remembered, but the item is not in this checkout — another branch, or removed" },
+  orphaned: { icon: Unlink, tone: ATTENTION_TONE, tip: "Its source folder is remembered, but the item is not in this checkout — another branch, or removed" },
 };
 
-/** The mark for one row, or undefined when it has nothing to answer for. */
-function useSourceMark(type: string, slug: string) {
-  const state = useStudio((store) => store.sourceStates[`${type}/${slug}`]?.state);
-  return state ? SOURCE_MARK[state] : undefined;
+/**
+ * A synced item's mark against the repository the sync copies it from. `behind`
+ * is what the next sync would change; `unknown` carries the reason it could not
+ * be compared. `current` shows nothing, and so does an item never checked.
+ */
+function upstreamMark(status: UpstreamStatus | undefined): RowMark | undefined {
+  if (status?.state === "behind") {
+    const changed = status.upstreamUpdatedAt ? ` — upstream changed on ${new Date(status.upstreamUpdatedAt).toLocaleDateString()}` : "";
+    return { icon: CloudDownload, tone: ATTENTION_TONE, tip: `Behind its source${changed}; the next sync (or pnpm sync) brings it in` };
+  }
+  if (status?.state === "unknown") return { icon: CloudAlert, tone: "text-neutral-500", tip: status.reason ?? "Could not be compared with its source" };
+  return undefined;
+}
+
+/**
+ * The mark for one row, or undefined when it has nothing to answer for. At most
+ * one of the two has something to say: source-status covers this registry's
+ * own items, upstream-status the synced ones, so no row carries both.
+ */
+function useRowMark(type: string, slug: string): RowMark | undefined {
+  const sourceState = useStudio((store) => store.sourceStates[`${type}/${slug}`]?.state);
+  const upstream = useStudio((store) => store.upstreamStates[`${type}/${slug}`]);
+  const sourceMark = sourceState ? SOURCE_MARK[sourceState] : undefined;
+  return sourceMark ?? upstreamMark(upstream);
 }
 
 /**
@@ -91,7 +121,7 @@ function CapabilityRow({
   rowStyle: RowStyle;
   onSelect(selection: { type: ComponentType; slug: string }): void;
 }) {
-  const mark = useSourceMark(type, slug);
+  const mark = useRowMark(type, slug);
   return (
     <button
       type="button"
@@ -149,6 +179,55 @@ function RowIndicators({ item, style }: { item: StudioItem["item"]; style: RowSt
   );
 }
 
+const UPSTREAM_CHECK_TIP = "Check every capability against its source — the daily sync's job, on demand";
+
+/** What the last upstream check found, for the button's tip. */
+function upstreamSummary(statuses: UpstreamStatus[], checkedAt: number): string {
+  const time = new Date(checkedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const behind = statuses.filter((status) => status.state === "behind").length;
+  if (behind > 0) return `${behind} of ${statuses.length} behind · checked ${time}`;
+  // "all current" would overstate a check that could not compare some of them.
+  const unknown = statuses.filter((status) => status.state === "unknown").length;
+  if (unknown > 0) return `none of ${statuses.length} behind, ${unknown} not compared · checked ${time}`;
+  return `all ${statuses.length} current, checked ${time}`;
+}
+
+/**
+ * The header's up-to-date check: every synced item against its upstream, on
+ * demand. The badge counts what the next sync would change, and the tip
+ * carries the outcome once there is one.
+ */
+function UpstreamCheckButton({ hasOps }: { hasOps: boolean }) {
+  const upstreamStates = useStudio((store) => store.upstreamStates);
+  const checking = useStudio((store) => store.upstreamChecking);
+  const checkedAt = useStudio((store) => store.upstreamCheckedAt);
+  const failed = useStudio((store) => store.upstreamCheckError !== null);
+  const checkUpstream = useStudio((store) => store.checkUpstream);
+  const statuses = Object.values(upstreamStates);
+  const behind = statuses.filter((status) => status.state === "behind").length;
+  // Only a check that got through can say anything: a failure leaves the
+  // states empty, and "all 0 current" would be the wrong reading of that.
+  const outcome = checkedAt > 0 && !failed ? upstreamSummary(statuses, checkedAt) : "";
+  return (
+    <span className="relative inline-flex">
+      <IconButton
+        icon={RefreshCw}
+        ariaLabel="check capabilities against their sources"
+        tip={hasOps ? [UPSTREAM_CHECK_TIP, outcome].filter(Boolean).join(" · ") : NO_OPS}
+        size="xs"
+        spin={checking}
+        disabled={!hasOps || checking}
+        onClick={() => void checkUpstream()}
+      />
+      {behind > 0 && (
+        <span className="count-badge" aria-label={`${behind} capabilities behind their source`}>
+          {behind > 99 ? "99+" : behind}
+        </span>
+      )}
+    </span>
+  );
+}
+
 const matches = (item: StudioItem, query: string): boolean => {
   const needle = query.toLowerCase();
   return item.slug.toLowerCase().includes(needle) || (item.item.name ?? "").toLowerCase().includes(needle);
@@ -172,6 +251,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
   // look alike. The title bar carries the unreachable case in words.
   const remote = useStudio((store) => store.remote);
   const behind = remote?.fetched ? remote.behind : 0;
+  const upstreamCheckError = useStudio((store) => store.upstreamCheckError);
   const setRowStyle = useRowStyle((s) => s.setStyle);
 
   // Every type is listed, empty ones included: a registry with no agents is a
@@ -213,6 +293,7 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
         <span className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">Explorer</span>
         <span className="flex-1" />
         <IconButton icon={Plus} ariaLabel="add capability" tip={hasOps ? "Add a capability to the registry" : NO_OPS} accentColor="violet" size="xs" onClick={onAddCapability} disabled={!hasOps} />
+        <UpstreamCheckButton hasOps={hasOps} />
         <IconButton
           icon={allCollapsed ? ChevronsUpDown : ChevronsDownUp}
           ariaLabel={allCollapsed ? "expand all groups" : "collapse all groups"}
@@ -229,6 +310,12 @@ export function Explorer({ items, problems, selected, onSelect, onAddCapability,
           <section className="mb-4 border-l-2 border-l-amber-500 py-1 pl-2.5 text-sm" role="alert">
             <p className="font-medium text-amber-400">Source marks unavailable</p>
             <p className="mt-1 text-neutral-500">{sourceCheckError}</p>
+          </section>
+        )}
+        {upstreamCheckError && (
+          <section className="mb-4 border-l-2 border-l-amber-500 py-1 pl-2.5 text-sm" role="alert">
+            <p className="font-medium text-amber-400">Up-to-date check failed</p>
+            <p className="mt-1 text-neutral-500">{upstreamCheckError}</p>
           </section>
         )}
         {problems.length > 0 && (

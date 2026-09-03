@@ -11,6 +11,7 @@
  *   tsx scripts/registry-op.ts validate <type> <slug>    validation errors for one item
  *   tsx scripts/registry-op.ts identity                  owner/repo/branch/author derived from git
  *   tsx scripts/registry-op.ts pin <github-url>          pinned commit, digest, file tree and plugin source for an add-remote
+ *   tsx scripts/registry-op.ts upstream-status         which synced items the next sync would change, without writing anything
  *
  * `--repo <path>` acts on another checkout instead of this one, which is how a
  * registry whose own tooling predates this CLI can still be changed safely.
@@ -19,6 +20,7 @@
  * are read from a file (or stdin with `-`) rather than argv — Windows caps a
  * command line near 32 K and a longDescription alone can be a few KB.
  */
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +29,8 @@ import type { ComponentType } from "@seedr/shared";
 import { cloneUrl, treeUrl } from "./sync/anthropic.js";
 import { collectContent } from "./sync/content.js";
 import { GitHubClient } from "./sync/github.js";
+import type { ManifestItem } from "./sync/types.js";
+import { checkUpstream } from "./sync/upstream.js";
 import { parseGitHubTreeUrl } from "./sync/utils.js";
 
 /**
@@ -43,6 +47,24 @@ export function repoRootFrom(argv: string[]): string {
 }
 
 const out = (value: unknown) => console.log(JSON.stringify(value, null, 2));
+
+/**
+ * A GitHub client for the read-only network commands, authenticated the way
+ * `pnpm sync` is: GITHUB_TOKEN if set, else the gh CLI's login — which is what
+ * a Studio launch has — else unauthenticated at sixty requests an hour. Its
+ * chatter goes to stderr so stdout stays JSON.
+ */
+function githubClient(): GitHubClient {
+  const env = { ...process.env };
+  if (!env.GITHUB_TOKEN) {
+    try {
+      env.GITHUB_TOKEN = execFileSync("gh", ["auth", "token"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || undefined;
+    } catch {
+      // No gh login on this machine: the client says so and runs unauthenticated.
+    }
+  }
+  return new GitHubClient({ env, log: (line) => console.error(line) });
+}
 const fail = (message: string): never => {
   console.error(`registry-op: ${message}`);
   process.exit(1);
@@ -138,7 +160,7 @@ async function main(argv: string[]): Promise<void> {
       // to GitHub, so the client's chatter goes to stderr and stdout stays JSON.
       const parsed = parseGitHubTreeUrl(rest[0] ?? "");
       if (!parsed) fail(`pin needs a GitHub repository or tree URL, got "${rest[0] ?? ""}"`);
-      const client = new GitHubClient({ log: (line) => console.error(line) });
+      const client = githubClient();
       const branch = await client.getDefaultBranch(parsed.repo);
       const { sha } = await client.getCommit(parsed.repo, parsed.ref ?? branch);
       const tree = await client.getTree(parsed.repo, sha);
@@ -162,8 +184,15 @@ async function main(argv: string[]): Promise<void> {
       });
       return;
     }
+    case "upstream-status": {
+      // The daily sync's question asked by hand — which items would its next
+      // run change — for Studio's explorer button, or a shell. Reads only.
+      const items = listItemsChecked(registryDir).items.map((located) => located.item as ManifestItem);
+      out({ checkedAt: new Date().toISOString(), items: await checkUpstream(githubClient(), items) });
+      return;
+    }
     default:
-      fail("usage: run --op <file|->, list [type], hash <type> <slug>, validate <type> <slug>, identity, pin <github-url>");
+      fail("usage: run --op <file|->, list [type], hash <type> <slug>, validate <type> <slug>, identity, pin <github-url>, upstream-status");
   }
 }
 

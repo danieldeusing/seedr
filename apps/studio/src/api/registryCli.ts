@@ -121,6 +121,33 @@ export async function allSourceStatuses(run: typeof runProcess = runProcess): Pr
   return parseJsonStdout<{ items?: (SourceStatus & { type: string; slug: string })[] }>(outcome, "source-status").items ?? [];
 }
 
+/**
+ * Where a synced item stands against the repository the sync copies it from:
+ * `behind` is what the next sync would change, `unknown` says why it could not
+ * be compared. First-party items are absent — they have no upstream.
+ */
+export interface UpstreamStatus {
+  type: string;
+  slug: string;
+  state: "current" | "behind" | "unknown";
+  reason?: string;
+  upstream?: { repo: string; sha: string; path: string };
+  /** Only for `behind`: when upstream last changed the item. */
+  upstreamUpdatedAt?: string;
+}
+
+/**
+ * Every synced item against its upstream — the daily sync's question, asked on
+ * demand. It reaches GitHub, so it gets the operation timeout rather than the
+ * minute the local reads get.
+ */
+export async function upstreamStatuses(run: typeof runProcess = runProcess): Promise<{ checkedAt: string; items: UpstreamStatus[] }> {
+  const outcome = await run({ taskId: "registry-upstream-all", program: "npx", ...cli("upstream-status"), cwd: "", timeoutMs: REGISTRY_OP_TIMEOUT_MS });
+  // Defaults for the same reason `allSourceStatuses` has them: another process's output.
+  const answer = parseJsonStdout<{ checkedAt?: string; items?: UpstreamStatus[] }>(outcome, "upstream-status");
+  return { checkedAt: answer.checkedAt ?? "", items: answer.items ?? [] };
+}
+
 /** What the source folder has that the copy here does not, as a unified diff. */
 export async function sourceDiffOf(type: string, slug: string, run: typeof runProcess = runProcess): Promise<string> {
   const outcome = await run({ taskId: `registry-source-diff-${type}-${slug}`, program: "npx", ...cli("source-diff", type, slug), cwd: "", timeoutMs: 60_000 });

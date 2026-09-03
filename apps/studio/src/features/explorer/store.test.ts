@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { emit, mockFs, onCommand } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
+import type { RunRequest } from "@/api/agent";
 import { REGISTRY_CHANGED } from "@/api/watch";
+import { REGISTRY_OP_TIMEOUT_MS } from "@/api/registryCli";
 import { selectedItem, useStudio } from "./store";
 
 const repo = { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" };
@@ -157,5 +159,81 @@ describe("a registry without the operations CLI", () => {
 
     useStudio.getState().clearRepoError();
     expect(useStudio.getState().repoError).toBeNull();
+  });
+});
+
+describe("checkUpstream", () => {
+  const answered = (request: RunRequest, items: unknown[]) => ({ taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ checkedAt: "2026-09-02T12:02:00Z", items }), stderr: "", durationMs: 1 });
+
+  beforeEach(() => {
+    useStudio.setState({ repo, upstreamStates: {}, upstreamCheckError: null, upstreamCheckedAt: 0, upstreamChecking: false });
+  });
+
+  test("runs upstream-status with the operation timeout and keys every answer by type/slug", async () => {
+    const requests: RunRequest[] = [];
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      requests.push(request);
+      return answered(request, [
+        { type: "skill", slug: "pdf", state: "behind", upstreamUpdatedAt: "2026-09-01T08:00:00Z" },
+        { type: "plugin", slug: "superpowers", state: "current" },
+      ]);
+    });
+
+    await useStudio.getState().checkUpstream();
+
+    // GitHub is on the other end of this one, so it is not held to the local reads' minute.
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.args).toContain("upstream-status");
+    expect(requests[0]?.timeoutMs).toBe(REGISTRY_OP_TIMEOUT_MS);
+    const state = useStudio.getState();
+    expect(state.upstreamStates["skill/pdf"]?.state).toBe("behind");
+    expect(state.upstreamStates["plugin/superpowers"]?.state).toBe("current");
+    expect(state.upstreamCheckError).toBeNull();
+    expect(state.upstreamChecking).toBe(false);
+    expect(state.upstreamCheckedAt).toBeGreaterThan(0);
+  });
+
+  test("a failure clears the previous answers and keeps the reason", async () => {
+    useStudio.setState({ upstreamStates: { "skill/pdf": { type: "skill", slug: "pdf", state: "behind" } } });
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      return { taskId: request.taskId, status: "failed", exitCode: 1, stdout: "", stderr: "registry-op: unknown command upstream-status", durationMs: 1 };
+    });
+
+    await useStudio.getState().checkUpstream();
+
+    const state = useStudio.getState();
+    // Stale marks would be worse than none: they would look like this check's answer.
+    expect(state.upstreamStates).toEqual({});
+    expect(state.upstreamCheckError).toMatch(/unknown command upstream-status/);
+    expect(state.upstreamChecking).toBe(false);
+    expect(state.upstreamCheckedAt).toBeGreaterThan(0);
+  });
+
+  test("runs once at a time, and not at all without a checkout", async () => {
+    let calls = 0;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    onCommand("run_process", async (args) => {
+      calls += 1;
+      await gate;
+      return answered((args as { request: RunRequest }).request, []);
+    });
+
+    useStudio.setState({ repo: null });
+    await useStudio.getState().checkUpstream();
+    expect(calls).toBe(0);
+
+    useStudio.setState({ repo });
+    const first = useStudio.getState().checkUpstream();
+    const second = useStudio.getState().checkUpstream();
+    expect(useStudio.getState().upstreamChecking).toBe(true);
+    release();
+    await Promise.all([first, second]);
+    expect(calls).toBe(1);
+    expect(useStudio.getState().upstreamChecking).toBe(false);
   });
 });

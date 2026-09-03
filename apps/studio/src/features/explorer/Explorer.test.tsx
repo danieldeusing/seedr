@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { useRowStyle } from "@/core/rowStyle";
 import { fs } from "@/api/fs";
-import { mockFs } from "@/test/mockIpc";
+import type { RunRequest } from "@/api/agent";
+import { mockFs, onCommand } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
 import { Explorer } from "./Explorer";
 import { useStudio } from "./store";
@@ -200,5 +201,96 @@ describe("the git button's count", () => {
     // The badge stays off and the title bar carries the reason in words —
     // a red 0 would be wrong and a silent green tick would be a lie.
     expect(screen.queryByLabelText(/commits to pull/)).toBeNull();
+  });
+});
+
+describe("the up-to-date check", () => {
+  const CHECK = "check capabilities against their sources";
+  const repo = { root: "/repo", name: "repo", isDefault: true, hasOps: true, registryDir: "registry" };
+
+  /** A host answering `upstream-status` with these items, collecting every request it gets. */
+  function host(items: unknown[]) {
+    const requests: RunRequest[] = [];
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      requests.push(request);
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout: JSON.stringify({ checkedAt: "2026-09-02T12:02:00Z", items }), stderr: "", durationMs: 1 };
+    });
+    return requests;
+  }
+
+  beforeEach(() => {
+    useStudio.setState({ repo, toolingRepo: null, sourceStates: {}, sourceCheckError: null, upstreamStates: {}, upstreamCheckError: null, upstreamCheckedAt: 0, upstreamChecking: false });
+  });
+
+  test("asks the host, marks the rows that are behind and counts them on the button", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    const requests = host([
+      { type: "skill", slug: "pdf", state: "behind", upstream: { repo: "anthropics/skills", sha: "b".repeat(40), path: "skills/pdf" }, upstreamUpdatedAt: "2026-09-01T08:00:00Z" },
+      { type: "skill", slug: "broken", state: "current" },
+    ]);
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    // Before any check the rows say nothing: this is asked for, never assumed.
+    expect(screen.queryByLabelText(/behind its source/i)).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: CHECK }));
+
+    const mark = await screen.findByLabelText(/behind its source/i);
+    expect(requests.some((request) => request.args.includes("upstream-status"))).toBe(true);
+    expect(mark).toHaveAttribute("role", "img");
+    expect(mark.getAttribute("class")).toMatch(/ml-auto/);
+    expect(mark.getAttribute("aria-label")).toMatch(/upstream changed on/);
+    // Both rows are named PDF; the one without a validation problem is `pdf`.
+    expect(within(mark.closest("button")!).queryByLabelText(/validation problems/)).toBeNull();
+    // `current` says nothing, as with the source marks: one mark for two items.
+    expect(screen.getAllByLabelText(/behind its source/i)).toHaveLength(1);
+    expect(screen.getByLabelText("1 capabilities behind their source")).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: CHECK }).getAttribute("data-tip")).toMatch(/1 of 2 behind · checked \d/);
+  });
+
+  test("an item that could not be compared carries the reason, in a neutral tone", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    host([{ type: "skill", slug: "pdf", state: "unknown", reason: "no longer listed in claude-plugins-official" }]);
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    await userEvent.click(screen.getByRole("button", { name: CHECK }));
+
+    const mark = await screen.findByLabelText("no longer listed in claude-plugins-official");
+    expect(mark.getAttribute("class")).toMatch(/text-neutral-500/);
+    expect(screen.queryByLabelText(/behind their source/)).toBeNull();
+    // Not "all current": one of them was never compared, and the tip says so.
+    expect(screen.getByRole("button", { name: CHECK }).getAttribute("data-tip")).toMatch(/none of 1 behind, 1 not compared/);
+  });
+
+  test("says that a check failed rather than showing every row as current", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      return { taskId: request.taskId, status: "failed", exitCode: 1, stdout: "", stderr: "registry-op: GitHub answered 403: rate limit exceeded", durationMs: 1 };
+    });
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    await userEvent.click(screen.getByRole("button", { name: CHECK }));
+
+    expect(await screen.findByText("Up-to-date check failed")).toBeInTheDocument();
+    expect(screen.getByText(/rate limit exceeded/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/behind its source/i)).toBeNull();
+    expect(screen.queryByLabelText(/behind their source/)).toBeNull();
+    // The button explains itself again, without a count it never got.
+    expect(screen.getByRole("button", { name: CHECK }).getAttribute("data-tip")).not.toMatch(/checked/);
+  });
+
+  test("is not offered without the operations CLI, and says why", async () => {
+    mockFs(registryFiles());
+    const { items } = await loadRegistry(fs, "registry");
+    useStudio.setState({ repo: { ...repo, hasOps: false }, toolingRepo: null });
+    render(<Explorer items={items} problems={[]} selected={null} onSelect={() => undefined} {...controls} />);
+
+    const button = screen.getByRole("button", { name: CHECK });
+    expect(button).toBeDisabled();
+    expect(button.getAttribute("data-tip")).toMatch(/no scripts\/registry-op\.ts/);
   });
 });

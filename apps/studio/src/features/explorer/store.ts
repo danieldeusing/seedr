@@ -4,7 +4,7 @@ import type { SourceStatus } from "@seedr/registry-ops/pure";
 import { fs } from "@/api/fs";
 import { forgetRepo, rememberRepo } from "./repoHistory";
 import { defaultRepo, getRepo, openRepoAt, pickRepo, setDefaultRepo, type RepoInfo } from "@/api/repo";
-import { allSourceStatuses, setOpsCheckout } from "@/api/registryCli";
+import { allSourceStatuses, setOpsCheckout, upstreamStatuses, type UpstreamStatus } from "@/api/registryCli";
 import { gitRemoteState, gitSummary, type RemoteState } from "@/api/git";
 import { useAuthorSettings } from "@/features/settings/authorSettings";
 import { usePrePrompts } from "@/features/settings/prePrompts";
@@ -75,6 +75,17 @@ interface StudioState {
   sourceCheckedAt: number;
   sourceChecking: boolean;
   /**
+   * Where each synced item stands against the repository the sync copies it
+   * from, keyed `type/slug`. Empty until the button is pressed: this reaches
+   * GitHub, so nothing asks it unprompted.
+   */
+  upstreamStates: Record<string, UpstreamStatus>;
+  /** Why the upstream marks are missing, when they are. Never silently absent. */
+  upstreamCheckError: string | null;
+  /** When the last upstream check finished (0 until one ran), and whether one is running. */
+  upstreamCheckedAt: number;
+  upstreamChecking: boolean;
+  /**
    * How many paths the worktree has uncommitted. Shown on the git button,
    * because every registry operation refuses to run while there are any — and
    * finding that out by pressing a button and reading a failure is late.
@@ -110,6 +121,8 @@ interface StudioState {
   refresh(): Promise<void>;
   /** Re-read where every item stands against its source folder. */
   checkSources(force?: boolean): Promise<void>;
+  /** Ask every synced item's upstream whether it has moved on — the daily sync's check, by hand. */
+  checkUpstream(): Promise<void>;
   /** Re-count the worktree's uncommitted paths. */
   countUncommitted(): Promise<void>;
   /** Fetch, and re-read how far ahead or behind the tracking branch this is. */
@@ -142,7 +155,9 @@ export const useStudio = create<StudioState>((set, get) => {
   const adopt = async (repo: RepoInfo): Promise<void> => {
     openCheckout(repo);
     rememberRepo(repo.root);
-    set({ repo, selected: null, repoError: null, remote: null, toolingRepo: await borrowedTooling(repo) });
+    // The upstream answers were about the previous checkout, and unlike the
+    // source marks nothing re-asks them on refresh.
+    set({ repo, selected: null, repoError: null, remote: null, upstreamStates: {}, upstreamCheckError: null, upstreamCheckedAt: 0, toolingRepo: await borrowedTooling(repo) });
     await useStudio.getState().refresh();
     void useStudio.getState().checkRemote(true);
     await watch(useStudio.getState().refresh);
@@ -154,6 +169,10 @@ export const useStudio = create<StudioState>((set, get) => {
   sourceCheckError: null,
   sourceCheckedAt: 0,
   sourceChecking: false,
+  upstreamStates: {},
+  upstreamCheckError: null,
+  upstreamCheckedAt: 0,
+  upstreamChecking: false,
   uncommitted: 0,
   remote: null,
   remoteChecking: false,
@@ -236,6 +255,23 @@ export const useStudio = create<StudioState>((set, get) => {
       set({ sourceStates: {}, sourceCheckError: (error as Error).message });
     } finally {
       set({ sourceChecking: false, sourceCheckedAt: Date.now() });
+    }
+  },
+
+  async checkUpstream() {
+    // Manual on purpose, with no freshness window: every ask reaches GitHub once
+    // per upstream repository, and when that is worth doing is the user's call.
+    if (!get().repo || get().upstreamChecking) return;
+    set({ upstreamChecking: true });
+    try {
+      const { items } = await upstreamStatuses();
+      set({ upstreamCheckError: null, upstreamStates: Object.fromEntries(items.map((status) => [`${status.type}/${status.slug}`, status])) });
+    } catch (error) {
+      // Said out loud, as with the source check: a checkout whose CLI predates
+      // the command, or GitHub refusing, must not look like everything current.
+      set({ upstreamStates: {}, upstreamCheckError: (error as Error).message });
+    } finally {
+      set({ upstreamChecking: false, upstreamCheckedAt: Date.now() });
     }
   },
 

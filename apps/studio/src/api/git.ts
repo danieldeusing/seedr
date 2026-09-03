@@ -56,6 +56,13 @@ export async function gitSummary(run: typeof runProcess = runProcess): Promise<G
   return { branch: check(branch, "git rev-parse").trim(), head: check(head, "git rev-parse").trim(), changes: parsePorcelain(check(status, "git status")) };
 }
 
+/** When this checkout last committed a change under `path` — null while nothing there is committed yet. */
+export async function gitLastCommitDate(path: string, run: typeof runProcess = runProcess): Promise<string | null> {
+  const outcome = await run({ taskId: `git-last-commit-${path}`, program: "git", args: ["log", "-1", "--format=%cI", "--", path], cwd: "", timeoutMs: 30_000 });
+  const date = check(outcome, "git log").trim();
+  return date === "" ? null : date;
+}
+
 export interface BranchInfo {
   name: string;
   current: boolean;

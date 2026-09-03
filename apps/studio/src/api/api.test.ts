@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { RunOutcome } from "./agent";
+import type { RunRequest } from "./agent";
+import { gitLastCommitDate } from "./git";
 import { fs, openPath } from "./fs";
 import { getRepo, pickRepo } from "./repo";
 import { operationError, opsInvocation } from "./registryCli";
@@ -103,5 +105,26 @@ describe("what an operation reports when it fails", () => {
     expect(operationError(outcome({ stderr: "tsx: command not found" }))).toBe("tsx: command not found");
     expect(operationError(outcome({ stdout: "something on stdout" }))).toBe("something on stdout");
     expect(operationError(outcome({ exitCode: 3 }))).toBe("exit code 3");
+  });
+});
+
+describe("gitLastCommitDate", () => {
+  const answering = (stdout: string) => {
+    const requests: RunRequest[] = [];
+    const run = async (request: RunRequest): Promise<RunOutcome> => {
+      requests.push(request);
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout, stderr: "", durationMs: 1 };
+    };
+    return { run, requests };
+  };
+
+  test("asks git for the last commit touching the path, in the repo root", async () => {
+    const { run, requests } = answering("2026-09-01T10:00:00+02:00\n");
+    expect(await gitLastCommitDate("registry/skills/tdd", run)).toBe("2026-09-01T10:00:00+02:00");
+    expect(requests[0]).toMatchObject({ program: "git", args: ["log", "-1", "--format=%cI", "--", "registry/skills/tdd"], cwd: "" });
+  });
+
+  test("an item nothing has committed yet has no date rather than an empty one", async () => {
+    expect(await gitLastCommitDate("registry/skills/new", answering("\n").run)).toBeNull();
   });
 });

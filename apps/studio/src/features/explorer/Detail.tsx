@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileTreeNode } from "@seedr/shared";
 import { formatErrors, isFirstParty } from "@seedr/registry-ops/pure";
 import { fs, openPath } from "@/api/fs";
+import { gitLastCommitDate } from "@/api/git";
 import { safeExternalUrl, useExternalLink } from "@/core/externalUrl";
 import { PaneResizeHandle } from "@/core/PaneResizeHandle";
+import { relativeDay } from "@/core/lib/relativeDay";
 import { useStudio } from "./store";
 import { useRememberedSize } from "@/core/remembered";
 import { SafeMarkdown } from "@/core/ui/SafeMarkdown";
@@ -33,7 +35,7 @@ interface DetailProps {
  * `contentHash` is additionally legacy: `contentDigest` replaced it, and it
  * survives only so older published CLI builds keep working.
  */
-const FIELDS = ["name", "type", "slug", "version", "sourceType", "description", "compatibility", "author", "externalUrl", "targetScope", "pluginType", "updatedAt"] as const;
+const FIELDS = ["name", "type", "slug", "version", "sourceType", "description", "compatibility", "author", "externalUrl", "targetScope", "pluginType"] as const;
 
 function renderValue(value: unknown): string {
   if (value === undefined || value === null) return "—";
@@ -57,8 +59,58 @@ function ExternalValue({ url, label }: { url: string; label: string }) {
   );
 }
 
+/**
+ * The two dates an item has, kept apart because they answer different
+ * questions. `updatedAt` is when the SOURCE last changed the content — the
+ * sync writes the last upstream commit touching the item's path — so the
+ * date this checkout last touched the item has to come from git instead.
+ * When the up-to-date check has found the item behind, the source row also
+ * says how far the source has moved on since our pin.
+ */
+function DateRows({ entry }: { entry: StudioItem }) {
+  const revision = useStudio((state) => state.revision);
+  const upstream = useStudio((state) => state.upstreamStates[`${entry.type}/${entry.slug}`]);
+  const [ours, setOurs] = useState<{ date: string | null } | { error: string } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setOurs(null);
+    gitLastCommitDate(entry.dir).then(
+      (date) => {
+        if (!cancelled) setOurs({ date });
+      },
+      (error: Error) => {
+        if (!cancelled) setOurs({ error: error.message });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [entry.dir, revision]);
+  const absolute = (iso: string) => new Date(iso).toLocaleString();
+  const source = entry.item.updatedAt;
+  const moved = upstream?.state === "behind" ? upstream.upstreamUpdatedAt : undefined;
+  return (
+    <>
+      <div className="contents">
+        <dt className="text-primary">lastUpdated</dt>
+        <dd className="break-words text-muted-foreground" data-tip={ours && "date" in ours && ours.date ? `${absolute(ours.date)} · the last commit touching this item in this checkout` : ours && "error" in ours ? ours.error : undefined}>
+          {ours === null ? "…" : "error" in ours ? "—" : ours.date ? relativeDay(ours.date) : "not committed yet"}
+        </dd>
+      </div>
+      <div className="contents">
+        <dt className="text-primary">sourceUpdated</dt>
+        <dd className="break-words text-muted-foreground" data-tip={source ? `${absolute(source)} · when the source last changed this content, at the pinned revision` : undefined}>
+          {source ? relativeDay(source) : "—"}
+          {moved && ` · upstream moved ${relativeDay(moved)}, not synced yet`}
+        </dd>
+      </div>
+    </>
+  );
+}
+
 /** The item.json fields, with the two values that go somewhere as gated links. */
-function MetaFields({ item }: { item: StudioItem["item"] }) {
+function MetaFields({ entry }: { entry: StudioItem }) {
+  const item = entry.item;
   const author = item.author;
   return (
           <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-xs">
@@ -84,6 +136,7 @@ function MetaFields({ item }: { item: StudioItem["item"] }) {
                 </dd>
               </div>
             ))}
+            <DateRows entry={entry} />
           </dl>
   );
 }
@@ -219,7 +272,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-6">
-          <MetaFields item={item.item} />
+          <MetaFields entry={item} />
           <SourcePanel item={item} />
           {item.item.longDescription && (
             <section className="mt-6">

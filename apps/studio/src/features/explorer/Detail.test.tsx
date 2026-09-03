@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import { fs } from "@/api/fs";
+import type { RunRequest } from "@/api/agent";
 import { invoke, mockFs, onCommand } from "@/test/mockIpc";
 import { registryFiles } from "@/test/fixtures";
 import { Detail } from "./Detail";
@@ -163,5 +164,41 @@ describe("Detail", () => {
 
     expect(await screen.findByText("local://registry/mcp/playwright")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "local://registry/mcp/playwright" })).toBeNull();
+  });
+});
+
+describe("the two dates", () => {
+  const day = 86_400_000;
+  /** A host whose git answers every `log` with this stdout. */
+  const gitAnswering = (stdout: string) =>
+    onCommand("run_process", (args) => {
+      const request = (args as { request: RunRequest }).request;
+      return { taskId: request.taskId, status: "ok", exitCode: 0, stdout, stderr: "", durationMs: 1 };
+    });
+
+  test("keeps apart when this checkout last changed the item and when its source did", async () => {
+    mockFs(registryFiles());
+    gitAnswering(`${new Date(Date.now() - 3 * day).toISOString()}\n`);
+    const { items } = await loadRegistry(fs, "registry");
+    const playwright = items.find((i) => i.slug === "playwright")!;
+    playwright.item.updatedAt = new Date(Date.now() - day).toISOString();
+    useStudio.setState({ upstreamStates: { "mcp/playwright": { type: "mcp", slug: "playwright", state: "behind", upstreamUpdatedAt: new Date().toISOString() } } });
+
+    render(<Detail item={playwright} />);
+
+    expect(await screen.findByText("3 days ago")).toBeInTheDocument();
+    expect(screen.getByText("yesterday · upstream moved today, not synced yet")).toBeInTheDocument();
+    expect(screen.queryByText("updatedAt")).toBeNull();
+  });
+
+  test("an item nothing has committed yet says so instead of showing a date", async () => {
+    mockFs(registryFiles());
+    gitAnswering("\n");
+    useStudio.setState({ upstreamStates: {} });
+    const { items } = await loadRegistry(fs, "registry");
+
+    render(<Detail item={items.find((i) => i.slug === "playwright")!} />);
+
+    expect(await screen.findByText("not committed yet")).toBeInTheDocument();
   });
 });

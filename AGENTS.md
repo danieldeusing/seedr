@@ -258,7 +258,7 @@ rows to the text form (`rw-` · `cgaxo`), next to the theme dropdown. The explor
 refresh button checks every synced capability against its source through `registry-op.ts
 upstream-status` — the daily sync's question, asked by hand — and marks the ones the next
 sync would change. Each item's detail
-pairs a resizable, collapsible metadata pane (stacking on narrow panes) with a Monaco file
+pairs a resizable, collapsible metadata pane (stacking on narrow panes) — whose two dates are kept apart, `lastUpdated` being this checkout's last commit touching the item and `sourceUpdated` the source's last change of the content, with how far the source has moved on once the up-to-date check has found it behind — with a Monaco file
 preview (self-hosted, read-only) offering syntax, formatted-markdown and plain views; a
 file's right-click menu carries "open with default app" and the view modes. Everything
 else — add capability, edit, test install, git, settings — opens as a dialog over the

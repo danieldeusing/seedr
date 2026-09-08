@@ -29,7 +29,10 @@ export function removeIgnoredFiles(dir: string): void {
  * Copy a tree following symlinks (Node's `cpSync` dereferences only the top
  * level): what lands in the registry is always real bytes, because a committed
  * link would carry a machine-local path into every other checkout. A cycle is
- * refused by tracking real paths already on the walk.
+ * refused by tracking real paths already on the walk. A `.git` directory is
+ * left behind at every depth: a source folder is usually a clone, and its
+ * repository metadata is neither content nor something git's ignore rules
+ * would flag — git simply never tracks a nested repository.
  */
 export function copyDereferenced(src: string, dest: string, walked: Set<string> = new Set()): void {
   const real = realpathSync(src);
@@ -37,7 +40,10 @@ export function copyDereferenced(src: string, dest: string, walked: Set<string> 
   if (statSync(src).isDirectory()) {
     mkdirSync(dest, { recursive: true });
     const nested = new Set(walked).add(real);
-    for (const entry of readdirSync(src)) copyDereferenced(join(src, entry), join(dest, entry), nested);
+    for (const entry of readdirSync(src)) {
+      if (entry === ".git") continue;
+      copyDereferenced(join(src, entry), join(dest, entry), nested);
+    }
   } else {
     copyFileSync(src, dest);
   }

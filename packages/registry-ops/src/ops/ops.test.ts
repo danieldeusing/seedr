@@ -100,6 +100,9 @@ describe("add-local", () => {
     writeFileSync(join(source, ".claude-plugin", "plugin.json"), '{"name":"alpha","version":"1.0.0"}\n');
     mkdirSync(join(source, "skills", "one"), { recursive: true });
     writeFileSync(join(source, "skills", "one", "SKILL.md"), "---\nname: one\ndescription: one\n---\n");
+    // A plugin folder is usually a clone: its repository metadata must stay behind.
+    mkdirSync(join(source, ".git", "hooks"), { recursive: true });
+    writeFileSync(join(source, ".git", "HEAD"), "ref: refs/heads/main\n");
 
     const result = applyOp(registry, addLocalOp({ type: "plugin", slug: "alpha", sourcePath: source }));
 
@@ -109,6 +112,7 @@ describe("add-local", () => {
       { name: "skills", type: "directory", children: [{ name: "one", type: "directory", children: [{ name: "SKILL.md", type: "file" }] }] },
     ]);
     expect(existsSync(join(registry, "plugins", "alpha", ".claude-plugin", "plugin.json"))).toBe(true);
+    expect(existsSync(join(registry, "plugins", "alpha", ".git"))).toBe(false);
   });
 
   // The folder is judged after the copy, inside the transaction: a plugin

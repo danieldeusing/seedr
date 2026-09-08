@@ -1,5 +1,5 @@
 import { join, relative } from "node:path";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat } from "node:fs/promises";
 import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
@@ -131,14 +131,27 @@ async function createStagingDir(cacheRoot: string, slug: string): Promise<string
   return resolveContained(cacheRoot, relative(cacheRoot, staging));
 }
 
-/** Bring the plugin's files into `contentPath`: a local checkout is copied, anything else is downloaded and verified. */
+/**
+ * Bring the plugin's files into `contentPath`: a registry checkout on this
+ * machine is copied, anything else is downloaded and verified. The local path
+ * is only a candidate — the published CLI derives one relative to its own
+ * package, where no registry exists — so it counts when it is really there.
+ */
 async function stageContent(item: RegistryItem, contentPath: string): Promise<FetchedItemContent | null> {
   const sourcePath = getItemSourcePath(item);
-  if (sourcePath) {
+  if (sourcePath && (await isDirectory(sourcePath))) {
     await copyDirectory(sourcePath, contentPath);
     return null;
   }
   return fetchItemToDestination(item, contentPath);
+}
+
+async function isDirectory(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 function resolveGitCommitSha(item: RegistryItem, fetched: FetchedItemContent | null): string | undefined {

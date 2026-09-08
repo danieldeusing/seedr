@@ -57,6 +57,10 @@ when it has been seen to write there.
 | plugin | codex | `~/.codex/config.toml` (`[marketplaces.…]`, `[plugins."…"]`), `plugins/cache/<mp>/<name>/<version>/` | `config.toml` inspection; the `<version>` level read off real cache entries |
 | plugin | opencode | `opencode.json` → `plugin: ["name@git+<url>#<sha>"]`, no tree | OpenCode's own loader (`Npm.add` → `exports["./server"]` or `main`); both shipped plugins set `main` to their `.opencode/plugins/*.js` |
 | plugin | antigravity | `~/.gemini/config/plugins/<name>/` with a root `plugin.json`; `import_manifest.json` | `agy plugin install` diff, then `agy plugin validate` for the marker |
+| plugin (first-party) | claude | the cache tree carries `.claude-plugin/marketplace.json` listing itself at `./`; `known_marketplaces.json` gets `{"source":{"source":"directory","path":<tree>},"installLocation":<tree>}`; the `installed_plugins.json` entry has no `gitCommitSha` | `claude plugin marketplace add <dir>` then `plugin install <name>@<mp>` on 2.1.220, both files read back, then uninstalled |
+| plugin (first-party) | copilot | `extraKnownMarketplaces[<mp>] = {"source":{"source":"directory","path":<tree>}}` beside `installed-plugins/<mp>/<name>/` | `copilot plugin marketplace add <dir>` on 1.0.80 wrote exactly that; a direct `plugin install <dir>` works too but the CLI announces it deprecated |
+| plugin (first-party) | opencode | `opencode.json` → `plugin: ["<abs dir>"]`, tree under `~/.config/opencode/plugins/<name>/` | documented file-path form of the `plugin` array; a subdirectory there is inert on its own (auto-load is `plugins/*.{js,ts}`, one level) |
+| plugin (first-party) | codex | refused | `[marketplaces.<name>]` is git-sourced and nothing else has been observed |
 | mcp | claude | `.mcp.json` / resolved user JSON file | primary documentation |
 | mcp | codex · opencode | `config.toml` / `opencode.json` | primary documentation |
 | mcp | copilot | `.mcp.json` (project, shared) / `~/.copilot/mcp-config.json` | `copilot mcp --help` plus a populated config on a real machine |

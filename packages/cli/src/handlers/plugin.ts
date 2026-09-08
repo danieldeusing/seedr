@@ -4,6 +4,7 @@ import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
+import { isFirstParty } from "@seedr/registry-ops/pure";
 import { brand } from "../utils/ui.js";
 import {
   getItem,
@@ -39,11 +40,27 @@ import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
 
 const SLUG_LABEL = "plugin slug";
 
-/** The marketplace a plugin is filed under, validated as a path segment. */
+/**
+ * The marketplace a plugin is filed under, validated as a path segment.
+ *
+ * A first-party plugin is its own marketplace — the installed tree lists
+ * itself — so it defaults to the plugin's slug: `name@name`, the id Claude's
+ * own directory install produces. The author is a person, not a catalogue.
+ */
 function resolveMarketplaceName(item: RegistryItem): string {
-  const marketplace = item.marketplace || item.author?.name || "seedr";
+  const fallback = isFirstParty(item.sourceType) ? item.slug : item.author?.name;
+  const marketplace = item.marketplace || fallback || "seedr";
   assertSafePathSegment(marketplace, "plugin marketplace");
   return marketplace;
+}
+
+/** Refuse, before anything is staged, a store that cannot hold a first-party plugin. */
+function assertStoreAccepts(store: PluginStore, item: RegistryItem, agent: CodingAgent): void {
+  if (isFirstParty(item.sourceType) && !store.firstParty) {
+    throw new Error(
+      `${CODING_AGENTS[agent].name} installs plugins only from a git marketplace, and a first-party plugin has none — it lives in the registry itself`
+    );
+  }
 }
 
 /** Identity read from a downloaded manifest, validated before it touches a path. */
@@ -124,14 +141,16 @@ async function stageContent(item: RegistryItem, contentPath: string): Promise<Fe
   return fetchItemToDestination(item, contentPath);
 }
 
-function resolveGitCommitSha(item: RegistryItem, fetched: FetchedItemContent | null): string {
+function resolveGitCommitSha(item: RegistryItem, fetched: FetchedItemContent | null): string | undefined {
   const sha = fetched?.sourceRevision ?? getEffectiveSourceRevision(item);
-  if (!sha) {
-    throw new Error(
-      `Cannot record a source revision for "${item.slug}": the registry entry has neither sourceRevision nor pluginSource.sha`
-    );
-  }
-  return sha;
+  if (sha) return sha;
+  // A first-party plugin is the registry's own content, pinned to no commit of
+  // any repository: there is nothing to record, and Claude records nothing for
+  // its own directory installs either.
+  if (isFirstParty(item.sourceType)) return undefined;
+  throw new Error(
+    `Cannot record a source revision for "${item.slug}": the registry entry has neither sourceRevision nor pluginSource.sha`
+  );
 }
 
 /** Run the undo steps in reverse; an undo that itself fails is reported, never hidden. */
@@ -199,11 +218,13 @@ async function installPluginForAgent(
   try {
     const store = pluginStoreFor(agent);
     assertValidSlug(item.slug, SLUG_LABEL);
+    assertStoreAccepts(store, item, agent);
     const marketplace = resolveMarketplaceName(item);
 
     // An agent that resolves the module itself gets no staged tree at all; its
-    // identity still has to come from the manifest, read on its own.
-    const cacheRoot = store.cacheRoot;
+    // identity still has to come from the manifest, read on its own. A
+    // first-party plugin has no module to resolve, so it gets a tree anyway.
+    const cacheRoot = store.cacheRoot ?? (isFirstParty(item.sourceType) ? store.firstPartyCacheRoot ?? null : null);
     const staging = cacheRoot ? await createStagingDir(cacheRoot, item.slug) : null;
     try {
       const contentPath = staging ? join(staging, "content") : null;
@@ -214,14 +235,14 @@ async function installPluginForAgent(
 
       const { name, version } = resolvePluginIdentity(item, pluginJson);
       if (contentPath && store.prepareTree) {
-        await store.prepareTree(contentPath, { name, version, item });
+        await store.prepareTree(contentPath, { name, version, marketplace, item });
       }
       const gitCommitSha = resolveGitCommitSha(item, fetched);
       const pluginId = getPluginId(name, marketplace);
-      const cachePath = await store.cachePath(marketplace, name, version);
+      const cachePath = await store.cachePath(marketplace, name, version, item);
 
       const marketplaceMutations = store.ensureMarketplace
-        ? await store.ensureMarketplace(marketplace, item)
+        ? await store.ensureMarketplace(marketplace, item, cachePath)
         : [];
       const context = {
         item, marketplace, name, version, pluginId, cachePath, gitCommitSha, scope, cwd,
@@ -335,6 +356,13 @@ async function kindFor(path: string): Promise<PlannedChange["kind"]> {
   return (await exists(path)) ? "modify" : "create";
 }
 
+/** What the plan says the tree is: a verified download, or the registry's own copy made into a marketplace. */
+function treeDetail(item: RegistryItem): string {
+  return isFirstParty(item.sourceType)
+    ? "plugin files (copied from the registry, listed as their own marketplace)"
+    : "plugin files (digest-verified download)";
+}
+
 export async function planPlugin(
   item: RegistryItem,
   agents: CodingAgent[],
@@ -347,13 +375,14 @@ export async function planPlugin(
   for (const agent of agents) {
     const store = pluginStoreFor(agent);
     assertValidSlug(item.slug, SLUG_LABEL);
+    assertStoreAccepts(store, item, agent);
     const marketplace = resolveMarketplaceName(item);
     const { name, version } = resolvePluginIdentity(
       item,
       await readManifestForPlan(item, store.manifestPaths)
     );
     const pluginId = getPluginId(name, marketplace);
-    const cachePath = await store.cachePath(marketplace, name, version);
+    const cachePath = await store.cachePath(marketplace, name, version, item);
 
     // Fail here for anything the install would throw on, rather than printing a
     // plan and then throwing. A dry run that reports success for an impossible
@@ -361,16 +390,11 @@ export async function planPlugin(
     resolveGitCommitSha(item, null);
 
     if (cachePath) {
-      changes.push({
-        agent,
-        kind: await kindFor(cachePath),
-        path: cachePath,
-        detail: "plugin files (digest-verified download)",
-      });
+      changes.push({ agent, kind: await kindFor(cachePath), path: cachePath, detail: treeDetail(item) });
     }
 
     const marketplaceMutations = store.ensureMarketplace
-      ? await store.ensureMarketplace(marketplace, item)
+      ? await store.ensureMarketplace(marketplace, item, cachePath)
       : [];
     const context = {
       item, marketplace, name, version, pluginId, cachePath,

@@ -345,6 +345,39 @@ function checkPluginFields(item: Item, push: Push): void {
   }
 }
 
+const PLUGIN_MANIFEST = "plugin.json";
+
+/** Whether a file tree carries a plugin manifest: `.claude-plugin/plugin.json`, or `plugin.json` at the root. */
+function hasPluginManifest(files: unknown[]): boolean {
+  const named = (node: unknown, name: string, type: "file" | "directory"): node is Item =>
+    isObject(node) && node.name === name && node.type === type;
+  const manifestIn = (nodes: unknown[]): boolean => nodes.some((node) => named(node, PLUGIN_MANIFEST, "file"));
+  if (manifestIn(files)) return true;
+  const manifestDir = files.find((node) => named(node, ".claude-plugin", "directory"));
+  return manifestDir !== undefined && Array.isArray(manifestDir.children) && manifestIn(manifestDir.children);
+}
+
+/**
+ * A first-party plugin has no git marketplace to resolve through, so the CLI
+ * builds one around the installed copy: Claude and Copilot both accept a
+ * marketplace that is a directory, and the copy lists itself in
+ * `.claude-plugin/marketplace.json`. That only works around a manifest — a
+ * folder without one is not a plugin, whatever its type says — so the manifest
+ * is demanded here, where the author can still choose differently. An empty
+ * tree passes: `add-local` fills it from the source before the copy for a
+ * plugin, and other paths validate again once the tree is known.
+ */
+function checkFirstPartyPlugin(item: Item, push: Push): void {
+  if (item.type !== "plugin" || !isObject(item.contents) || !Array.isArray(item.contents.files)) return;
+  const files = item.contents.files;
+  if (files.length > 0 && !hasPluginManifest(files)) {
+    push(
+      "contents.files",
+      `a first-party plugin needs a manifest — .claude-plugin/${PLUGIN_MANIFEST} (or ${PLUGIN_MANIFEST} at the root) — the CLI installs it as a marketplace built around that manifest`
+    );
+  }
+}
+
 function checkProvenance(item: Item, options: ValidateOptions, push: Push): void {
   const requireProvenance = options.requireProvenance ?? true;
   const synced = !isFirstParty(item.sourceType);
@@ -362,21 +395,7 @@ function checkProvenance(item: Item, options: ValidateOptions, push: Push): void
     for (const key of ["sourceRevision", "pluginSource", "marketplaceRef"] as const) {
       if (item[key] !== undefined) push(key, "is only allowed on synced (official/community) items");
     }
-    // A first-party plugin cannot work, and the missing provenance is only half
-    // the reason. Every agent's plugin machinery keys on a marketplace, which is
-    // resolved from `marketplaceRef.url ?? externalUrl`: a first-party item
-    // points at the registry repository, which carries no marketplace manifest,
-    // and a fork serving `local://` resolves no repository at all. The install
-    // would succeed and the agent would then report the plugin orphaned.
-    //
-    // Publish the bundle's contents as their own items instead — skills and
-    // rules install on every agent, where a plugin is Claude-shaped packaging.
-    if (item.type === "plugin") {
-      push(
-        "type",
-        'a first-party ("seedr") item cannot be a plugin: plugins resolve through a marketplace, and the registry itself is not one. Add the bundle\'s skills, rules and commands as their own items'
-      );
-    }
+    checkFirstPartyPlugin(item, push);
   } else if (requireProvenance) {
     if (item.sourceRevision === undefined) push("sourceRevision", 'synced items must carry "sourceRevision"');
     if (item.contentDigest === undefined) push("contentDigest", 'synced items must carry "contentDigest"');

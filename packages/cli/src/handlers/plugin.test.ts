@@ -47,6 +47,8 @@ const CODEX_CACHE_DIR = `${HOME}/.codex/plugins/cache`;
 const OPENCODE_PROJECT_CONFIG = `${PROJECT}/opencode.json`;
 const GEMINI_MANIFEST = `${HOME}/.gemini/config/import_manifest.json`;
 const GEMINI_PLUGINS_DIR = `${HOME}/.gemini/config/plugins`;
+/** Where a local registry checkout keeps the fixture plugin's own copy. */
+const LOCAL_SOURCE = "/registry/plugins/my-plugin";
 
 interface EntryOverrides {
   scope?: "project" | "user" | "local";
@@ -277,9 +279,9 @@ describe("plugin handler", () => {
 
     it("uses pluginSource.sha for a locally sourced plugin", async () => {
       const { getItemSourcePath } = await import("../config/registry.js");
-      vi.mocked(getItemSourcePath).mockReturnValue("/registry/plugins/my-plugin");
-      vol.mkdirSync("/registry/plugins/my-plugin/.claude-plugin", { recursive: true });
-      vol.writeFileSync("/registry/plugins/my-plugin/.claude-plugin/plugin.json", JSON.stringify({ name: "my-plugin", version: "3.0.0" }));
+      vi.mocked(getItemSourcePath).mockReturnValue(LOCAL_SOURCE);
+      vol.mkdirSync(`${LOCAL_SOURCE}/.claude-plugin`, { recursive: true });
+      vol.writeFileSync(`${LOCAL_SOURCE}/.claude-plugin/plugin.json`, JSON.stringify({ name: "my-plugin", version: "3.0.0" }));
       const { installPlugin } = await import("./plugin.js");
       const item = pluginItem({ sourceType: "seedr", sourceRevision: undefined, pluginSource: { kind: "github", url: "https://github.com/owner/my-plugin", sha: SHA } });
 
@@ -875,7 +877,7 @@ describe("plugin handler", () => {
     // name is the only honest answer — npm may still know it.
     it("falls back to the bare module name when no repository can be resolved", async () => {
       const { toOpenCodePluginSpec } = await import("./pluginStores.js");
-      expect(toOpenCodePluginSpec({ ...pluginItem(), externalUrl: undefined }, "solo")).toBe("solo");
+      expect(toOpenCodePluginSpec({ ...pluginItem(), externalUrl: undefined }, "solo", null)).toBe("solo");
     });
 
     it("refuses an agent that has no plugin store", async () => {
@@ -892,6 +894,189 @@ describe("plugin handler", () => {
 
       expect(plan.every((change) => change.path.startsWith(HOME))).toBe(true);
       expect(plan.some((change) => change.detail?.includes("user-global"))).toBe(true);
+    });
+  });
+
+  // A first-party plugin is the registry's own content: no repository, no
+  // commit, no marketplace anywhere. Its installed tree becomes its marketplace
+  // — the `directory` source Claude and Copilot both record for `plugin
+  // marketplace add <dir>` — and OpenCode is handed the directory itself.
+  describe("first-party plugins", () => {
+    const USER_SETTINGS = `${HOME}/.claude/settings.json`;
+    const OPENCODE_PLUGINS_DIR = `${HOME}/.config/opencode/plugins`;
+
+    async function serveRegistryCopy(files: Record<string, string>): Promise<void> {
+      const { getItemSourcePath } = await import("../config/registry.js");
+      vi.mocked(getItemSourcePath).mockReturnValue(LOCAL_SOURCE);
+      for (const [relativePath, content] of Object.entries(files)) {
+        const path = `${LOCAL_SOURCE}/${relativePath}`;
+        vol.mkdirSync(path.slice(0, path.lastIndexOf("/")), { recursive: true });
+        vol.writeFileSync(path, content);
+      }
+    }
+
+    const firstPartyFiles = {
+      ".claude-plugin/plugin.json": JSON.stringify({ name: "my-plugin", version: "2.0.0" }),
+      "skills/one/SKILL.md": "---\nname: one\ndescription: one\n---\n",
+    };
+
+    function firstPartyItem(overrides: Partial<RegistryItem> = {}): RegistryItem {
+      return pluginItem({
+        sourceType: "seedr",
+        externalUrl: "local://registry/plugins/my-plugin",
+        marketplace: undefined,
+        sourceRevision: undefined,
+        ...overrides,
+      });
+    }
+
+    it("installs into Claude as its own directory marketplace, recording no commit", async () => {
+      await serveRegistryCopy(firstPartyFiles);
+      const { installPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(firstPartyItem(), ["claude"], "user", "copy", true, PROJECT);
+
+      const cachePath = `${CACHE_DIR}/my-plugin/my-plugin/2.0.0`;
+      expect(results[0]).toEqual({ agent: "claude", success: true, path: cachePath });
+      expect(execFileMock).not.toHaveBeenCalled();
+      expect(readJsonFile(KNOWN_MARKETPLACES_PATH)["my-plugin"]).toEqual({
+        source: { source: "directory", path: cachePath },
+        installLocation: cachePath,
+        lastUpdated: expect.any(String),
+      });
+      expect(readJsonFile(`${cachePath}/.claude-plugin/marketplace.json`)).toEqual({
+        name: "my-plugin",
+        owner: { name: "seedr" },
+        description: "A plugin",
+        plugins: [{ name: "my-plugin", source: "./", description: "A plugin" }],
+      });
+      const [installed] = readJsonFile(INSTALLED_PATH).plugins["my-plugin@my-plugin"];
+      expect(installed).toMatchObject({ scope: "user", installPath: cachePath, version: "2.0.0" });
+      expect("gitCommitSha" in installed).toBe(false);
+      expect(readJsonFile(USER_SETTINGS).enabledPlugins["my-plugin@my-plugin"]).toBe(true);
+      expect(vol.readFileSync(`${cachePath}/skills/one/SKILL.md`, "utf-8")).toContain("name: one");
+    });
+
+    it("keeps a marketplace file the tree ships, aligning only its name and its listing", async () => {
+      await serveRegistryCopy({
+        ...firstPartyFiles,
+        ".claude-plugin/marketplace.json": JSON.stringify({
+          name: "other",
+          owner: { name: "Someone" },
+          description: "shipped",
+          plugins: [{ name: "unrelated", source: "./unrelated" }],
+        }),
+      });
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(firstPartyItem(), ["claude"], "user", "copy", true, PROJECT);
+
+      expect(readJsonFile(`${CACHE_DIR}/my-plugin/my-plugin/2.0.0/.claude-plugin/marketplace.json`)).toEqual({
+        name: "my-plugin",
+        owner: { name: "Someone" },
+        description: "shipped",
+        plugins: [
+          { name: "unrelated", source: "./unrelated" },
+          { name: "my-plugin", source: "./", description: "A plugin" },
+        ],
+      });
+    });
+
+    it("files the plugin under an explicit marketplace name when the item names one", async () => {
+      await serveRegistryCopy(firstPartyFiles);
+      const { installPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(firstPartyItem({ marketplace: "vu3" }), ["claude"], "user", "copy", true, PROJECT);
+
+      expect(results[0]?.path).toBe(`${CACHE_DIR}/vu3/my-plugin/2.0.0`);
+      expect(readJsonFile(KNOWN_MARKETPLACES_PATH).vu3.source).toEqual({ source: "directory", path: results[0]?.path });
+      expect(readJsonFile(`${results[0]?.path}/.claude-plugin/marketplace.json`).name).toBe("vu3");
+      expect(readJsonFile(INSTALLED_PATH).plugins["my-plugin@vu3"]).toHaveLength(1);
+    });
+
+    it("drops the directory marketplace again when the last Claude install is removed", async () => {
+      await serveRegistryCopy(firstPartyFiles);
+      const { installPlugin, uninstallPlugin } = await import("./plugin.js");
+      await installPlugin(firstPartyItem(), ["claude"], "user", "copy", true, PROJECT);
+
+      expect(await uninstallPlugin("my-plugin", "claude", "user", PROJECT)).toBe(true);
+
+      expect(vol.existsSync(`${CACHE_DIR}/my-plugin/my-plugin/2.0.0`)).toBe(false);
+      expect(readJsonFile(KNOWN_MARKETPLACES_PATH)["my-plugin"]).toBeUndefined();
+      // The marketplace the test fixture seeded is not ours to drop.
+      expect(readJsonFile(KNOWN_MARKETPLACES_PATH)[MARKETPLACE]).toBeDefined();
+      expect(readJsonFile(INSTALLED_PATH).plugins["my-plugin@my-plugin"]).toBeUndefined();
+    });
+
+    it("registers a directory marketplace in Copilot's settings and removes it with the tree", async () => {
+      await serveRegistryCopy(firstPartyFiles);
+      const { installPlugin, uninstallPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(firstPartyItem(), ["copilot"], "user", "copy", true, PROJECT);
+
+      const cachePath = `${COPILOT_PLUGINS_DIR}/my-plugin/my-plugin`;
+      expect(results[0]).toEqual({ agent: "copilot", success: true, path: cachePath });
+      const settings = readJsonFile(COPILOT_SETTINGS);
+      expect(settings.extraKnownMarketplaces["my-plugin"]).toEqual({ source: { source: "directory", path: cachePath } });
+      expect(settings.enabledPlugins["my-plugin@my-plugin"]).toBe(true);
+      expect(readJsonFile(`${cachePath}/.claude-plugin/marketplace.json`).plugins[0]).toMatchObject({ name: "my-plugin", source: "./" });
+
+      expect(await uninstallPlugin("my-plugin", "copilot", "user", PROJECT)).toBe(true);
+      expect(vol.existsSync(cachePath)).toBe(false);
+      expect(readJsonFile(COPILOT_SETTINGS).extraKnownMarketplaces["my-plugin"]).toBeUndefined();
+    });
+
+    it("copies the tree for OpenCode and names its directory in the plugin array", async () => {
+      await serveRegistryCopy(firstPartyFiles);
+      const { installPlugin, uninstallPlugin, getInstalledPlugins } = await import("./plugin.js");
+
+      const results = await installPlugin(firstPartyItem(), ["opencode"], "project", "copy", true, PROJECT);
+
+      const tree = `${OPENCODE_PLUGINS_DIR}/my-plugin`;
+      expect(results[0]).toEqual({ agent: "opencode", success: true, path: tree });
+      expect(vol.readFileSync(`${tree}/skills/one/SKILL.md`, "utf-8")).toContain("name: one");
+      expect(readJsonFile(OPENCODE_PROJECT_CONFIG).plugin).toEqual([tree]);
+      expect(await getInstalledPlugins("opencode", "project", PROJECT)).toEqual(["my-plugin"]);
+
+      expect(await uninstallPlugin("my-plugin", "opencode", "project", PROJECT)).toBe(true);
+      expect(readJsonFile(OPENCODE_PROJECT_CONFIG).plugin).toEqual([]);
+      expect(vol.existsSync(tree)).toBe(false);
+    });
+
+    it("leaves a module OpenCode fetched itself alone when removing it", async () => {
+      vol.mkdirSync(`${OPENCODE_PLUGINS_DIR}/my-plugin`, { recursive: true });
+      vol.mkdirSync(PROJECT, { recursive: true });
+      vol.writeFileSync(OPENCODE_PROJECT_CONFIG, JSON.stringify({ plugin: [`my-plugin@git+https://github.com/owner/my-plugin.git#${SHA}`] }));
+      const { uninstallPlugin } = await import("./plugin.js");
+
+      expect(await uninstallPlugin("my-plugin", "opencode", "project", PROJECT)).toBe(true);
+
+      expect(vol.existsSync(`${OPENCODE_PLUGINS_DIR}/my-plugin`)).toBe(true);
+    });
+
+    it("refuses Codex, which only knows git marketplaces, before staging anything", async () => {
+      await serveRegistryCopy(firstPartyFiles);
+      const { installPlugin, planPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(firstPartyItem(), ["codex"], "project", "copy", true, PROJECT);
+
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toMatch(/git marketplace/);
+      expect(vol.existsSync(CODEX_CONFIG)).toBe(false);
+      expect(vol.existsSync(CODEX_CACHE_DIR)).toBe(false);
+      await expect(planPlugin(firstPartyItem(), ["codex"], "project", "copy", PROJECT)).rejects.toThrow(/git marketplace/);
+    });
+
+    it("plans the directory marketplace without downloading", async () => {
+      await serveRegistryCopy(firstPartyFiles);
+      const { planPlugin } = await import("./plugin.js");
+      const { fetchItemToDestination } = await import("../config/registry.js");
+
+      const plan = await planPlugin(firstPartyItem(), ["claude"], "user", "copy", PROJECT);
+
+      expect(fetchItemToDestination).not.toHaveBeenCalled();
+      expect(plan).toContainEqual(expect.objectContaining({ path: `${CACHE_DIR}/my-plugin/my-plugin/2.0.0`, detail: expect.stringContaining("copied from the registry") }));
+      expect(plan).toContainEqual(expect.objectContaining({ path: KNOWN_MARKETPLACES_PATH, detail: expect.stringContaining("from directory") }));
     });
   });
 

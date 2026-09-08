@@ -930,6 +930,22 @@ describe("plugin handler", () => {
       });
     }
 
+    // The published CLI derives a registry directory relative to its own package,
+    // where no registry exists: the path is a candidate, not a promise.
+    it("downloads the registry copy when the local registry path does not exist", async () => {
+      const { getItemSourcePath, fetchItemToDestination } = await import("../config/registry.js");
+      vi.mocked(getItemSourcePath).mockReturnValue("/npx/node_modules/registry/plugins/my-plugin");
+      await serveDownload({ name: "my-plugin", version: "2.0.0" });
+      const { installPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(firstPartyItem(), ["claude"], "user", "copy", true, PROJECT);
+
+      expect(results[0]?.error).toBeUndefined();
+      expect(results[0]?.success).toBe(true);
+      expect(fetchItemToDestination).toHaveBeenCalledTimes(1);
+      expect(vol.existsSync(`${CACHE_DIR}/my-plugin/my-plugin/2.0.0/.claude-plugin/plugin.json`)).toBe(true);
+    });
+
     it("installs into Claude as its own directory marketplace, recording no commit", async () => {
       await serveRegistryCopy(firstPartyFiles);
       const { installPlugin } = await import("./plugin.js");

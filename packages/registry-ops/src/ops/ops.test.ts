@@ -91,14 +91,32 @@ describe("add-local", () => {
     expect(applyOp(registry, addLocalOp({ type: "rule", slug: "alpha" })).item?.type).toBe("rule");
   });
 
-  // A plugin resolves through a marketplace, and the registry is not one: a
-  // first-party plugin installs and the agent then reports it orphaned. The
-  // refusal happens where the author can still choose differently.
-  test("refuses a first-party plugin, naming what to do instead", () => {
+  // A first-party plugin installs as a marketplace built around its own
+  // manifest, so the manifest is the one thing the folder has to bring.
+  test("adds a first-party plugin from a folder that carries a manifest", () => {
     const registry = makeRegistry();
-    expect(() => applyOp(registry, addLocalOp({ type: "plugin", slug: "alpha" }))).toThrow(
-      /cannot be a plugin.*as their own items/s
-    );
+    const source = makeTempDir("seedr-plugin-");
+    mkdirSync(join(source, ".claude-plugin"));
+    writeFileSync(join(source, ".claude-plugin", "plugin.json"), '{"name":"alpha","version":"1.0.0"}\n');
+    mkdirSync(join(source, "skills", "one"), { recursive: true });
+    writeFileSync(join(source, "skills", "one", "SKILL.md"), "---\nname: one\ndescription: one\n---\n");
+
+    const result = applyOp(registry, addLocalOp({ type: "plugin", slug: "alpha", sourcePath: source }));
+
+    expect(result.item?.sourceType).toBe("seedr");
+    expect(result.item?.contents?.files).toEqual([
+      { name: ".claude-plugin", type: "directory", children: [{ name: "plugin.json", type: "file" }] },
+      { name: "skills", type: "directory", children: [{ name: "one", type: "directory", children: [{ name: "SKILL.md", type: "file" }] }] },
+    ]);
+    expect(existsSync(join(registry, "plugins", "alpha", ".claude-plugin", "plugin.json"))).toBe(true);
+  });
+
+  // The folder is judged after the copy, inside the transaction: a plugin
+  // without a manifest rolls back and leaves no trace.
+  test("refuses a first-party plugin whose folder has no manifest, writing nothing", () => {
+    const registry = makeRegistry();
+    expect(() => applyOp(registry, addLocalOp({ type: "plugin", slug: "alpha" }))).toThrow(/needs a manifest/);
+    expect(existsSync(join(registry, "plugins", "alpha"))).toBe(false);
   });
 
   test("validates the full item — including the description gate — before copying anything", () => {

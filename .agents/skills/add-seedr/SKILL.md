@@ -36,14 +36,18 @@ Infer `ComponentType` from the path. Use the **deepest matching** segment:
 
 If ambiguous, ask the user with AskUserQuestion.
 
-**A first-party item cannot be a plugin.** The operation refuses `type: "plugin"`
-on a `seedr` item, because a plugin resolves through a marketplace and the
-registry is not one — it would install and the agent would then report it
-orphaned. When a source folder carries `.claude-plugin/`, add its contents as
-their own items instead: the `skills/` become skill items, standing instructions
-become `rule` items, and both install on all five agents where a plugin is
-Claude-shaped packaging. Use `/add-community` for a plugin that genuinely lives
-in someone else's repository.
+**A first-party plugin is a folder with a manifest.** The operation accepts
+`type: "plugin"` on a `seedr` item only when the folder carries
+`.claude-plugin/plugin.json` (or `plugin.json` at the root); it is refused
+otherwise, after the copy, inside the transaction. Such a plugin has no git
+marketplace, so the CLI makes the installed copy its own: it writes or aligns
+`.claude-plugin/marketplace.json` in the copy and registers that directory as the
+marketplace — Claude and Copilot both accept one — and hands OpenCode the
+directory as a path. The marketplace is named after the plugin's slug unless the
+item sets `marketplace`; Codex is refused (git marketplaces only). The bundle's
+skills and standing instructions may still be added as their own items when they
+should install one by one, or on an agent that has no plugin surface. Use
+`/add-community` for a plugin that genuinely lives in someone else's repository.
 
 ### 3. Derive a default slug
 

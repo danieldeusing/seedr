@@ -1,11 +1,11 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, isAbsolute, join } from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { CodingAgent, InstallScope } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
-import { canonicalAgent } from "@seedr/registry-ops/pure";
+import { canonicalAgent, isFirstParty } from "@seedr/registry-ops/pure";
 import {
   claudeUserRoot,
   codexUserRoot,
@@ -58,7 +58,12 @@ export interface InstallContext {
   pluginId: string;
   /** Where the tree was placed, or null for an agent that resolves the module itself. */
   cachePath: string | null;
-  gitCommitSha: string;
+  /**
+   * The commit the content was taken from. Absent for a first-party plugin,
+   * whose content is the registry's own and pinned to no repository — Claude's
+   * own directory installs record none either.
+   */
+  gitCommitSha: string | undefined;
   scope: InstallScope;
   cwd: string;
 }
@@ -78,17 +83,38 @@ export interface PluginStore {
    */
   cacheRoot: string | null;
   /**
+   * Whether a first-party plugin — content held by the registry itself, with
+   * no git marketplace anywhere — can be installed here. Claude and Copilot
+   * both accept a marketplace that is a directory, OpenCode loads a plugin
+   * from a path, Antigravity files plugins by name; Codex knows only git
+   * marketplaces and is refused rather than left with a dangling entry.
+   */
+  firstParty: boolean;
+  /**
+   * Where a first-party plugin's tree is staged and lands, for a store that
+   * keeps no tree otherwise because the agent resolves remote modules itself
+   * (OpenCode). Ignored when `cacheRoot` is set.
+   */
+  firstPartyCacheRoot?: string;
+  /**
    * Where the plugin tree lands. `null` means the agent installs the module
    * itself from a URL and seedr writes only configuration (OpenCode).
    */
-  cachePath: (marketplace: string, name: string, version: string) => Promise<string | null>;
-  /** Register the marketplace this plugin is filed under, when the agent has that concept. */
-  ensureMarketplace?: (marketplace: string, item: RegistryItem) => Promise<PluginMutation[]>;
+  cachePath: (marketplace: string, name: string, version: string, item: RegistryItem) => Promise<string | null>;
+  /**
+   * Register the marketplace this plugin is filed under, when the agent has
+   * that concept. `cachePath` is where the tree lands, which for a first-party
+   * plugin is the marketplace itself.
+   */
+  ensureMarketplace?: (marketplace: string, item: RegistryItem, cachePath: string | null) => Promise<PluginMutation[]>;
   /**
    * Shape the staged tree before it is moved into place, for an agent whose
    * discovery needs a marker the source repository does not carry.
    */
-  prepareTree?: (contentPath: string, context: { name: string; version: string; item: RegistryItem }) => Promise<void>;
+  prepareTree?: (
+    contentPath: string,
+    context: { name: string; version: string; marketplace: string; item: RegistryItem }
+  ) => Promise<void>;
   /** The config writes, in the order they should be applied. */
   mutations: (context: InstallContext) => PluginMutation[];
   listInstalled: (scope: InstallScope, cwd: string) => Promise<string[]>;
@@ -141,6 +167,45 @@ function manifestsFor(ownManifest?: string): readonly string[] {
   return ownManifest ? [ownManifest, CLAUDE_MANIFEST] : [CLAUDE_MANIFEST];
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+interface SelfMarketplace {
+  name?: string;
+  owner?: unknown;
+  description?: string;
+  plugins?: unknown[];
+  [key: string]: unknown;
+}
+
+/**
+ * A first-party plugin has no marketplace to be filed under, so its own tree
+ * becomes one: `.claude-plugin/marketplace.json` names the marketplace and
+ * lists the plugin at `./` — exactly the directory that `claude plugin
+ * marketplace add <dir>` and `copilot plugin marketplace add <dir>` accept, and
+ * the source both record as `{"source":"directory","path":…}`.
+ *
+ * A marketplace file the tree already ships is kept and only aligned: its name
+ * to the marketplace the plugin is installed under, because that name is the
+ * key both agents file the plugin by, and its list to contain the plugin.
+ */
+async function ensureSelfMarketplace(contentPath: string, marketplace: string, name: string, item: RegistryItem): Promise<void> {
+  const dir = join(contentPath, ".claude-plugin");
+  const path = join(dir, "marketplace.json");
+  const existing = (await exists(path)) ? await readJson<SelfMarketplace>(path) : {};
+  const plugins = Array.isArray(existing.plugins) ? existing.plugins : [];
+  const listed = plugins.some((entry) => isRecord(entry) && entry.name === name);
+  const description = item.description ? { description: item.description } : {};
+  await mkdir(dir, { recursive: true });
+  await writeJson(path, {
+    ...existing,
+    name: marketplace,
+    owner: existing.owner ?? { name: item.author?.name ?? "seedr" },
+    ...(existing.description === undefined ? description : {}),
+    plugins: listed ? plugins : [...plugins, { name, source: "./", ...description }],
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Claude Code — ~/.claude/plugins
 // ---------------------------------------------------------------------------
@@ -158,11 +223,12 @@ export interface PluginInstallInfo {
   version: string;
   installedAt: string;
   lastUpdated: string;
-  gitCommitSha: string;
+  /** Absent for a plugin installed from a directory, as Claude itself records those. */
+  gitCommitSha?: string;
 }
 
 interface KnownMarketplaceEntry {
-  source: { source: string; repo?: string; url?: string };
+  source: { source: string; repo?: string; url?: string; path?: string };
   installLocation: string;
   lastUpdated: string;
 }
@@ -200,17 +266,45 @@ async function disableInJsonSettings(path: string, pluginId: string): Promise<bo
 const claudeStore: PluginStore = {
   manifestPaths: manifestsFor(),
   userGlobal: false,
+  firstParty: true,
   cacheRoot: CLAUDE_CACHE_DIR,
 
   cachePath: (marketplace, name, version) =>
     resolveContained(CLAUDE_CACHE_DIR, marketplace, name, version),
 
+  async prepareTree(contentPath, { name, marketplace, item }) {
+    if (isFirstParty(item.sourceType)) await ensureSelfMarketplace(contentPath, marketplace, name, item);
+  },
+
   /**
    * Claude Code reports a plugin as "orphaned" unless its marketplace is both
    * recorded and cloned, so this is the one store that fetches a second
    * repository. The other agents only record the source.
+   *
+   * A first-party plugin has no repository: its installed tree is the
+   * marketplace (see `ensureSelfMarketplace`), recorded as the `directory`
+   * source Claude writes for `claude plugin marketplace add <dir>`. Always
+   * upserted, because the path carries the version and moves with it.
    */
-  async ensureMarketplace(marketplace, item) {
+  async ensureMarketplace(marketplace, item, cachePath) {
+    if (isFirstParty(item.sourceType)) {
+      if (!cachePath) return [];
+      return [
+        {
+          path: CLAUDE_KNOWN_MARKETPLACES_PATH,
+          detail: `marketplace "${marketplace}" from directory ${cachePath}`,
+          apply: async () => {
+            const current = await readJson<Record<string, KnownMarketplaceEntry>>(CLAUDE_KNOWN_MARKETPLACES_PATH);
+            current[marketplace] = {
+              source: { source: "directory", path: cachePath },
+              installLocation: cachePath,
+              lastUpdated: new Date().toISOString(),
+            };
+            await writeJson(CLAUDE_KNOWN_MARKETPLACES_PATH, current);
+          },
+        },
+      ];
+    }
     const known = await readJson<Record<string, KnownMarketplaceEntry>>(CLAUDE_KNOWN_MARKETPLACES_PATH);
     if (known[marketplace]) return [];
     const repo = marketplaceRepo(item);
@@ -270,7 +364,7 @@ const claudeStore: PluginStore = {
           version: context.version,
           installedAt: now,
           lastUpdated: now,
-          gitCommitSha: context.gitCommitSha,
+          ...(context.gitCommitSha !== undefined ? { gitCommitSha: context.gitCommitSha } : {}),
         };
         const existing = registry.plugins[context.pluginId] || [];
         registry.plugins[context.pluginId] = [
@@ -316,6 +410,15 @@ const claudeStore: PluginStore = {
         await removePathEntry(await resolveContained(CLAUDE_CACHE_DIR, installPath));
       } catch {
         // Outside the cache: not ours to delete.
+        continue;
+      }
+      // A first-party plugin's marketplace IS that directory; with the tree
+      // gone the entry would point at nothing and Claude would report it broken.
+      const marketplace = splitPluginId(pluginId)?.marketplace;
+      const known = await readJson<Record<string, KnownMarketplaceEntry>>(CLAUDE_KNOWN_MARKETPLACES_PATH);
+      if (marketplace && known[marketplace]?.source.source === "directory" && known[marketplace].source.path === installPath) {
+        delete known[marketplace];
+        await writeJson(CLAUDE_KNOWN_MARKETPLACES_PATH, known);
       }
     }
     return true;
@@ -331,17 +434,43 @@ export const COPILOT_SETTINGS_PATH = join(COPILOT_DIR, "settings.json");
 export const COPILOT_PLUGINS_DIR = join(COPILOT_DIR, "installed-plugins");
 
 interface CopilotSettings extends EnabledPluginsFile {
-  extraKnownMarketplaces?: Record<string, { source: { source: string; repo?: string; url?: string } }>;
+  extraKnownMarketplaces?: Record<string, { source: { source: string; repo?: string; url?: string; path?: string } }>;
 }
 
 const copilotStore: PluginStore = {
   manifestPaths: manifestsFor(),
   userGlobal: true,
+  firstParty: true,
   cacheRoot: COPILOT_PLUGINS_DIR,
 
   cachePath: (marketplace, name) => resolveContained(COPILOT_PLUGINS_DIR, marketplace, name),
 
-  async ensureMarketplace(marketplace, item) {
+  async prepareTree(contentPath, { name, marketplace, item }) {
+    if (isFirstParty(item.sourceType)) await ensureSelfMarketplace(contentPath, marketplace, name, item);
+  },
+
+  /**
+   * A first-party plugin's installed tree is its marketplace, recorded the way
+   * `copilot plugin marketplace add <dir>` records one: a `directory` source.
+   * Direct installs from a path exist too, but Copilot 1.0.80 announces them
+   * as deprecated in favour of `plugin@marketplace`, which this is.
+   */
+  async ensureMarketplace(marketplace, item, cachePath) {
+    if (isFirstParty(item.sourceType)) {
+      if (!cachePath) return [];
+      return [
+        {
+          path: COPILOT_SETTINGS_PATH,
+          detail: `extraKnownMarketplaces["${marketplace}"] = directory ${cachePath}`,
+          apply: async () => {
+            const current = await readJson<CopilotSettings>(COPILOT_SETTINGS_PATH);
+            current.extraKnownMarketplaces = current.extraKnownMarketplaces || {};
+            current.extraKnownMarketplaces[marketplace] = { source: { source: "directory", path: cachePath } };
+            await writeJson(COPILOT_SETTINGS_PATH, current);
+          },
+        },
+      ];
+    }
     const repo = marketplaceRepo(item);
     if (!repo) return [];
     const settings = await readJson<CopilotSettings>(COPILOT_SETTINGS_PATH);
@@ -380,10 +509,20 @@ const copilotStore: PluginStore = {
     if (!disabled) return false;
     const split = splitPluginId(pluginId);
     if (split) {
+      let tree: string;
       try {
-        await removePathEntry(await resolveContained(COPILOT_PLUGINS_DIR, split.marketplace, split.name));
+        tree = await resolveContained(COPILOT_PLUGINS_DIR, split.marketplace, split.name);
+        await removePathEntry(tree);
       } catch {
         // Outside the store: not ours to delete.
+        return true;
+      }
+      // A first-party plugin's marketplace IS that tree; drop the entry with it.
+      const settings = await readJson<CopilotSettings>(COPILOT_SETTINGS_PATH);
+      const marketplace = settings.extraKnownMarketplaces?.[split.marketplace];
+      if (marketplace?.source.source === "directory" && marketplace.source.path === tree) {
+        delete settings.extraKnownMarketplaces![split.marketplace];
+        await writeJson(COPILOT_SETTINGS_PATH, settings);
       }
     }
     return true;
@@ -429,6 +568,8 @@ async function upsertCodex(table: TomlTableSpec): Promise<void> {
 const codexStore: PluginStore = {
   manifestPaths: manifestsFor(".codex-plugin/plugin.json"),
   userGlobal: true,
+  // `[marketplaces.<name>]` is git-sourced and nothing else has been observed.
+  firstParty: false,
   cacheRoot: CODEX_CACHE_DIR,
 
   // Real cache entries on disk are <marketplace>/<name>/<version> — e.g.
@@ -502,6 +643,14 @@ export function openCodeConfigPath(scope: InstallScope, cwd: string): string {
 }
 
 /**
+ * Where a first-party plugin's tree is copied for OpenCode. A subdirectory
+ * here is inert on its own — OpenCode auto-loads only `plugins/*.{js,ts}`, one
+ * level deep — so the tree is loaded solely through the `plugin` entry that
+ * names its path.
+ */
+export const OPENCODE_PLUGINS_DIR = join(openCodeUserConfigDir(), "plugins");
+
+/**
  * OpenCode resolves the module itself, so the entry is a spec rather than a
  * path: an npm name, or `name@git+<url>#<sha>` for a repository.
  *
@@ -509,8 +658,15 @@ export function openCodeConfigPath(scope: InstallScope, cwd: string): string {
  * (`pluginSource.url`), never the marketplace it was indexed in — most
  * marketplace entries point at a monorepo, and handing OpenCode that root
  * installs something else entirely under this plugin's name.
+ *
+ * A first-party plugin has no repository at all; OpenCode accepts a file path
+ * in the same array, so the entry is the directory the tree was copied to.
  */
-export function toOpenCodePluginSpec(item: RegistryItem, name: string): string {
+export function toOpenCodePluginSpec(item: RegistryItem, name: string, cachePath: string | null): string {
+  if (isFirstParty(item.sourceType)) {
+    if (!cachePath) throw new Error(`OpenCode cannot install "${name}": a first-party plugin needs a directory to load from`);
+    return cachePath;
+  }
   const source = item.pluginSource;
 
   // A plugin living in a subdirectory cannot be expressed as a git spec — the
@@ -529,7 +685,12 @@ export function toOpenCodePluginSpec(item: RegistryItem, name: string): string {
   return `${name}@git+https://github.com/${repo}.git${pinned ? `#${pinned}` : ""}`;
 }
 
+/** A `plugin` entry that names a directory rather than a module: absolute, home-relative or dot-relative. */
+const isPathSpec = (spec: string): boolean => isAbsolute(spec) || spec.startsWith("~") || spec.startsWith(".");
+
+/** The name an entry stands for: the part before `@` of a spec, or the directory's own name for a path. */
 function specName(spec: string): string {
+  if (isPathSpec(spec)) return basename(spec);
   const at = spec.indexOf("@", 1);
   return at > 0 ? spec.slice(0, at) : spec;
 }
@@ -537,14 +698,19 @@ function specName(spec: string): string {
 const openCodeStore: PluginStore = {
   manifestPaths: manifestsFor(),
   userGlobal: false,
+  firstParty: true,
   cacheRoot: null,
+  firstPartyCacheRoot: OPENCODE_PLUGINS_DIR,
 
-  // OpenCode installs the module from the spec; seedr writes no tree.
-  cachePath: async () => null,
+  // OpenCode installs a remote module from its spec, so seedr writes no tree;
+  // only a first-party plugin, which has no spec, is copied to a directory
+  // OpenCode can load by path.
+  cachePath: (_marketplace, name, _version, item) =>
+    isFirstParty(item.sourceType) ? resolveContained(OPENCODE_PLUGINS_DIR, name) : Promise.resolve(null),
 
   mutations: (context) => {
     const path = openCodeConfigPath(context.scope, context.cwd);
-    const spec = toOpenCodePluginSpec(context.item, context.name);
+    const spec = toOpenCodePluginSpec(context.item, context.name, context.cachePath);
     return [
       {
         path,
@@ -574,6 +740,14 @@ const openCodeStore: PluginStore = {
     if (remaining.length === plugins.length) return false;
     config.plugin = remaining;
     await writeJson(path, config);
+    // A path entry names a tree seedr copied; a module OpenCode fetched is its own to keep.
+    if (plugins.some((entry) => specName(entry) === name && isPathSpec(entry))) {
+      try {
+        await removePathEntry(await resolveContained(OPENCODE_PLUGINS_DIR, name));
+      } catch {
+        // Outside the store: not ours to delete.
+      }
+    }
     return true;
   },
 };
@@ -593,6 +767,8 @@ interface ImportManifest {
 const antigravityStore: PluginStore = {
   manifestPaths: manifestsFor(),
   userGlobal: true,
+  // Filed by name from a tree, so a first-party copy is as good as any other.
+  firstParty: true,
   cacheRoot: GEMINI_PLUGINS_DIR,
 
   // Antigravity files plugins by name only — it has no marketplace dimension.

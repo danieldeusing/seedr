@@ -217,6 +217,7 @@ For first-party content maintained in this repo. Copies files into `registry/` a
 - Asks for name, scope, compatibility, and description via interactive prompts
 - Copies content to `registry/<type>s/<slug>/`
 - First-party items are preserved across syncs
+- A plugin folder (one carrying `.claude-plugin/plugin.json`) is accepted as a first-party plugin; the CLI installs it as a marketplace built around its own copy (`docs/verification.md`, "plugin (first-party)")
 
 ### `/add-community <github-url>` — Add community GitHub repos
 

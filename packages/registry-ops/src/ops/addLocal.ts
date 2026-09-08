@@ -47,7 +47,10 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
     ...(op.targetScope ? { targetScope: op.targetScope } : {}),
     ...(op.label ? { label: op.label } : {}),
     updatedAt: today(),
-    contents: { files: [] },
+    // A plugin is judged by its manifest, so its tree is read off the source
+    // now — before the copy, where a refusal still leaves no trace. Every other
+    // type carries no such rule and keeps the empty provisional tree.
+    contents: { files: op.type === "plugin" && sourceIsDir ? fileTree(op.sourcePath) : [] },
   };
   const errors = validateItem(provisional);
   if (errors.length > 0) throw new Error(`Item would be invalid: ${formatErrors(errors)}`);

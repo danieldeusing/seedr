@@ -7,7 +7,7 @@
 import type { GitHubClient } from "./github.js";
 import { computeContentDigest } from "./digest.js";
 import { describeLicense, locateLicense } from "./license.js";
-import type { FileTreeNode, LicenseInfo, ManifestItem, PluginType } from "./types.js";
+import type { FileTreeNode, LicenseInfo, ManifestItem, ParsedPluginContents, PluginType } from "./types.js";
 import { buildFileTree, computeLegacyContentHash, isSkillDirectory, listTreeFiles, mapConcurrent, parsePluginContents, skillNamesIn, treeHasDirectory, type PluginJson, type TreeFile } from "./utils.js";
 import type { GitTreeItem } from "./types.js";
 
@@ -162,21 +162,17 @@ export interface PluginClassification {
   package?: Record<string, number>;
 }
 
-/**
- * Classify a plugin from its file tree plus the declarations that are not visible in the
- * tree: hooks.json trigger names, .mcp.json / plugin.json server names, inline marketplace
- * `lspServers` (integration) and `skills` (strict:false entries without a skills/ folder).
- */
-export function classifyPlugin(
-  content: CollectedContent,
-  options: { pluginJson: PluginJson | null; lspServers?: Record<string, unknown>; inlineSkills?: string[]; existing: ManifestItem | null },
-): PluginClassification {
-  const { existing } = options;
-  if (options.lspServers || existing?.pluginType === "integration") {
-    return { pluginType: "integration", integration: existing?.integration ?? "lsp" };
-  }
+/** The components a plugin ships, by name, as the classifier counts them. */
+export type PluginComponents = Pick<ParsedPluginContents, "skills" | "agents" | "commands" | "hooks" | "mcpServers">;
 
-  const parsed = parsePluginContents(content.files);
+/**
+ * Component names from the file tree plus the declarations that are not visible in it:
+ * hooks.json trigger names, .mcp.json / plugin.json server names, inline marketplace
+ * `skills` (strict:false entries without a skills/ folder) and plugin.json skill paths.
+ */
+export function resolvePluginComponents(content: CollectedContent, options: { pluginJson: PluginJson | null; inlineSkills?: string[] }): PluginComponents {
+  const { skills, agents, commands, hooks, mcpServers } = parsePluginContents(content.files);
+  const parsed: PluginComponents = { skills, agents, commands, hooks, mcpServers };
   if (parsed.hooks) {
     for (const hooksPath of ["hooks/hooks.json", ".claude/hooks/hooks.json"]) {
       const hooks = parseJsonEntry<{ hooks?: Record<string, unknown> }>(content, hooksPath);
@@ -198,11 +194,26 @@ export function classifyPlugin(
   }
   const declaredSkills = declaredSkillNames(options.pluginJson?.skills, content.files);
   if (declaredSkills.length > 0) parsed.skills = [...new Set([...(parsed.skills ?? []), ...declaredSkills])];
+  return parsed;
+}
 
-  const contentKeyToType: Record<string, string> = { skills: "skill", agents: "agent", hooks: "hook", commands: "command", mcpServers: "mcp" };
+/**
+ * Classify a plugin from its components; inline marketplace `lspServers` mark an integration.
+ */
+export function classifyPlugin(
+  content: CollectedContent,
+  options: { pluginJson: PluginJson | null; lspServers?: Record<string, unknown>; inlineSkills?: string[]; existing: ManifestItem | null },
+): PluginClassification {
+  const { existing } = options;
+  if (options.lspServers || existing?.pluginType === "integration") {
+    return { pluginType: "integration", integration: existing?.integration ?? "lsp" };
+  }
+
+  const components = resolvePluginComponents(content, options);
+  const contentKeyToType: Record<keyof PluginComponents, string> = { skills: "skill", agents: "agent", hooks: "hook", commands: "command", mcpServers: "mcp" };
   const counts: Record<string, number> = {};
   for (const [key, typeName] of Object.entries(contentKeyToType)) {
-    const list = parsed[key as keyof typeof parsed];
+    const list = components[key as keyof PluginComponents];
     if (Array.isArray(list) && list.length > 0) counts[typeName] = list.length;
   }
   const kinds = Object.keys(counts);

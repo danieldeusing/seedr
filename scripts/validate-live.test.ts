@@ -31,8 +31,8 @@ describe("validateLive", () => {
   it("passes for a freshly synced registry and verifies every digest with --all", async () => {
     const report = await live({ all: true });
     expect(report.failures).toEqual([]);
-    expect(report.checked).toBe(13);
-    expect(report.digestsVerified).toBe(13);
+    expect(report.checked).toBe(17);
+    expect(report.digestsVerified).toBe(17);
   });
 
   it("samples digests deterministically and always verifies first-party items from disk", async () => {

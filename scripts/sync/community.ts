@@ -78,11 +78,12 @@ async function refreshPlugin(ctx: SourceContext, item: ManifestItem, head: RepoH
 
   if (marketplace && entry) {
     ctx.log(`    ${item.slug}: using entry "${entry.name}" of marketplace "${marketplace.name}"`);
-    return buildMarketplacePlugin(
-      ctx,
-      { entry, existing: item, slug: item.slug, marketplace: { name: marketplace.name, repo: head.repo, sha: head.sha, tree: head.tree } },
-      "community",
-    );
+    return buildMarketplacePlugin(ctx, {
+      entry,
+      existing: item,
+      slug: item.slug,
+      marketplace: { name: marketplace.name, repo: head.repo, sha: head.sha, tree: head.tree, hostedSourceType: "community" },
+    });
   }
 
   // No marketplace entry describes this item: the externalUrl path is the plugin directory.

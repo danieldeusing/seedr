@@ -232,6 +232,7 @@ For third-party content hosted on GitHub. Metadata-only in the manifest (no loca
 - Extracts metadata, pins the revision and digests the content (`registry-op.ts pin`), asks clarifying questions
 - Adds manifest entry with `sourceType: "community"`
 - Community items are re-synced from their GitHub repos on `pnpm sync`
+- A repository that one of Anthropic's marketplaces lists is already mirrored by the sync; the skill stops and points at the synced item instead of adding a second one
 
 ### `/update-item <type> <slug> <instruction>` — Update a first-party item
 
@@ -404,7 +405,7 @@ GitHub Actions workflows in `.github/workflows/`:
 |----------|---------|------|
 | `ci.yml` | push to `main`, any PR | Main job: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm check-descriptions`. Matrix job (ubuntu/windows/macos): registry-ops tests, script tests, `cargo test` for the Studio host |
 | `deploy.yml` | push to `prod` | Deploy web to Cloudflare Pages + publish CLI to npm |
-| `sync.yml` | schedule / manual | Re-sync community registry items from their GitHub repos |
+| `sync.yml` | schedule / manual | Mirror Anthropic's three plugin marketplaces (official, knowledge-work, community — about 2,600 plugins) and the official skills, and re-sync the remaining community items from their GitHub repos |
 | `test-email.yml` | manual | Smoke-test the SMTP sync-notification setup |
 
 **Work on `main`; promote to `prod` by merge — and only in that direction.** The branches

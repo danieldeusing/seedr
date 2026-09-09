@@ -64,8 +64,17 @@ the committed ones.
 A community item added by hand carries its pin from the start: `/add-community` runs
 `scripts/registry-op.ts pin <url>`, which reads the tree at the pinned commit and computes the
 digest with the sync's own code, and the add operation refuses an item without one. The next
-sync run re-pins it from its default branch — or from the official marketplace's pinned sha,
-when that marketplace lists the repository.
+sync run re-pins it from its default branch — or from the pinned sha of whichever of
+Anthropic's marketplaces lists it.
+
+Anthropic's three marketplaces are mirrored whole, in order of precedence
+(`claude-plugins-official`, `knowledge-work-plugins`, `claude-community`; a slug two of them
+list belongs to the first). A marketplace-built item's `marketplaceRef.sha` is the marketplace
+commit it was last *built* from, not the marketplace head: an entry whose pin has not moved
+keeps its item byte for byte, so a marketplace commit that bumps one plugin rewrites one
+`item.json`, not thousands. `SYNC_REBUILD=1` rebuilds them all, for a change in the sync's own
+derivation logic. A new marketplace item gets a first `longDescription` drafted from its own
+files (`scripts/sync/tldr.ts`); like `name`, it is curated afterwards and never overwritten.
 
 ## 5. Sync fail-closed rules
 

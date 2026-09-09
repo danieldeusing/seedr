@@ -19,6 +19,7 @@
  *   SYNC_MAX_DELETIONS   abort above this many deletions (default 5)
  *   SYNC_ALLOW_EMPTY=1   accept an empty skills listing (normally treated as a failed source)
  *   SYNC_DRY_RUN=1       stage and report, write nothing (also: pnpm sync -- --dry-run)
+ *   SYNC_REBUILD=1       rebuild mirrored marketplace items whose pin has not moved
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -26,7 +27,7 @@ import { basename, join } from "node:path";
 import { isFirstParty, typeDirName } from "@seedr/registry-ops";
 import { DEFAULT_REGISTRY_DIR, compileManifest, readAllItems } from "./compile-manifest.js";
 import { findDuplicateItems, validateItem } from "./lib/validate-item.js";
-import { syncOfficialPlugins, syncOfficialSkills, type SourceContext } from "./sync/anthropic.js";
+import { MARKETPLACES, syncMarketplace, syncOfficialSkills, type SourceContext } from "./sync/anthropic.js";
 import { syncCommunityItem } from "./sync/community.js";
 import { GitHubClient } from "./sync/github.js";
 import { serializeItem } from "./sync/item.js";
@@ -44,6 +45,8 @@ export interface SyncOptions {
   allowEmpty?: boolean;
   /** Stage and report the proposed registry without writing or compiling. */
   dryRun?: boolean;
+  /** Rebuild mirrored marketplace items whose pin has not moved. */
+  rebuild?: boolean;
   log?: (line: string) => void;
 }
 
@@ -64,7 +67,10 @@ interface NamedSource {
   result: SourceResult;
 }
 
-export function readEnvOptions(env: NodeJS.ProcessEnv, argv: string[] = []): { maxDeletions: number; allowEmpty: boolean; dryRun: boolean } {
+export function readEnvOptions(
+  env: NodeJS.ProcessEnv,
+  argv: string[] = [],
+): { maxDeletions: number; allowEmpty: boolean; dryRun: boolean; rebuild: boolean } {
   const raw = env.SYNC_MAX_DELETIONS;
   const maxDeletions = raw === undefined || raw === "" ? DEFAULT_MAX_DELETIONS : Number(raw);
   if (!Number.isInteger(maxDeletions) || maxDeletions < 0) {
@@ -72,7 +78,12 @@ export function readEnvOptions(env: NodeJS.ProcessEnv, argv: string[] = []): { m
   }
   const unknown = argv.filter((arg) => arg !== "--dry-run");
   if (unknown.length > 0) throw new Error(`Unknown argument(s): ${unknown.join(" ")}`);
-  return { maxDeletions, allowEmpty: env.SYNC_ALLOW_EMPTY === "1", dryRun: env.SYNC_DRY_RUN === "1" || argv.includes("--dry-run") };
+  return {
+    maxDeletions,
+    allowEmpty: env.SYNC_ALLOW_EMPTY === "1",
+    dryRun: env.SYNC_DRY_RUN === "1" || argv.includes("--dry-run"),
+    rebuild: env.SYNC_REBUILD === "1",
+  };
 }
 
 function itemPath(registryDir: string, item: Pick<ManifestItem, "type" | "slug">): string {
@@ -99,6 +110,7 @@ export async function runSync(options: SyncOptions = {}): Promise<SyncOutcome> {
   const maxDeletions = options.maxDeletions ?? DEFAULT_MAX_DELETIONS;
   const allowEmpty = options.allowEmpty ?? false;
   const dryRun = options.dryRun ?? false;
+  const rebuild = options.rebuild ?? false;
 
   const outcome: SyncOutcome = { ok: false, added: [], changed: [], unchanged: [], carriedOver: [], deleted: [], failedSources: [] };
   const abort = (reason: string): SyncOutcome => {
@@ -113,16 +125,29 @@ export async function runSync(options: SyncOptions = {}): Promise<SyncOutcome> {
   // 1. The registry as it is. Not validated here: a broken item on disk must still be carried over.
   const existingItems = readAllItems({ registryDir, validate: false });
   const existing = new Map<ItemKey, ManifestItem>(existingItems.map((item) => [itemKey(item), item]));
-  const ctx: SourceContext = { client, existing, log, allowEmpty };
+  const ctx: SourceContext = { client, existing, log, allowEmpty, rebuild };
 
-  // 2. Official sources first — the marketplace decides which plugins it owns.
+  // 2. Official sources first — the marketplaces decide which plugins they own, in order of
+  //    precedence: a slug claimed by an earlier one is left to it.
   const sources: NamedSource[] = [];
-  const [skills, plugins] = await Promise.all([syncOfficialSkills(ctx), syncOfficialPlugins(ctx)]);
-  sources.push({ name: "official-skills", result: skills }, { name: "official-marketplace", result: plugins });
+  const claimed = new Set<ItemKey>();
+  const claim = (result: SourceResult): void => {
+    for (const key of result.owned) claimed.add(key);
+    if (result.status === "complete") for (const item of result.items) claimed.add(itemKey(item));
+  };
+  const [official, ...rest] = MARKETPLACES;
+  const [skills, plugins] = await Promise.all([syncOfficialSkills(ctx), syncMarketplace(ctx, official!, claimed)]);
+  sources.push({ name: "official-skills", result: skills }, { name: `marketplace:${official!.name}`, result: plugins });
+  claim(skills);
+  claim(plugins);
+  for (const source of rest) {
+    const result = await syncMarketplace(ctx, source, claimed);
+    sources.push({ name: `marketplace:${source.name}`, result });
+    claim(result);
+  }
 
-  // 3. Everything synced that no official source owns is a community item with its own source.
-  const officiallyOwned = new Set<ItemKey>([...skills.owned, ...plugins.owned]);
-  const communityItems = existingItems.filter((item) => !isFirstParty(item.sourceType) && !officiallyOwned.has(itemKey(item)));
+  // 3. Everything synced that no marketplace owns is a community item with its own source.
+  const communityItems = existingItems.filter((item) => !isFirstParty(item.sourceType) && !claimed.has(itemKey(item)));
   if (communityItems.length > 0) log(`\n=== Community items (${communityItems.length}) ===`);
   const communityResults = await mapConcurrent(communityItems, COMMUNITY_CONCURRENCY, (item) => syncCommunityItem(ctx, item));
   communityItems.forEach((item, index) => sources.push({ name: `community:${itemKey(item)}`, result: communityResults[index]! }));
@@ -239,8 +264,8 @@ export async function runSync(options: SyncOptions = {}): Promise<SyncOutcome> {
 }
 
 async function main(): Promise<void> {
-  const { maxDeletions, allowEmpty, dryRun } = readEnvOptions(process.env, process.argv.slice(2));
-  const outcome = await runSync({ maxDeletions, allowEmpty, dryRun });
+  const { maxDeletions, allowEmpty, dryRun, rebuild } = readEnvOptions(process.env, process.argv.slice(2));
+  const outcome = await runSync({ maxDeletions, allowEmpty, dryRun, rebuild });
   if (!outcome.ok) process.exit(1);
   if (outcome.failedSources.length > 0) {
     console.warn(`\n⚠ ${outcome.failedSources.length} source(s) failed and were carried over unchanged; see the decision log above.`);

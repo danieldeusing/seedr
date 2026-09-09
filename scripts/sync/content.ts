@@ -8,7 +8,7 @@ import type { GitHubClient } from "./github.js";
 import { computeContentDigest } from "./digest.js";
 import { describeLicense, locateLicense } from "./license.js";
 import type { FileTreeNode, LicenseInfo, ManifestItem, ParsedPluginContents, PluginType } from "./types.js";
-import { buildFileTree, computeLegacyContentHash, isSkillDirectory, listTreeFiles, mapConcurrent, parsePluginContents, skillNamesIn, treeHasDirectory, type PluginJson, type TreeFile } from "./utils.js";
+import { buildFileTree, computeLegacyContentHash, isSkillDirectory, listTreeFiles, mapConcurrent, parseFrontmatter, parsePluginContents, skillNamesIn, treeHasDirectory, type PluginJson, type TreeFile } from "./utils.js";
 import type { GitTreeItem } from "./types.js";
 
 /** Refuse to hash repositories beyond this size; the CLI would have to download all of it per install. */
@@ -215,18 +215,24 @@ export function resolvePluginComponents(content: CollectedContent, options: { pl
   }
   const declaredSkills = declaredSkillNames(options.pluginJson?.skills, content.files);
   if (declaredSkills.length > 0) parsed.skills = [...new Set([...(parsed.skills ?? []), ...declaredSkills])];
+  // The repository is the skill: one SKILL.md at the root, named by its frontmatter.
+  if (!parsed.skills) {
+    const rootSkill = findEntry(content, "SKILL.md");
+    if (rootSkill) parsed.skills = [parseFrontmatter(rootSkill.toString("utf-8"))?.name ?? options.pluginJson?.name ?? "skill"];
+  }
   return parsed;
 }
 
 /**
- * Classify a plugin from its components; inline marketplace `lspServers` mark an integration.
+ * Classify a plugin from its components. A language server — declared inline in the
+ * marketplace entry, in plugin.json, or in a root `.lsp.json` — makes it an integration.
  */
 export function classifyPlugin(
   content: CollectedContent,
   options: { pluginJson: PluginJson | null; lspServers?: Record<string, unknown>; inlineSkills?: string[]; existing: ManifestItem | null },
 ): PluginClassification {
   const { existing } = options;
-  if (options.lspServers || existing?.pluginType === "integration") {
+  if (options.lspServers || options.pluginJson?.lspServers || findEntry(content, ".lsp.json") || existing?.pluginType === "integration") {
     return { pluginType: "integration", integration: existing?.integration ?? "lsp" };
   }
 

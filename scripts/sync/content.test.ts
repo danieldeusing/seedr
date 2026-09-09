@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FakeGitHub, SHA_A } from "../test/fake-github.js";
-import { classifyPlugin, collectContent, declaredMcpServerNames, declaredSkillNames, withDeclaredLicense, type CollectedContent } from "./content.js";
+import { classifyPlugin, collectContent, declaredMcpServerNames, declaredSkillNames, resolvePluginComponents, withDeclaredLicense, type CollectedContent } from "./content.js";
 import { computeContentDigest } from "./digest.js";
 import { GitHubClient } from "./github.js";
 import { buildFileTree } from "./utils.js";
@@ -48,6 +48,22 @@ describe("classifyPlugin", () => {
     expect(classifyPlugin(c, { pluginJson: null, existing: null })).toEqual({ pluginType: "package", package: { hook: 2, command: 1 } });
     expect(classifyPlugin(c, { pluginJson: null, lspServers: { x: { command: "x" } }, existing: null })).toEqual({ pluginType: "integration", integration: "lsp" });
     expect(classifyPlugin(c, { pluginJson: null, existing: { pluginType: "integration", integration: "custom" } as never })).toEqual({ pluginType: "integration", integration: "custom" });
+  });
+
+  it("counts a skill kept beside plugin.json, and a repository that is one skill by its frontmatter name", () => {
+    const beside = content({ ".claude-plugin/plugin.json": "{}", "uikit-max/SKILL.md": "---\nname: uikit-max\n---\n", "README.md": "" });
+    expect(classifyPlugin(beside, { pluginJson: {}, existing: null })).toEqual({ pluginType: "wrapper", wrapper: "skill" });
+
+    const whole = content({ "SKILL.md": "---\nname: dev-tracker\ndescription: A journal\n---\n", "references/a.md": "" });
+    expect(resolvePluginComponents(whole, { pluginJson: { name: "tracker" } }).skills).toEqual(["dev-tracker"]);
+    expect(resolvePluginComponents(content({ "SKILL.md": "# no frontmatter\n" }), { pluginJson: { name: "tracker" } }).skills).toEqual(["tracker"]);
+  });
+
+  it("treats a language server declared in plugin.json or a root .lsp.json as an integration", () => {
+    const viaPluginJson = classifyPlugin(content({ "README.md": "" }), { pluginJson: { lspServers: { roslyn: { command: "dotnet" } } }, existing: null });
+    expect(viaPluginJson).toEqual({ pluginType: "integration", integration: "lsp" });
+    const viaFile = classifyPlugin(content({ ".lsp.json": "{}", "README.md": "" }), { pluginJson: {}, existing: null });
+    expect(viaFile).toEqual({ pluginType: "integration", integration: "lsp" });
   });
 
   it("uses inline marketplace skills when the tree has no skills folder", () => {

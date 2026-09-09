@@ -1,9 +1,10 @@
 /**
  * GitHub access for the sync and the live validator.
  *
- * One client per run holds the auth header, the rate-limit state and two caches:
- * git trees by `repo@sha` and file bytes by git blob sha (identical blobs across
- * repositories and items are fetched once).
+ * One client per run holds the auth header, the rate-limit state and three caches:
+ * git trees by `repo@sha`, the last few commit archives by `repo@sha` (the sync reads
+ * content from these — one request per repository, where the raw host costs one per
+ * file), and file bytes by git blob sha for the raw reads that remain.
  *
  * Failure policy (docs/registry-integrity.md §5): network errors, 5xx and 429 are retried
  * with exponential backoff, at most `maxRetries` times. 404 and an exhausted primary rate

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { Browse } from "./Browse";
@@ -12,9 +12,9 @@ vi.mock("@/lib/labels", () => ({
   labelDefinition: (slug: string | undefined) => catalogue.find((definition) => definition.slug === slug),
 }));
 
-function renderBrowse(search = "") {
+function renderBrowse(search = "", type = "skills") {
   return render(
-    <MemoryRouter initialEntries={[`/skills${search}`]}>
+    <MemoryRouter initialEntries={[`/${type}${search}`]}>
       <Routes>
         <Route path="/:type" element={<Browse />} />
       </Routes>
@@ -23,6 +23,27 @@ function renderBrowse(search = "") {
 }
 
 const filterBar = () => within(screen.getByTestId("filter-bar"));
+const resultCards = () => screen.getByTestId("results-grid").children;
+
+describe("Browse results window", () => {
+  it("renders the first window of a long list and widens it on request", () => {
+    // /plugins carries the mirrored marketplaces, far more than one window
+    renderBrowse("", "plugins");
+    const total = Number(/^(\d+) plugins available/.exec(screen.getByText(/plugins available/).textContent ?? "")?.[1]);
+    expect(total).toBeGreaterThan(96);
+    expect(resultCards()).toHaveLength(48);
+    expect(screen.getByText(`Showing 48 of ${total}.`)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show more" }));
+    expect(resultCards()).toHaveLength(96);
+  });
+
+  it("renders a short list whole, without the window notice", () => {
+    renderBrowse("", "hooks");
+    expect(resultCards().length).toBeLessThan(48);
+    expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
+  });
+});
 
 describe("Browse label filter", () => {
   beforeEach(() => {

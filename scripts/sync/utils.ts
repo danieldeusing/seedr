@@ -156,7 +156,10 @@ export interface GitHubRepoRef {
 
 /** Accepts https://github.com/o/r(.git)(/…), http, and git@github.com:o/r.git forms. */
 export function parseGitHubRepoUrl(url: string): GitHubRepoRef | null {
-  const match = /^(?:https?:\/\/(?:www\.)?github\.com\/|git@github\.com:)([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[/#?].*)?$/.exec(url.trim());
+  // A bare `owner/repo` is how Claude Code's marketplaces abbreviate a GitHub repository too.
+  const match =
+    /^(?:https?:\/\/(?:www\.)?github\.com\/|git@github\.com:)([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[/#?].*)?$/.exec(url.trim()) ??
+    /^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?$/.exec(url.trim());
   if (!match) return null;
   const repo = `${match[1]}/${match[2]}`;
   return { repo, cloneUrl: `https://github.com/${repo}.git` };

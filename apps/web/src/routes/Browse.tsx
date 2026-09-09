@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import Fuse from "fuse.js";
 import { X } from "lucide-react";
@@ -183,26 +183,63 @@ function BrowseResults({
   filters: BrowseFilters;
   setFilter: (key: FilterParamKey, value: string | null) => void;
 }) {
+  const visible = useVisibleWindow(items);
   if (items.length === 0) {
     return <p className="py-12 text-center text-subtext">No {typeLabelPlural[componentType].toLowerCase()} found</p>;
   }
   const isPlugins = componentType === "plugin";
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="results-grid">
-      {items.map((item) => (
-        <ItemCard
-          key={`${item.slug}-${item.type}-${item.pluginType ?? ""}`}
-          item={item}
-          browseType={componentType}
-          onSourceClick={(source) => setFilter("source", source)}
-          onScopeClick={(scope) => setFilter("scope", scope)}
-          onToolClick={(tool) => setFilter("tool", tool)}
-          onPluginTypeClick={isPlugins ? (pluginType) => setFilter("pluginType", pluginType) : undefined}
-          onDateClick={() => setFilter(filters.sortField === "updated" ? "sortAsc" : "sortField", filters.sortField === "updated" ? (filters.sortAsc ? "false" : "true") : "updated")}
-        />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="results-grid">
+        {items.slice(0, visible.count).map((item) => (
+          <ItemCard
+            key={`${item.slug}-${item.type}-${item.pluginType ?? ""}`}
+            item={item}
+            browseType={componentType}
+            onSourceClick={(source) => setFilter("source", source)}
+            onScopeClick={(scope) => setFilter("scope", scope)}
+            onToolClick={(tool) => setFilter("tool", tool)}
+            onPluginTypeClick={isPlugins ? (pluginType) => setFilter("pluginType", pluginType) : undefined}
+            onDateClick={() => setFilter(filters.sortField === "updated" ? "sortAsc" : "sortField", filters.sortField === "updated" ? (filters.sortAsc ? "false" : "true") : "updated")}
+          />
+        ))}
+      </div>
+      {visible.count < items.length && (
+        <p ref={visible.sentinel} className="py-8 text-center text-subtext">
+          Showing {visible.count} of {items.length}.{" "}
+          <button type="button" className="text-primary hover:underline" onClick={visible.more}>
+            Show more
+          </button>
+        </p>
+      )}
+    </>
   );
+}
+
+const WINDOW = 48;
+
+/**
+ * How many of the results are rendered: a first window, widened as the reader nears the
+ * end of it (or asks for more). A registry of a few thousand plugins would otherwise put
+ * every card in the document at once, and pay for it again on each keystroke of the search.
+ */
+function useVisibleWindow(items: readonly RegistryItem[]) {
+  const [count, setCount] = useState(WINDOW);
+  const sentinel = useRef<HTMLParagraphElement>(null);
+  useEffect(() => setCount(WINDOW), [items]);
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || count >= items.length || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setCount((current) => Math.min(current + WINDOW, items.length));
+      },
+      { rootMargin: "800px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [count, items.length]);
+  return { count: Math.min(count, items.length), sentinel, more: () => setCount((current) => Math.min(current + WINDOW, items.length)) };
 }
 
 function BrowsePage({ componentType }: { componentType: ComponentType }) {

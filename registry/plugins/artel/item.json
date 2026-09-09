@@ -1,0 +1,1206 @@
+{
+  "slug": "artel",
+  "name": "Artel",
+  "type": "plugin",
+  "description": "Mesh infrastructure for AI teams. One self-hosted server gives a fleet of agents shared semantic memory, tasks, agent-to-agent messages, and session handoffs. Artel instances mesh together via RSS/JSON feed subscriptions — memory flows across machines, frameworks, and providers with no central coordinator — while a background archivist keeps the shared memory auto-organizing: merging conflicts, synthesizing cross-agent findings, and decaying stale knowledge.",
+  "longDescription": "Ships **4 commands**, **5 hooks** and **1 MCP server**.\n\n- **Commands** (4): `artel-handoff` (Save an Artel session handoff so the next session or agent can continue), `artel-recall` (Search Artel shared memory for what the fleet already knows), `artel-remember` (Write a fact, decision, or gotcha to Artel shared memory), `artel-tasks` (Show open Artel tasks, or claim and start the next one)\n- **Hooks** (5): `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PreCompact`, `Stop`\n- **MCP servers** (1): `artel`\n\nInstalls with `claude plugin install artel@claude-community` from `NicolasPrimeau/artel`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "hook": 5,
+    "command": 4,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Nicolas Primeau",
+    "url": "https://github.com/NicolasPrimeau"
+  },
+  "externalUrl": "https://github.com/NicolasPrimeau/artel/tree/542ea7022d6b8cc0de4ea38f8aef48d996e77a43",
+  "marketplace": "claude-community",
+  "version": "0.43.1",
+  "sourceRevision": "542ea7022d6b8cc0de4ea38f8aef48d996e77a43",
+  "contentDigest": "adad1bcee9af05cc37c3b6da0b454f8ed600373edf1047be9b5f69cfb9aa7752",
+  "contentHash": "5d83d86c41b0397f",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/NicolasPrimeau/artel.git",
+    "sha": "542ea7022d6b8cc0de4ea38f8aef48d996e77a43"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE.md"
+  },
+  "updatedAt": "2026-08-08T02:04:31Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "artel",
+        "type": "directory",
+        "children": [
+          {
+            "name": "archivist",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "agent.py",
+                "type": "file"
+              },
+              {
+                "name": "blueprint_compile.py",
+                "type": "file"
+              },
+              {
+                "name": "client.py",
+                "type": "file"
+              },
+              {
+                "name": "compaction.py",
+                "type": "file"
+              },
+              {
+                "name": "config.py",
+                "type": "file"
+              },
+              {
+                "name": "conflict.py",
+                "type": "file"
+              },
+              {
+                "name": "conflicts.py",
+                "type": "file"
+              },
+              {
+                "name": "control.py",
+                "type": "file"
+              },
+              {
+                "name": "llm.py",
+                "type": "file"
+              },
+              {
+                "name": "synthesis.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compile",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "anchors.py",
+                "type": "file"
+              },
+              {
+                "name": "install.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "config.py",
+                "type": "file"
+              },
+              {
+                "name": "server.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "routes",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agents.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "archivist.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "blueprints.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "captures.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compile.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "decisions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "events.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "feeds.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "logs.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mesh.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "messages.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "oauth.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onboard.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "participants.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "projects.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pulse.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sessions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "static",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "favicon-32.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "favicon.ico",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "app.py",
+                "type": "file"
+              },
+              {
+                "name": "auth.py",
+                "type": "file"
+              },
+              {
+                "name": "blueprint.py",
+                "type": "file"
+              },
+              {
+                "name": "broadcast.py",
+                "type": "file"
+              },
+              {
+                "name": "config.py",
+                "type": "file"
+              },
+              {
+                "name": "contract.py",
+                "type": "file"
+              },
+              {
+                "name": "feed_poller.py",
+                "type": "file"
+              },
+              {
+                "name": "gossip.py",
+                "type": "file"
+              },
+              {
+                "name": "jwt_utils.py",
+                "type": "file"
+              },
+              {
+                "name": "mdns_announce.py",
+                "type": "file"
+              },
+              {
+                "name": "mdns.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "presence.py",
+                "type": "file"
+              },
+              {
+                "name": "reactor.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "store",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "affinity.py",
+                "type": "file"
+              },
+              {
+                "name": "bandit.py",
+                "type": "file"
+              },
+              {
+                "name": "db.py",
+                "type": "file"
+              },
+              {
+                "name": "decay.py",
+                "type": "file"
+              },
+              {
+                "name": "embeddings.py",
+                "type": "file"
+              },
+              {
+                "name": "graph.py",
+                "type": "file"
+              },
+              {
+                "name": "hebbian.py",
+                "type": "file"
+              },
+              {
+                "name": "merkle.py",
+                "type": "file"
+              },
+              {
+                "name": "mmr.py",
+                "type": "file"
+              },
+              {
+                "name": "performance.py",
+                "type": "file"
+              },
+              {
+                "name": "recall_bandit.py",
+                "type": "file"
+              },
+              {
+                "name": "schema.py",
+                "type": "file"
+              },
+              {
+                "name": "vclock.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "watch.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "artel-handoff.md",
+            "type": "file"
+          },
+          {
+            "name": "artel-recall.md",
+            "type": "file"
+          },
+          {
+            "name": "artel-remember.md",
+            "type": "file"
+          },
+          {
+            "name": "artel-tasks.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "blog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devto-mesh-post.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".anchors.lock",
+            "type": "file"
+          },
+          {
+            "name": "adaptive-control.md",
+            "type": "file"
+          },
+          {
+            "name": "architecture.md",
+            "type": "file"
+          },
+          {
+            "name": "artel.gif",
+            "type": "file"
+          },
+          {
+            "name": "auth.md",
+            "type": "file"
+          },
+          {
+            "name": "code_review.gif",
+            "type": "file"
+          },
+          {
+            "name": "dash_agents.png",
+            "type": "file"
+          },
+          {
+            "name": "dash_dashboard.png",
+            "type": "file"
+          },
+          {
+            "name": "dash_memory.png",
+            "type": "file"
+          },
+          {
+            "name": "dash_messages.png",
+            "type": "file"
+          },
+          {
+            "name": "dash_projects.png",
+            "type": "file"
+          },
+          {
+            "name": "dash_sessions.png",
+            "type": "file"
+          },
+          {
+            "name": "dash_tasks.png",
+            "type": "file"
+          },
+          {
+            "name": "demo-2.gif",
+            "type": "file"
+          },
+          {
+            "name": "directive_spec.md",
+            "type": "file"
+          },
+          {
+            "name": "documentation.md",
+            "type": "file"
+          },
+          {
+            "name": "incident_response.gif",
+            "type": "file"
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          },
+          {
+            "name": "logo-400.png",
+            "type": "file"
+          },
+          {
+            "name": "logo-400.svg",
+            "type": "file"
+          },
+          {
+            "name": "mesh_network5.gif",
+            "type": "file"
+          },
+          {
+            "name": "onboard-3.gif",
+            "type": "file"
+          },
+          {
+            "name": "plan.md",
+            "type": "file"
+          },
+          {
+            "name": "plugin-setup.gif",
+            "type": "file"
+          },
+          {
+            "name": "project_management.gif",
+            "type": "file"
+          },
+          {
+            "name": "reddit-posts.md",
+            "type": "file"
+          },
+          {
+            "name": "session_continuity.gif",
+            "type": "file"
+          },
+          {
+            "name": "showcase-2.gif",
+            "type": "file"
+          },
+          {
+            "name": "showcase.gif",
+            "type": "file"
+          },
+          {
+            "name": "spec.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "autogen_agent.py",
+            "type": "file"
+          },
+          {
+            "name": "python_client.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "integrations",
+        "type": "directory",
+        "children": [
+          {
+            "name": "opencode",
+            "type": "directory",
+            "children": [
+              {
+                "name": "artel.ts",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "artel_compile.py",
+                "type": "file"
+              },
+              {
+                "name": "pre-commit",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "_artel_hooks.py",
+            "type": "file"
+          },
+          {
+            "name": "artel-capture.sh",
+            "type": "file"
+          },
+          {
+            "name": "artel-check-inbox.sh",
+            "type": "file"
+          },
+          {
+            "name": "artel-doctor.sh",
+            "type": "file"
+          },
+          {
+            "name": "artel-drain.sh",
+            "type": "file"
+          },
+          {
+            "name": "artel-pretool-gotcha.sh",
+            "type": "file"
+          },
+          {
+            "name": "artel-recall.sh",
+            "type": "file"
+          },
+          {
+            "name": "artel-session-start.sh",
+            "type": "file"
+          },
+          {
+            "name": "artel-statusline.sh",
+            "type": "file"
+          },
+          {
+            "name": "artel-stop.sh",
+            "type": "file"
+          },
+          {
+            "name": "check_docs.py",
+            "type": "file"
+          },
+          {
+            "name": "demo_combine.py",
+            "type": "file"
+          },
+          {
+            "name": "demo_fmt.py",
+            "type": "file"
+          },
+          {
+            "name": "demo_record.py",
+            "type": "file"
+          },
+          {
+            "name": "demo_reddit_real.sh",
+            "type": "file"
+          },
+          {
+            "name": "demo.py",
+            "type": "file"
+          },
+          {
+            "name": "flatten_gif.py",
+            "type": "file"
+          },
+          {
+            "name": "gen_docs.py",
+            "type": "file"
+          },
+          {
+            "name": "gen_mesh_cast.py",
+            "type": "file"
+          },
+          {
+            "name": "gen_onboard_cast.py",
+            "type": "file"
+          },
+          {
+            "name": "gen_openapi.py",
+            "type": "file"
+          },
+          {
+            "name": "record_demo.sh",
+            "type": "file"
+          },
+          {
+            "name": "record_full_onboard.py",
+            "type": "file"
+          },
+          {
+            "name": "record_mesh_demo.py",
+            "type": "file"
+          },
+          {
+            "name": "record_onboard.py",
+            "type": "file"
+          },
+          {
+            "name": "record_reddit.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_keys.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scenarios",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "agent.py",
+                "type": "file"
+              },
+              {
+                "name": "conftest.py",
+                "type": "file"
+              },
+              {
+                "name": "test_adaptive_archivist_scenarios.py",
+                "type": "file"
+              },
+              {
+                "name": "test_archivist_curator.py",
+                "type": "file"
+              },
+              {
+                "name": "test_compile_mode.py",
+                "type": "file"
+              },
+              {
+                "name": "test_conflict_lifecycle.py",
+                "type": "file"
+              },
+              {
+                "name": "test_coordination.py",
+                "type": "file"
+              },
+              {
+                "name": "test_directives.py",
+                "type": "file"
+              },
+              {
+                "name": "test_emergent_systems.py",
+                "type": "file"
+              },
+              {
+                "name": "test_hybrid_retrieval.py",
+                "type": "file"
+              },
+              {
+                "name": "test_mesh_archivist.py",
+                "type": "file"
+              },
+              {
+                "name": "test_messaging_and_task_transfer.py",
+                "type": "file"
+              },
+              {
+                "name": "test_project_roles.py",
+                "type": "file"
+              },
+              {
+                "name": "test_rbac.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "smoke",
+            "type": "directory",
+            "children": [
+              {
+                "name": "e2e_agent.sh",
+                "type": "file"
+              },
+              {
+                "name": "run.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_adaptive_archivist.py",
+            "type": "file"
+          },
+          {
+            "name": "test_affinity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_agent_performance.py",
+            "type": "file"
+          },
+          {
+            "name": "test_archivist_guard.py",
+            "type": "file"
+          },
+          {
+            "name": "test_archivist_improvements.py",
+            "type": "file"
+          },
+          {
+            "name": "test_archivist_lease.py",
+            "type": "file"
+          },
+          {
+            "name": "test_archivist_tasks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_archivist.py",
+            "type": "file"
+          },
+          {
+            "name": "test_bandit.py",
+            "type": "file"
+          },
+          {
+            "name": "test_blueprint_compile.py",
+            "type": "file"
+          },
+          {
+            "name": "test_blueprints.py",
+            "type": "file"
+          },
+          {
+            "name": "test_broadcast.py",
+            "type": "file"
+          },
+          {
+            "name": "test_capture_drain.py",
+            "type": "file"
+          },
+          {
+            "name": "test_captures_compaction.py",
+            "type": "file"
+          },
+          {
+            "name": "test_captures.py",
+            "type": "file"
+          },
+          {
+            "name": "test_compile.py",
+            "type": "file"
+          },
+          {
+            "name": "test_completion_contract.py",
+            "type": "file"
+          },
+          {
+            "name": "test_conflict_resolution.py",
+            "type": "file"
+          },
+          {
+            "name": "test_control.py",
+            "type": "file"
+          },
+          {
+            "name": "test_decay_control.py",
+            "type": "file"
+          },
+          {
+            "name": "test_decay.py",
+            "type": "file"
+          },
+          {
+            "name": "test_docs_freshness.py",
+            "type": "file"
+          },
+          {
+            "name": "test_embeddings.py",
+            "type": "file"
+          },
+          {
+            "name": "test_events.py",
+            "type": "file"
+          },
+          {
+            "name": "test_feeds.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fts_sync.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gossip.py",
+            "type": "file"
+          },
+          {
+            "name": "test_headlines.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hebbian.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hook_project_scope.py",
+            "type": "file"
+          },
+          {
+            "name": "test_logs.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_stateless.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "test_memory_diversify.py",
+            "type": "file"
+          },
+          {
+            "name": "test_memory_hybrid.py",
+            "type": "file"
+          },
+          {
+            "name": "test_memory_trust_signals.py",
+            "type": "file"
+          },
+          {
+            "name": "test_memory.py",
+            "type": "file"
+          },
+          {
+            "name": "test_merkle.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mesh_scenario.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mesh.py",
+            "type": "file"
+          },
+          {
+            "name": "test_messages.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mmr.py",
+            "type": "file"
+          },
+          {
+            "name": "test_oauth.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pagerank.py",
+            "type": "file"
+          },
+          {
+            "name": "test_plugin.py",
+            "type": "file"
+          },
+          {
+            "name": "test_project_migration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_projects.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pulse.py",
+            "type": "file"
+          },
+          {
+            "name": "test_recall_bandit.py",
+            "type": "file"
+          },
+          {
+            "name": "test_recall_hook.py",
+            "type": "file"
+          },
+          {
+            "name": "test_reinforce.py",
+            "type": "file"
+          },
+          {
+            "name": "test_server_card.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sessions.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spreading_activation.py",
+            "type": "file"
+          },
+          {
+            "name": "test_stigmergy.py",
+            "type": "file"
+          },
+          {
+            "name": "test_synthesis_link.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tasks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ui_session.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vclock.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".dockerignore",
+        "type": "file"
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitleaks.toml",
+        "type": "file"
+      },
+      {
+        "name": ".pre-commit-config.yaml",
+        "type": "file"
+      },
+      {
+        "name": ".python-version",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.override.yml",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.yml",
+        "type": "file"
+      },
+      {
+        "name": "Dockerfile",
+        "type": "file"
+      },
+      {
+        "name": "entrypoint.sh",
+        "type": "file"
+      },
+      {
+        "name": "fly.toml",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "glama.json",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE.md",
+        "type": "file"
+      },
+      {
+        "name": "llms-install.md",
+        "type": "file"
+      },
+      {
+        "name": "llms.txt",
+        "type": "file"
+      },
+      {
+        "name": "logo.png",
+        "type": "file"
+      },
+      {
+        "name": "mkdocs.yml",
+        "type": "file"
+      },
+      {
+        "name": "openapi.json",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1660 @@
+{
+  "slug": "bridge-ds",
+  "name": "Bridge Ds",
+  "type": "plugin",
+  "description": "AI-powered design generation in Figma using your real design system. Bridge extracts your DS (components, tokens, styles), writes validated specs, and generates production-ready Figma designs with 100% DS compliance — zero hardcoded values, real component instances, bound variables. Features a unique learning loop that captures your corrections and improves future generations. Supports both figma-console-mcp and the official Figma MCP server.",
+  "longDescription": "Ships **5 skills**, **1 hook** and **1 MCP server**.\n\n- **Skills** (5): `extracting-design-system` (Use when the user says \"setup\", \"setup bridge\", \"extract\", \"extract DS\", \"onboard\", \"build knowledge base\", \"initialize bridge\", or…), `generating-figma-design` (Use when the user requests to design, create, build, generate, or make a new Figma component or screen…), `learning-from-corrections` (Use when the user says they adjusted the design in Figma, mentions \"fix\", \"correct\", \"learn from\", \"I changed\",…), `shipping-and-archiving` (Use when the user says \"done\", \"ship it\", \"finish\", \"complete\", \"archive\", or otherwise indicates the current design is…), `using-bridge` (Use when any Bridge command is invoked (make, fix, done, setup, drop, status) or any Figma / design-system…)\n- **Hooks** (1): `SessionStart`\n- **MCP servers** (1): `figma-console`\n\nInstalls with `claude plugin install bridge-ds@claude-community` from `noemuch/bridge`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 5,
+    "hook": 1,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "noemuch",
+    "url": "https://github.com/noemuch"
+  },
+  "externalUrl": "https://github.com/noemuch/bridge/tree/dd585ce079c660368401c49d58759ffcda60d36f",
+  "marketplace": "claude-community",
+  "version": "6.0.0",
+  "sourceRevision": "dd585ce079c660368401c49d58759ffcda60d36f",
+  "contentDigest": "32b3daea312886eda4014bf6dec35d9798ca7dd23ffa3281c2b8b1a58c6f730c",
+  "contentHash": "171760f3af098e46",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/noemuch/bridge.git",
+    "sha": "dd585ce079c660368401c49d58759ffcda60d36f"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-12T13:53:25Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bridge.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bridge-banner.png",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "session-start",
+            "type": "file"
+          },
+          {
+            "name": "skill-load",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "banner.ts",
+                "type": "file"
+              },
+              {
+                "name": "doctor.ts",
+                "type": "file"
+              },
+              {
+                "name": "extract.ts",
+                "type": "file"
+              },
+              {
+                "name": "lint.ts",
+                "type": "file"
+              },
+              {
+                "name": "main.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "main.ts",
+                "type": "file"
+              },
+              {
+                "name": "migrate.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "migrate.ts",
+                "type": "file"
+              },
+              {
+                "name": "setup-orchestrator.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "setup-orchestrator.ts",
+                "type": "file"
+              },
+              {
+                "name": "token-handling.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "token-handling.ts",
+                "type": "file"
+              },
+              {
+                "name": "ui.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compiler",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli.ts",
+                "type": "file"
+              },
+              {
+                "name": "codegen.ts",
+                "type": "file"
+              },
+              {
+                "name": "compile-with-lint.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "compile.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "compile.ts",
+                "type": "file"
+              },
+              {
+                "name": "errors.ts",
+                "type": "file"
+              },
+              {
+                "name": "helpers.ts",
+                "type": "file"
+              },
+              {
+                "name": "plan.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry.schema-guard.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry.ts",
+                "type": "file"
+              },
+              {
+                "name": "resolve.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              },
+              {
+                "name": "validate.ts",
+                "type": "file"
+              },
+              {
+                "name": "wrap.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "kb-config.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "kb-config.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cron",
+            "type": "directory",
+            "children": [
+              {
+                "name": "orchestrator.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "orchestrator.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "extractors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "figma-rest.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "figma-rest.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kb",
+            "type": "directory",
+            "children": [
+              {
+                "name": "migrations",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "legacy-to-v1.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "legacy-to-v1.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "auto-detect.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "auto-detect.ts",
+                "type": "file"
+              },
+              {
+                "name": "hash.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "hash.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry-io.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry-io.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema-version.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema-version.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "builtin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_rulesets",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "recommended.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "strict.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "copy",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "artifacts-english-only",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "french-copy.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "english-copy.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "interaction",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "interaction-tokens-are-float",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "color-interaction.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "float-overlay.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "no-hover-as-variant",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "hover-variant.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "base-states.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "naming",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "component-name-pascal",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "camel.cspec.yaml",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "kebab.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "pascal.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "property-key-suffix",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "missing-node-id-suffix.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "suffixed-keys.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "spec-filename-kebab",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "crypto_card.cspec.yaml",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "CryptoCard.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "crypto-card.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "variant-name-lowercase",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "pascal-variant-values.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "lowercase-and-kebab.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "structure",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "bridge-api-versioned",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "missing-bridge-api.ruleset.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "versioned-rule.ruleset.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "cspec-shape",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "bad-name-shape.cspec.yaml",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "missing-component.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "valid.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "snapshot-next-to-spec",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "missing-snapshot.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "with-snapshot-snapshot.json",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "with-snapshot.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "spec-required-fields",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "missing-all.cspec.yaml",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "missing-archetype.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "all-fields.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "cspec-shape.schema.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tokens",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dtcg-compliance",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "missing-dollar-prefix.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "dtcg-shape.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "no-deprecated-tokens",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "deprecated-tokens.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "active-tokens.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "no-hardcoded-hex",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "inline-hex.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "semantic-tokens.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "no-hardcoded-spacing-px",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "px-literals.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "semantic-spacing.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "token-refs-resolve",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "dangling-token.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "known-tokens.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "workflow",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "recipe-eligibility",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "component-archetype.cspec.yaml",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "too-many-corrections.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "eligible-screen.cspec.yaml",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ship-bundle-completeness",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fixtures",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "negative",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "missing-history.json",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "missing-snapshot.json",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "positive",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "complete-bundle.json",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rule.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "builtin-functions.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "builtin-functions.ts",
+                "type": "file"
+              },
+              {
+                "name": "builtin.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "compile-bridge.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "compile-bridge.ts",
+                "type": "file"
+              },
+              {
+                "name": "coverage.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "coverage.ts",
+                "type": "file"
+              },
+              {
+                "name": "engine.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "engine.ts",
+                "type": "file"
+              },
+              {
+                "name": "integration.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "kb-loader.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "kb-loader.ts",
+                "type": "file"
+              },
+              {
+                "name": "load-custom-functions.ts",
+                "type": "file"
+              },
+              {
+                "name": "loader.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "loader.ts",
+                "type": "file"
+              },
+              {
+                "name": "overlay.snapshot.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "overlay.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "overlay.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "packages",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rule-api",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "defineBridge.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "references",
+        "type": "directory",
+        "children": [
+          {
+            "name": "compiler-reference.md",
+            "type": "file"
+          },
+          {
+            "name": "red-flags-catalog.md",
+            "type": "file"
+          },
+          {
+            "name": "transport-adapter.md",
+            "type": "file"
+          },
+          {
+            "name": "verification-gates.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bump-version.js",
+            "type": "file"
+          },
+          {
+            "name": "copy-builtin-resources.js",
+            "type": "file"
+          },
+          {
+            "name": "validate-rule-meta.js",
+            "type": "file"
+          },
+          {
+            "name": "validate-skills.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "extracting-design-system",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generating-figma-design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "component-cspec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "screen-cspec.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "learning-from-corrections",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "shipping-and-archiving",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-bridge",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "test",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "figma-rest",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "component-sets-response.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "components-response.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nodes-response.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "styles-response.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "variables-response.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kb",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "legacy-grouped",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "knowledge-base",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "registries",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "components.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "text-styles.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "variables.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "registries",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "components.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "text-styles.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "variables.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "kb-config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "full.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "minimal.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "multi-file.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lint",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "kb",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "registries",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "components.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "text-styles.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "variables.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "finary.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "minimal-config.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "readme",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "with-figma-url.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "with-package-json-figma.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "without-figma-url.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "security",
+            "type": "directory",
+            "children": [
+              {
+                "name": "token-leak.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "snapshots",
+            "type": "directory",
+            "children": [
+              {
+                "name": "overlay-card.xml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".npmignore",
+        "type": "file"
+      },
+      {
+        "name": ".nvmrc",
+        "type": "file"
+      },
+      {
+        "name": ".prettierignore",
+        "type": "file"
+      },
+      {
+        "name": ".prettierrc.json",
+        "type": "file"
+      },
+      {
+        "name": "BREAKING.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "eslint.config.js",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1076 @@
+{
+  "slug": "cockroachdb",
+  "name": "Cockroachdb",
+  "type": "plugin",
+  "description": "Connect Claude Code directly to your CockroachDB clusters for hands-on database work — explore schemas, write optimized SQL, debug queries, and manage distributed database clusters. This plugin provides 14 tools across two active MCP backends (self-hosted MCP Toolbox and managed CockroachDB Cloud MCP Server), three specialized agents (DBA, Developer, Operator), 32 skills across 6 operational domains, and built-in safety hooks.",
+  "longDescription": "Ships **34 skills**, **3 agents**, **2 hooks** and **3 MCP servers**.\n\n- **Skills** (34): `benchmarking-transaction-patterns` (Guides benchmarking and comparing explicit multi-statement transactions versus single-statement CTE transactions in CockroachDB, with fair test methodology, contention…), `designing-application-transactions` (Guides application developers in designing correct and performant transaction patterns for CockroachDB, covering transaction lifetime, implicit vs explicit…), `designing-multi-region-applications` (Guides developers in selecting and implementing multi-region patterns for CockroachDB applications, covering active-passive vs active-active architectures, REGIONAL BY…), `analyzing-range-distribution` (Analyzes CockroachDB range distribution across tables and indexes using SHOW RANGES to identify range count, size patterns, leaseholder…), `analyzing-schema-change-storage-risk` (Estimates storage requirements for CockroachDB online schema change backfills using SHOW RANGES WITH DETAILS, KEYS, INDEXES), `auditing-table-statistics` (Audits optimizer table statistics for staleness, missing coverage, and data quality issues using SHOW STATISTICS), `monitoring-background-jobs` (Monitors CockroachDB background job health by identifying failed, paused, and long-running jobs using SHOW JOBS and SHOW AUTOMATIC…), `profiling-statement-fingerprints` (Ranks and analyzes statement fingerprints using aggregated SQL statistics from crdb_internal.statement_statistics to identify slow, resource-intensive, or error-prone query…), and 26 more\n- **Agents** (3): `cockroachdb-dba` (CockroachDB database administration agent), `cockroachdb-developer` (CockroachDB application developer agent), `cockroachdb-operator` (CockroachDB operator and SRE agent)\n- **Hooks** (2): `PreToolUse`, `PostToolUse`\n- **MCP servers** (3): `cockroachdb-toolbox`, `cockroachdb-toolbox-http`, `cockroachdb-cloud`\n\nInstalls with `claude plugin install cockroachdb@claude-plugins-official` from `cockroachdb/claude-plugin`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 34,
+    "agent": 3,
+    "hook": 2,
+    "mcp": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Cockroach Labs"
+  },
+  "externalUrl": "https://github.com/cockroachdb/claude-plugin/tree/6c96c6394a61f366e8ec1b7cec2281e97507cbff",
+  "marketplace": "claude-plugins-official",
+  "version": "0.1.10",
+  "sourceRevision": "6c96c6394a61f366e8ec1b7cec2281e97507cbff",
+  "contentDigest": "91138cfdb12d50ba293a1b1e9d648a5ed3245065837519ea49c354508c3eceda",
+  "contentHash": "077503a8f6c96867",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/cockroachdb/claude-plugin.git",
+    "sha": "6c96c6394a61f366e8ec1b7cec2281e97507cbff"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-22T16:48:36Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "release-please.yml",
+                "type": "file"
+              },
+              {
+                "name": "test-hooks.yml",
+                "type": "file"
+              },
+              {
+                "name": "update-skills.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cockroachdb-dba.md",
+            "type": "file"
+          },
+          {
+            "name": "cockroachdb-developer.md",
+            "type": "file"
+          },
+          {
+            "name": "cockroachdb-operator.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "logo.svg",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-sql-files.py",
+            "type": "file"
+          },
+          {
+            "name": "setup-cockroachdb.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-hooks.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-marketplace-install.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-sql.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cockroachdb-application-development",
+            "type": "directory",
+            "children": [
+              {
+                "name": "benchmarking-transaction-patterns",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "designing-application-transactions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "monitoring-and-concurrency-testing.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "designing-multi-region-applications",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-cost-and-usage-management",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-integrations-and-ecosystem",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-observability-and-diagnostics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyzing-range-distribution",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "permissions.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sql-queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "analyzing-schema-change-storage-risk",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "permissions.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "auditing-table-statistics",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "create-statistics-examples.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "statistics-thresholds.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "monitoring-background-jobs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "job-states.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "job-types.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "permissions.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sql-query-variations.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "profiling-statement-fingerprints",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "json-field-reference.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "metrics-and-units.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sql-query-variations.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "profiling-transaction-fingerprints",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "json-field-reference.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "metrics-and-units.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sql-query-variations.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "triaging-live-sql-activity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "permissions.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sql-queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-onboarding-and-migrations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "molt-fetch",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "flags.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "molt-replicator",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "flags.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "molt-verify",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "flags.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "setting-up-local-cluster",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-operations-and-lifecycle",
+            "type": "directory",
+            "children": [
+              {
+                "name": "managing-certificates-and-encryption",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cmek-procedures.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kubernetes-certs.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rotation-procedures.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "safety-guide.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "managing-cluster-capacity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "replacing-failed-nodes.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "storage-management.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "managing-cluster-settings",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cloud-restricted-settings.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "node-level-settings.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "recommended-values.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "safety-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sql-queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "performing-cluster-maintenance",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "drain-details.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "maintenance-prechecks.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "safety-guide.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "provisioning-cluster-for-production",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "hardware-and-infrastructure.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "production-deployment-checklist.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "reviewing-cluster-health",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "production-readiness.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "upgrading-cluster-version",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-performance-and-scaling",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-query-and-schema-design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cockroachdb-sql",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cockroachdb-rules",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "00-fundamental-principles.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "01-schema-design.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "02-dml-operations.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "03-query-patterns.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "04-optimization.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "05-operational.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "EXAMPLES.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-resilience-and-disaster-recovery",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cockroachdb-security-and-governance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auditing-cis-benchmark",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cis-controls.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sample-report.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sql-queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "auditing-cloud-cluster-security",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ccloud-commands.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "permissions.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sample-report.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sql-queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "configuring-audit-logging",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "sql-queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "configuring-ip-allowlists",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ccloud-commands.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "configuring-log-export",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cloud-provider-setup.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "configuring-private-connectivity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ccloud-commands.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cloud-provider-setup.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "configuring-sso-and-scim",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "configuration-steps.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "enabling-cmek-encryption",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ccloud-commands.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "enforcing-password-policies",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "sql-queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hardening-user-privileges",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "sql-queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "managing-tls-certificates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "connection-examples.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "troubleshooting.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "preparing-compliance-documentation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "compliance-matrix.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitmodules",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".release-please-manifest.json",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "release-please-config.json",
+        "type": "file"
+      },
+      {
+        "name": "tools.yaml",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,572 @@
+{
+  "slug": "dod-guard",
+  "name": "Dod Guard",
+  "type": "plugin",
+  "description": "Definition of Done as an executable barrier for Claude Code. Stops AI agents from declaring tasks done while code is still half-baked.",
+  "longDescription": "Ships **4 skills**, **7 agents**, **8 commands** and **4 hooks**.\n\n- **Skills** (4): `adversarial-verification` (Use when you are acting as a DoD-Guard validator subagent (completeness-auditor, test-quality-auditor, e2e-verifier, regression-hunter, adversarial-reviewer, claim-validator)), `dod-enforcement` (Use whenever you are implementing, refactoring, or fixing code in a project that has a .dod-guard.json file), `evidence-reporting` (Use when producing any DoD-Guard report — task completion reports from the orchestrator, validator envelopes from subagents, /dod:confess…), `stub-detection-patterns` (Use when scanning code for incomplete implementations across multiple languages)\n- **Agents** (7): `adversarial-reviewer` (Hostile code review focused on bugs, edge cases, security, and race conditions), `claim-validator` (Reads the orchestrator's \"task completion report\" and validates every claim against the actual code), `completeness-auditor` (Hunts stubs, TODOs, empty functions, placeholders), `e2e-verifier` (Demands proof that the user-facing behavior actually works), `final-judge` (Reads every other DoD-Guard subagent report from .dod-guard/reports/<session>/ and emits the final aggregated verdict), `regression-hunter` (Runs the full test suite and compares against the last baseline), `test-quality-auditor` (Audits the quality of tests, not their coverage)\n- **Commands** (8): `audit` (Full multi-agent audit), `checklist` (Present the project's Definition of Done checklist (from DOD.md) with the items completed this session marked off), `confess` (Force the orchestrator into paranoid self-audit mode), `init` (Initialize DoD-Guard in the current project (creates .dod-guard.json + DOD.md + .dod-guard/ dir)), `report` (Generate a human-readable markdown report of DoD state from existing .dod-guard/reports/ — no subagents, just formatting), `stubs` (Fast scan for stubs / TODOs / empty functions across the whole project), `tests` (Audit test quality (not coverage)), `verify` (Quick 5-phase deterministic verification (snapshot → stubs → tests → e2e probe → verdict))\n- **Hooks** (4): `SessionStart`, `PostToolUse`, `Stop`, `SubagentStop`\n\nInstalls with `claude plugin install dod-guard@claude-community` from `atoslins/dod-guard`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 4,
+    "agent": 7,
+    "hook": 4,
+    "command": 8
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Atos Daniel de Assis Lins"
+  },
+  "externalUrl": "https://github.com/atoslins/dod-guard/tree/be038f7201198a8a25790236048f6ed40b9983c1",
+  "marketplace": "claude-community",
+  "version": "0.2.0",
+  "sourceRevision": "be038f7201198a8a25790236048f6ed40b9983c1",
+  "contentDigest": "7bbced9f2423f2b83d02d69a982e0802f8c130246150d38def99c676d2a46345",
+  "contentHash": "2fe25f7b55c84647",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/atoslins/dod-guard.git",
+    "sha": "be038f7201198a8a25790236048f6ed40b9983c1"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-19T17:18:31Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adversarial-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "claim-validator.md",
+            "type": "file"
+          },
+          {
+            "name": "completeness-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "e2e-verifier.md",
+            "type": "file"
+          },
+          {
+            "name": "final-judge.md",
+            "type": "file"
+          },
+          {
+            "name": "regression-hunter.md",
+            "type": "file"
+          },
+          {
+            "name": "test-quality-auditor.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "banner.svg",
+            "type": "file"
+          },
+          {
+            "name": "demo.svg",
+            "type": "file"
+          },
+          {
+            "name": "logo.svg",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit.md",
+            "type": "file"
+          },
+          {
+            "name": "checklist.md",
+            "type": "file"
+          },
+          {
+            "name": "confess.md",
+            "type": "file"
+          },
+          {
+            "name": "init.md",
+            "type": "file"
+          },
+          {
+            "name": "report.md",
+            "type": "file"
+          },
+          {
+            "name": "stubs.md",
+            "type": "file"
+          },
+          {
+            "name": "tests.md",
+            "type": "file"
+          },
+          {
+            "name": "verify.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "CUSTOMIZATION.md",
+            "type": "file"
+          },
+          {
+            "name": "DEVELOPMENT.md",
+            "type": "file"
+          },
+          {
+            "name": "EXAMPLES.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "handlers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "post-edit.sh",
+                "type": "file"
+              },
+              {
+                "name": "pre-commit.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-start.sh",
+                "type": "file"
+              },
+              {
+                "name": "stop-gate.sh",
+                "type": "file"
+              },
+              {
+                "name": "subagent-stop.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "exemptions.py",
+                "type": "file"
+              },
+              {
+                "name": "languages.sh",
+                "type": "file"
+              },
+              {
+                "name": "report.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check-not-implemented.sh",
+            "type": "file"
+          },
+          {
+            "name": "coverage-delta.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-empty-functions.py",
+            "type": "file"
+          },
+          {
+            "name": "detect-stubs.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-suspicious-returns.py",
+            "type": "file"
+          },
+          {
+            "name": "detect-test-tautology.py",
+            "type": "file"
+          },
+          {
+            "name": "detect-todos.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-full-suite.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-verification-pipeline.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adversarial-verification",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dod-enforcement",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evidence-reporting",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "stub-detection-patterns",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "CLAUDE-dod-section.md",
+            "type": "file"
+          },
+          {
+            "name": "DOD-go.md.template",
+            "type": "file"
+          },
+          {
+            "name": "dod-guard.json.template",
+            "type": "file"
+          },
+          {
+            "name": "DOD-node.md.template",
+            "type": "file"
+          },
+          {
+            "name": "DOD.md.template",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "project-broken-tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "test_widget.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "widget.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "project-clean",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "calc.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_calc.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "project-go-stubs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "internal",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "repo_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "repo.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "go.mod",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "project-js-stubs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "user.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "user.test.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "project-monorepo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "app",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dirty.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "vendor-thing",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "very_dirty.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".dod-guard.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "project-with-stubs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "empty.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fake.test.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stubs.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stubs.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stubs.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "test-agents-syntax.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-detectors.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-hooks.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-integration.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".dod-guard.json",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "DOD.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,3549 @@
+{
+  "slug": "sema",
+  "name": "Sema",
+  "type": "plugin",
+  "description": "Sema adds a content-addressed vocabulary of 452 cognitive patterns to Claude. Each pattern has a handle like StateLock#5602 — a SHA-256 hash of its definition — so two agents using the same handle are provably talking about the same thing. Any divergence in meaning produces a different hash, making silent misalignment impossible.\n\nKey features:\n\n- sema_search — semantic + keyword search across the pattern library\n• sema_resolve — full definition, mechanism, invariants, and dependency graph for any handle\n• sema_handshake — verify two agents share the exact same definition; halt on mismatch\n• sema_tree — browse the taxonomy (Physics / Mind / Society / Infrastructure)\n• sema_root — one-hash fingerprint of the whole vocabulary, for fast drift checks\n• sema_mint — add project-local patterns (survives pip upgrades)\n• sema pull — sync a project DB with upstream, auto-redirecting renamed handles",
+  "longDescription": "Ships **4 skills**, **2 hooks** and **1 MCP server**.\n\n- **Skills** (4): `sema-mint` (How to mint new sema patterns — the full pipeline from concept to content-addressed vocabulary entry), `sema-seed` (Seed the sema vocabulary by exploring random words), `sema-ui` (Launch the Sema web UI at localhost:3030 — interactive pattern browser with 3D graph, search, and live updates), `sema-usage` (Content-addressed vocabulary protocol via the sema MCP server)\n- **Hooks** (2): `UserPromptSubmit`, `PreToolUse`\n- **MCP servers** (1): `sema`\n\nInstalls with `claude plugin install sema@claude-community` from `emergent-wisdom/sema`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 4,
+    "hook": 2,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Community"
+  },
+  "externalUrl": "https://github.com/emergent-wisdom/sema/tree/495e4655b2b404fe8ec0329b193f0c36e2ea7b8a",
+  "marketplace": "claude-community",
+  "version": "0.4.0",
+  "sourceRevision": "495e4655b2b404fe8ec0329b193f0c36e2ea7b8a",
+  "contentDigest": "476bbe6fd14de380220bca2b872309f3f2da1411c679c81a6c62a47bce54a2ee",
+  "contentHash": "d760d519d2e7b7b8",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/emergent-wisdom/sema.git",
+    "sha": "495e4655b2b404fe8ec0329b193f0c36e2ea7b8a"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-04T17:47:15Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "data",
+        "type": "directory",
+        "children": [
+          {
+            "name": "presets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "empty.txt",
+                "type": "file"
+              },
+              {
+                "name": "full.txt",
+                "type": "file"
+              },
+              {
+                "name": "standard.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "staging",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vocabulary",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Abduction.json",
+                "type": "file"
+              },
+              {
+                "name": "AcceptSpec.json",
+                "type": "file"
+              },
+              {
+                "name": "Act.json",
+                "type": "file"
+              },
+              {
+                "name": "Actor.json",
+                "type": "file"
+              },
+              {
+                "name": "AdversarialProof.json",
+                "type": "file"
+              },
+              {
+                "name": "AdversarialSteel.json",
+                "type": "file"
+              },
+              {
+                "name": "Aesthetics.json",
+                "type": "file"
+              },
+              {
+                "name": "Agent.json",
+                "type": "file"
+              },
+              {
+                "name": "AgentDiscover.json",
+                "type": "file"
+              },
+              {
+                "name": "AgentProtocol.json",
+                "type": "file"
+              },
+              {
+                "name": "AgentSandbox.json",
+                "type": "file"
+              },
+              {
+                "name": "Aggregate.json",
+                "type": "file"
+              },
+              {
+                "name": "AmbiguityResolution.json",
+                "type": "file"
+              },
+              {
+                "name": "AnalogyBridge.json",
+                "type": "file"
+              },
+              {
+                "name": "AnchorDrop.json",
+                "type": "file"
+              },
+              {
+                "name": "Anomaly.json",
+                "type": "file"
+              },
+              {
+                "name": "AntifragileInversion.json",
+                "type": "file"
+              },
+              {
+                "name": "Artifact.json",
+                "type": "file"
+              },
+              {
+                "name": "Assessment.json",
+                "type": "file"
+              },
+              {
+                "name": "Assumption.json",
+                "type": "file"
+              },
+              {
+                "name": "AtomicBid.json",
+                "type": "file"
+              },
+              {
+                "name": "AttentionMarkets.json",
+                "type": "file"
+              },
+              {
+                "name": "Attractor.json",
+                "type": "file"
+              },
+              {
+                "name": "Audit.json",
+                "type": "file"
+              },
+              {
+                "name": "AuditTrail.json",
+                "type": "file"
+              },
+              {
+                "name": "Award.json",
+                "type": "file"
+              },
+              {
+                "name": "Axiom.json",
+                "type": "file"
+              },
+              {
+                "name": "Backoff.json",
+                "type": "file"
+              },
+              {
+                "name": "BackwardChain.json",
+                "type": "file"
+              },
+              {
+                "name": "Ballot.json",
+                "type": "file"
+              },
+              {
+                "name": "BaseRateInclude.json",
+                "type": "file"
+              },
+              {
+                "name": "BayesUpdate.json",
+                "type": "file"
+              },
+              {
+                "name": "BeamSearch.json",
+                "type": "file"
+              },
+              {
+                "name": "BearerToken.json",
+                "type": "file"
+              },
+              {
+                "name": "Belief.json",
+                "type": "file"
+              },
+              {
+                "name": "BeliefTracking.json",
+                "type": "file"
+              },
+              {
+                "name": "Bid.json",
+                "type": "file"
+              },
+              {
+                "name": "Bisect.json",
+                "type": "file"
+              },
+              {
+                "name": "Boolean.json",
+                "type": "file"
+              },
+              {
+                "name": "BoundedTask.json",
+                "type": "file"
+              },
+              {
+                "name": "Branch.json",
+                "type": "file"
+              },
+              {
+                "name": "BreadthGovernor.json",
+                "type": "file"
+              },
+              {
+                "name": "Break.json",
+                "type": "file"
+              },
+              {
+                "name": "Bubble.json",
+                "type": "file"
+              },
+              {
+                "name": "Budget.json",
+                "type": "file"
+              },
+              {
+                "name": "Build.json",
+                "type": "file"
+              },
+              {
+                "name": "Cache.json",
+                "type": "file"
+              },
+              {
+                "name": "Canary.json",
+                "type": "file"
+              },
+              {
+                "name": "CapacityPressure.json",
+                "type": "file"
+              },
+              {
+                "name": "Card.json",
+                "type": "file"
+              },
+              {
+                "name": "Care.json",
+                "type": "file"
+              },
+              {
+                "name": "Category.json",
+                "type": "file"
+              },
+              {
+                "name": "CausalBarrier.json",
+                "type": "file"
+              },
+              {
+                "name": "Causation.json",
+                "type": "file"
+              },
+              {
+                "name": "Chain.json",
+                "type": "file"
+              },
+              {
+                "name": "ChainOfThought.json",
+                "type": "file"
+              },
+              {
+                "name": "Check.json",
+                "type": "file"
+              },
+              {
+                "name": "ChunkMerge.json",
+                "type": "file"
+              },
+              {
+                "name": "CircuitBreaker.json",
+                "type": "file"
+              },
+              {
+                "name": "CiteBack.json",
+                "type": "file"
+              },
+              {
+                "name": "CognitiveBias.json",
+                "type": "file"
+              },
+              {
+                "name": "CognitiveEcho.json",
+                "type": "file"
+              },
+              {
+                "name": "CollaborativeWritingProtocol.json",
+                "type": "file"
+              },
+              {
+                "name": "Combine.json",
+                "type": "file"
+              },
+              {
+                "name": "CommitmentDevice.json",
+                "type": "file"
+              },
+              {
+                "name": "Compare.json",
+                "type": "file"
+              },
+              {
+                "name": "CompatibilityCheck.json",
+                "type": "file"
+              },
+              {
+                "name": "Compensate.json",
+                "type": "file"
+              },
+              {
+                "name": "Compose.json",
+                "type": "file"
+              },
+              {
+                "name": "Compress.json",
+                "type": "file"
+              },
+              {
+                "name": "Compromise.json",
+                "type": "file"
+              },
+              {
+                "name": "ComputeBudget.json",
+                "type": "file"
+              },
+              {
+                "name": "ConceptAnchor.json",
+                "type": "file"
+              },
+              {
+                "name": "ConceptBlend.json",
+                "type": "file"
+              },
+              {
+                "name": "ConceptualDecomposition.json",
+                "type": "file"
+              },
+              {
+                "name": "Condition.json",
+                "type": "file"
+              },
+              {
+                "name": "ConfidenceCalibrate.json",
+                "type": "file"
+              },
+              {
+                "name": "ConfirmationBlock.json",
+                "type": "file"
+              },
+              {
+                "name": "ConfusedDeputy.json",
+                "type": "file"
+              },
+              {
+                "name": "Consensus.json",
+                "type": "file"
+              },
+              {
+                "name": "ConsensusFinder.json",
+                "type": "file"
+              },
+              {
+                "name": "Conservation.json",
+                "type": "file"
+              },
+              {
+                "name": "Constitution.json",
+                "type": "file"
+              },
+              {
+                "name": "Constraint.json",
+                "type": "file"
+              },
+              {
+                "name": "ConstraintFirst.json",
+                "type": "file"
+              },
+              {
+                "name": "ConstructOntology.json",
+                "type": "file"
+              },
+              {
+                "name": "Context.json",
+                "type": "file"
+              },
+              {
+                "name": "ContextCompress.json",
+                "type": "file"
+              },
+              {
+                "name": "ContextFirst.json",
+                "type": "file"
+              },
+              {
+                "name": "ContextSwitch.json",
+                "type": "file"
+              },
+              {
+                "name": "ContingencyPlan.json",
+                "type": "file"
+              },
+              {
+                "name": "ContinuousResourceAuction.json",
+                "type": "file"
+              },
+              {
+                "name": "Contract.json",
+                "type": "file"
+              },
+              {
+                "name": "Cooldown.json",
+                "type": "file"
+              },
+              {
+                "name": "Correlation.json",
+                "type": "file"
+              },
+              {
+                "name": "CounterfactualAnchor.json",
+                "type": "file"
+              },
+              {
+                "name": "Creative.json",
+                "type": "file"
+              },
+              {
+                "name": "CreativeBlend.json",
+                "type": "file"
+              },
+              {
+                "name": "Criteria.json",
+                "type": "file"
+              },
+              {
+                "name": "Critique.json",
+                "type": "file"
+              },
+              {
+                "name": "Crystallize.json",
+                "type": "file"
+              },
+              {
+                "name": "CurriculumReplay.json",
+                "type": "file"
+              },
+              {
+                "name": "Cyclic.json",
+                "type": "file"
+              },
+              {
+                "name": "DAG.json",
+                "type": "file"
+              },
+              {
+                "name": "Dampen.json",
+                "type": "file"
+              },
+              {
+                "name": "DataMinimization.json",
+                "type": "file"
+              },
+              {
+                "name": "Datum.json",
+                "type": "file"
+              },
+              {
+                "name": "Decay.json",
+                "type": "file"
+              },
+              {
+                "name": "Decision.json",
+                "type": "file"
+              },
+              {
+                "name": "Decompose.json",
+                "type": "file"
+              },
+              {
+                "name": "DecompositionGate.json",
+                "type": "file"
+              },
+              {
+                "name": "Deduction.json",
+                "type": "file"
+              },
+              {
+                "name": "Deep.json",
+                "type": "file"
+              },
+              {
+                "name": "DeepResearch.json",
+                "type": "file"
+              },
+              {
+                "name": "Defer.json",
+                "type": "file"
+              },
+              {
+                "name": "Delegate.json",
+                "type": "file"
+              },
+              {
+                "name": "DeliberativeAlign.json",
+                "type": "file"
+              },
+              {
+                "name": "Deploy.json",
+                "type": "file"
+              },
+              {
+                "name": "DepthGovernor.json",
+                "type": "file"
+              },
+              {
+                "name": "DesignArchitect.json",
+                "type": "file"
+              },
+              {
+                "name": "Dialectic.json",
+                "type": "file"
+              },
+              {
+                "name": "Disband.json",
+                "type": "file"
+              },
+              {
+                "name": "Discover.json",
+                "type": "file"
+              },
+              {
+                "name": "DiscoveryProtocol.json",
+                "type": "file"
+              },
+              {
+                "name": "DissentSeek.json",
+                "type": "file"
+              },
+              {
+                "name": "Distance.json",
+                "type": "file"
+              },
+              {
+                "name": "DocumentedOverride.json",
+                "type": "file"
+              },
+              {
+                "name": "DogfoodFirst.json",
+                "type": "file"
+              },
+              {
+                "name": "DriftWatch.json",
+                "type": "file"
+              },
+              {
+                "name": "EbbFlowSync.json",
+                "type": "file"
+              },
+              {
+                "name": "EjectionSeat.json",
+                "type": "file"
+              },
+              {
+                "name": "Elect.json",
+                "type": "file"
+              },
+              {
+                "name": "Eliminate.json",
+                "type": "file"
+              },
+              {
+                "name": "EmpathySim.json",
+                "type": "file"
+              },
+              {
+                "name": "EmpiricalTest.json",
+                "type": "file"
+              },
+              {
+                "name": "Entropy.json",
+                "type": "file"
+              },
+              {
+                "name": "EntropyPump.json",
+                "type": "file"
+              },
+              {
+                "name": "EpistemicCalibrate.json",
+                "type": "file"
+              },
+              {
+                "name": "EpistemicCascade.json",
+                "type": "file"
+              },
+              {
+                "name": "EpistemicROI.json",
+                "type": "file"
+              },
+              {
+                "name": "Equilibrium.json",
+                "type": "file"
+              },
+              {
+                "name": "Equivalence.json",
+                "type": "file"
+              },
+              {
+                "name": "Estimate.json",
+                "type": "file"
+              },
+              {
+                "name": "EthicalReasoningProtocol.json",
+                "type": "file"
+              },
+              {
+                "name": "EvaluatorOptimizer.json",
+                "type": "file"
+              },
+              {
+                "name": "Event.json",
+                "type": "file"
+              },
+              {
+                "name": "EventReact.json",
+                "type": "file"
+              },
+              {
+                "name": "Exception.json",
+                "type": "file"
+              },
+              {
+                "name": "ExchangeRate.json",
+                "type": "file"
+              },
+              {
+                "name": "ExecutionManifest.json",
+                "type": "file"
+              },
+              {
+                "name": "Expansive.json",
+                "type": "file"
+              },
+              {
+                "name": "ExperienceSharding.json",
+                "type": "file"
+              },
+              {
+                "name": "Experiment.json",
+                "type": "file"
+              },
+              {
+                "name": "ExpiringToken.json",
+                "type": "file"
+              },
+              {
+                "name": "ExplainBeacon.json",
+                "type": "file"
+              },
+              {
+                "name": "ExploreExploit.json",
+                "type": "file"
+              },
+              {
+                "name": "ExponentialBackoff.json",
+                "type": "file"
+              },
+              {
+                "name": "ExtendedThinking.json",
+                "type": "file"
+              },
+              {
+                "name": "FabricSharding.json",
+                "type": "file"
+              },
+              {
+                "name": "FailClosed.json",
+                "type": "file"
+              },
+              {
+                "name": "FailureTrace.json",
+                "type": "file"
+              },
+              {
+                "name": "Falsification.json",
+                "type": "file"
+              },
+              {
+                "name": "FeatureFlag.json",
+                "type": "file"
+              },
+              {
+                "name": "Feedback.json",
+                "type": "file"
+              },
+              {
+                "name": "FeedbackSignal.json",
+                "type": "file"
+              },
+              {
+                "name": "Fermi.json",
+                "type": "file"
+              },
+              {
+                "name": "FirstPrinciples.json",
+                "type": "file"
+              },
+              {
+                "name": "Forest.json",
+                "type": "file"
+              },
+              {
+                "name": "FractalIntelligence.json",
+                "type": "file"
+              },
+              {
+                "name": "FrameError.json",
+                "type": "file"
+              },
+              {
+                "name": "FrameSpec.json",
+                "type": "file"
+              },
+              {
+                "name": "Gardener.json",
+                "type": "file"
+              },
+              {
+                "name": "Gate.json",
+                "type": "file"
+              },
+              {
+                "name": "GenealogicalTrace.json",
+                "type": "file"
+              },
+              {
+                "name": "Generalize.json",
+                "type": "file"
+              },
+              {
+                "name": "GlacialVault.json",
+                "type": "file"
+              },
+              {
+                "name": "Global.json",
+                "type": "file"
+              },
+              {
+                "name": "Goal.json",
+                "type": "file"
+              },
+              {
+                "name": "GracefulDegradation.json",
+                "type": "file"
+              },
+              {
+                "name": "Gradient.json",
+                "type": "file"
+              },
+              {
+                "name": "GraphOfThought.json",
+                "type": "file"
+              },
+              {
+                "name": "Greet.json",
+                "type": "file"
+              },
+              {
+                "name": "HackDetect.json",
+                "type": "file"
+              },
+              {
+                "name": "Handoff.json",
+                "type": "file"
+              },
+              {
+                "name": "Heartbeat.json",
+                "type": "file"
+              },
+              {
+                "name": "HeldRelease.json",
+                "type": "file"
+              },
+              {
+                "name": "HeuristicSnap.json",
+                "type": "file"
+              },
+              {
+                "name": "Hierarchy.json",
+                "type": "file"
+              },
+              {
+                "name": "HindsightBlock.json",
+                "type": "file"
+              },
+              {
+                "name": "HolographicShard.json",
+                "type": "file"
+              },
+              {
+                "name": "HumanApprove.json",
+                "type": "file"
+              },
+              {
+                "name": "HumanEmulatorProtocol.json",
+                "type": "file"
+              },
+              {
+                "name": "Hypothesis.json",
+                "type": "file"
+              },
+              {
+                "name": "HypothesisEngine.json",
+                "type": "file"
+              },
+              {
+                "name": "HypothesisLadder.json",
+                "type": "file"
+              },
+              {
+                "name": "Hysteresis.json",
+                "type": "file"
+              },
+              {
+                "name": "IdempotentWrite.json",
+                "type": "file"
+              },
+              {
+                "name": "Identity.json",
+                "type": "file"
+              },
+              {
+                "name": "IdentityHandshake.json",
+                "type": "file"
+              },
+              {
+                "name": "Incongruity.json",
+                "type": "file"
+              },
+              {
+                "name": "Induction.json",
+                "type": "file"
+              },
+              {
+                "name": "InputGuard.json",
+                "type": "file"
+              },
+              {
+                "name": "IntentGap.json",
+                "type": "file"
+              },
+              {
+                "name": "InternalConsistency.json",
+                "type": "file"
+              },
+              {
+                "name": "Interpret.json",
+                "type": "file"
+              },
+              {
+                "name": "InvariantFilter.json",
+                "type": "file"
+              },
+              {
+                "name": "Invert.json",
+                "type": "file"
+              },
+              {
+                "name": "Jester.json",
+                "type": "file"
+              },
+              {
+                "name": "Judge.json",
+                "type": "file"
+              },
+              {
+                "name": "Kairos.json",
+                "type": "file"
+              },
+              {
+                "name": "LatentAttachment.json",
+                "type": "file"
+              },
+              {
+                "name": "LatentWander.json",
+                "type": "file"
+              },
+              {
+                "name": "LateralOptimization.json",
+                "type": "file"
+              },
+              {
+                "name": "LatticeCommit.json",
+                "type": "file"
+              },
+              {
+                "name": "LayeredCheck.json",
+                "type": "file"
+              },
+              {
+                "name": "LazyConsensus.json",
+                "type": "file"
+              },
+              {
+                "name": "LeastToMost.json",
+                "type": "file"
+              },
+              {
+                "name": "Ledger.json",
+                "type": "file"
+              },
+              {
+                "name": "LivedProof.json",
+                "type": "file"
+              },
+              {
+                "name": "LocalizedLearning.json",
+                "type": "file"
+              },
+              {
+                "name": "Lock.json",
+                "type": "file"
+              },
+              {
+                "name": "Loop.json",
+                "type": "file"
+              },
+              {
+                "name": "ManifestPlanning.json",
+                "type": "file"
+              },
+              {
+                "name": "MarginalValueRule.json",
+                "type": "file"
+              },
+              {
+                "name": "Measurement.json",
+                "type": "file"
+              },
+              {
+                "name": "MECE.json",
+                "type": "file"
+              },
+              {
+                "name": "MechanisticDesignProposal.json",
+                "type": "file"
+              },
+              {
+                "name": "MemeticSeed.json",
+                "type": "file"
+              },
+              {
+                "name": "MentalSim.json",
+                "type": "file"
+              },
+              {
+                "name": "Message.json",
+                "type": "file"
+              },
+              {
+                "name": "Meta.json",
+                "type": "file"
+              },
+              {
+                "name": "MetaCheck.json",
+                "type": "file"
+              },
+              {
+                "name": "MetaPrompt.json",
+                "type": "file"
+              },
+              {
+                "name": "MetaProtocols.json",
+                "type": "file"
+              },
+              {
+                "name": "Metric.json",
+                "type": "file"
+              },
+              {
+                "name": "MetricReading.json",
+                "type": "file"
+              },
+              {
+                "name": "MintWhenFriction.json",
+                "type": "file"
+              },
+              {
+                "name": "Mode.json",
+                "type": "file"
+              },
+              {
+                "name": "ModestClaim.json",
+                "type": "file"
+              },
+              {
+                "name": "Monitor.json",
+                "type": "file"
+              },
+              {
+                "name": "MonitorReport.json",
+                "type": "file"
+              },
+              {
+                "name": "MonotonicCounter.json",
+                "type": "file"
+              },
+              {
+                "name": "Mutex.json",
+                "type": "file"
+              },
+              {
+                "name": "MutualInformation.json",
+                "type": "file"
+              },
+              {
+                "name": "Nature.json",
+                "type": "file"
+              },
+              {
+                "name": "NegativeProof.json",
+                "type": "file"
+              },
+              {
+                "name": "Noise.json",
+                "type": "file"
+              },
+              {
+                "name": "NoiseInjection.json",
+                "type": "file"
+              },
+              {
+                "name": "NormativeJudge.json",
+                "type": "file"
+              },
+              {
+                "name": "NormCheck.json",
+                "type": "file"
+              },
+              {
+                "name": "Novelty.json",
+                "type": "file"
+              },
+              {
+                "name": "Nucleate.json",
+                "type": "file"
+              },
+              {
+                "name": "OathBind.json",
+                "type": "file"
+              },
+              {
+                "name": "Observe.json",
+                "type": "file"
+              },
+              {
+                "name": "OntologyAdapt.json",
+                "type": "file"
+              },
+              {
+                "name": "OntologyHandshake.json",
+                "type": "file"
+              },
+              {
+                "name": "OODA.json",
+                "type": "file"
+              },
+              {
+                "name": "OpportunityCost.json",
+                "type": "file"
+              },
+              {
+                "name": "OptimalStop.json",
+                "type": "file"
+              },
+              {
+                "name": "OptimisticSolver.json",
+                "type": "file"
+              },
+              {
+                "name": "Optimize.json",
+                "type": "file"
+              },
+              {
+                "name": "Option.json",
+                "type": "file"
+              },
+              {
+                "name": "Oracle.json",
+                "type": "file"
+              },
+              {
+                "name": "OrchestrationLoop.json",
+                "type": "file"
+              },
+              {
+                "name": "OsmoticFilter.json",
+                "type": "file"
+              },
+              {
+                "name": "Outcome.json",
+                "type": "file"
+              },
+              {
+                "name": "OutputGuard.json",
+                "type": "file"
+              },
+              {
+                "name": "Overlap.json",
+                "type": "file"
+              },
+              {
+                "name": "Parallel.json",
+                "type": "file"
+              },
+              {
+                "name": "Parallelize.json",
+                "type": "file"
+              },
+              {
+                "name": "ParetoFront.json",
+                "type": "file"
+              },
+              {
+                "name": "Parsimony.json",
+                "type": "file"
+              },
+              {
+                "name": "PathwayMemory.json",
+                "type": "file"
+              },
+              {
+                "name": "PatternDiscovery.json",
+                "type": "file"
+              },
+              {
+                "name": "PatternEmergence.json",
+                "type": "file"
+              },
+              {
+                "name": "PatternSketch.json",
+                "type": "file"
+              },
+              {
+                "name": "PerformanceSignal.json",
+                "type": "file"
+              },
+              {
+                "name": "Permission.json",
+                "type": "file"
+              },
+              {
+                "name": "PermissionEscalate.json",
+                "type": "file"
+              },
+              {
+                "name": "PerspectiveEnsemble.json",
+                "type": "file"
+              },
+              {
+                "name": "PhasedRefinement.json",
+                "type": "file"
+              },
+              {
+                "name": "PhaseTransition.json",
+                "type": "file"
+              },
+              {
+                "name": "Plan.json",
+                "type": "file"
+              },
+              {
+                "name": "PolymorphicSolver.json",
+                "type": "file"
+              },
+              {
+                "name": "PreMortem.json",
+                "type": "file"
+              },
+              {
+                "name": "Prioritize.json",
+                "type": "file"
+              },
+              {
+                "name": "Probability.json",
+                "type": "file"
+              },
+              {
+                "name": "Probe.json",
+                "type": "file"
+              },
+              {
+                "name": "Problem.json",
+                "type": "file"
+              },
+              {
+                "name": "ProblemFramer.json",
+                "type": "file"
+              },
+              {
+                "name": "ProblemSpace.json",
+                "type": "file"
+              },
+              {
+                "name": "PromiseGraph.json",
+                "type": "file"
+              },
+              {
+                "name": "Prompt.json",
+                "type": "file"
+              },
+              {
+                "name": "PromptChain.json",
+                "type": "file"
+              },
+              {
+                "name": "ProphetFanOut.json",
+                "type": "file"
+              },
+              {
+                "name": "PropheticQuorum.json",
+                "type": "file"
+              },
+              {
+                "name": "Proposal.json",
+                "type": "file"
+              },
+              {
+                "name": "Proprioception.json",
+                "type": "file"
+              },
+              {
+                "name": "Protocol.json",
+                "type": "file"
+              },
+              {
+                "name": "ProtoPack.json",
+                "type": "file"
+              },
+              {
+                "name": "Prototype.json",
+                "type": "file"
+              },
+              {
+                "name": "PURE.json",
+                "type": "file"
+              },
+              {
+                "name": "PUREBrainstorming.json",
+                "type": "file"
+              },
+              {
+                "name": "PURECheck.json",
+                "type": "file"
+              },
+              {
+                "name": "PUREOptimization.json",
+                "type": "file"
+              },
+              {
+                "name": "Queue.json",
+                "type": "file"
+              },
+              {
+                "name": "Quorum.json",
+                "type": "file"
+              },
+              {
+                "name": "QuorumPulse.json",
+                "type": "file"
+              },
+              {
+                "name": "Rally.json",
+                "type": "file"
+              },
+              {
+                "name": "Rank.json",
+                "type": "file"
+              },
+              {
+                "name": "ReAct.json",
+                "type": "file"
+              },
+              {
+                "name": "Realizable.json",
+                "type": "file"
+              },
+              {
+                "name": "RealizationProtocol.json",
+                "type": "file"
+              },
+              {
+                "name": "Reason.json",
+                "type": "file"
+              },
+              {
+                "name": "ReAttempt.json",
+                "type": "file"
+              },
+              {
+                "name": "ReceptivityGate.json",
+                "type": "file"
+              },
+              {
+                "name": "RecursionDive.json",
+                "type": "file"
+              },
+              {
+                "name": "RecursiveRootCause.json",
+                "type": "file"
+              },
+              {
+                "name": "RedTeam.json",
+                "type": "file"
+              },
+              {
+                "name": "Refine.json",
+                "type": "file"
+              },
+              {
+                "name": "Reflex.json",
+                "type": "file"
+              },
+              {
+                "name": "Reflexion.json",
+                "type": "file"
+              },
+              {
+                "name": "Reframe.json",
+                "type": "file"
+              },
+              {
+                "name": "RegimeSense.json",
+                "type": "file"
+              },
+              {
+                "name": "RegretMinimization.json",
+                "type": "file"
+              },
+              {
+                "name": "RepresentationSwap.json",
+                "type": "file"
+              },
+              {
+                "name": "RequestFraming.json",
+                "type": "file"
+              },
+              {
+                "name": "Resonate.json",
+                "type": "file"
+              },
+              {
+                "name": "Resource.json",
+                "type": "file"
+              },
+              {
+                "name": "Responsibility.json",
+                "type": "file"
+              },
+              {
+                "name": "Result.json",
+                "type": "file"
+              },
+              {
+                "name": "RetrievalAugment.json",
+                "type": "file"
+              },
+              {
+                "name": "Retry.json",
+                "type": "file"
+              },
+              {
+                "name": "Reversibility.json",
+                "type": "file"
+              },
+              {
+                "name": "ReversibilityCheck.json",
+                "type": "file"
+              },
+              {
+                "name": "RigorousSolver.json",
+                "type": "file"
+              },
+              {
+                "name": "Risk.json",
+                "type": "file"
+              },
+              {
+                "name": "Roadmap.json",
+                "type": "file"
+              },
+              {
+                "name": "Robustness.json",
+                "type": "file"
+              },
+              {
+                "name": "Role.json",
+                "type": "file"
+              },
+              {
+                "name": "Rollout.json",
+                "type": "file"
+              },
+              {
+                "name": "RolloutManifest.json",
+                "type": "file"
+              },
+              {
+                "name": "RolloutWatch.json",
+                "type": "file"
+              },
+              {
+                "name": "RootHashGossip.json",
+                "type": "file"
+              },
+              {
+                "name": "RootSolver.json",
+                "type": "file"
+              },
+              {
+                "name": "Route.json",
+                "type": "file"
+              },
+              {
+                "name": "RuleSet.json",
+                "type": "file"
+              },
+              {
+                "name": "SacrificialProbe.json",
+                "type": "file"
+              },
+              {
+                "name": "Sandbox.json",
+                "type": "file"
+              },
+              {
+                "name": "Satisfice.json",
+                "type": "file"
+              },
+              {
+                "name": "ScopeFreeze.json",
+                "type": "file"
+              },
+              {
+                "name": "Score.json",
+                "type": "file"
+              },
+              {
+                "name": "ScoringFunction.json",
+                "type": "file"
+              },
+              {
+                "name": "Scratchpad.json",
+                "type": "file"
+              },
+              {
+                "name": "Search.json",
+                "type": "file"
+              },
+              {
+                "name": "Select.json",
+                "type": "file"
+              },
+              {
+                "name": "SelfConsistency.json",
+                "type": "file"
+              },
+              {
+                "name": "SelfReminder.json",
+                "type": "file"
+              },
+              {
+                "name": "SemanticTabu.json",
+                "type": "file"
+              },
+              {
+                "name": "Sequence.json",
+                "type": "file"
+              },
+              {
+                "name": "Shard.json",
+                "type": "file"
+              },
+              {
+                "name": "ShoutWhisper.json",
+                "type": "file"
+              },
+              {
+                "name": "Sign.json",
+                "type": "file"
+              },
+              {
+                "name": "Signal.json",
+                "type": "file"
+              },
+              {
+                "name": "SignalReflection.json",
+                "type": "file"
+              },
+              {
+                "name": "Silence.json",
+                "type": "file"
+              },
+              {
+                "name": "Simulation.json",
+                "type": "file"
+              },
+              {
+                "name": "SimulationTrace.json",
+                "type": "file"
+              },
+              {
+                "name": "Skeleton.json",
+                "type": "file"
+              },
+              {
+                "name": "SkeletonOfThought.json",
+                "type": "file"
+              },
+              {
+                "name": "Snapshot.json",
+                "type": "file"
+              },
+              {
+                "name": "SocraticLoop.json",
+                "type": "file"
+              },
+              {
+                "name": "Solution.json",
+                "type": "file"
+              },
+              {
+                "name": "Solver.json",
+                "type": "file"
+              },
+              {
+                "name": "SolverManifest.json",
+                "type": "file"
+              },
+              {
+                "name": "SolverNode.json",
+                "type": "file"
+              },
+              {
+                "name": "SolverTree.json",
+                "type": "file"
+              },
+              {
+                "name": "SomaticMarker.json",
+                "type": "file"
+              },
+              {
+                "name": "SourceEvaluate.json",
+                "type": "file"
+              },
+              {
+                "name": "Spec.json",
+                "type": "file"
+              },
+              {
+                "name": "Specialize.json",
+                "type": "file"
+              },
+              {
+                "name": "SpectralTune.json",
+                "type": "file"
+              },
+              {
+                "name": "SpotAudit.json",
+                "type": "file"
+              },
+              {
+                "name": "State.json",
+                "type": "file"
+              },
+              {
+                "name": "StateAudit.json",
+                "type": "file"
+              },
+              {
+                "name": "StateLock.json",
+                "type": "file"
+              },
+              {
+                "name": "StateSnapshot.json",
+                "type": "file"
+              },
+              {
+                "name": "StateTransition.json",
+                "type": "file"
+              },
+              {
+                "name": "Status.json",
+                "type": "file"
+              },
+              {
+                "name": "SteelmanCheck.json",
+                "type": "file"
+              },
+              {
+                "name": "SteelmanFirst.json",
+                "type": "file"
+              },
+              {
+                "name": "Step.json",
+                "type": "file"
+              },
+              {
+                "name": "StepBack.json",
+                "type": "file"
+              },
+              {
+                "name": "Stigmergy.json",
+                "type": "file"
+              },
+              {
+                "name": "StrategicReading.json",
+                "type": "file"
+              },
+              {
+                "name": "Strategy.json",
+                "type": "file"
+              },
+              {
+                "name": "Stream.json",
+                "type": "file"
+              },
+              {
+                "name": "StructuralCoaching.json",
+                "type": "file"
+              },
+              {
+                "name": "StyleSpec.json",
+                "type": "file"
+              },
+              {
+                "name": "Subject.json",
+                "type": "file"
+              },
+              {
+                "name": "Summarize.json",
+                "type": "file"
+              },
+              {
+                "name": "Summary.json",
+                "type": "file"
+              },
+              {
+                "name": "SunkCostIgnore.json",
+                "type": "file"
+              },
+              {
+                "name": "SurprisalUpdate.json",
+                "type": "file"
+              },
+              {
+                "name": "SurvivorCorrect.json",
+                "type": "file"
+              },
+              {
+                "name": "SynergisticMode.json",
+                "type": "file"
+              },
+              {
+                "name": "Synthesis.json",
+                "type": "file"
+              },
+              {
+                "name": "System.json",
+                "type": "file"
+              },
+              {
+                "name": "Taper.json",
+                "type": "file"
+              },
+              {
+                "name": "Task.json",
+                "type": "file"
+              },
+              {
+                "name": "TaskLifecycle.json",
+                "type": "file"
+              },
+              {
+                "name": "TemporalEnsembleForecasting.json",
+                "type": "file"
+              },
+              {
+                "name": "Tension.json",
+                "type": "file"
+              },
+              {
+                "name": "TensionHold.json",
+                "type": "file"
+              },
+              {
+                "name": "Think.json",
+                "type": "file"
+              },
+              {
+                "name": "ThinSlice.json",
+                "type": "file"
+              },
+              {
+                "name": "ThreeLevelCollision.json",
+                "type": "file"
+              },
+              {
+                "name": "Throttle.json",
+                "type": "file"
+              },
+              {
+                "name": "TieredAccess.json",
+                "type": "file"
+              },
+              {
+                "name": "TimeboxThink.json",
+                "type": "file"
+              },
+              {
+                "name": "TimeWarpLog.json",
+                "type": "file"
+              },
+              {
+                "name": "ToolDiscovery.json",
+                "type": "file"
+              },
+              {
+                "name": "ToolInvoke.json",
+                "type": "file"
+              },
+              {
+                "name": "Topology.json",
+                "type": "file"
+              },
+              {
+                "name": "Trace.json",
+                "type": "file"
+              },
+              {
+                "name": "TraceBelief.json",
+                "type": "file"
+              },
+              {
+                "name": "TradeOff.json",
+                "type": "file"
+              },
+              {
+                "name": "Trait.json",
+                "type": "file"
+              },
+              {
+                "name": "Transition.json",
+                "type": "file"
+              },
+              {
+                "name": "Translate.json",
+                "type": "file"
+              },
+              {
+                "name": "TranslationProxy.json",
+                "type": "file"
+              },
+              {
+                "name": "Tree.json",
+                "type": "file"
+              },
+              {
+                "name": "TreeOfThoughts.json",
+                "type": "file"
+              },
+              {
+                "name": "TriGate.json",
+                "type": "file"
+              },
+              {
+                "name": "TruthseekingProtocol.json",
+                "type": "file"
+              },
+              {
+                "name": "Uncertain.json",
+                "type": "file"
+              },
+              {
+                "name": "UncertaintyMap.json",
+                "type": "file"
+              },
+              {
+                "name": "Understand.json",
+                "type": "file"
+              },
+              {
+                "name": "UniqueHandle.json",
+                "type": "file"
+              },
+              {
+                "name": "UniversalSolverTree.json",
+                "type": "file"
+              },
+              {
+                "name": "UptakeAsGround.json",
+                "type": "file"
+              },
+              {
+                "name": "UptakeOverTimestamp.json",
+                "type": "file"
+              },
+              {
+                "name": "Validate.json",
+                "type": "file"
+              },
+              {
+                "name": "Value.json",
+                "type": "file"
+              },
+              {
+                "name": "ValuePeg.json",
+                "type": "file"
+              },
+              {
+                "name": "Variable.json",
+                "type": "file"
+              },
+              {
+                "name": "Vector.json",
+                "type": "file"
+              },
+              {
+                "name": "Verification.json",
+                "type": "file"
+              },
+              {
+                "name": "Vote.json",
+                "type": "file"
+              },
+              {
+                "name": "Warmup.json",
+                "type": "file"
+              },
+              {
+                "name": "WhyClimb.json",
+                "type": "file"
+              },
+              {
+                "name": "Work.json",
+                "type": "file"
+              },
+              {
+                "name": "WorkerMode.json",
+                "type": "file"
+              },
+              {
+                "name": "Workflow.json",
+                "type": "file"
+              },
+              {
+                "name": "WorldReversible.json",
+                "type": "file"
+              },
+              {
+                "name": "WorldTransparent.json",
+                "type": "file"
+              },
+              {
+                "name": "Yield.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design_critique.json",
+            "type": "file"
+          },
+          {
+            "name": "experimental.db",
+            "type": "file"
+          },
+          {
+            "name": "graph.json",
+            "type": "file"
+          },
+          {
+            "name": "sema_manifest.json",
+            "type": "file"
+          },
+          {
+            "name": "taxonomy.db",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "philosophy.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "guides",
+            "type": "directory",
+            "children": [
+              {
+                "name": "authoring.md",
+                "type": "file"
+              },
+              {
+                "name": "getting-started.md",
+                "type": "file"
+              },
+              {
+                "name": "hosted-workspaces.md",
+                "type": "file"
+              },
+              {
+                "name": "lifecycle.md",
+                "type": "file"
+              },
+              {
+                "name": "review-method.md",
+                "type": "file"
+              },
+              {
+                "name": "understanding-graph.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "images",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sema_banner.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "information",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit.md",
+                "type": "file"
+              },
+              {
+                "name": "vocabulary_information.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manuals",
+            "type": "directory",
+            "children": [
+              {
+                "name": "vocabulary-design.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "specification",
+            "type": "directory",
+            "children": [
+              {
+                "name": "naming.md",
+                "type": "file"
+              },
+              {
+                "name": "schema.md",
+                "type": "file"
+              },
+              {
+                "name": "validation-matrix.md",
+                "type": "file"
+              },
+              {
+                "name": "validation.md",
+                "type": "file"
+              },
+              {
+                "name": "versioning.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "experiments",
+        "type": "directory",
+        "children": [
+          {
+            "name": "demos",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent_handshake.py",
+                "type": "file"
+              },
+              {
+                "name": "local_handshake.py",
+                "type": "file"
+              },
+              {
+                "name": "multi_agent_coordination.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "paper_v1",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "taxonomy_v1.db",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sema_design_challenge",
+            "type": "directory",
+            "children": [
+              {
+                "name": "traces",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "run_20251229_162004",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "A_Natural_Language",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "B_Sema_Only",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "C_Optimistic",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "run_20251229_163224",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "A_Natural_Language",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "B_Sema_Only",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "C_Optimistic",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "run_20251229_165003",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "A_Natural_Language",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "B_Sema_Only",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "C_Optimistic",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "run_20251229_181935",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "A_Natural_Language",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "B_Sema_Only",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "C_Optimistic",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "run_20251229_183534",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "A_Natural_Language",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "B_Sema_Only",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "C_Optimistic",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "summary.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "swarm.jsonl",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "design_challenge.yaml",
+                "type": "file"
+              },
+              {
+                "name": "natural_language.yaml",
+                "type": "file"
+              },
+              {
+                "name": "optimistic.yaml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "reproduce.sh",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ref_gate.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "ref_gate.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "infra",
+        "type": "directory",
+        "children": [
+          {
+            "name": "supabase",
+            "type": "directory",
+            "children": [
+              {
+                "name": "schema.sql",
+                "type": "file"
+              },
+              {
+                "name": "SETUP.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "paper",
+        "type": "directory",
+        "children": [
+          {
+            "name": "arxiv.sty",
+            "type": "file"
+          },
+          {
+            "name": "generated_appendix.tex",
+            "type": "file"
+          },
+          {
+            "name": "generated_pattern_cards.tex",
+            "type": "file"
+          },
+          {
+            "name": "generated_stats.tex",
+            "type": "file"
+          },
+          {
+            "name": "generated_table_rows.tex",
+            "type": "file"
+          },
+          {
+            "name": "references.bib",
+            "type": "file"
+          },
+          {
+            "name": "sema.pdf",
+            "type": "file"
+          },
+          {
+            "name": "sema.tex",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyze_implements_wiring.py",
+                "type": "file"
+              },
+              {
+                "name": "analyze_weak_patterns.py",
+                "type": "file"
+              },
+              {
+                "name": "check_half_concepts.py",
+                "type": "file"
+              },
+              {
+                "name": "count_categories.py",
+                "type": "file"
+              },
+              {
+                "name": "dangling_handles.py",
+                "type": "file"
+              },
+              {
+                "name": "fan_in.py",
+                "type": "file"
+              },
+              {
+                "name": "find_cycles.py",
+                "type": "file"
+              },
+              {
+                "name": "generate_situational_review.py",
+                "type": "file"
+              },
+              {
+                "name": "generate_vocabulary_review.py",
+                "type": "file"
+              },
+              {
+                "name": "inspect_derivation.py",
+                "type": "file"
+              },
+              {
+                "name": "inspect_patterns.py",
+                "type": "file"
+              },
+              {
+                "name": "rule_adherence.py",
+                "type": "file"
+              },
+              {
+                "name": "run_all_audits.py",
+                "type": "file"
+              },
+              {
+                "name": "scan_vocab_stats.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "export",
+            "type": "directory",
+            "children": [
+              {
+                "name": "create_profile_view.py",
+                "type": "file"
+              },
+              {
+                "name": "export_sema.py",
+                "type": "file"
+              },
+              {
+                "name": "export_short_hand.py",
+                "type": "file"
+              },
+              {
+                "name": "generate_paper_data.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "changelog_gate.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "viz",
+            "type": "directory",
+            "children": [
+              {
+                "name": "inspect_deps.py",
+                "type": "file"
+              },
+              {
+                "name": "multi_agent_mock.py",
+                "type": "file"
+              },
+              {
+                "name": "show_novelty.py",
+                "type": "file"
+              },
+              {
+                "name": "show_tree.py",
+                "type": "file"
+              },
+              {
+                "name": "trading_bot_simulation.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "align_text_refs.py",
+            "type": "file"
+          },
+          {
+            "name": "apply_vocabulary_change.py",
+            "type": "file"
+          },
+          {
+            "name": "build_release.sh",
+            "type": "file"
+          },
+          {
+            "name": "calculate_graph_stats.py",
+            "type": "file"
+          },
+          {
+            "name": "compile_paper.sh",
+            "type": "file"
+          },
+          {
+            "name": "generate_design_manual.py",
+            "type": "file"
+          },
+          {
+            "name": "generate_paper_tables.py",
+            "type": "file"
+          },
+          {
+            "name": "generate_pattern_cards.py",
+            "type": "file"
+          },
+          {
+            "name": "iterative_improve.py",
+            "type": "file"
+          },
+          {
+            "name": "migrate_parameters.py",
+            "type": "file"
+          },
+          {
+            "name": "migrate_taxonomy_to_path.py",
+            "type": "file"
+          },
+          {
+            "name": "rebuild_db.sh",
+            "type": "file"
+          },
+          {
+            "name": "rebuild_vocabulary.py",
+            "type": "file"
+          },
+          {
+            "name": "release.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup_hooks.sh",
+            "type": "file"
+          },
+          {
+            "name": "smoke_hosted_workspaces.py",
+            "type": "file"
+          },
+          {
+            "name": "sync_release_metadata.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hash_verification.py",
+            "type": "file"
+          },
+          {
+            "name": "update_doc_refs.py",
+            "type": "file"
+          },
+          {
+            "name": "update_paper_hashes.py",
+            "type": "file"
+          },
+          {
+            "name": "verify_vocabulary_change.py",
+            "type": "file"
+          },
+          {
+            "name": "vocabulary_merkle_root.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sema-mint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sema-seed",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sema-ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sema-usage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sema",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_contract_language.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_missing_or_short.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_runner.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "__main__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graph.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hash_validity.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "missing_links.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "missing_or_short.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redundancy.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rigor.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "runner.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scenarios.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "similarity.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "speakability.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unlinked_mentions.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cli",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_apply.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_build.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_cascade.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_check_command.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_handle_index.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_merkle_cascade.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_merkle_dag.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_mint_tool.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_pull.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_registry.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_schema_constraints.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_session_cache.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "guardian.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "core",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fixtures",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "refcheck_conformance.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_agent_negotiation.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_apply_vocabulary_change.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_check.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_dependency_cycles.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_export_sema.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_export_short_hand.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_generate_design_manual.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_generate_pattern_cards.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_handshake_contract.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_hashing.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_mint.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_rebuild_vocabulary.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_schema.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_update_doc_refs.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_verification_manifest.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_verify_vocabulary_change.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_vocabulary_information.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_vocabulary_root.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_workspace.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "actions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "check.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dependencies.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "handshake.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hashing.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mint.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "registry.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stdlib.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "utils.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validator.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workspace.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "inventory",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mcp",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_mcp_pull.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_mcp_validate.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "server",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "static",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      },
+                      {
+                        "name": "favicon.svg",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.html",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sema_logo.svg",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_github_auth.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_hosted_workspaces.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_static_assets.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "taxonomy_graph",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "embedding_service.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "generator_prompt.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graph_store.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "client.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test_multi_db.sh",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "verification",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lean",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SemaVerification",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CanonicalEncoding.lean",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Handshake.lean",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lake-manifest.json",
+                "type": "file"
+              },
+              {
+                "name": "lakefile.toml",
+                "type": "file"
+              },
+              {
+                "name": "lean-toolchain",
+                "type": "file"
+              },
+              {
+                "name": "SemaVerification.lean",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "proof-manifest.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "web",
+        "type": "directory",
+        "children": [
+          {
+            "name": "public",
+            "type": "directory",
+            "children": [
+              {
+                "name": "favicon.svg",
+                "type": "file"
+              },
+              {
+                "name": "llms.txt",
+                "type": "file"
+              },
+              {
+                "name": "sema_logo.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "components",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "DbSwitcher.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "DetailsPanel.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "GraphCanvas.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "LicenseLine.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SemaLogo.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TopBar.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "useApi.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "utils.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pages",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "DocsPage.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "GraphPage.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "GraphPageLazy.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HomePage.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "WorkspaceDemoPage.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "stores",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "appStore.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "types",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "taxonomy.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "App.tsx",
+                "type": "file"
+              },
+              {
+                "name": "entry.client.tsx",
+                "type": "file"
+              },
+              {
+                "name": "entry.server.tsx",
+                "type": "file"
+              },
+              {
+                "name": "index.css",
+                "type": "file"
+              },
+              {
+                "name": "main.tsx",
+                "type": "file"
+              },
+              {
+                "name": "root.tsx",
+                "type": "file"
+              },
+              {
+                "name": "routes.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "react-router.config.ts",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.app.json",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.node.json",
+            "type": "file"
+          },
+          {
+            "name": "vite.config.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".dockerignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitmodules",
+        "type": "file"
+      },
+      {
+        "name": ".pre-commit-config.yaml",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CITATION.cff",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "Dockerfile",
+        "type": "file"
+      },
+      {
+        "name": "Dockerfile.web",
+        "type": "file"
+      },
+      {
+        "name": "install.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE-CONTENT",
+        "type": "file"
+      },
+      {
+        "name": "nixpacks.toml",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "railway.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      }
+    ]
+  }
+}

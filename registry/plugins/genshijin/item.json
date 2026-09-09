@@ -1,0 +1,573 @@
+{
+  "slug": "genshijin",
+  "name": "Genshijin",
+  "type": "plugin",
+  "description": "Ultra-compressed Japanese communication mode for Claude Code. Reduces output tokens by ~75% by eliminating keigo (polite language), filler phrases, and redundant particles while preserving full technical accuracy. Japanese-optimized fork of caveman with 3 intensity levels (丁寧/通常/極限). Safety valve auto-restores normal Japanese for destructive operations.",
+  "longDescription": "Ships **7 skills**, **3 agents**, **6 commands** and **1 MCP server**.\n\n- **Skills** (7): `genshijin` (超圧縮コミュニケーションモード。原始人のように話してトークン使用量を約75%削減。 技術的正確性は完全に維持。強度レベル: 丁寧・通常（デフォルト）・極限の3段階。 「原始人モード」「短く」「簡潔に」「トークン節約」と言うか、/genshijin で起動。), `genshijin-commit` (超圧縮コミットメッセージ生成。Conventional Commits形式で件名≤50文字、 「何を」より「なぜ」を重視。日本語・英語両対応。 「コミットメッセージ作って」「/commit」「/genshijin-commit」で起動。 ステージング変更時に自動起動候補。), `genshijin-compress` (自然言語メモリファイル（CLAUDE.md, todos, 設定）を原始人形式に圧縮し入力トークン削減。 技術内容・コード・URL・構造は完全保持。圧縮版が原ファイルを上書き、人間可読版は FILE.original.md として保存。「/genshijin-compress <filepath>」「メモリファイル圧縮」で起動。), `genshijin-crew` (原始人スタイル subagent への委譲判断ガイド。`genshijin-investigator` (コード位置特定)、 `genshijin-builder` (1-2ファイル編集)、`genshijin-reviewer` (diff レビュー) を inline作業 or vanilla `Explore` の代わりにスポーンするタイミングを示す。subagent 出力は原始人圧縮 → 主コンテキストに戻る tool-result…), `genshijin-help` (全 genshijin モード・スキル・コマンドのクイックリファレンスカード。 1回限り表示・モード変更なし・状態永続化なし。 「/genshijin-help」「原始人ヘルプ」「原始人の使い方」で起動。), `genshijin-review` (超圧縮PRレビューコメント。1行1指摘: 位置・問題・修正。前置き削除、シグナル優先。 日本語対応。「PRレビューして」「コードレビュー」「/review」「/genshijin-review」で起動。 プルリクエストレビュー時に自動起動候補。), `genshijin-stats` (現セッションのリアルトークン使用量と推定削減量を表示。Claude Code セッションログから直接読込 — AI 推定なし。 `/genshijin-stats` で起動。出力は mode-tracker フックが注入し、モデル自身は数値計算しない。)\n- **Agents** (3): `genshijin-builder` (1-2ファイル surgical 編集。typo修正、単関数書換、機械的rename、コメント削除、フォーマット保持微調整。 3ファイル以上は強制拒否。原始人diff receipt 返却。スコープ明確時に使用、新機能/新ファイル/cross-file リファクタには使うな。), `genshijin-investigator` (読取専用コードロケーター。「Xはどこで定義？」「Yを呼んでるのは？」「Zの全用法」「ディレクトリ構造」に file:line 表で返却。出力は原始人圧縮 → 主スレッドの消費トークンが vanilla Explore 比で約60%減。 修正提案は拒否。), `genshijin-reviewer` (Diff/branch/file レビュアー。1指摘1行、severity タグ付、賞賛なし、スコープ越境なし。 出力形式: `path:line: <emoji> <severity>: <問題>)\n- **Commands** (6): `genshijin-commit` (Conventional Commits形式の簡潔なコミットメッセージ生成), `genshijin-compress` (Markdown・テキストファイルを原始人形式へ安全圧縮), `genshijin-help` (原始人モード・サブコマンドのクイックリファレンス), `genshijin-review` (1行1指摘の簡潔なコードレビュー), `genshijin-stats` (現セッションのtoken使用量・推定削減量・USD表示), `genshijin` (原始人モード強度切替（丁寧/通常/極限/off）)\n- **MCP servers** (1): `genshijin-shrink`\n\nInstalls with `claude plugin install genshijin@claude-community` from `InterfaceX-co-jp/genshijin`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 7,
+    "agent": 3,
+    "command": 6,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "InterfaceX-co-jp",
+    "url": "https://github.com/InterfaceX-co-jp"
+  },
+  "externalUrl": "https://github.com/InterfaceX-co-jp/genshijin/tree/968d3c449499fdefc00aff9f1fe9c52c4dfdc7ae",
+  "marketplace": "claude-community",
+  "version": "1.5.0",
+  "sourceRevision": "968d3c449499fdefc00aff9f1fe9c52c4dfdc7ae",
+  "contentDigest": "9de4612e6a2d60f4da9a82c14db8f718eae4d62a38cde0e1d2eab9a62790d656",
+  "contentHash": "02cf11db01378054",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/InterfaceX-co-jp/genshijin.git",
+    "sha": "968d3c449499fdefc00aff9f1fe9c52c4dfdc7ae"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-04T07:10:30Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".clinerules",
+        "type": "directory",
+        "children": [
+          {
+            "name": "genshijin.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "genshijin.mdc",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "benchmark.yml",
+                "type": "file"
+              },
+              {
+                "name": "pages.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copilot-instructions.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".windsurf",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "genshijin.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "genshijin-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-investigator.md",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-reviewer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "benchmarks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "results",
+            "type": "directory",
+            "children": [
+              {
+                "name": "v1.2.0_ja.json",
+                "type": "file"
+              },
+              {
+                "name": "v1.3.0_ja.json",
+                "type": "file"
+              },
+              {
+                "name": "v1.4.0_ja.json",
+                "type": "file"
+              },
+              {
+                "name": "v1.5.0_ja.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caveman_skill.md",
+            "type": "file"
+          },
+          {
+            "name": "prompts_en.json",
+            "type": "file"
+          },
+          {
+            "name": "prompts.json",
+            "type": "file"
+          },
+          {
+            "name": "requirements.txt",
+            "type": "file"
+          },
+          {
+            "name": "run.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "cli",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "settings.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "genshijin-commit.md",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-commit.toml",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-compress.md",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-help.md",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-review.md",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-review.toml",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-stats.md",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-stats.toml",
+            "type": "file"
+          },
+          {
+            "name": "genshijin.md",
+            "type": "file"
+          },
+          {
+            "name": "genshijin.toml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "article.md",
+            "type": "file"
+          },
+          {
+            "name": "benchmark.json",
+            "type": "file"
+          },
+          {
+            "name": "caveman-diff-analysis.md",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "ogp-template.html",
+            "type": "file"
+          },
+          {
+            "name": "ogp.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "genshijin-activate.js",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-config.js",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-mode-tracker.js",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-stats.js",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-statusline.ps1",
+            "type": "file"
+          },
+          {
+            "name": "genshijin-statusline.sh",
+            "type": "file"
+          },
+          {
+            "name": "install.ps1",
+            "type": "file"
+          },
+          {
+            "name": "install.sh",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "uninstall.ps1",
+            "type": "file"
+          },
+          {
+            "name": "uninstall.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "mcp-servers",
+        "type": "directory",
+        "children": [
+          {
+            "name": "genshijin-shrink",
+            "type": "directory",
+            "children": [
+              {
+                "name": "compress.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "package-lock.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "rules",
+        "type": "directory",
+        "children": [
+          {
+            "name": "genshijin-activate.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bump_version.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "genshijin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "genshijin-commit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "genshijin-compress",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "__main__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compress.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detect.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "genshijin-crew",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "genshijin-help",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "genshijin-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "genshijin-stats",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "run-tests.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_caveman_parity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hooks_and_shrink.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tools",
+        "type": "directory",
+        "children": [
+          {
+            "name": "genshijin-init.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "install.ps1",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "Makefile",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "renovate.json",
+        "type": "file"
+      }
+    ]
+  }
+}

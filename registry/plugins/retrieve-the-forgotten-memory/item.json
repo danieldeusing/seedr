@@ -1,0 +1,862 @@
+{
+  "slug": "retrieve-the-forgotten-memory",
+  "name": "Retrieve The Forgotten Memory",
+  "type": "plugin",
+  "description": "Indexes your project — code, markdown, PDFs, legal text, research notes into a local SQLite file. Claude searches it before grepping. No API keys, no cloud, nothing leaves your machine.",
+  "longDescription": "Ships **5 skills**, **2 commands**, **4 hooks** and **1 MCP server**.\n\n- **Skills** (5): `expand` (Read the full content of a specific file or section previously returned by rtfm_search), `install-embeddings` (Install the embeddings extra (fastembed, ~85 MB ONNX model) into an isolated venv), `install-pdf` (Install the light PDF parser (pdftext, ~50 MB) into an isolated venv), `install-pdf-full` (Install the full PDF parser (pdftext + marker-pdf + CPU-only torch, ~1.5 GB) into an isolated venv), `search` (Search the RTFM-indexed corpus of the current project (code, docs, data))\n- **Commands** (2): `rtfm.ocr` (Enable persistent OCR fallback for scanned PDFs and run the OCR pass in the background), `rtfm.status` (Show full RTFM index status (with pending-sync counts and health signals))\n- **Hooks** (4): `SessionStart`, `PostToolUse`, `UserPromptSubmit`, `Stop`\n- **MCP servers** (1): `rtfm`\n\nInstalls with `claude plugin install retrieve-the-forgotten-memory@claude-community` from `roomi-fields/rtfm`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 5,
+    "hook": 4,
+    "command": 2,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "roomi-fields"
+  },
+  "externalUrl": "https://github.com/roomi-fields/rtfm/tree/73721c1349ae6f637afd15ddc515f542ada5eb69",
+  "marketplace": "claude-community",
+  "version": "0.26.4",
+  "sourceRevision": "73721c1349ae6f637afd15ddc515f542ada5eb69",
+  "contentDigest": "904f13826b4135dfc321ab56c518d154c690bd38042c411db392dd5fa24a0594",
+  "contentHash": "819e40a294d3f203",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/roomi-fields/rtfm.git",
+    "sha": "73721c1349ae6f637afd15ddc515f542ada5eb69"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-03T09:17:39Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "docs.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CONTRIBUTING.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rtfm-hook",
+            "type": "file"
+          },
+          {
+            "name": "rtfm-hook.cmd",
+            "type": "file"
+          },
+          {
+            "name": "rtfm-install-extras",
+            "type": "file"
+          },
+          {
+            "name": "rtfm-install-extras.cmd",
+            "type": "file"
+          },
+          {
+            "name": "rtfm-serve",
+            "type": "file"
+          },
+          {
+            "name": "rtfm-serve.cmd",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rtfm.ocr.md",
+            "type": "file"
+          },
+          {
+            "name": "rtfm.status.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "benchmarks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ab_test_b10_analysis_fr.md",
+                "type": "file"
+              },
+              {
+                "name": "ab_test_b10_analysis.md",
+                "type": "file"
+              },
+              {
+                "name": "benchmark_paper_fr.md",
+                "type": "file"
+              },
+              {
+                "name": "benchmark_paper.md",
+                "type": "file"
+              },
+              {
+                "name": "benchmark_results.md",
+                "type": "file"
+              },
+              {
+                "name": "featurebench.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "comparisons",
+            "type": "directory",
+            "children": [
+              {
+                "name": "vs-vector-rag.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "demo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "make_split_gif.py",
+                "type": "file"
+              },
+              {
+                "name": "rtfm-demo.png",
+                "type": "file"
+              },
+              {
+                "name": "rtfm-demo.tape",
+                "type": "file"
+              },
+              {
+                "name": "rtfm-split.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "architecture.md",
+            "type": "file"
+          },
+          {
+            "name": "CHANGELOG.md",
+            "type": "file"
+          },
+          {
+            "name": "incident-2026-07-famine-ordonnanceur.md",
+            "type": "file"
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          },
+          {
+            "name": "json-mappings.md",
+            "type": "file"
+          },
+          {
+            "name": "notebooklm-integration.md",
+            "type": "file"
+          },
+          {
+            "name": "obsidian-vault-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "parsers.md",
+            "type": "file"
+          },
+          {
+            "name": "positioning.md",
+            "type": "file"
+          },
+          {
+            "name": "rag-fundamentals.md",
+            "type": "file"
+          },
+          {
+            "name": "worker-lifecycle.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "rtfm_bootstrap.py",
+            "type": "file"
+          },
+          {
+            "name": "rtfm_record_edit.py",
+            "type": "file"
+          },
+          {
+            "name": "rtfm_stop_sync.py",
+            "type": "file"
+          },
+          {
+            "name": "rtfm_sync.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "rtfm",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "schema.py",
+                "type": "file"
+              },
+              {
+                "name": "server.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "dbcare.py",
+                "type": "file"
+              },
+              {
+                "name": "embeddings.py",
+                "type": "file"
+              },
+              {
+                "name": "handlers.py",
+                "type": "file"
+              },
+              {
+                "name": "library.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "ocr_daemon.py",
+                "type": "file"
+              },
+              {
+                "name": "queue.py",
+                "type": "file"
+              },
+              {
+                "name": "reconcile.py",
+                "type": "file"
+              },
+              {
+                "name": "sniff.py",
+                "type": "file"
+              },
+              {
+                "name": "supervisor.py",
+                "type": "file"
+              },
+              {
+                "name": "sync.py",
+                "type": "file"
+              },
+              {
+                "name": "throttle.py",
+                "type": "file"
+              },
+              {
+                "name": "worker.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "parsers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mappings",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "apply.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "base.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "registry.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "template.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "_chunking.py",
+                "type": "file"
+              },
+              {
+                "name": "base.py",
+                "type": "file"
+              },
+              {
+                "name": "csv_parser.py",
+                "type": "file"
+              },
+              {
+                "name": "djvu.py",
+                "type": "file"
+              },
+              {
+                "name": "docx.py",
+                "type": "file"
+              },
+              {
+                "name": "epub.py",
+                "type": "file"
+              },
+              {
+                "name": "fb2.py",
+                "type": "file"
+              },
+              {
+                "name": "html_bofip.py",
+                "type": "file"
+              },
+              {
+                "name": "json_parser.py",
+                "type": "file"
+              },
+              {
+                "name": "jupyter.py",
+                "type": "file"
+              },
+              {
+                "name": "latex.py",
+                "type": "file"
+              },
+              {
+                "name": "local.py",
+                "type": "file"
+              },
+              {
+                "name": "markdown.py",
+                "type": "file"
+              },
+              {
+                "name": "mobi_parser.py",
+                "type": "file"
+              },
+              {
+                "name": "odt.py",
+                "type": "file"
+              },
+              {
+                "name": "pdf.py",
+                "type": "file"
+              },
+              {
+                "name": "plaintext.py",
+                "type": "file"
+              },
+              {
+                "name": "python.py",
+                "type": "file"
+              },
+              {
+                "name": "rtf.py",
+                "type": "file"
+              },
+              {
+                "name": "shell.py",
+                "type": "file"
+              },
+              {
+                "name": "sqlite_parser.py",
+                "type": "file"
+              },
+              {
+                "name": "toml_parser.py",
+                "type": "file"
+              },
+              {
+                "name": "xlsx.py",
+                "type": "file"
+              },
+              {
+                "name": "xml_legifrance.py",
+                "type": "file"
+              },
+              {
+                "name": "yaml_parser.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "claude_md.py",
+                "type": "file"
+              },
+              {
+                "name": "discover.py",
+                "type": "file"
+              },
+              {
+                "name": "hooks.py",
+                "type": "file"
+              },
+              {
+                "name": "install.py",
+                "type": "file"
+              },
+              {
+                "name": "vault_output.py",
+                "type": "file"
+              },
+              {
+                "name": "vault.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "conftest.py",
+                "type": "file"
+              },
+              {
+                "name": "sample_bofip.html",
+                "type": "file"
+              },
+              {
+                "name": "sample_cgi.xml",
+                "type": "file"
+              },
+              {
+                "name": "test_cli_ergonomics.py",
+                "type": "file"
+              },
+              {
+                "name": "test_cli.py",
+                "type": "file"
+              },
+              {
+                "name": "test_config.py",
+                "type": "file"
+              },
+              {
+                "name": "test_context.py",
+                "type": "file"
+              },
+              {
+                "name": "test_cross_corpus_move.py",
+                "type": "file"
+              },
+              {
+                "name": "test_dbcare.py",
+                "type": "file"
+              },
+              {
+                "name": "test_discover.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ebook_parsers.py",
+                "type": "file"
+              },
+              {
+                "name": "test_embeddings.py",
+                "type": "file"
+              },
+              {
+                "name": "test_file_versions.py",
+                "type": "file"
+              },
+              {
+                "name": "test_graph.py",
+                "type": "file"
+              },
+              {
+                "name": "test_handler_reconcile.py",
+                "type": "file"
+              },
+              {
+                "name": "test_handler_remove.py",
+                "type": "file"
+              },
+              {
+                "name": "test_handler_scan.py",
+                "type": "file"
+              },
+              {
+                "name": "test_handler_vacuum.py",
+                "type": "file"
+              },
+              {
+                "name": "test_handlers.py",
+                "type": "file"
+              },
+              {
+                "name": "test_library.py",
+                "type": "file"
+              },
+              {
+                "name": "test_local_parsers.py",
+                "type": "file"
+              },
+              {
+                "name": "test_mappings.py",
+                "type": "file"
+              },
+              {
+                "name": "test_mcp.py",
+                "type": "file"
+              },
+              {
+                "name": "test_models.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ocr_daemon.py",
+                "type": "file"
+              },
+              {
+                "name": "test_office_parsers.py",
+                "type": "file"
+              },
+              {
+                "name": "test_parsers.py",
+                "type": "file"
+              },
+              {
+                "name": "test_pdf_measure.py",
+                "type": "file"
+              },
+              {
+                "name": "test_pdf_parser.py",
+                "type": "file"
+              },
+              {
+                "name": "test_plugin.py",
+                "type": "file"
+              },
+              {
+                "name": "test_progressive_disclosure.py",
+                "type": "file"
+              },
+              {
+                "name": "test_queue.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ranking.py",
+                "type": "file"
+              },
+              {
+                "name": "test_reconcile.py",
+                "type": "file"
+              },
+              {
+                "name": "test_schema_validity.py",
+                "type": "file"
+              },
+              {
+                "name": "test_smart_parsers.py",
+                "type": "file"
+              },
+              {
+                "name": "test_sniff.py",
+                "type": "file"
+              },
+              {
+                "name": "test_supervisor.py",
+                "type": "file"
+              },
+              {
+                "name": "test_sync_health.py",
+                "type": "file"
+              },
+              {
+                "name": "test_sync.py",
+                "type": "file"
+              },
+              {
+                "name": "test_tags.py",
+                "type": "file"
+              },
+              {
+                "name": "test_throttle.py",
+                "type": "file"
+              },
+              {
+                "name": "test_vault.py",
+                "type": "file"
+              },
+              {
+                "name": "test_version.py",
+                "type": "file"
+              },
+              {
+                "name": "test_versions.py",
+                "type": "file"
+              },
+              {
+                "name": "test_worker.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "cli_worker.py",
+            "type": "file"
+          },
+          {
+            "name": "cli.py",
+            "type": "file"
+          },
+          {
+            "name": "config.py",
+            "type": "file"
+          },
+          {
+            "name": "log.py",
+            "type": "file"
+          },
+          {
+            "name": "mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "schema.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "schemas",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rtfm-mapping-v1.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sync_version.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "expand",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install-embeddings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install-pdf",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install-pdf-full",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "glama.json",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "mkdocs.yml",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      }
+    ]
+  }
+}

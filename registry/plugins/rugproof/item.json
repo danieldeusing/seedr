@@ -1,0 +1,2469 @@
+{
+  "slug": "rugproof",
+  "name": "Rugproof",
+  "type": "plugin",
+  "description": "Smart contract security auditor for Claude Code — vuln detection, exploit PoCs, mainnet-fork simulation, audit cards, on-chain certificates. Solidity + Vyper · 38 commands · 19 agents · 33 skills · 9 MCP servers.",
+  "longDescription": "Ships **45 skills**, **23 agents**, **45 commands** and **13 MCP servers**.\n\n- **Skills** (45): `access-control` (Detect missing or incorrect access control — missing modifiers, wrong role checks, privileged function exposure, public initializers, and…), `approval-issues` (Detect ERC-20 approval pitfalls — approve race (front-run), missing safeApprove, infinite approvals, approval-without-revoke, Permit2 misuse, max-approval to untrusted…), `caching-and-incremental` (Always-on meta-skill — cache audit results per file by content hash so unchanged files aren't re-analyzed on subsequent…), `centralization-risk` (Detect centralization and trust-assumption risks — admin powers, single-key risk, missing timelocks, upgrade authority, treasury keys, pause permanence,…), `confidence-scoring` (Always-on meta-skill — for every finding produced, attach a confidence level (HIGH/MEDIUM/LOW) and a reasoning trace), `cosmwasm` (Detect bug classes specific to CosmWasm (Rust) contracts — missing info.sender authorization in execute handlers, unbounded map iteration…), `cross-chain-messaging` (Detect cross-chain messaging bugs — replay protection gaps, untrusted-remote acceptance, default-config inheritance, validator-set misconfig, force-include vulnerabilities, chainId /…), `cross-contract-state` (Detect cross-contract state inconsistency — two or more contracts sharing a token, oracle, or price feed where one…), and 37 more\n- **Agents** (23): `aa-specialist` (Account-Abstraction (ERC-4337) specialist), `amm-specialist` (AMM-specific audit specialist), `assembly-auditor` (Specialist for inline assembly / Yul), `attacker` (Adversarial reviewer), `bridge-specialist` (Bridge-specific specialist), `crosschain-messaging-specialist` (Specialist for cross-chain messaging primitives — LayerZero V2, Chainlink CCIP, Hyperlane, Wormhole, Axelar, Polyhedra ZKBridge, native rollup messengers), `defender` (Blue team), `economic-rug-specialist` (Rug-pull, tokenomics, and centralization deep-dive), and 15 more\n- **Commands** (45): `audit-changes` (Audit only the git diff vs main (or specified base)), `audit-deep` (Deep audit — same as /audit but spawns more parallel subagents, runs multi-pass review, and chases exploit chains…), `audit-deps` (Audit third-party dependencies — resolve installed versions, cross-reference known-vulnerable releases, and flag vendored code that has diverged from…), `audit-diff` (Diff two Rugproof audit reports (before vs after) to track regressions — what's new, what's fixed, and whether…), `audit-history` (Pull past public audits (Code4rena, Sherlock, Spearbit, etc.) for a deployed contract or known protocol), `audit-live` (Audit a deployed contract on a live chain), `audit-multi-chain` (Diff the on-chain configuration of one contract deployed across multiple chains — owner, oracle, fees, timelock, pause state,…), `audit-strict` (Multi-pass consensus audit — runs the audit twice with different prompts, only reports consensus findings), and 37 more\n- **MCP servers** (13): `block-explorer`, `forge-runner`, `hardhat-runner`, `anvil`, `tenderly`, `c4-history`, `sherlock-history`, `gas-tracker`, and 5 more\n\nInstalls with `claude plugin install rugproof@claude-community` from `omermaksutii/RugProof`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 45,
+    "agent": 23,
+    "command": 45,
+    "mcp": 13
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Rugproof",
+    "url": "https://github.com/omermaksutii/RugProof"
+  },
+  "externalUrl": "https://github.com/omermaksutii/RugProof/tree/7091cf5e25231183b98d8bfaaa11ca7d8df8b64d",
+  "marketplace": "claude-community",
+  "version": "1.0.1",
+  "sourceRevision": "7091cf5e25231183b98d8bfaaa11ca7d8df8b64d",
+  "contentDigest": "7e810f4303c1b29f9191fc54b34e6c8dfc5b1c1018bfc1b5f02d061235adb05a",
+  "contentHash": "0a05213e7fecb424",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/omermaksutii/RugProof.git",
+    "sha": "7091cf5e25231183b98d8bfaaa11ca7d8df8b64d"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-06-16T22:12:15Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "actions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rugproof-action",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action.yml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature.yml",
+                "type": "file"
+              },
+              {
+                "name": "vuln-rule.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "pages.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "rugproof-pr.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "aa-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "amm-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "assembly-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "attacker.md",
+            "type": "file"
+          },
+          {
+            "name": "bridge-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "crosschain-messaging-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "defender.md",
+            "type": "file"
+          },
+          {
+            "name": "economic-rug-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "exploit-poc-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "gas-optimizer.md",
+            "type": "file"
+          },
+          {
+            "name": "governance-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "intents-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "invariant-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "l2-sequencer-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "lending-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "nft-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "remediation-suggester.md",
+            "type": "file"
+          },
+          {
+            "name": "report-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "restaking-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "staking-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "vyper-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "yield-aggregator-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "zk-verifier-specialist.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bench",
+        "type": "directory",
+        "children": [
+          {
+            "name": "expected.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit-changes.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-deep.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-deps.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-diff.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-history.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-live.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-multi-chain.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-strict.md",
+            "type": "file"
+          },
+          {
+            "name": "audit.md",
+            "type": "file"
+          },
+          {
+            "name": "bounty-submit.md",
+            "type": "file"
+          },
+          {
+            "name": "bounty.md",
+            "type": "file"
+          },
+          {
+            "name": "card.md",
+            "type": "file"
+          },
+          {
+            "name": "coverage.md",
+            "type": "file"
+          },
+          {
+            "name": "demo.md",
+            "type": "file"
+          },
+          {
+            "name": "diff-audit.md",
+            "type": "file"
+          },
+          {
+            "name": "dismiss.md",
+            "type": "file"
+          },
+          {
+            "name": "explain.md",
+            "type": "file"
+          },
+          {
+            "name": "exploit-chain.md",
+            "type": "file"
+          },
+          {
+            "name": "exploit-live.md",
+            "type": "file"
+          },
+          {
+            "name": "exploit.md",
+            "type": "file"
+          },
+          {
+            "name": "fuzz.md",
+            "type": "file"
+          },
+          {
+            "name": "gas.md",
+            "type": "file"
+          },
+          {
+            "name": "invariant.md",
+            "type": "file"
+          },
+          {
+            "name": "mint-cert.md",
+            "type": "file"
+          },
+          {
+            "name": "monitor.md",
+            "type": "file"
+          },
+          {
+            "name": "mythril.md",
+            "type": "file"
+          },
+          {
+            "name": "notify-discord.md",
+            "type": "file"
+          },
+          {
+            "name": "notify-slack.md",
+            "type": "file"
+          },
+          {
+            "name": "pre-deploy.md",
+            "type": "file"
+          },
+          {
+            "name": "prover.md",
+            "type": "file"
+          },
+          {
+            "name": "quick-scan.md",
+            "type": "file"
+          },
+          {
+            "name": "remediate.md",
+            "type": "file"
+          },
+          {
+            "name": "replay-incident.md",
+            "type": "file"
+          },
+          {
+            "name": "report.md",
+            "type": "file"
+          },
+          {
+            "name": "rug-check.md",
+            "type": "file"
+          },
+          {
+            "name": "rugproof-init.md",
+            "type": "file"
+          },
+          {
+            "name": "score.md",
+            "type": "file"
+          },
+          {
+            "name": "simulate.md",
+            "type": "file"
+          },
+          {
+            "name": "slither.md",
+            "type": "file"
+          },
+          {
+            "name": "symbolic.md",
+            "type": "file"
+          },
+          {
+            "name": "test-gen.md",
+            "type": "file"
+          },
+          {
+            "name": "tweet.md",
+            "type": "file"
+          },
+          {
+            "name": "upgrade-safety.md",
+            "type": "file"
+          },
+          {
+            "name": "verify-deploy.md",
+            "type": "file"
+          },
+          {
+            "name": "verify-finding.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "animations.js",
+                "type": "file"
+              },
+              {
+                "name": "apple-touch-icon.png",
+                "type": "file"
+              },
+              {
+                "name": "card-flash-loan-gov.png",
+                "type": "file"
+              },
+              {
+                "name": "card-inflatable.png",
+                "type": "file"
+              },
+              {
+                "name": "card-replayable-bridge.png",
+                "type": "file"
+              },
+              {
+                "name": "card-spot-oracle.png",
+                "type": "file"
+              },
+              {
+                "name": "docs.css",
+                "type": "file"
+              },
+              {
+                "name": "favicon-64.png",
+                "type": "file"
+              },
+              {
+                "name": "favicon.svg",
+                "type": "file"
+              },
+              {
+                "name": "gallery.css",
+                "type": "file"
+              },
+              {
+                "name": "og.png",
+                "type": "file"
+              },
+              {
+                "name": "og.svg",
+                "type": "file"
+              },
+              {
+                "name": "sample-card.png",
+                "type": "file"
+              },
+              {
+                "name": "style.css",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents.html",
+                "type": "file"
+              },
+              {
+                "name": "commands.html",
+                "type": "file"
+              },
+              {
+                "name": "configuration.html",
+                "type": "file"
+              },
+              {
+                "name": "index.html",
+                "type": "file"
+              },
+              {
+                "name": "mcp-reference.html",
+                "type": "file"
+              },
+              {
+                "name": "sample-flash-loan-governance.html",
+                "type": "file"
+              },
+              {
+                "name": "sample-inflatable-4626.html",
+                "type": "file"
+              },
+              {
+                "name": "sample-replayable-bridge.html",
+                "type": "file"
+              },
+              {
+                "name": "sample-spot-oracle-lending.html",
+                "type": "file"
+              },
+              {
+                "name": "sample-vulnerable-vault.html",
+                "type": "file"
+              },
+              {
+                "name": "skills.html",
+                "type": "file"
+              },
+              {
+                "name": "stability.html",
+                "type": "file"
+              },
+              {
+                "name": "telemetry.html",
+                "type": "file"
+              },
+              {
+                "name": "troubleshooting.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gallery",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.html",
+                "type": "file"
+              },
+              {
+                "name": "manifest.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-06-16-rugproof-v0.2.0-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "FlashLoanGovernance.sol",
+            "type": "file"
+          },
+          {
+            "name": "Inflatable4626.sol",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "ReplayableBridge.sol",
+            "type": "file"
+          },
+          {
+            "name": "SpotOracleLending.sol",
+            "type": "file"
+          },
+          {
+            "name": "VulnerableVault.sol",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples-vyper",
+        "type": "directory",
+        "children": [
+          {
+            "name": "VulnerableVyper.vy",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "post-test-coverage.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-commit-quickscan.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-deploy-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-push-audit.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "mcp",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "anvil-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "block-explorer-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "c4-history-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "forge-runner-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fuzz-runner-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gas-tracker-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hardhat-runner-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "monitoring-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mythril-runner-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sherlock-history-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "slither-runner-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tenderly-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_rpc.mjs",
+                "type": "file"
+              },
+              {
+                "name": "servers.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "shared.test.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "token-metadata-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.base.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "nft",
+        "type": "directory",
+        "children": [
+          {
+            "name": "script",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Deploy.s.sol",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AuditCertificate.sol",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AuditCertificate.t.sol",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "DEPLOY.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "out-nft",
+        "type": "directory",
+        "children": [
+          {
+            "name": "AuditCertificate.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AuditCertificate.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "AuditCertificate.t.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AuditCertificateTest.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Base.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "CommonBase.json",
+                "type": "file"
+              },
+              {
+                "name": "ScriptBase.json",
+                "type": "file"
+              },
+              {
+                "name": "TestBase.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "build-info",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cb948956ad19d11d.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Bytes.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Bytes.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "console.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "console.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Context.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Context.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "draft-IERC6093.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "IERC1155Errors.json",
+                "type": "file"
+              },
+              {
+                "name": "IERC20Errors.json",
+                "type": "file"
+              },
+              {
+                "name": "IERC721Errors.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ERC165.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ERC165.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ERC721.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ERC721.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ERC721Utils.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ERC721Utils.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "IERC165.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "IERC165.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "IERC721.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "IERC721.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "IERC721Metadata.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "IERC721Metadata.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "IERC721Receiver.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "IERC721Receiver.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "IMulticall3.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "IMulticall3.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Math.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Math.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Ownable.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Ownable.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Ownable2Step.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Ownable2Step.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Panic.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Panic.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "SafeCast.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SafeCast.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "safeconsole.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "safeconsole.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "SignedMath.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SignedMath.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdAssertions.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "StdAssertions.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdChains.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "StdChains.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdCheats.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "StdCheats.json",
+                "type": "file"
+              },
+              {
+                "name": "StdCheatsSafe.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdConstants.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "StdConstants.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdError.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "stdError.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdInvariant.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "StdInvariant.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdJson.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "stdJson.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdMath.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "stdMath.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdStorage.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "stdStorage.json",
+                "type": "file"
+              },
+              {
+                "name": "stdStorageSafe.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdStyle.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "StdStyle.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdToml.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "stdToml.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "StdUtils.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "StdUtils.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Strings.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Strings.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Test.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Test.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "Vm.sol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Vm.json",
+                "type": "file"
+              },
+              {
+                "name": "VmSafe.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "rules",
+        "type": "directory",
+        "children": [
+          {
+            "name": "community-pack-example",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "example-fork-detection",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "pack.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "solady-gotchas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "solady-erc20-permit2-assumptions",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "solady-ownable-init-frontrun",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "solady-safetransferlib-no-contract-check",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "pack.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "uniswap-v4-hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "v4-hook-delta-accounting",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "v4-hook-permission-flags-mismatch",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "v4-hook-reentrancy-via-unlock",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "pack.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "samples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit-flash-loan-governance.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-inflatable-4626.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-replayable-bridge.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-spot-oracle-lending.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-vulnerable-vault.html",
+            "type": "file"
+          },
+          {
+            "name": "audit-vulnerable-vault.json",
+            "type": "file"
+          },
+          {
+            "name": "audit-vulnerable-vault.md",
+            "type": "file"
+          },
+          {
+            "name": "card-flash-loan-gov.png",
+            "type": "file"
+          },
+          {
+            "name": "card-inflatable.png",
+            "type": "file"
+          },
+          {
+            "name": "card-replayable-bridge.png",
+            "type": "file"
+          },
+          {
+            "name": "card-spot-oracle.png",
+            "type": "file"
+          },
+          {
+            "name": "findings-flash-loan-gov.json",
+            "type": "file"
+          },
+          {
+            "name": "findings-inflatable.json",
+            "type": "file"
+          },
+          {
+            "name": "findings-replayable-bridge.json",
+            "type": "file"
+          },
+          {
+            "name": "findings-spot-oracle.json",
+            "type": "file"
+          },
+          {
+            "name": "sample-card.png",
+            "type": "file"
+          },
+          {
+            "name": "sample-findings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "schemas",
+        "type": "directory",
+        "children": [
+          {
+            "name": "finding.schema.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "benchmark.ts",
+                "type": "file"
+              },
+              {
+                "name": "check-update.ts",
+                "type": "file"
+              },
+              {
+                "name": "diff-reports.ts",
+                "type": "file"
+              },
+              {
+                "name": "format-bounty.ts",
+                "type": "file"
+              },
+              {
+                "name": "md-to-html.ts",
+                "type": "file"
+              },
+              {
+                "name": "notify-discord.ts",
+                "type": "file"
+              },
+              {
+                "name": "notify-slack.ts",
+                "type": "file"
+              },
+              {
+                "name": "parse-mythril.ts",
+                "type": "file"
+              },
+              {
+                "name": "parse-slither.ts",
+                "type": "file"
+              },
+              {
+                "name": "render-card.ts",
+                "type": "file"
+              },
+              {
+                "name": "render-report.ts",
+                "type": "file"
+              },
+              {
+                "name": "report-crash.ts",
+                "type": "file"
+              },
+              {
+                "name": "sign-cert.ts",
+                "type": "file"
+              },
+              {
+                "name": "telemetry.ts",
+                "type": "file"
+              },
+              {
+                "name": "test-mcp.ts",
+                "type": "file"
+              },
+              {
+                "name": "tweet.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_helpers.mjs",
+                "type": "file"
+              },
+              {
+                "name": "benchmark.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "diff-reports.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "e2e-report.sh",
+                "type": "file"
+              },
+              {
+                "name": "format-bounty.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "parse-mythril.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "parse-slither.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "sign-cert.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "validate-rule-pack.test.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check-versions.mjs",
+            "type": "file"
+          },
+          {
+            "name": "ci-fetch-deps.sh",
+            "type": "file"
+          },
+          {
+            "name": "generate-docs.mjs",
+            "type": "file"
+          },
+          {
+            "name": "generate-gallery.mjs",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          },
+          {
+            "name": "validate-rule-pack.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "access-control",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "approval-issues",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caching-and-incremental",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "centralization-risk",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "confidence-scoring",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cosmwasm",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cross-chain-messaging",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cross-contract-state",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "delegatecall-risks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diamond-eip2535",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dos-vectors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "erc1271-contract-signatures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "erc4337-account-abstraction",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "erc4626-inflation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "false-positive-feedback-loop",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fee-on-transfer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "flash-loan-attacks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "initialization",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "inline-assembly",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integer-issues",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "intents-erc7683",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "known-good-comparison",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "liquidation-cascade",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mev-frontrunning",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mev-pbs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "multi-pass-self-critique",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "oracle-manipulation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "oracle-redundancy",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "permit2-patterns",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pragma-and-addresses",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "progress-and-streaming",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reentrancy",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "restaking-eigenlayer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "selfdestruct-eip6780",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signature-malleability",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signature-replay",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "solana-anchor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "storage-layout",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "stylus-rust",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "token-compatibility",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tx-context-misuse",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "unchecked-calls",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ve-lock-governance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vyper-specific",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "zk-verifier-bugs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit-card.svg.hbs",
+            "type": "file"
+          },
+          {
+            "name": "report.html.hbs",
+            "type": "file"
+          },
+          {
+            "name": "report.md.hbs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "test",
+        "type": "directory",
+        "children": [
+          {
+            "name": "exploits",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ExploitREENT001.t.sol",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitmodules",
+        "type": "file"
+      },
+      {
+        "name": ".rugproof.yml.example",
+        "type": "file"
+      },
+      {
+        "name": ".rugproofignore.example",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "foundry.toml",
+        "type": "file"
+      },
+      {
+        "name": "LAUNCH.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "Makefile",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "remappings.txt",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,831 @@
+{
+  "slug": "claude-onboarding-agent",
+  "name": "Claude Onboarding Agent",
+  "type": "plugin",
+  "description": "Interactive onboarding agent that configures your Claude Code workspace for optimal use. Through guided questions, it generates tailored CLAUDE.md and AGENTS.md files and installs the right skills for your workflow — whether you're coding, researching, writing, or managing projects.",
+  "longDescription": "Ships **16 skills** and **4 agents**.\n\n- **Skills** (16): `academic-writing-setup` (Set up Claude for academic writing — thesis, paper, or dissertation), `anchors` (Refresh the anchor-derived marker sections in this project's CLAUDE.md and AGENTS.md by re-fetching the latest anchors, diffing against…), `audit-setup` (Read-only audit of your current Claude setup — prints a prioritized HIGH/MEDIUM/LOW findings list covering package manager hygiene,…), `checkup` (The single user-facing maintenance entrypoint for an existing Claude setup), `coding-setup` (Set up Claude for software development — installs Superpowers, configures an iterative coding workflow (brainstorm → plan →…), `content-voice-setup` (Set up Claude for on-brand content voice), `data-science-setup` (Set up Claude for data science and ML engineering — configures notebook workflow, experiment tracking, reproducibility conventions, and…), `design-setup` (Set up Claude for UI/UX design tooling — wires up your design tool (Figma, Sketch, XD, Penpot) and…), and 8 more\n- **Agents** (4): `artifact-verifier` (Read-only subagent that confirms a list of files exists on disk and passes lightweight structural checks (non-empty, valid…), `audit-collector` (Read-only subagent that runs an audit skill (default `/audit-setup`) and returns a compact severity-bucketed finding summary), `repo-scanner` (Read-only subagent that scans a user project for language, framework, corpus-size, and use-case signals), `upgrade-planner` (Read-only subagent that enumerates plugin-owned delimited sections in a user project, diffs each against the canonical current template,…)\n\nInstalls with `claude plugin install claude-onboarding-agent@claude-community` from `a2ngerer/claude_onboarding_agent`.",
+  "compatibility": [
+    "claude",
+    "copilot"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 16,
+    "agent": 4
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Alexander Angerer"
+  },
+  "externalUrl": "https://github.com/a2ngerer/claude_onboarding_agent/tree/ae7a344c5ded03c8b6f4bb349c1b70672bbe3fdc",
+  "marketplace": "claude-community",
+  "version": "1.3.0",
+  "sourceRevision": "ae7a344c5ded03c8b6f4bb349c1b70672bbe3fdc",
+  "contentDigest": "b91ea19482a51df45479de1ebd53d8cd21f8579c2bfd7226567e82eecfb90a58",
+  "contentHash": "8f9bf34f3db8a833",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/a2ngerer/claude_onboarding_agent.git",
+    "sha": "ae7a344c5ded03c8b6f4bb349c1b70672bbe3fdc"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-06-30T17:26:54Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "schemas",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "artifact-verify.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "audit-summary.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "repo-scan.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "upgrade-plan.schema.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "artifact-verifier.md",
+                "type": "file"
+              },
+              {
+                "name": "audit-collector.md",
+                "type": "file"
+              },
+              {
+                "name": "repo-scanner.md",
+                "type": "file"
+              },
+              {
+                "name": "upgrade-planner.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "check-dependencies.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "PULL_REQUEST_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "anchor-update.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-code-review.yml",
+                "type": "file"
+              },
+              {
+                "name": "claude.yml",
+                "type": "file"
+              },
+              {
+                "name": "consistency.yml",
+                "type": "file"
+              },
+              {
+                "name": "skill-evals.yml",
+                "type": "file"
+              },
+              {
+                "name": "update-anchors.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "anchors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_trend-sources.md",
+                "type": "file"
+              },
+              {
+                "name": "claude-models.md",
+                "type": "file"
+              },
+              {
+                "name": "claude-tools.md",
+                "type": "file"
+              },
+              {
+                "name": "knowledge-base.md",
+                "type": "file"
+              },
+              {
+                "name": "mcp-servers.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "subagents.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "banner.jpeg",
+                "type": "file"
+              },
+              {
+                "name": "demo.gif",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "schemas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "handoff-context.schema.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-16-new-setups-and-optional-skills.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-16-onboarding-agent.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-17-installation-protocol.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-20-tipps-skill.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-anchor-consumer-integration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-anchor-redesign-updater.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-anchor-trend-sources.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-end-user-hooks-rollout.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-end-user-subagents-rollout.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-mcp-server-integration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-onboarding-subagent-orchestration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-plugin-internal-subagents.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-realtime-anchors.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-rules-convention-migration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-skill-modularization.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-06-12-skill-eval-harness.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-16-new-setups-and-optional-skills-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-16-onboarding-agent-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-17-installation-protocol-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-18-checkup-skill-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-20-tipps-skill-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-anchor-redesign-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-end-user-hooks-rollout-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-end-user-subagents-rollout-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-mcp-server-integration-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-onboarding-subagent-orchestration-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-plugin-internal-subagents-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-rules-convention-migration-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-21-skill-modularization-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-22-content-voice-setup-narrowing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-22-office-setup-business-writing-refocus.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-22-research-to-academic-cascade.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-06-12-skill-eval-harness-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-06-30-okf-conformance-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "installation.md",
+            "type": "file"
+          },
+          {
+            "name": "RELEASE-NOTES.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "evals",
+        "type": "directory",
+        "children": [
+          {
+            "name": "academic-writing-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "anchors.json",
+            "type": "file"
+          },
+          {
+            "name": "audit-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "checkup.json",
+            "type": "file"
+          },
+          {
+            "name": "coding-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "content-voice-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "data-science-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "design-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "devops-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "graphify-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "knowledge-base-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "office-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "onboarding.json",
+            "type": "file"
+          },
+          {
+            "name": "research-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "upgrade-setup.json",
+            "type": "file"
+          },
+          {
+            "name": "web-development-setup.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-consistency.sh",
+            "type": "file"
+          },
+          {
+            "name": "install.ps1",
+            "type": "file"
+          },
+          {
+            "name": "install.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-skill-evals.sh",
+            "type": "file"
+          },
+          {
+            "name": "uninstall.ps1",
+            "type": "file"
+          },
+          {
+            "name": "uninstall.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "anchor-mapping.md",
+                "type": "file"
+              },
+              {
+                "name": "backup-before-write.md",
+                "type": "file"
+              },
+              {
+                "name": "consume-handoff.md",
+                "type": "file"
+              },
+              {
+                "name": "emit-hook.md",
+                "type": "file"
+              },
+              {
+                "name": "emit-subagent.md",
+                "type": "file"
+              },
+              {
+                "name": "fetch-anchor.md",
+                "type": "file"
+              },
+              {
+                "name": "gitignore-common.md",
+                "type": "file"
+              },
+              {
+                "name": "gitignore-node.md",
+                "type": "file"
+              },
+              {
+                "name": "gitignore-python.md",
+                "type": "file"
+              },
+              {
+                "name": "graphify-install.md",
+                "type": "file"
+              },
+              {
+                "name": "installation-protocol.md",
+                "type": "file"
+              },
+              {
+                "name": "migrate-claude-instructions.md",
+                "type": "file"
+              },
+              {
+                "name": "offer-github-mcp.md",
+                "type": "file"
+              },
+              {
+                "name": "offer-graphify.md",
+                "type": "file"
+              },
+              {
+                "name": "offer-mcp.md",
+                "type": "file"
+              },
+              {
+                "name": "offer-superpowers.md",
+                "type": "file"
+              },
+              {
+                "name": "parse-subagent-json.md",
+                "type": "file"
+              },
+              {
+                "name": "render-anchor-section.md",
+                "type": "file"
+              },
+              {
+                "name": "write-meta.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "academic-writing-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "document-skeletons.md",
+                "type": "file"
+              },
+              {
+                "name": "gitignore-block.md",
+                "type": "file"
+              },
+              {
+                "name": "optional-integrations.md",
+                "type": "file"
+              },
+              {
+                "name": "rule-file-templates.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "anchors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "audit-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "checkup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coding-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "content-voice-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "data-science-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "gitignore-block.md",
+                "type": "file"
+              },
+              {
+                "name": "notebook-hygiene.md",
+                "type": "file"
+              },
+              {
+                "name": "rule-file-templates.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "stack-scaffolds.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "devops-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rule-file-templates.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "graphify-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "knowledge-base-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "document-skeletons.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "office-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "onboarding",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "research-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "upgrade-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "web-development-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "document-skeletons.md",
+                "type": "file"
+              },
+              {
+                "name": "framework-defaults.md",
+                "type": "file"
+              },
+              {
+                "name": "gitignore-block.md",
+                "type": "file"
+              },
+              {
+                "name": "rule-file-templates.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "type-check-hook.template.sh",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

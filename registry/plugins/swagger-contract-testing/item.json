@@ -1,0 +1,415 @@
+{
+  "slug": "swagger-contract-testing",
+  "name": "Swagger Contract Testing",
+  "type": "plugin",
+  "description": "AI assistant skills and agents for PactFlow contract testing. Covers the full contract testing lifecycle — from writing and reviewing Pact consumer/provider tests to publishing contracts,\nrunning can-i-deploy checks, and managing your PactFlow workspace.\n\nIncludes:\n- PactFlow skill — expert assistant for Pact and PactFlow; uses the SmartBear MCP server to generate and review tests with AI, publish contracts, verify providers, record deployments, and\nmanage environments, webhooks, and secrets.\n- Drift skill — expert assistant for Drift, PactFlow's OpenAPI contract testing CLI; helps write test cases, configure lifecycle hooks, debug failures, and publish results for\nBi-Directional Contract Testing (BDCT).\n- OpenAPI Parser skill — parses complex OpenAPI specs (anyOf/oneOf/allOf, discriminators, $ref chains, enums, regex patterns) and generates comprehensive Drift test cases covering every\nschema combination.\n- Specialized agents — pact-generator (writes Pact tests from code or specs), pact-reviewer (audits tests for best-practice violations), pact-implementor (builds Pact FFI bindings for new\nlanguages), pact-maintainer (fixes failing verifications and cleans up stale workspace state), and bdct-tester (drives a full BDCT flow end-to-end).",
+  "longDescription": "Ships **3 skills**, **5 agents**, **2 hooks** and **1 MCP server**.\n\n- **Skills** (3): `drift-testing` (Verifies API implementations against OpenAPI specifications using the Drift CLI, catching spec drift and supporting Bi-Directional Contract Testing…), `openapi-parser` (Parses complex OpenAPI specs and generates Drift test cases from them), `pactflow` (Expert assistant for PactFlow and Pact contract testing)\n- **Agents** (5): `bdct-tester` (Agentic BDCT (Bi-Directional Contract Testing) driver), `pact-generator` (Specialized agent for generating new Pact consumer tests and provider state handlers from existing code, OpenAPI specs, or…), `pact-implementor` (Specialized agent for building a new Pact client library from scratch in any language), `pact-maintainer` (Pact ecosystem maintenance agent), `pact-reviewer` (Specialized agent for reviewing Pact consumer tests and provider verification code)\n- **Hooks** (2): `SessionStart`, `PostToolUse`\n- **MCP servers** (1): `smartbear`\n\nInstalls with `claude plugin install swagger-contract-testing@claude-community` from `pactflow/pactflow-agent-skills` (`plugins/swagger-contract-testing`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 3,
+    "agent": 5,
+    "hook": 2,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Kevin Rohan Vaz"
+  },
+  "externalUrl": "https://github.com/pactflow/pactflow-agent-skills/tree/566f81d4ec1bbfac666c98c1ba8e421f0dd35b63/plugins/swagger-contract-testing",
+  "marketplace": "claude-community",
+  "version": "1.1.0",
+  "sourceRevision": "566f81d4ec1bbfac666c98c1ba8e421f0dd35b63",
+  "contentDigest": "3c8b3377bad1bbbcbcc31dd8463540536a7d2229447ac872d9abe5b16bddb380",
+  "contentHash": "2015c74a30448c16",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/swagger-contract-testing",
+    "url": "https://github.com/pactflow/pactflow-agent-skills.git",
+    "ref": "main",
+    "sha": "566f81d4ec1bbfac666c98c1ba8e421f0dd35b63"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-07-20T05:46:31Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bdct-tester.md",
+            "type": "file"
+          },
+          {
+            "name": "pact-generator.md",
+            "type": "file"
+          },
+          {
+            "name": "pact-implementor.md",
+            "type": "file"
+          },
+          {
+            "name": "pact-maintainer.md",
+            "type": "file"
+          },
+          {
+            "name": "pact-reviewer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-pact-config.sh",
+            "type": "file"
+          },
+          {
+            "name": "deployment-reminder.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "drift-testing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "products-api-with-failures.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple-products-api.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "01-basic-get-endpoint.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "02-stateful-delete-endpoint.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "03-debug-failing-test.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auth.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli-reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lua-api.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mock-server.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pactflow-and-cicd.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-cases.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "check_coverage.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_endpoints.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run_loop.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run_loop.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "start_mock.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "start_mock.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "openapi-parser",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "anyof-parameter-variants.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "discriminator-with-allof.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "regex-pattern-field.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "01-anyof-parameter-variants.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "02-discriminator-with-allof.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "03-regex-pattern-field.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "drift-mapping.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-repos.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema-patterns.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pactflow",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "evals.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bdct.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.dotnet.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.golang.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.java.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.javascript.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.kotlin.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.php.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.swift.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dsl.typescript.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-setup.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-broker-advanced.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-broker-setup.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-cicd.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-concepts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-consumer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-docs-index.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-faq.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-implementations.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-messages.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-plugins.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-provider.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pact-recipes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tools.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workflow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      }
+    ]
+  }
+}

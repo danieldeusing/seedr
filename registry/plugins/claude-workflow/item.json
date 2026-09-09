@@ -1,0 +1,709 @@
+{
+  "slug": "claude-workflow",
+  "name": "Claude Workflow",
+  "type": "plugin",
+  "description": "A Claude Code plugin that drives agents through YAML-defined state machines. Define workflows as YAML with states, transitions, and prompts.\nThe engine tracks state, enforces guards, manages nested sub-workflow stacks, and persists every mutation atomically.\nIncludes 16 bundled workflows covering the full agent lifecycle — from task routing and coding to review, testing, and reflection.\nShips with a web dashboard for real-time session monitoring and workflow graph visualization.",
+  "longDescription": "Ships **2 hooks** and **1 MCP server**.\n\n- **Hooks** (2): `SessionStart`, `SessionEnd`\n- **MCP servers** (1): `wf`\n\nInstalls with `claude plugin install claude-workflow@claude-community` from `AxGord/claude-workflow`.\n\nA Claude Code plugin that drives agents through YAML-defined state machines. The engine tracks state, enforces guards, manages nested sub-workflow stacks, and visualizes everything in a web dashboard.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "hook": 2,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "AxGord",
+    "url": "https://github.com/AxGord"
+  },
+  "externalUrl": "https://github.com/AxGord/claude-workflow/tree/ea7a7e60f4452a9c8e1f1689b67a6d0d00fb2a27",
+  "marketplace": "claude-community",
+  "version": "0.1.11",
+  "sourceRevision": "ea7a7e60f4452a9c8e1f1689b67a6d0d00fb2a27",
+  "contentDigest": "0d05ea0d9942393b1d4a577ad558ffefbf8b533c0a5c6f5f3f70ae2ad4230cc3",
+  "contentHash": "d6d1b042ef93541d",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/AxGord/claude-workflow.git",
+    "sha": "ea7a7e60f4452a9c8e1f1689b67a6d0d00fb2a27"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-18T11:48:03Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "dashboard",
+        "type": "directory",
+        "children": [
+          {
+            "name": "index.html",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "screenshots",
+            "type": "directory",
+            "children": [
+              {
+                "name": "statusline.png",
+                "type": "file"
+              },
+              {
+                "name": "workflow-coding.png",
+                "type": "file"
+              },
+              {
+                "name": "workflow-master.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "banner.png",
+            "type": "file"
+          },
+          {
+            "name": "social-preview.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "workflow-cleanup.sh",
+            "type": "file"
+          },
+          {
+            "name": "workflow-start.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-skill-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "hxq-lint-file.sh",
+            "type": "file"
+          },
+          {
+            "name": "scan-project.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "dashboard.ts",
+            "type": "file"
+          },
+          {
+            "name": "engine.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "engine.ts",
+            "type": "file"
+          },
+          {
+            "name": "executor.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "executor.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          },
+          {
+            "name": "loader.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "loader.ts",
+            "type": "file"
+          },
+          {
+            "name": "modifier.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "modifier.ts",
+            "type": "file"
+          },
+          {
+            "name": "skill-gate.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "storage.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "storage.ts",
+            "type": "file"
+          },
+          {
+            "name": "template.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "template.ts",
+            "type": "file"
+          },
+          {
+            "name": "test-helpers.ts",
+            "type": "file"
+          },
+          {
+            "name": "tools.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "tools.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "architecture",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "aws-lambda",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "browser-verify",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "build-cmake",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ci-github-actions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-code-config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cleanup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "coding-skill-selector",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "debug-bridge-scaffold",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "debugging",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "domain-gamedev",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "domain-pixi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "domain-reid",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "domain-ui",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "domain-yolo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hxq",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "lint.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ops.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "parser-dev.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ide-zed",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lang-as3",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lang-haxe",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "abstracts.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "compile-traps.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "macros.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "null-safety.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "targets-runtime.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lang-python",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "math",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mcp-setup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "preferences",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skill-manager",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "target-openfl-native",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "build-and-versions.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "task-delegation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "web-reading",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "workflow-authoring",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "batch.yaml",
+            "type": "file"
+          },
+          {
+            "name": "bug-fix.yaml",
+            "type": "file"
+          },
+          {
+            "name": "code-review.yaml",
+            "type": "file"
+          },
+          {
+            "name": "coding.yaml",
+            "type": "file"
+          },
+          {
+            "name": "debugging.yaml",
+            "type": "file"
+          },
+          {
+            "name": "explore.yaml",
+            "type": "file"
+          },
+          {
+            "name": "file-code.yaml",
+            "type": "file"
+          },
+          {
+            "name": "file-review.yaml",
+            "type": "file"
+          },
+          {
+            "name": "github-init.yaml",
+            "type": "file"
+          },
+          {
+            "name": "investigate.yaml",
+            "type": "file"
+          },
+          {
+            "name": "lint-review.yaml",
+            "type": "file"
+          },
+          {
+            "name": "master.yaml",
+            "type": "file"
+          },
+          {
+            "name": "new-feature.yaml",
+            "type": "file"
+          },
+          {
+            "name": "planning.yaml",
+            "type": "file"
+          },
+          {
+            "name": "reflection.yaml",
+            "type": "file"
+          },
+          {
+            "name": "review-push.yaml",
+            "type": "file"
+          },
+          {
+            "name": "subagent.yaml",
+            "type": "file"
+          },
+          {
+            "name": "testing.yaml",
+            "type": "file"
+          },
+          {
+            "name": "web-research.yaml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".skillsyncignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

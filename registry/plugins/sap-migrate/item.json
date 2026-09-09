@@ -1,0 +1,521 @@
+{
+  "slug": "sap-migrate",
+  "name": "Sap Migrate",
+  "type": "plugin",
+  "description": "S/4HANA custom-code migration engine: run a brownfield conversion as a tracked campaign — inventory custom (Z/Y) objects, flag unused code for decommission, run the S/4HANA-readiness ATC, triage findings, and remediate mechanical changes at scale on a sandbox. Companion to sap-dev-core (install that first).",
+  "longDescription": "Ships **10 skills** and **1 agent**.\n\n- **Skills** (10): `sap-cc-analyze` (Runs the S/4HANA-readiness ATC over a migration campaign's REMEDIATE objects and captures per-finding results into findings/findings_raw.tsv, advancing each…), `sap-cc-campaign` (Owns the S/4HANA custom-code migration campaign workspace and is the orchestration entry point for the sap-migrate engine), `sap-cc-cloud-readiness` (Measures each custom (Z/Y) object's DISTANCE FROM ABAP CLOUD — the question S4HANA_READINESS (/sap-cc-analyze) does not answer), `sap-cc-decommission` (EXECUTES the retirement of unused custom objects a campaign flagged for decommission — turning \"40-60% of custom code…), `sap-cc-inventory` (Enumerates and classifies the custom (Z/Y / customer-namespace) repository objects in scope for an S/4HANA migration campaign), `sap-cc-remediate` (Remediates a migration campaign's TRIAGED R1 (mechanical) objects on the SANDBOX — the only sap-migrate skill that changes…), `sap-cc-triage` (Two modes for an S/4HANA migration campaign's readiness findings), `sap-cc-usage` (Overlays runtime usage data onto the campaign inventory to decide what to remediate vs), and 2 more\n- **Agents** (1): `cc-migration-engineer` (S/4HANA custom-code migration campaign orchestrator)\n\nInstalls with `claude plugin install sap-migrate@claude-community` from `sapdev-ai/sap-dev` (`plugins/sap-migrate`).",
+  "compatibility": [
+    "claude",
+    "copilot"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 10,
+    "agent": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "KexiHe",
+    "url": "https://sapdev.ai"
+  },
+  "externalUrl": "https://github.com/sapdev-ai/sap-dev/tree/f75aa49b592b1642a83b78a703a4f6378afb0146/plugins/sap-migrate",
+  "marketplace": "claude-community",
+  "version": "0.8.1",
+  "sourceRevision": "f75aa49b592b1642a83b78a703a4f6378afb0146",
+  "contentDigest": "189a1eae0a5fa619abd7c37dc31d9500ffc4aad2d9e057f55d6bc9589a311144",
+  "contentHash": "14f77b483d17eaa9",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/sap-migrate",
+    "url": "https://github.com/sapdev-ai/sap-dev.git",
+    "ref": "main",
+    "sha": "f75aa49b592b1642a83b78a703a4f6378afb0146"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "GPL-3.0-only",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-07-18T02:24:59Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cc-migration-engineer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "shared",
+        "type": "directory",
+        "children": [
+          {
+            "name": "knowledge",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cloud",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cloudification_repository.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "forbidden_statements.tsv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kp_meta.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "recipes",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_TEMPLATE.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ACDOCA_FIN.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADD_ORDER_BY.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "BP_CVI.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "COMPAT_VIEW_WRITE.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CREDIT_MGMT.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "DUAL_MAINTENANCE.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FI_OPENITEM_INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "LIS_ANALYTICS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MATDOC_DOCS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MATDOC_STOCK.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MATNR_EXTENSION.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OUTPUT_MGMT.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SD_PRICING.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SD_STATUS_TABLES.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "api_replacements.tsv",
+                "type": "file"
+              },
+              {
+                "name": "catalog.tsv",
+                "type": "file"
+              },
+              {
+                "name": "field_map.tsv",
+                "type": "file"
+              },
+              {
+                "name": "manifest.json",
+                "type": "file"
+              },
+              {
+                "name": "object_map.tsv",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sap-cc-analyze",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_cc_analyze.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-cc-campaign",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_cc_campaign.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_cc_drift_read.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-cc-cloud-readiness",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "coverage.tsv",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PROG__ZCC_DYN.abap",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PROG__ZCC_T1_CLEAN.abap",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PROG__ZCC_T2_WRAP.abap",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PROG__ZCC_T3_CLASSIC.abap",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "sap_cc_cloud_download.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_cc_cloud_scan.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-cc-decommission",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_cc_decommission.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-cc-inventory",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_cc_inventory.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-cc-remediate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "migration_rules_r1.tsv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_cc_remediate.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-cc-triage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_cc_learn.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_cc_triage.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-cc-usage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_cc_scmon_read.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_cc_usage.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_cc_workload_read.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-exit-modernize",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_exit_markers.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_exit_markers.tests.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_exit_read.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-spau-triage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_spau_classify.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_spau_classify.tests.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_spau_rfc.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

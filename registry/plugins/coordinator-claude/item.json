@@ -1,0 +1,1901 @@
+{
+  "slug": "coordinator-claude",
+  "name": "Coordinator Claude",
+  "type": "plugin",
+  "description": "Engineering management layer for Claude Code --- structures your session like a real dev team where you're PM and Claude is EM. Provides session workflows, multi-persona code review (staff engineer, UX, front-end, data science reviewers), structured planning, agent delegation, handoffs between sessions, and daily routines. You set direction; Claude makes engineering calls and runs them by you.",
+  "longDescription": "Ships **26 skills**, **16 agents**, **11 commands** and **4 hooks**.\n\n- **Skills** (26): `architecture-rotation` (Run the weekly architecture audit rotation — score systems, audit the highest-priority target, apply findings, and update the…), `brainstorming` (Use for new feature requests, vague/ambiguous requirements, or multi-subsystem decomposition before plan mode), `bug-sweep` (Systematic codebase bug hunt — find and fix all AI-fixable bugs in-session, defer blocked ones to backlog), `code-health` (Night-shift code health review — queries today's completion entries for touched surfaces, dispatches a reviewer, applies findings, and…), `consolidate-git` (Cleans up branch sprawl), `debt-triage` (EM-PM conversation to review and prioritize the technical debt backlog), `dogfood` (Smoke-driven fix-through loop — invoke a newly-built thing (skill, script, pipeline, install process) and fix bugs until it…), `enrich-and-review` (Run enrichment pipeline on chunk directories), and 18 more\n- **Agents** (16): `code-reviewer` (Sonnet code reviewer with obsessive standards — flags nitpicks, weak tests, dead code, unclear naming, dubious abstractions, missing…), `dep-cve-auditor` (Sonnet worker agent for dependency CVE auditing), `doc-link-checker` (Sonnet worker agent for documentation link validation), `docs-checker` (Use this agent to verify API references in artifacts (plans, code, stubs) against authoritative documentation before dispatching expensive…), `eng-director` (the Director of Engineering — Director of Engineering), `enricher` (Use this agent when plan stub documents need enrichment with research findings), `executor` (Use this agent when enriched and reviewed stub specifications are ready for implementation), `external-pattern-checker` (Opt-in pre-flight that does bounded web research (≤5 WebFetch, ≤2 WebSearch, ≤6 topics) on architecturally-loaded plan claims that…), and 8 more\n- **Commands** (11): `architecture-audit` (Bootstrap or refresh the architecture atlas via multi-phase agent pipeline (Haiku scouts → Sonnet analysts → Opus synthesizer)), `autonomous` (Toggle autonomous execution mode — suppresses /handoff nudges from the context pressure hook when the PM wants the…), `bug-blitz` (Autonomously grind tasks/bug-backlog.md — verify each item still applies, fix small items in parallel waves, surface big ones…), `distill` (Distill session artifacts into evergreen wiki + decisions; trim + archive canonical specs; delete scaffolding), `mise-en-place` (Autonomous backlog execution — gathers ready items, builds compaction-proof flight recorder, runs sequentially), `setup` (Set up the coordinator plugin — check prerequisites, verify environment, configure project), `update-docs` (Repo-wide documentation maintenance and sync), `workday-complete` (End-of-day orchestration — validate, consolidate branches, daily review, append to week-changelog), and 3 more\n- **Hooks** (4): `SessionStart`, `PreToolUse`, `PostToolUse`, `PreCompact`\n\nInstalls with `claude plugin install coordinator-claude@claude-community` from `oduffy-delphi/coordinator-claude` (`plugins/coordinator`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 26,
+    "agent": 16,
+    "hook": 4,
+    "command": 11
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "the Coordinator Authors"
+  },
+  "externalUrl": "https://github.com/oduffy-delphi/coordinator-claude/tree/e9424db28722cd1bfba9fae2427a8d23b09b23c5/plugins/coordinator",
+  "marketplace": "claude-community",
+  "version": "2.2.0",
+  "sourceRevision": "e9424db28722cd1bfba9fae2427a8d23b09b23c5",
+  "contentDigest": "bf9f5f665cdadd806127a5c4b04227cc1dd3325ec4526d7a161ddbe1839115be",
+  "contentHash": "6250497ec85995eb",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/coordinator",
+    "url": "https://github.com/oduffy-delphi/coordinator-claude.git",
+    "ref": "main",
+    "sha": "e9424db28722cd1bfba9fae2427a8d23b09b23c5"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-05-20T22:49:30Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "code-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "dep-cve-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "doc-link-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "docs-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "eng-director.md",
+            "type": "file"
+          },
+          {
+            "name": "enricher.md",
+            "type": "file"
+          },
+          {
+            "name": "executor.md",
+            "type": "file"
+          },
+          {
+            "name": "external-pattern-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "parallel-review-synthesizer.md",
+            "type": "file"
+          },
+          {
+            "name": "plan-coverage-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "prior-art-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "review-integrator.md",
+            "type": "file"
+          },
+          {
+            "name": "security-audit-worker.md",
+            "type": "file"
+          },
+          {
+            "name": "staff-eng.md",
+            "type": "file"
+          },
+          {
+            "name": "test-evidence-parser.md",
+            "type": "file"
+          },
+          {
+            "name": "vp-product.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "consumed-marker.js",
+                "type": "file"
+              },
+              {
+                "name": "query-records.test.js",
+                "type": "file"
+              },
+              {
+                "name": "schema.js",
+                "type": "file"
+              },
+              {
+                "name": "schema.test.js",
+                "type": "file"
+              },
+              {
+                "name": "sentinel-blocks-cli.js",
+                "type": "file"
+              },
+              {
+                "name": "sentinel-blocks.js",
+                "type": "file"
+              },
+              {
+                "name": "sentinel-blocks.test.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test-depersonalize-path-rewrite.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agent-worktree-sweep.sh",
+            "type": "file"
+          },
+          {
+            "name": "aggregate-chain-loe.sh",
+            "type": "file"
+          },
+          {
+            "name": "audit-enabled-plugins.sh",
+            "type": "file"
+          },
+          {
+            "name": "audit-roadmap.sh",
+            "type": "file"
+          },
+          {
+            "name": "blocked.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-description-length.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-no-monolith-completion-append.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-rag-state.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-shipped-on-main.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-weekly-staleness.sh",
+            "type": "file"
+          },
+          {
+            "name": "claude-ue-bootstrap.sh",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-auto-push",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-current-branch",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-reap-sessions",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-safe-commit",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-safe-commit.test.sh",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-session-loe.sh",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-write-review-trail.sh",
+            "type": "file"
+          },
+          {
+            "name": "decode-claude-projects-dir.sh",
+            "type": "file"
+          },
+          {
+            "name": "depersonalize-for-publish.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-project-runtime.sh",
+            "type": "file"
+          },
+          {
+            "name": "find-polluter.sh",
+            "type": "file"
+          },
+          {
+            "name": "generate-repomap.sh",
+            "type": "file"
+          },
+          {
+            "name": "learn-lessons-config-update.sh",
+            "type": "file"
+          },
+          {
+            "name": "lint-frontmatter.js",
+            "type": "file"
+          },
+          {
+            "name": "lint-frontmatter.sh",
+            "type": "file"
+          },
+          {
+            "name": "migrate-branch-canonical-case.sh",
+            "type": "file"
+          },
+          {
+            "name": "migrate-completion-log-legacy.sh",
+            "type": "file"
+          },
+          {
+            "name": "normalize-consumed-frontmatter.js",
+            "type": "file"
+          },
+          {
+            "name": "orphan-branch-sweep.sh",
+            "type": "file"
+          },
+          {
+            "name": "prune-resolved-queue-entries.sh",
+            "type": "file"
+          },
+          {
+            "name": "prune-resolved-queue-entries.test.sh",
+            "type": "file"
+          },
+          {
+            "name": "query-completions.sh",
+            "type": "file"
+          },
+          {
+            "name": "query-records.js",
+            "type": "file"
+          },
+          {
+            "name": "query-records.sh",
+            "type": "file"
+          },
+          {
+            "name": "refresh-queries.js",
+            "type": "file"
+          },
+          {
+            "name": "refresh-queries.sh",
+            "type": "file"
+          },
+          {
+            "name": "regenerate-orientation-cache.sh",
+            "type": "file"
+          },
+          {
+            "name": "render-template.sh",
+            "type": "file"
+          },
+          {
+            "name": "scan-addon-health.sh",
+            "type": "file"
+          },
+          {
+            "name": "scope-flip-readiness",
+            "type": "file"
+          },
+          {
+            "name": "scope-soak-enable",
+            "type": "file"
+          },
+          {
+            "name": "scope-warning-resolve",
+            "type": "file"
+          },
+          {
+            "name": "standup.sh",
+            "type": "file"
+          },
+          {
+            "name": "sync-main.sh",
+            "type": "file"
+          },
+          {
+            "name": "sync-plugin-wiki.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-calibration-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-coverage.js",
+            "type": "file"
+          },
+          {
+            "name": "verify-coverage.test.js",
+            "type": "file"
+          },
+          {
+            "name": "verify-docs-checker-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-meta-ask-preamble-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-no-powershell-flash.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-orientation-cache-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-parallel-review-lens-orthogonality.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-plan-coverage-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-preamble-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-prior-art-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-skill-anchor-links.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-templates-bin-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-text-only-sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-ue-overrides.sh",
+            "type": "file"
+          },
+          {
+            "name": "whats-next.sh",
+            "type": "file"
+          },
+          {
+            "name": "workday-start-step0-reconcile.sh",
+            "type": "file"
+          },
+          {
+            "name": "workday-start-step0.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "architecture-audit.md",
+            "type": "file"
+          },
+          {
+            "name": "autonomous.md",
+            "type": "file"
+          },
+          {
+            "name": "bug-blitz.md",
+            "type": "file"
+          },
+          {
+            "name": "distill.md",
+            "type": "file"
+          },
+          {
+            "name": "mise-en-place.md",
+            "type": "file"
+          },
+          {
+            "name": "setup.md",
+            "type": "file"
+          },
+          {
+            "name": "update-docs.md",
+            "type": "file"
+          },
+          {
+            "name": "workday-complete.md",
+            "type": "file"
+          },
+          {
+            "name": "workday-start.md",
+            "type": "file"
+          },
+          {
+            "name": "workweek-complete.md",
+            "type": "file"
+          },
+          {
+            "name": "workweek-start.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "config",
+        "type": "directory",
+        "children": [
+          {
+            "name": "loe-thresholds.yaml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "wiki",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ab-experiment-design.md",
+                "type": "file"
+              },
+              {
+                "name": "addon-chunker-categories.md",
+                "type": "file"
+              },
+              {
+                "name": "addon-health-sentinel.md",
+                "type": "file"
+              },
+              {
+                "name": "addon-hookspec-shape.md",
+                "type": "file"
+              },
+              {
+                "name": "addon-protocol.md",
+                "type": "file"
+              },
+              {
+                "name": "addon-receiver-scaffold.md",
+                "type": "file"
+              },
+              {
+                "name": "agent-dispatch-economics.md",
+                "type": "file"
+              },
+              {
+                "name": "agent-teams-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "authoring-an-addon.md",
+                "type": "file"
+              },
+              {
+                "name": "backlog-prune-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "bash-on-windows-gotchas.md",
+                "type": "file"
+              },
+              {
+                "name": "capability-dispatch.md",
+                "type": "file"
+              },
+              {
+                "name": "ceremony-calibration.md",
+                "type": "file"
+              },
+              {
+                "name": "chunk-metadata-schema-seam.md",
+                "type": "file"
+              },
+              {
+                "name": "claude-code-platform-gotchas.md",
+                "type": "file"
+              },
+              {
+                "name": "cleanup-sweep-hazards.md",
+                "type": "file"
+              },
+              {
+                "name": "completion-log-release-loop.md",
+                "type": "file"
+              },
+              {
+                "name": "context-md-convention.md",
+                "type": "file"
+              },
+              {
+                "name": "coordinator-doctor.md",
+                "type": "file"
+              },
+              {
+                "name": "coordinator-installer-shape.md",
+                "type": "file"
+              },
+              {
+                "name": "coordinator-installer-status-schema.md",
+                "type": "file"
+              },
+              {
+                "name": "coordinator-tripwires.md",
+                "type": "file"
+              },
+              {
+                "name": "corpus-band-protocol.md",
+                "type": "file"
+              },
+              {
+                "name": "corpus-class-taxonomy.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-corpus-class-addon-contract.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-language-consumer-audit.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-plugin-whoami-contract.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-rag-sync-table.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-repo-citation-conventions.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-repo-communication.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-repo-contract-test-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-repo-handshake-doctrine.md",
+                "type": "file"
+              },
+              {
+                "name": "daily-branch-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "daily-summary-procedure.md",
+                "type": "file"
+              },
+              {
+                "name": "delegate-execution.md",
+                "type": "file"
+              },
+              {
+                "name": "DIRECTORY_GUIDE.md",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-parallel-agents.md",
+                "type": "file"
+              },
+              {
+                "name": "docs-checker-pre-review.md",
+                "type": "file"
+              },
+              {
+                "name": "document-bloat-trim.md",
+                "type": "file"
+              },
+              {
+                "name": "doe-altitude-and-shared-infra.md",
+                "type": "file"
+              },
+              {
+                "name": "dogfooding-doctrine.md",
+                "type": "file"
+              },
+              {
+                "name": "dual-identity-module-hazard.md",
+                "type": "file"
+              },
+              {
+                "name": "eager-agent-calibration.md",
+                "type": "file"
+              },
+              {
+                "name": "em-pm-collaboration-extras.md",
+                "type": "file"
+              },
+              {
+                "name": "external-pattern-checker.md",
+                "type": "file"
+              },
+              {
+                "name": "external-tool-integration-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "gitattributes-lfs-carve-outs.md",
+                "type": "file"
+              },
+              {
+                "name": "held-out-slice-sealing-pattern.md",
+                "type": "file"
+              },
+              {
+                "name": "holodeck-for-your-ue-project.md",
+                "type": "file"
+              },
+              {
+                "name": "hook-best-practices.md",
+                "type": "file"
+              },
+              {
+                "name": "host-addon-separation-of-concerns.md",
+                "type": "file"
+              },
+              {
+                "name": "host-resilience-and-bounded-spawn.md",
+                "type": "file"
+              },
+              {
+                "name": "host-vs-addons.md",
+                "type": "file"
+              },
+              {
+                "name": "implementation-standards-by-domain.md",
+                "type": "file"
+              },
+              {
+                "name": "install-status-tags.md",
+                "type": "file"
+              },
+              {
+                "name": "integration-test-at-schema-boundary.md",
+                "type": "file"
+              },
+              {
+                "name": "lesson-triage.md",
+                "type": "file"
+              },
+              {
+                "name": "lfs-coordinator-auto-push-merge.md",
+                "type": "file"
+              },
+              {
+                "name": "lookup-vs-live-state.md",
+                "type": "file"
+              },
+              {
+                "name": "machine-local-registry.md",
+                "type": "file"
+              },
+              {
+                "name": "mcp-async-handler-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "multi-source-daemon.md",
+                "type": "file"
+              },
+              {
+                "name": "named-contracts-vs-incidental-flags.md",
+                "type": "file"
+              },
+              {
+                "name": "naming-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "oom-reproducer-strategy.md",
+                "type": "file"
+              },
+              {
+                "name": "orientation-surfacing-doctrine.md",
+                "type": "file"
+              },
+              {
+                "name": "parallel-enrichment-seam-review.md",
+                "type": "file"
+              },
+              {
+                "name": "parity-audit-doctrine.md",
+                "type": "file"
+              },
+              {
+                "name": "peer-repo-polarity.md",
+                "type": "file"
+              },
+              {
+                "name": "peer-repo-research-triage.md",
+                "type": "file"
+              },
+              {
+                "name": "per-project-plugin-gating.md",
+                "type": "file"
+              },
+              {
+                "name": "percolate-setup.md",
+                "type": "file"
+              },
+              {
+                "name": "plan-coverage-checker.md",
+                "type": "file"
+              },
+              {
+                "name": "pluggy-hookspec-semantics.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin-extraction-and-distribution.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin-identity-and-health-sentinels.md",
+                "type": "file"
+              },
+              {
+                "name": "post-sync-hook-doctrine.md",
+                "type": "file"
+              },
+              {
+                "name": "pre-dispatch-verification-extras.md",
+                "type": "file"
+              },
+              {
+                "name": "pre-dispatch-verification.md",
+                "type": "file"
+              },
+              {
+                "name": "prior-art-checker.md",
+                "type": "file"
+              },
+              {
+                "name": "project-rag-tool-envelope.md",
+                "type": "file"
+              },
+              {
+                "name": "published-api-surface.md",
+                "type": "file"
+              },
+              {
+                "name": "python-subprocess-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "rag-bait-conventions.md",
+                "type": "file"
+              },
+              {
+                "name": "receiving-code-review.md",
+                "type": "file"
+              },
+              {
+                "name": "repo-registry.md",
+                "type": "file"
+              },
+              {
+                "name": "repomap-rag-gating.md",
+                "type": "file"
+              },
+              {
+                "name": "review-integration-doctrine.md",
+                "type": "file"
+              },
+              {
+                "name": "reviewer-pipeline.md",
+                "type": "file"
+              },
+              {
+                "name": "reviewer-premise-challenge.md",
+                "type": "file"
+              },
+              {
+                "name": "reviewer-routed-workers.md",
+                "type": "file"
+              },
+              {
+                "name": "round-trip-contract-tests.md",
+                "type": "file"
+              },
+              {
+                "name": "scoped-safety-commits.md",
+                "type": "file"
+              },
+              {
+                "name": "scout-and-dispatch-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "scratch-lifecycle.md",
+                "type": "file"
+              },
+              {
+                "name": "session-end-review.md",
+                "type": "file"
+              },
+              {
+                "name": "sibling-surface-parity-testing.md",
+                "type": "file"
+              },
+              {
+                "name": "skill-budget-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "source-addressing-scheme.md",
+                "type": "file"
+              },
+              {
+                "name": "source-kwarg-routing.md",
+                "type": "file"
+              },
+              {
+                "name": "spinoff-handoffs.md",
+                "type": "file"
+              },
+              {
+                "name": "staff-sessions.md",
+                "type": "file"
+              },
+              {
+                "name": "stuck-detection.md",
+                "type": "file"
+              },
+              {
+                "name": "sub-plan-delegation.md",
+                "type": "file"
+              },
+              {
+                "name": "substrate-pin-doctrine.md",
+                "type": "file"
+              },
+              {
+                "name": "super-skill-architecture.md",
+                "type": "file"
+              },
+              {
+                "name": "systematic-debugging.md",
+                "type": "file"
+              },
+              {
+                "name": "test-design-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "test-driven-development.md",
+                "type": "file"
+              },
+              {
+                "name": "test-environment-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "tiered-context-loading.md",
+                "type": "file"
+              },
+              {
+                "name": "tool-registry-vs-routing.md",
+                "type": "file"
+              },
+              {
+                "name": "tool-version-resolution-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "verification-before-completion.md",
+                "type": "file"
+              },
+              {
+                "name": "verification-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "windows-cmd-shims.md",
+                "type": "file"
+              },
+              {
+                "name": "windows-crash-forensics.md",
+                "type": "file"
+              },
+              {
+                "name": "wiring-env-source-of-truth.md",
+                "type": "file"
+              },
+              {
+                "name": "workday-workweek-cadence.md",
+                "type": "file"
+              },
+              {
+                "name": "writing-plans.md",
+                "type": "file"
+              },
+              {
+                "name": "writing-skills.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude-cli-subprocess-contract.md",
+            "type": "file"
+          },
+          {
+            "name": "hook-authoring-notes.md",
+            "type": "file"
+          },
+          {
+            "name": "pretooluse-deny-contract.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "condition-based-waiting-example.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-completion-log.sh",
+                "type": "file"
+              },
+              {
+                "name": "block-completion-monolith-write.sh",
+                "type": "file"
+              },
+              {
+                "name": "block-dev-side-mirror-wiki.sh",
+                "type": "file"
+              },
+              {
+                "name": "block-no-verify.sh",
+                "type": "file"
+              },
+              {
+                "name": "block-off-daily-branch.sh",
+                "type": "file"
+              },
+              {
+                "name": "block-unauthorized-handoff.sh",
+                "type": "file"
+              },
+              {
+                "name": "check-claude-md-size.py",
+                "type": "file"
+              },
+              {
+                "name": "context-pressure-advisory.sh",
+                "type": "file"
+              },
+              {
+                "name": "context-pressure-precompact.sh",
+                "type": "file"
+              },
+              {
+                "name": "coordinator-reminder.sh",
+                "type": "file"
+              },
+              {
+                "name": "nudge-improvement-queue-write.sh",
+                "type": "file"
+              },
+              {
+                "name": "plan-persistence-check.sh",
+                "type": "file"
+              },
+              {
+                "name": "project-orientation.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-heartbeat.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-init.sh",
+                "type": "file"
+              },
+              {
+                "name": "suggest-sonnet-research.sh",
+                "type": "file"
+              },
+              {
+                "name": "track-dispatched-agents.sh",
+                "type": "file"
+              },
+              {
+                "name": "track-touched-files.sh",
+                "type": "file"
+              },
+              {
+                "name": "ue-knowledge-distrust.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate-commit.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate-frontmatter-schema.js",
+                "type": "file"
+              },
+              {
+                "name": "validate-frontmatter-schema.test.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "project-rag-detect-wrapper.sh",
+            "type": "file"
+          },
+          {
+            "name": "project-rag-detect.ps1",
+            "type": "file"
+          },
+          {
+            "name": "project-rag-detect.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-home",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_claude_home.py",
+                "type": "file"
+              },
+              {
+                "name": "claude-home",
+                "type": "file"
+              },
+              {
+                "name": "claude-home.cmd",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coordinator_session.js",
+            "type": "file"
+          },
+          {
+            "name": "coordinator_session.py",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-daily-branch.sh",
+            "type": "file"
+          },
+          {
+            "name": "coordinator-session.sh",
+            "type": "file"
+          },
+          {
+            "name": "discover-working-repos.sh",
+            "type": "file"
+          },
+          {
+            "name": "install-substrate.sh",
+            "type": "file"
+          },
+          {
+            "name": "resolve-python.sh",
+            "type": "file"
+          },
+          {
+            "name": "workweek-trail-scope.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "pipelines",
+        "type": "directory",
+        "children": [
+          {
+            "name": "artifact-distillation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-prompts.md",
+                "type": "file"
+              },
+              {
+                "name": "phase-2-5-judgment-mining.md",
+                "type": "file"
+              },
+              {
+                "name": "PIPELINE.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bug-sweep",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pattern-library.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "daily-code-health",
+            "type": "directory",
+            "children": [
+              {
+                "name": "PIPELINE.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "deep-architecture-audit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-prompts.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "executing-plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "PIPELINE.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mise-en-place",
+            "type": "directory",
+            "children": [
+              {
+                "name": "PIPELINE.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "staff-session",
+            "type": "directory",
+            "children": [
+              {
+                "name": "planner-prompt-template.md",
+                "type": "file"
+              },
+              {
+                "name": "reviewer-prompt-template.md",
+                "type": "file"
+              },
+              {
+                "name": "synthesizer-prompt-template.md",
+                "type": "file"
+              },
+              {
+                "name": "team-protocol.md",
+                "type": "file"
+              },
+              {
+                "name": "templates-and-fields.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "update-docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "artifact-pruning.md",
+                "type": "file"
+              },
+              {
+                "name": "atlas-integrity-check.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-repo-registry-refresh.md",
+                "type": "file"
+              },
+              {
+                "name": "handoff-archival.md",
+                "type": "file"
+              },
+              {
+                "name": "tracker-maintenance.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "weekly-architecture-audit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "PIPELINE.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "relay-protocol.md",
+            "type": "file"
+          },
+          {
+            "name": "scratch-paths.md",
+            "type": "file"
+          },
+          {
+            "name": "workday-start-internals.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "schemas",
+        "type": "directory",
+        "children": [
+          {
+            "name": "completion-entry.yaml",
+            "type": "file"
+          },
+          {
+            "name": "decision.yaml",
+            "type": "file"
+          },
+          {
+            "name": "handoff-archived.yaml",
+            "type": "file"
+          },
+          {
+            "name": "handoff.yaml",
+            "type": "file"
+          },
+          {
+            "name": "lesson-entry.yaml",
+            "type": "file"
+          },
+          {
+            "name": "plan.yaml",
+            "type": "file"
+          },
+          {
+            "name": "review.yaml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "architecture-rotation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "brainstorming",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bug-sweep",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "code-health",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "consolidate-git",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "debt-triage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dogfood",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "enrich-and-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "execute-plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "finishing-a-development-branch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "handoff",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "learn-lessons",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "merging-to-main",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "parallel-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "percolate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pickup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "project-onboarding",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CLAUDE.md.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lessons.md.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tracker.md.template",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-code",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "roadmap-planning",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-end",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-start",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spinoff",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "staff-session",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "validate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "snippets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bounded-enumeration-preamble.md",
+            "type": "file"
+          },
+          {
+            "name": "deletion-list-hygiene.md",
+            "type": "file"
+          },
+          {
+            "name": "docs-checker-consumption.md",
+            "type": "file"
+          },
+          {
+            "name": "meta-ask-preamble.md",
+            "type": "file"
+          },
+          {
+            "name": "plan-coverage-check-consumption.md",
+            "type": "file"
+          },
+          {
+            "name": "prior-art-check-consumption.md",
+            "type": "file"
+          },
+          {
+            "name": "project-rag-preamble.md",
+            "type": "file"
+          },
+          {
+            "name": "reviewer-calibration.md",
+            "type": "file"
+          },
+          {
+            "name": "text-only-recovery-preamble.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tasks",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".deferred-branches.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_machine_local.py",
+                "type": "file"
+              },
+              {
+                "name": "claude_machine_local.py",
+                "type": "file"
+              },
+              {
+                "name": "claude-machine-local.ps1",
+                "type": "file"
+              },
+              {
+                "name": "claude-machine-local.sh",
+                "type": "file"
+              },
+              {
+                "name": "machine-local",
+                "type": "file"
+              },
+              {
+                "name": "machine-local.cmd",
+                "type": "file"
+              },
+              {
+                "name": "python3.cmd",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "machine-local",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "registry.local.toml.example",
+                "type": "file"
+              },
+              {
+                "name": "registry.toml.example",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CLAUDE.local.md.tmpl",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "whoami",
+        "type": "directory",
+        "children": [
+          {
+            "name": "coordinator_whoami",
+            "type": "directory",
+            "children": [
+              {
+                "name": "project_rag",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "schemas",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cli_output.v1.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "__main__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "_paths.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "addons.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "envelope.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "schemas",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "whoami-envelope.v1.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "contract.py",
+                "type": "file"
+              },
+              {
+                "name": "envelope_base.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coordinator_whoami.egg-info",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dependency_links.txt",
+                "type": "file"
+              },
+              {
+                "name": "PKG-INFO",
+                "type": "file"
+              },
+              {
+                "name": "requires.txt",
+                "type": "file"
+              },
+              {
+                "name": "SOURCES.txt",
+                "type": "file"
+              },
+              {
+                "name": "top_level.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pyproject.toml",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "capability-catalog.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "em-operating-model.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "routing.md",
+        "type": "file"
+      }
+    ]
+  }
+}

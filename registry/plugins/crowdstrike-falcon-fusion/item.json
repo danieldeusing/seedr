@@ -1,0 +1,966 @@
+{
+  "slug": "crowdstrike-falcon-fusion",
+  "name": "Crowdstrike Falcon Fusion",
+  "type": "plugin",
+  "description": "CrowdStrike Falcon Fusion skills for authoring, deploying, and executing Fusion workflows. Includes live action discovery, YAML authoring with schema validation, workflow import and release, execution monitoring, and Falcon Next-Gen SIEM lookup files.",
+  "longDescription": "Ships **7 skills** and **3 hooks**.\n\n- **Skills** (7): `authoring` (Discover Falcon Fusion actions via live API, author workflow YAML with correct schema, validate against Charlotte JSON schema,…), `deployment` (Import, release, and manage Falcon Fusion workflow definitions in a CID), `execution` (Trigger Falcon Fusion workflows, monitor execution status, and debug failures), `foundry-redirect` (TRIGGER when the user asks to \"build a Foundry app\", \"create a Foundry app\", mentions manifest.yml, or needs…), `lookup-files` (Manage Falcon Next-Gen SIEM lookup files (CSV/JSON/TXT) for CQL match() queries), `setup` (Configure CrowdStrike Falcon API credentials for the fusion-skills plugin), `workflows` (Orchestrates the full Falcon Fusion workflow lifecycle from discovery through deployment and execution)\n- **Hooks** (3): `SessionStart`, `UserPromptSubmit`, `PreToolUse`\n\nInstalls with `claude plugin install crowdstrike-falcon-fusion@claude-plugins-official` from `CrowdStrike/fusion-skills`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 7,
+    "hook": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "CrowdStrike"
+  },
+  "externalUrl": "https://github.com/CrowdStrike/fusion-skills/tree/8df28a78be316f619a0a5227a401b395da990c40",
+  "marketplace": "claude-plugins-official",
+  "version": "1.1.0",
+  "sourceRevision": "8df28a78be316f619a0a5227a401b395da990c40",
+  "contentDigest": "a38e4df8749505710a48749b4768fb253076df3e8ab049f41ceb207418f9103c",
+  "contentHash": "7161618a5787b972",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/CrowdStrike/fusion-skills.git",
+    "sha": "8df28a78be316f619a0a5227a401b395da990c40"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-19T17:20:06Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "main.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copilot-instructions.md",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "common",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_bootstrap.py",
+                "type": "file"
+              },
+              {
+                "name": "auth.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bootstrap.sh",
+            "type": "file"
+          },
+          {
+            "name": "fusion-foundry-bridge.sh",
+            "type": "file"
+          },
+          {
+            "name": "fusion-skill-router.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "images",
+        "type": "directory",
+        "children": [
+          {
+            "name": "alliance-team.png",
+            "type": "file"
+          },
+          {
+            "name": "cs-logo-footer.png",
+            "type": "file"
+          },
+          {
+            "name": "cs-logo.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cleanup_workflows.py",
+            "type": "file"
+          },
+          {
+            "name": "convert_catalog_to_yaml.py",
+            "type": "file"
+          },
+          {
+            "name": "export-trigger-yaml.sh",
+            "type": "file"
+          },
+          {
+            "name": "python-detect.sh",
+            "type": "file"
+          },
+          {
+            "name": "python.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup-python-venv.sh",
+            "type": "file"
+          },
+          {
+            "name": "skill-isolation.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "authoring",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "conditional.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "loop-conditional.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "loop.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "single-action.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "identity-response",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "email-phishing-playbook-itp.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "identity-detection-auto-resolution.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ngsiem",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "close-duplicate-detections.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "notifications",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "network-contain-endpoint-on-detection.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "slack-send-message-to-channel.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "response-actions",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "pan-ngfw-allowlist-edl-exception.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pan-ngfw-blocklist-edl-force-refresh.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pan-ngfw-get-all-edls.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pan-ngfw-monitor-dag-members.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pan-ngfw-register-ip-tag-dag.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pan-ngfw-unregister-ip-from-tag-dag.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "threat-intel",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "analyze-enrich-epp-detection-llm.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "domain-enrichment-pulsedive.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "domain-enrichment-virustotal.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "enrich-ip-virustotal-llm-email.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "enrich-url-virustotal-zscaler-blocklist.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ip-address-enrichment-abuseipdb.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tutorials",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "crowdstrike-http-request-falcon-api.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "intro-cases-add-event.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "intro-data-transforms-ternary.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "intro-deduplicate-third-party-detections.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "intro-error-handling.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "intro-lookup-file-actions.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "intro-python-sslbl-lookup.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "intro-receive-email-trigger.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "intro-variables-append-array.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "best-practices.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cel-expressions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "charlotte-ai-action.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "deduplicate-ratelimit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "event-query-action.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "event-query-vs-api.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "http-actions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inline-python-action.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "json-structure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trigger-types.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "yaml-schema.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action_search.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trigger_search.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "deployment",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "console-verification.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "delete_workflow.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "export_workflow.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "import_workflows.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "query_workflows.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "release_workflow.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "execution",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "execution-log-queries.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "throttling.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "get_execution_results.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "monitor_execution.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trigger_workflow.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "foundry-redirect",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lookup-files",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "example-ip-blocklist.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-user-risk.csv",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cql-match-function.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lookup-file-formats.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "create_lookup.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "delete_lookup.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "get_lookup.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list_lookups.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "update_lookup.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verify_lookup.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "best-practices.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cel-expressions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "json-structure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trigger-types.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "yaml-schema.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_action_search.py",
+            "type": "file"
+          },
+          {
+            "name": "test_auth.py",
+            "type": "file"
+          },
+          {
+            "name": "test_bootstrap.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cleanup_workflows.py",
+            "type": "file"
+          },
+          {
+            "name": "test_convert_catalog_to_yaml.py",
+            "type": "file"
+          },
+          {
+            "name": "test_create_lookup.py",
+            "type": "file"
+          },
+          {
+            "name": "test_delete_lookup.py",
+            "type": "file"
+          },
+          {
+            "name": "test_delete_workflow.py",
+            "type": "file"
+          },
+          {
+            "name": "test_export_workflow.py",
+            "type": "file"
+          },
+          {
+            "name": "test_get_execution_results.py",
+            "type": "file"
+          },
+          {
+            "name": "test_get_lookup.py",
+            "type": "file"
+          },
+          {
+            "name": "test_import_workflows.py",
+            "type": "file"
+          },
+          {
+            "name": "test_list_lookups.py",
+            "type": "file"
+          },
+          {
+            "name": "test_monitor_execution.py",
+            "type": "file"
+          },
+          {
+            "name": "test_query_workflows.py",
+            "type": "file"
+          },
+          {
+            "name": "test_release_workflow.py",
+            "type": "file"
+          },
+          {
+            "name": "test_trigger_search.py",
+            "type": "file"
+          },
+          {
+            "name": "test_trigger_workflow.py",
+            "type": "file"
+          },
+          {
+            "name": "test_update_lookup.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validate.py",
+            "type": "file"
+          },
+          {
+            "name": "test_verify_lookup.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "use-cases",
+        "type": "directory",
+        "children": [
+          {
+            "name": "api-pagination.md",
+            "type": "file"
+          },
+          {
+            "name": "case-management.md",
+            "type": "file"
+          },
+          {
+            "name": "charlotte-agent-invocation.md",
+            "type": "file"
+          },
+          {
+            "name": "custom-soar-actions.md",
+            "type": "file"
+          },
+          {
+            "name": "detection-deduplication.md",
+            "type": "file"
+          },
+          {
+            "name": "detection-enrichment.md",
+            "type": "file"
+          },
+          {
+            "name": "event-queries.md",
+            "type": "file"
+          },
+          {
+            "name": "export-query-results-csv.md",
+            "type": "file"
+          },
+          {
+            "name": "http-actions.md",
+            "type": "file"
+          },
+          {
+            "name": "human-in-the-loop-containment.md",
+            "type": "file"
+          },
+          {
+            "name": "identity-detection-response.md",
+            "type": "file"
+          },
+          {
+            "name": "lookup-enrichment.md",
+            "type": "file"
+          },
+          {
+            "name": "lookup-file-management.md",
+            "type": "file"
+          },
+          {
+            "name": "ngsiem-detection-response.md",
+            "type": "file"
+          },
+          {
+            "name": "notifications.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".markdownlint.json",
+        "type": "file"
+      },
+      {
+        "name": ".pylintrc",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CITATION.cff",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "plugin.json",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "release.sh",
+        "type": "file"
+      },
+      {
+        "name": "requirements-test.txt",
+        "type": "file"
+      },
+      {
+        "name": "requirements.txt",
+        "type": "file"
+      },
+      {
+        "name": "run-ab-test.sh",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "SUPPORT.md",
+        "type": "file"
+      },
+      {
+        "name": "tail-test.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-assistants.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-bootstrap-symlink.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-hooks.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-result-schema.json",
+        "type": "file"
+      },
+      {
+        "name": "test-scorecard-parser.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-skill-isolation.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-skill-scorecard.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-skill.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-validate.sh",
+        "type": "file"
+      },
+      {
+        "name": "test-verdict-parser.sh",
+        "type": "file"
+      },
+      {
+        "name": "verify-result-schema.json",
+        "type": "file"
+      },
+      {
+        "name": "verify-workflows.sh",
+        "type": "file"
+      }
+    ]
+  }
+}

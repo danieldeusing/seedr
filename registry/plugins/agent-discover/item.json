@@ -1,0 +1,589 @@
+{
+  "slug": "agent-discover",
+  "name": "Agent Discover",
+  "type": "plugin",
+  "description": "MCP server registry and on-demand proxy for AI coding agents. Browse the official MCP Registry, install/activate/deactivate servers from a local dashboard, and proxy their tools with namespace prefixing. Per-server secrets, health probes with error-count tracking, tool-call metrics, and a real-time call log via WebSocket.",
+  "longDescription": "Ships **1 MCP server**, `agent-discover`.\n\nInstalls with `claude plugin install agent-discover@claude-community` from `keshrath/agent-discover`.\n\nMCP server registry and marketplace. Discover, install, activate, and manage MCP tools on demand. Acts as a dynamic proxy -- activated servers have their tools merged into the registry's own tool list, so agents can use them without restarting.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "mcp",
+  "sourceType": "community",
+  "author": {
+    "name": "keshrath"
+  },
+  "externalUrl": "https://github.com/keshrath/agent-discover/tree/46b337711d108b03f4867a5c534adb10ea5aed7b",
+  "marketplace": "claude-community",
+  "version": "1.3.7",
+  "sourceRevision": "46b337711d108b03f4867a5c534adb10ea5aed7b",
+  "contentDigest": "05bfcba4c458cca18f60a68f7a8219e21a45244b403eb3f6b8cfaaad4c673937",
+  "contentHash": "d450aa5326d62cb3",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/keshrath/agent-discover.git",
+    "sha": "46b337711d108b03f4867a5c534adb10ea5aed7b"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-19T17:48:05Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".husky",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-commit",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bench",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_results",
+            "type": "directory",
+            "children": [
+              {
+                "name": "latest.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "drivers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli.ts",
+                "type": "file"
+              },
+              {
+                "name": "opencode.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fake-tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "catalog.json",
+                "type": "file"
+              },
+              {
+                "name": "seed-registry.ts",
+                "type": "file"
+              },
+              {
+                "name": "server.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workloads",
+            "type": "directory",
+            "children": [
+              {
+                "name": "tasks.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "rescore.ts",
+            "type": "file"
+          },
+          {
+            "name": "runner.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "screenshots",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dark.png",
+                "type": "file"
+              },
+              {
+                "name": "light.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "API.md",
+            "type": "file"
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "DASHBOARD.md",
+            "type": "file"
+          },
+          {
+            "name": "SETUP.md",
+            "type": "file"
+          },
+          {
+            "name": "USER-MANUAL.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "session-start.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copy-ui.js",
+            "type": "file"
+          },
+          {
+            "name": "setup.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "domain",
+            "type": "directory",
+            "children": [
+              {
+                "name": "events.ts",
+                "type": "file"
+              },
+              {
+                "name": "health.ts",
+                "type": "file"
+              },
+              {
+                "name": "installer.ts",
+                "type": "file"
+              },
+              {
+                "name": "log.ts",
+                "type": "file"
+              },
+              {
+                "name": "marketplace.ts",
+                "type": "file"
+              },
+              {
+                "name": "metrics.ts",
+                "type": "file"
+              },
+              {
+                "name": "presets.ts",
+                "type": "file"
+              },
+              {
+                "name": "proxy.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry.ts",
+                "type": "file"
+              },
+              {
+                "name": "sampling.ts",
+                "type": "file"
+              },
+              {
+                "name": "secrets.ts",
+                "type": "file"
+              },
+              {
+                "name": "setup.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "embeddings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "factory.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "local.ts",
+                "type": "file"
+              },
+              {
+                "name": "none.ts",
+                "type": "file"
+              },
+              {
+                "name": "openai.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "storage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "database.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "transport",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mcp-handlers.ts",
+                "type": "file"
+              },
+              {
+                "name": "mcp.ts",
+                "type": "file"
+              },
+              {
+                "name": "rest.ts",
+                "type": "file"
+              },
+              {
+                "name": "ws.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "app.js",
+                "type": "file"
+              },
+              {
+                "name": "index.html",
+                "type": "file"
+              },
+              {
+                "name": "markdown.js",
+                "type": "file"
+              },
+              {
+                "name": "schema-form.js",
+                "type": "file"
+              },
+              {
+                "name": "styles.css",
+                "type": "file"
+              },
+              {
+                "name": "template.js",
+                "type": "file"
+              },
+              {
+                "name": "tester-window.html",
+                "type": "file"
+              },
+              {
+                "name": "tester-window.js",
+                "type": "file"
+              },
+              {
+                "name": "tester.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          },
+          {
+            "name": "lib.ts",
+            "type": "file"
+          },
+          {
+            "name": "package-meta.ts",
+            "type": "file"
+          },
+          {
+            "name": "server.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.ts",
+            "type": "file"
+          },
+          {
+            "name": "version.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "domain",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hydrate.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "e2e",
+            "type": "directory",
+            "children": [
+              {
+                "name": "workflow.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "e2e-ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dashboard.pw.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "elicitation-sampling.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "installer.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "log-kinds.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "marketplace-extra.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "marketplace.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "mcp-handlers.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "presets.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "proxy-headers.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "proxy-race.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "proxy-tester.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "proxy.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "registry.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "rest-errors.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "rest-presets.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "rest-tester.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "rest.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "v110-misc.test.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".prettierignore",
+        "type": "file"
+      },
+      {
+        "name": "agent-desk-plugin.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "eslint.config.js",
+        "type": "file"
+      },
+      {
+        "name": "index.js",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "playwright.config.ts",
+        "type": "file"
+      },
+      {
+        "name": "prettier.config.js",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

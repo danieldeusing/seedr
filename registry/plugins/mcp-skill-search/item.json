@@ -1,0 +1,429 @@
+{
+  "slug": "mcp-skill-search",
+  "name": "Mcp Skill Search",
+  "type": "plugin",
+  "description": "A \"ToolSearch for skills\" — searches your SKILL.md files by keyword, exact name, or required-term filter so the model can fetch full skill descriptions on demand. Mirrors Claude Code's internal ToolSearch scoring algorithm 1:1, but for skills instead of MCP tools.\n\nPairs with two bundled slash-commands: /optimize-skill-context sets SLASH_COMMAND_TOOL_CHAR_BUDGET=1 to free Claude Code's ~1% skill-description budget (forcing names-only mode), and /restore-skill-descriptions reverses it. Slash-commands keep working; descriptions are fetched on demand via skill_search when relevant.\n\nRepo-aware: skills under the current git-root's .claude/skills/ get a +5 score boost over same-named skills from other repos, so search ranking respects which project you're working in.",
+  "longDescription": "Ships **2 skills**, `optimize-skill-context` (Free up Claude Code's skill-description budget by setting SLASH_COMMAND_TOOL_CHAR_BUDGET=1), `restore-skill-descriptions` (Reverse `/optimize-skill-context` — clear SLASH_COMMAND_TOOL_CHAR_BUDGET so Claude Code resumes loading full skill descriptions in the system prompt).\n\nInstalls with `claude plugin install mcp-skill-search@claude-community` from `PettHa/mcp-skill-search`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "PettHa",
+    "url": "https://github.com/PettHa"
+  },
+  "externalUrl": "https://github.com/PettHa/mcp-skill-search/tree/237fe44a419b22fd738a33b85978ae1f2d1bb790",
+  "marketplace": "claude-community",
+  "version": "1.0.0",
+  "sourceRevision": "237fe44a419b22fd738a33b85978ae1f2d1bb790",
+  "contentDigest": "817043e7a239a29333be563b7413c7cde862e01f1649adbf953aa1c5b67e60e8",
+  "contentHash": "2489468de270e014",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/PettHa/mcp-skill-search.git",
+    "sha": "237fe44a419b22fd738a33b85978ae1f2d1bb790"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-11T06:31:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "discovery",
+            "type": "directory",
+            "children": [
+              {
+                "name": "findSkills.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "findSkills.js",
+                "type": "file"
+              },
+              {
+                "name": "findSkills.js.map",
+                "type": "file"
+              },
+              {
+                "name": "parseFrontmatter.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "parseFrontmatter.js",
+                "type": "file"
+              },
+              {
+                "name": "parseFrontmatter.js.map",
+                "type": "file"
+              },
+              {
+                "name": "types.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.js",
+                "type": "file"
+              },
+              {
+                "name": "types.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "parseSkillName.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "parseSkillName.js",
+                "type": "file"
+              },
+              {
+                "name": "parseSkillName.js.map",
+                "type": "file"
+              },
+              {
+                "name": "querySelect.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "querySelect.js",
+                "type": "file"
+              },
+              {
+                "name": "querySelect.js.map",
+                "type": "file"
+              },
+              {
+                "name": "scoring.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "scoring.js",
+                "type": "file"
+              },
+              {
+                "name": "scoring.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skillSearch.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "skillSearch.js",
+                "type": "file"
+              },
+              {
+                "name": "skillSearch.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "config.js",
+            "type": "file"
+          },
+          {
+            "name": "config.js.map",
+            "type": "file"
+          },
+          {
+            "name": "index.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.js",
+            "type": "file"
+          },
+          {
+            "name": "index.js.map",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "install-vscode.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "optimize-skill-context",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "restore-skill-descriptions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "discovery",
+            "type": "directory",
+            "children": [
+              {
+                "name": "findSkills.ts",
+                "type": "file"
+              },
+              {
+                "name": "parseFrontmatter.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "parseSkillName.ts",
+                "type": "file"
+              },
+              {
+                "name": "querySelect.ts",
+                "type": "file"
+              },
+              {
+                "name": "scoring.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skillSearch.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auto-go",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "malformed",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "minimal",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "no-name",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "norsk",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ship-to-prod",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "config.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "findSkills.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "integration.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "parseFrontmatter.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "parseSkillName.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "querySelect.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "scoring.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "sourceAware.test.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

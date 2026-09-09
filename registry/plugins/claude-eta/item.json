@@ -1,0 +1,1733 @@
+{
+  "slug": "claude-eta",
+  "name": "Claude Eta",
+  "type": "plugin",
+  "description": "Task duration tracker and estimator for Claude Code. Silently times every task, classifies it, and builds a local velocity profile. After 10 tasks of the same type, injects calibrated ETAs at the start of Claude's responses using your real project data. Detects repair loops by fingerprinting error content (not just count) and intervenes before tokens are wasted. Includes a hallucinated-estimate detector that corrects Claude's time claims inline. 100% local, zero telemetry, opt-in community baselines via Supabase.",
+  "longDescription": "Ships **1 command** and **9 hooks**.\n\n- **Commands** (1): `eta` (Show task duration stats — current session, history, or project averages)\n- **Hooks** (9): `SessionStart`, `UserPromptSubmit`, `PostToolUse`, `PostToolUseFailure`, `Stop`, `StopFailure`, `SubagentStart`, `SubagentStop`, and 1 more\n\nInstalls with `claude plugin install claude-eta@claude-community` from `mmmprod/claude-eta`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "hook": 9,
+    "command": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "mmmprod",
+    "url": "https://github.com/mmmprod"
+  },
+  "externalUrl": "https://github.com/mmmprod/claude-eta/tree/5448ae40b91386d0c4506e8ddffb98f5b62c6501",
+  "marketplace": "claude-community",
+  "version": "1.3.18",
+  "sourceRevision": "5448ae40b91386d0c4506e8ddffb98f5b62c6501",
+  "contentDigest": "bd69f5f53dead897424245e4540fc9f184682dbb8e6dcb2e326aacb644d7dc78",
+  "contentHash": "c939519700371eca",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/mmmprod/claude-eta.git",
+    "sha": "5448ae40b91386d0c4506e8ddffb98f5b62c6501"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-26T16:13:55Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "filter-scorecard-sarif.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "codeql.yml",
+                "type": "file"
+              },
+              {
+                "name": "dependency-review.yml",
+                "type": "file"
+              },
+              {
+                "name": "eta-demo.yml",
+                "type": "file"
+              },
+              {
+                "name": "refresh-baselines.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "scorecard.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".serena",
+        "type": "directory",
+        "children": [
+          {
+            "name": "project.local.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "admin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "dashboard.html",
+            "type": "file"
+          },
+          {
+            "name": "serve.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "eta.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "admin-export.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "admin-export.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "admin-export.js",
+                "type": "file"
+              },
+              {
+                "name": "admin-export.js.map",
+                "type": "file"
+              },
+              {
+                "name": "colors.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "colors.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "colors.js",
+                "type": "file"
+              },
+              {
+                "name": "colors.js.map",
+                "type": "file"
+              },
+              {
+                "name": "compare.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "compare.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "compare.js",
+                "type": "file"
+              },
+              {
+                "name": "compare.js.map",
+                "type": "file"
+              },
+              {
+                "name": "contribute.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "contribute.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "contribute.js",
+                "type": "file"
+              },
+              {
+                "name": "contribute.js.map",
+                "type": "file"
+              },
+              {
+                "name": "eta.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "eta.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "eta.js",
+                "type": "file"
+              },
+              {
+                "name": "eta.js.map",
+                "type": "file"
+              },
+              {
+                "name": "export.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "export.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "export.js",
+                "type": "file"
+              },
+              {
+                "name": "export.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "on-prompt.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-prompt.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-prompt.js",
+                "type": "file"
+              },
+              {
+                "name": "on-prompt.js.map",
+                "type": "file"
+              },
+              {
+                "name": "on-session-end.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-session-end.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-session-end.js",
+                "type": "file"
+              },
+              {
+                "name": "on-session-end.js.map",
+                "type": "file"
+              },
+              {
+                "name": "on-session-start.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-session-start.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-session-start.js",
+                "type": "file"
+              },
+              {
+                "name": "on-session-start.js.map",
+                "type": "file"
+              },
+              {
+                "name": "on-stop-failure.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-stop-failure.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-stop-failure.js",
+                "type": "file"
+              },
+              {
+                "name": "on-stop-failure.js.map",
+                "type": "file"
+              },
+              {
+                "name": "on-stop.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-stop.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-stop.js",
+                "type": "file"
+              },
+              {
+                "name": "on-stop.js.map",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-start.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-start.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-start.js",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-start.js.map",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-stop.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-stop.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-stop.js",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-stop.js.map",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-failure.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-failure.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-failure.js",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-failure.js.map",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-use.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-use.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-use.js",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-use.js.map",
+                "type": "file"
+              },
+              {
+                "name": "refine-eta.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "refine-eta.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "refine-eta.js",
+                "type": "file"
+              },
+              {
+                "name": "refine-eta.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "insights",
+            "type": "directory",
+            "children": [
+              {
+                "name": "breakdowns.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "breakdowns.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "breakdowns.js",
+                "type": "file"
+              },
+              {
+                "name": "breakdowns.js.map",
+                "type": "file"
+              },
+              {
+                "name": "correlations.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "correlations.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "correlations.js",
+                "type": "file"
+              },
+              {
+                "name": "correlations.js.map",
+                "type": "file"
+              },
+              {
+                "name": "format.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "format.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "format.js",
+                "type": "file"
+              },
+              {
+                "name": "format.js.map",
+                "type": "file"
+              },
+              {
+                "name": "index.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js.map",
+                "type": "file"
+              },
+              {
+                "name": "temporal.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "temporal.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "temporal.js",
+                "type": "file"
+              },
+              {
+                "name": "temporal.js.map",
+                "type": "file"
+              },
+              {
+                "name": "types.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "types.js",
+                "type": "file"
+              },
+              {
+                "name": "types.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "anonymize.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "anonymize.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "anonymize.js",
+            "type": "file"
+          },
+          {
+            "name": "anonymize.js.map",
+            "type": "file"
+          },
+          {
+            "name": "auto-eta.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "auto-eta.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "auto-eta.js",
+            "type": "file"
+          },
+          {
+            "name": "auto-eta.js.map",
+            "type": "file"
+          },
+          {
+            "name": "baseline-match.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "baseline-match.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "baseline-match.js",
+            "type": "file"
+          },
+          {
+            "name": "baseline-match.js.map",
+            "type": "file"
+          },
+          {
+            "name": "baselines-cache.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "baselines-cache.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "baselines-cache.js",
+            "type": "file"
+          },
+          {
+            "name": "baselines-cache.js.map",
+            "type": "file"
+          },
+          {
+            "name": "classify.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "classify.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "classify.js",
+            "type": "file"
+          },
+          {
+            "name": "classify.js.map",
+            "type": "file"
+          },
+          {
+            "name": "community-consent.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "community-consent.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "community-consent.js",
+            "type": "file"
+          },
+          {
+            "name": "community-consent.js.map",
+            "type": "file"
+          },
+          {
+            "name": "compat.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "compat.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "compat.js",
+            "type": "file"
+          },
+          {
+            "name": "compat.js.map",
+            "type": "file"
+          },
+          {
+            "name": "convert.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "convert.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "convert.js",
+            "type": "file"
+          },
+          {
+            "name": "convert.js.map",
+            "type": "file"
+          },
+          {
+            "name": "debug-log.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "debug-log.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "debug-log.js",
+            "type": "file"
+          },
+          {
+            "name": "debug-log.js.map",
+            "type": "file"
+          },
+          {
+            "name": "detector.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "detector.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "detector.js",
+            "type": "file"
+          },
+          {
+            "name": "detector.js.map",
+            "type": "file"
+          },
+          {
+            "name": "ephemeral.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "ephemeral.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "ephemeral.js",
+            "type": "file"
+          },
+          {
+            "name": "ephemeral.js.map",
+            "type": "file"
+          },
+          {
+            "name": "estimator.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "estimator.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "estimator.js",
+            "type": "file"
+          },
+          {
+            "name": "estimator.js.map",
+            "type": "file"
+          },
+          {
+            "name": "eta-accuracy.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "eta-accuracy.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "eta-accuracy.js",
+            "type": "file"
+          },
+          {
+            "name": "eta-accuracy.js.map",
+            "type": "file"
+          },
+          {
+            "name": "eval.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "eval.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "eval.js",
+            "type": "file"
+          },
+          {
+            "name": "eval.js.map",
+            "type": "file"
+          },
+          {
+            "name": "event-store.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "event-store.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "event-store.js",
+            "type": "file"
+          },
+          {
+            "name": "event-store.js.map",
+            "type": "file"
+          },
+          {
+            "name": "features.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "features.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "features.js",
+            "type": "file"
+          },
+          {
+            "name": "features.js.map",
+            "type": "file"
+          },
+          {
+            "name": "history-signature.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "history-signature.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "history-signature.js",
+            "type": "file"
+          },
+          {
+            "name": "history-signature.js.map",
+            "type": "file"
+          },
+          {
+            "name": "hook-model.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "hook-model.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "hook-model.js",
+            "type": "file"
+          },
+          {
+            "name": "hook-model.js.map",
+            "type": "file"
+          },
+          {
+            "name": "identity.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "identity.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "identity.js",
+            "type": "file"
+          },
+          {
+            "name": "identity.js.map",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector.js",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector.js.map",
+            "type": "file"
+          },
+          {
+            "name": "migrate.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "migrate.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "migrate.js",
+            "type": "file"
+          },
+          {
+            "name": "migrate.js.map",
+            "type": "file"
+          },
+          {
+            "name": "paths.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "paths.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "paths.js",
+            "type": "file"
+          },
+          {
+            "name": "paths.js.map",
+            "type": "file"
+          },
+          {
+            "name": "preferences.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "preferences.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "preferences.js",
+            "type": "file"
+          },
+          {
+            "name": "preferences.js.map",
+            "type": "file"
+          },
+          {
+            "name": "project-meta.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "project-meta.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "project-meta.js",
+            "type": "file"
+          },
+          {
+            "name": "project-meta.js.map",
+            "type": "file"
+          },
+          {
+            "name": "repo-metrics.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "repo-metrics.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "repo-metrics.js",
+            "type": "file"
+          },
+          {
+            "name": "repo-metrics.js.map",
+            "type": "file"
+          },
+          {
+            "name": "stats-cache.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "stats-cache.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "stats-cache.js",
+            "type": "file"
+          },
+          {
+            "name": "stats-cache.js.map",
+            "type": "file"
+          },
+          {
+            "name": "stats.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "stats.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "stats.js",
+            "type": "file"
+          },
+          {
+            "name": "stats.js.map",
+            "type": "file"
+          },
+          {
+            "name": "stdin.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "stdin.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "stdin.js",
+            "type": "file"
+          },
+          {
+            "name": "stdin.js.map",
+            "type": "file"
+          },
+          {
+            "name": "store.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "store.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "store.js",
+            "type": "file"
+          },
+          {
+            "name": "store.js.map",
+            "type": "file"
+          },
+          {
+            "name": "supabase.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "supabase.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "supabase.js",
+            "type": "file"
+          },
+          {
+            "name": "supabase.js.map",
+            "type": "file"
+          },
+          {
+            "name": "transcript-metrics.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "transcript-metrics.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "transcript-metrics.js",
+            "type": "file"
+          },
+          {
+            "name": "transcript-metrics.js.map",
+            "type": "file"
+          },
+          {
+            "name": "turn-factory.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "turn-factory.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "turn-factory.js",
+            "type": "file"
+          },
+          {
+            "name": "turn-factory.js.map",
+            "type": "file"
+          },
+          {
+            "name": "types.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "types.js",
+            "type": "file"
+          },
+          {
+            "name": "types.js.map",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-03-20-admin-dashboard.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-20-auto-eta-plan.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-21-maturity-tracker.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-03-20-auto-eta-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "eta-demo.cast",
+            "type": "file"
+          },
+          {
+            "name": "eta-demo.gif",
+            "type": "file"
+          },
+          {
+            "name": "eta-demo.mp4",
+            "type": "file"
+          },
+          {
+            "name": "eval-snapshot.md",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector-demo.cast",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector-demo.gif",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector-demo.mp4",
+            "type": "file"
+          },
+          {
+            "name": "product-brief.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bench-hooks.mjs",
+            "type": "file"
+          },
+          {
+            "name": "bench-hooks.sh",
+            "type": "file"
+          },
+          {
+            "name": "build-eta-gif.sh",
+            "type": "file"
+          },
+          {
+            "name": "eta-demo-script.sh",
+            "type": "file"
+          },
+          {
+            "name": "render-eta-demo-cast.mjs",
+            "type": "file"
+          },
+          {
+            "name": "run-tests.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "admin-export.ts",
+                "type": "file"
+              },
+              {
+                "name": "colors.ts",
+                "type": "file"
+              },
+              {
+                "name": "compare.ts",
+                "type": "file"
+              },
+              {
+                "name": "contribute.ts",
+                "type": "file"
+              },
+              {
+                "name": "eta.ts",
+                "type": "file"
+              },
+              {
+                "name": "export.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "on-prompt.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-session-end.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-session-start.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-stop-failure.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-stop.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-start.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-stop.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-failure.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-tool-use.ts",
+                "type": "file"
+              },
+              {
+                "name": "refine-eta.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "insights",
+            "type": "directory",
+            "children": [
+              {
+                "name": "breakdowns.ts",
+                "type": "file"
+              },
+              {
+                "name": "correlations.ts",
+                "type": "file"
+              },
+              {
+                "name": "format.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "temporal.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "anonymize.ts",
+            "type": "file"
+          },
+          {
+            "name": "auto-eta.ts",
+            "type": "file"
+          },
+          {
+            "name": "baseline-match.ts",
+            "type": "file"
+          },
+          {
+            "name": "baselines-cache.ts",
+            "type": "file"
+          },
+          {
+            "name": "classify.ts",
+            "type": "file"
+          },
+          {
+            "name": "community-consent.ts",
+            "type": "file"
+          },
+          {
+            "name": "compat.ts",
+            "type": "file"
+          },
+          {
+            "name": "convert.ts",
+            "type": "file"
+          },
+          {
+            "name": "debug-log.ts",
+            "type": "file"
+          },
+          {
+            "name": "detector.ts",
+            "type": "file"
+          },
+          {
+            "name": "ephemeral.ts",
+            "type": "file"
+          },
+          {
+            "name": "estimator.ts",
+            "type": "file"
+          },
+          {
+            "name": "eta-accuracy.ts",
+            "type": "file"
+          },
+          {
+            "name": "eval.ts",
+            "type": "file"
+          },
+          {
+            "name": "event-store.ts",
+            "type": "file"
+          },
+          {
+            "name": "features.ts",
+            "type": "file"
+          },
+          {
+            "name": "history-signature.ts",
+            "type": "file"
+          },
+          {
+            "name": "hook-model.ts",
+            "type": "file"
+          },
+          {
+            "name": "identity.ts",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector.ts",
+            "type": "file"
+          },
+          {
+            "name": "migrate.ts",
+            "type": "file"
+          },
+          {
+            "name": "paths.ts",
+            "type": "file"
+          },
+          {
+            "name": "preferences.ts",
+            "type": "file"
+          },
+          {
+            "name": "project-meta.ts",
+            "type": "file"
+          },
+          {
+            "name": "repo-metrics.ts",
+            "type": "file"
+          },
+          {
+            "name": "stats-cache.ts",
+            "type": "file"
+          },
+          {
+            "name": "stats.ts",
+            "type": "file"
+          },
+          {
+            "name": "stdin.ts",
+            "type": "file"
+          },
+          {
+            "name": "store.ts",
+            "type": "file"
+          },
+          {
+            "name": "supabase.ts",
+            "type": "file"
+          },
+          {
+            "name": "transcript-metrics.ts",
+            "type": "file"
+          },
+          {
+            "name": "turn-factory.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "supabase",
+        "type": "directory",
+        "children": [
+          {
+            "name": "functions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "refresh-baselines",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "migrations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "20260319123000_initial_schema.sql",
+                "type": "file"
+              },
+              {
+                "name": "20260321_dedup_key.sql",
+                "type": "file"
+              },
+              {
+                "name": "20260321170000_model_aware_baselines.sql",
+                "type": "file"
+              },
+              {
+                "name": "20260321180000_source_turn_count.sql",
+                "type": "file"
+              },
+              {
+                "name": "20260322_baselines_filter_record_unit.sql",
+                "type": "file"
+              },
+              {
+                "name": "20260420000000_fix_refresh_baselines_truncate.sql",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "helpers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "event-store-close-worker.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "admin-export.test.js",
+            "type": "file"
+          },
+          {
+            "name": "anonymize-property.test.js",
+            "type": "file"
+          },
+          {
+            "name": "anonymize.test.js",
+            "type": "file"
+          },
+          {
+            "name": "auto-eta.test.js",
+            "type": "file"
+          },
+          {
+            "name": "baselines-cache.test.js",
+            "type": "file"
+          },
+          {
+            "name": "bench-hooks.test.js",
+            "type": "file"
+          },
+          {
+            "name": "classify.test.js",
+            "type": "file"
+          },
+          {
+            "name": "community-cli.test.js",
+            "type": "file"
+          },
+          {
+            "name": "compare.test.js",
+            "type": "file"
+          },
+          {
+            "name": "compat.test.js",
+            "type": "file"
+          },
+          {
+            "name": "contribute.test.js",
+            "type": "file"
+          },
+          {
+            "name": "debug-log.test.js",
+            "type": "file"
+          },
+          {
+            "name": "detector.test.js",
+            "type": "file"
+          },
+          {
+            "name": "estimator.test.js",
+            "type": "file"
+          },
+          {
+            "name": "eta-accuracy.test.js",
+            "type": "file"
+          },
+          {
+            "name": "eta-cli.test.js",
+            "type": "file"
+          },
+          {
+            "name": "eval.test.js",
+            "type": "file"
+          },
+          {
+            "name": "event-store.test.js",
+            "type": "file"
+          },
+          {
+            "name": "export.test.js",
+            "type": "file"
+          },
+          {
+            "name": "identity.test.js",
+            "type": "file"
+          },
+          {
+            "name": "insights-breakdowns.test.js",
+            "type": "file"
+          },
+          {
+            "name": "insights-correlations.test.js",
+            "type": "file"
+          },
+          {
+            "name": "insights-integration.test.js",
+            "type": "file"
+          },
+          {
+            "name": "insights-temporal.test.js",
+            "type": "file"
+          },
+          {
+            "name": "legacy-paths.test.js",
+            "type": "file"
+          },
+          {
+            "name": "loop-detector.test.js",
+            "type": "file"
+          },
+          {
+            "name": "migrate.test.js",
+            "type": "file"
+          },
+          {
+            "name": "paths.test.js",
+            "type": "file"
+          },
+          {
+            "name": "plugin-package.test.js",
+            "type": "file"
+          },
+          {
+            "name": "preferences-v2.test.js",
+            "type": "file"
+          },
+          {
+            "name": "prompt-hook.test.js",
+            "type": "file"
+          },
+          {
+            "name": "repo-metrics.test.js",
+            "type": "file"
+          },
+          {
+            "name": "session-start.test.js",
+            "type": "file"
+          },
+          {
+            "name": "stats-cache.test.js",
+            "type": "file"
+          },
+          {
+            "name": "stats.test.js",
+            "type": "file"
+          },
+          {
+            "name": "stop-hook.test.js",
+            "type": "file"
+          },
+          {
+            "name": "store.test.js",
+            "type": "file"
+          },
+          {
+            "name": "subagent-hooks.test.js",
+            "type": "file"
+          },
+          {
+            "name": "supabase-integration.test.js",
+            "type": "file"
+          },
+          {
+            "name": "supabase.test.js",
+            "type": "file"
+          },
+          {
+            "name": "tool-failure-hook.test.js",
+            "type": "file"
+          },
+          {
+            "name": "tool-use-hook.test.js",
+            "type": "file"
+          },
+          {
+            "name": "transcript-metrics.test.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".coderabbit.yaml",
+        "type": "file"
+      },
+      {
+        "name": ".editorconfig",
+        "type": "file"
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".prettierrc",
+        "type": "file"
+      },
+      {
+        "name": ".release-please-manifest.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "release-please-config.json",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      }
+    ]
+  }
+}

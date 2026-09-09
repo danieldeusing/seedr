@@ -1,0 +1,2800 @@
+{
+  "slug": "trabuco",
+  "name": "Trabuco",
+  "type": "plugin",
+  "description": "Trabuco generates production-ready Java multi-module Maven projects and migrates existing Spring Boot 2.x/3.x repos into the same shape. It exposes both halves to Claude Code: 8 skills (/trabuco:new-project, /trabuco:design-system, /trabuco:add-module, /trabuco:extend, /trabuco:migrate, /trabuco:doctor, /trabuco:suggest, /trabuco:sync), 17 subagents (architect + AI-agent expert + a 15-agent migration team), and a 25-tool MCP server.\n\nThe generated projects are opinionated and production-grade by default: Spring Boot 3 with Spring Data JDBC (no JPA), Flyway migrations, Testcontainers, Resilience4j circuit breakers, Google Java Format enforced by Spotless, ArchUnit boundary tests, RFC 7807 Problem Details, virtual threads, OpenTelemetry tracing, and the modular layout (Model / SQLDatastore / NoSQLDatastore / Shared / API / Worker / EventConsumer / AIAgent) with compile-time boundaries. A first-class AI Agent module ships scaffolding for tool calling, guardrails, MCP server endpoints, A2A protocol, and knowledge-base integration on Spring\nAlongside the code, Trabuco lays down per-agent rule files (CLAUDE.md, AGENTS.md, .cursor/rules, .github/instructions) that teach the major coding agents the project's architecture so they can extend it correctly without re-explaining conventions every session.",
+  "longDescription": "Installs with `claude plugin install trabuco@claude-community` from `arianlopezc/Trabuco`.\n\n████████╗██████╗ █████╗ ██████╗ ██╗ ██╗ ██████╗ ██████╗ ╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗██║ ██║██╔════╝██╔═══██╗ ██║ ██████╔╝███████║██████╔╝██║ ██║██║ ██║ ██║ ██║ ██╔══██╗██╔══██║██╔══██╗██║ ██║██║ ██║ ██║ ██║ ██║ ██║██║ ██║██████╔╝╚██████╔╝╚██████╗╚██████╔╝ ╚═╝ ╚═╝ ╚═╝╚═╝ ╚═╝╚═════╝ ╚═════╝ ╚═════╝ ╚═════╝",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {},
+  "sourceType": "community",
+  "author": {
+    "name": "Community"
+  },
+  "externalUrl": "https://github.com/arianlopezc/Trabuco/tree/27f3c315c9f57a23b380b2ea51c8dc90869331e5",
+  "marketplace": "claude-community",
+  "sourceRevision": "27f3c315c9f57a23b380b2ea51c8dc90869331e5",
+  "contentDigest": "ed2f48dd6e42b5bf67a90b1b9c83c4b1898c81bacf6c00cbcb6892efafd86b23",
+  "contentHash": "65e981f918b6dac2",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/arianlopezc/Trabuco.git",
+    "sha": "27f3c315c9f57a23b380b2ea51c8dc90869331e5"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-27T18:29:44Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "cmd",
+        "type": "directory",
+        "children": [
+          {
+            "name": "trabuco",
+            "type": "directory",
+            "children": [
+              {
+                "name": "main.go",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "manual.md",
+            "type": "file"
+          },
+          {
+            "name": "migration-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "internal",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai",
+            "type": "directory",
+            "children": [
+              {
+                "name": "anthropic.go",
+                "type": "file"
+              },
+              {
+                "name": "cost.go",
+                "type": "file"
+              },
+              {
+                "name": "factory.go",
+                "type": "file"
+              },
+              {
+                "name": "models_api_test.go",
+                "type": "file"
+              },
+              {
+                "name": "models_api.go",
+                "type": "file"
+              },
+              {
+                "name": "openrouter.go",
+                "type": "file"
+              },
+              {
+                "name": "provider_test.go",
+                "type": "file"
+              },
+              {
+                "name": "provider.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auth",
+            "type": "directory",
+            "children": [
+              {
+                "name": "credentials.go",
+                "type": "file"
+              },
+              {
+                "name": "manager.go",
+                "type": "file"
+              },
+              {
+                "name": "storage.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cache",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cache.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "add.go",
+                "type": "file"
+              },
+              {
+                "name": "auth.go",
+                "type": "file"
+              },
+              {
+                "name": "doctor.go",
+                "type": "file"
+              },
+              {
+                "name": "init.go",
+                "type": "file"
+              },
+              {
+                "name": "mcp.go",
+                "type": "file"
+              },
+              {
+                "name": "migrate.go",
+                "type": "file"
+              },
+              {
+                "name": "review.go",
+                "type": "file"
+              },
+              {
+                "name": "root.go",
+                "type": "file"
+              },
+              {
+                "name": "sync.go",
+                "type": "file"
+              },
+              {
+                "name": "version.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "metadata_test.go",
+                "type": "file"
+              },
+              {
+                "name": "metadata.go",
+                "type": "file"
+              },
+              {
+                "name": "modules_test.go",
+                "type": "file"
+              },
+              {
+                "name": "modules.go",
+                "type": "file"
+              },
+              {
+                "name": "project.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "doctor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "checks_test.go",
+                "type": "file"
+              },
+              {
+                "name": "checks.go",
+                "type": "file"
+              },
+              {
+                "name": "detector_test.go",
+                "type": "file"
+              },
+              {
+                "name": "detector.go",
+                "type": "file"
+              },
+              {
+                "name": "doctor_test.go",
+                "type": "file"
+              },
+              {
+                "name": "doctor.go",
+                "type": "file"
+              },
+              {
+                "name": "fixer_test.go",
+                "type": "file"
+              },
+              {
+                "name": "fixer.go",
+                "type": "file"
+              },
+              {
+                "name": "types.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adder_test.go",
+                "type": "file"
+              },
+              {
+                "name": "adder.go",
+                "type": "file"
+              },
+              {
+                "name": "backup.go",
+                "type": "file"
+              },
+              {
+                "name": "compilation_test.go",
+                "type": "file"
+              },
+              {
+                "name": "docs.go",
+                "type": "file"
+              },
+              {
+                "name": "generator_test.go",
+                "type": "file"
+              },
+              {
+                "name": "generator.go",
+                "type": "file"
+              },
+              {
+                "name": "java.go",
+                "type": "file"
+              },
+              {
+                "name": "pom.go",
+                "type": "file"
+              },
+              {
+                "name": "review_checks_rules_test.go",
+                "type": "file"
+              },
+              {
+                "name": "review_checks_test.go",
+                "type": "file"
+              },
+              {
+                "name": "review.go",
+                "type": "file"
+              },
+              {
+                "name": "skills_test.go",
+                "type": "file"
+              },
+              {
+                "name": "skills.go",
+                "type": "file"
+              },
+              {
+                "name": "stop_hook_claude_test.go",
+                "type": "file"
+              },
+              {
+                "name": "stop_hook_cursor_codex_test.go",
+                "type": "file"
+              },
+              {
+                "name": "stop_hook_roundtrip_test.go",
+                "type": "file"
+              },
+              {
+                "name": "updaters.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "java",
+            "type": "directory",
+            "children": [
+              {
+                "name": "detector_darwin.go",
+                "type": "file"
+              },
+              {
+                "name": "detector_linux.go",
+                "type": "file"
+              },
+              {
+                "name": "detector_test.go",
+                "type": "file"
+              },
+              {
+                "name": "detector_windows.go",
+                "type": "file"
+              },
+              {
+                "name": "detector.go",
+                "type": "file"
+              },
+              {
+                "name": "version.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "expert_prompts.go",
+                "type": "file"
+              },
+              {
+                "name": "expert_resources.go",
+                "type": "file"
+              },
+              {
+                "name": "migration_tools.go",
+                "type": "file"
+              },
+              {
+                "name": "patterns_test.go",
+                "type": "file"
+              },
+              {
+                "name": "patterns.go",
+                "type": "file"
+              },
+              {
+                "name": "server.go",
+                "type": "file"
+              },
+              {
+                "name": "sync.go",
+                "type": "file"
+              },
+              {
+                "name": "tools.go",
+                "type": "file"
+              },
+              {
+                "name": "workspace_test.go",
+                "type": "file"
+              },
+              {
+                "name": "workspace.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "migration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "orchestrator",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "filewrites_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "filewrites.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "orchestrator.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scanner",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "scanner.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specialists",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "activator",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "specialist.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "assessor",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "prompt.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schema.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "specialist.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "finalizer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "specialist.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "llm",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "llm.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "provider.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "prompts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "aiagent.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "api.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "datastore.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "deployment.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "eventconsumer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "model.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prompts.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "shared.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tests.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "worker.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "registry",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "registry.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "skeleton",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "generator.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "specialist.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "base.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "default.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "state",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lock.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "types",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "types_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "validation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "funnel_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "funnel.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vcs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "vcs_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vcs.go",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "prompts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "add_test.go",
+                "type": "file"
+              },
+              {
+                "name": "add.go",
+                "type": "file"
+              },
+              {
+                "name": "prompts.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sync",
+            "type": "directory",
+            "children": [
+              {
+                "name": "jurisdiction_test.go",
+                "type": "file"
+              },
+              {
+                "name": "jurisdiction.go",
+                "type": "file"
+              },
+              {
+                "name": "plan.go",
+                "type": "file"
+              },
+              {
+                "name": "sync_test.go",
+                "type": "file"
+              },
+              {
+                "name": "sync.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates_test.go",
+                "type": "file"
+              },
+              {
+                "name": "templates.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "docker.go",
+                "type": "file"
+              },
+              {
+                "name": "maven.go",
+                "type": "file"
+              },
+              {
+                "name": "strings_test.go",
+                "type": "file"
+              },
+              {
+                "name": "strings.go",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "npm",
+        "type": "directory",
+        "children": [
+          {
+            "name": "install.js",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "run.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".claude-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "trabuco-ai-agent-expert.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-architect.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-activator.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-aiagent.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-api.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-assessor.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-config.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-datastore.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-deployment.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-eventconsumer.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-finalizer.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-model.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-orchestrator.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-shared.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-skeleton-builder.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-tests.md",
+                "type": "file"
+              },
+              {
+                "name": "trabuco-migration-worker.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "limitations.md",
+                "type": "file"
+              },
+              {
+                "name": "module-catalog.md",
+                "type": "file"
+              },
+              {
+                "name": "pattern-recipes.md",
+                "type": "file"
+              },
+              {
+                "name": "philosophy.md",
+                "type": "file"
+              },
+              {
+                "name": "when-not-to-use.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks.json",
+                "type": "file"
+              },
+              {
+                "name": "post-generate-workspace.sh",
+                "type": "file"
+              },
+              {
+                "name": "post-init-project.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-start.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "add-module",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "design-system",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "doctor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "extend",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "migrate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "new-project",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "suggest",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": ".mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "e2e",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test_full_build.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai",
+            "type": "directory",
+            "children": [
+              {
+                "name": "prompts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "add-a2a-skill.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-endpoint.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-entity.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-event.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-guardrail-rule.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-job.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-knowledge-entry.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-migration.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-repository-method.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-service.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-test.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-tool.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "code-review.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extending-the-project.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "JAVA_CODE_QUALITY.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "testing-guide.md.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "checkpoint.json.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "README.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "code-reviewer.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "performance-reviewer.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt-reviewer.md.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "format.sh.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "require-review.sh.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "HOOKS.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "settings.json.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "require-review.sh.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "config.toml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "hooks.json.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copilot",
+            "type": "directory",
+            "children": [
+              {
+                "name": "instructions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "java.instructions.md.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "copilot-setup-steps.yml.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cursor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "require-review.sh.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rules",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "java.mdc.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks.json.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "docker",
+            "type": "directory",
+            "children": [
+              {
+                "name": "localstack-init",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ready.d",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "init-sqs.sh.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "aiagent.Dockerfile.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "api.Dockerfile.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "docker-compose.yml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "dockerignore.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "env.example.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "eventconsumer.Dockerfile.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "worker.Dockerfile.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AGENTS.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "CLAUDE.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "gitignore.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "README.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "github",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "review-checks.sh.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "workflows",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ci.yml.tmpl",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "idea",
+            "type": "directory",
+            "children": [
+              {
+                "name": "run",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "AIAgent__Maven_.run.xml.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "API__Maven_.run.xml.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EventConsumer__Maven_.run.xml.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Worker__Maven_.run.xml.tmpl",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "java",
+            "type": "directory",
+            "children": [
+              {
+                "name": "aiagent",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PrimaryAgent.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SpecialistAgent.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SpecialistAgentTool.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "brain",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "MemoryEntry.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ReflectionDecision.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ReflectionService.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Scratchpad.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ChatClientConfig.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "McpServerConfig.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WebConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "event",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "WebhookManager.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WebhookRegistration.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "knowledge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "KnowledgeBase.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "KnowledgeTools.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "model",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "AskRequest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "AskResponse.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ChatRequest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ChatResponse.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "JsonRpcRequest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "JsonRpcResponse.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WebhookRegisterRequest.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "protocol",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "A2AController.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "AgentRestController.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "DiscoveryController.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "StreamingController.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WebhookController.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "resources",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "agent.json.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "application.yml.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "logback-spring.xml.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "security",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ApiKeyAuthFilter.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CallerContext.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CallerIdentity.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CorrelationIdFilter.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "InputGuardrailAdvisor.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OutputGuardrailAdvisor.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RateLimiter.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RequireScope.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ScopeEnforcer.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ScopeInterceptor.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "task",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "TaskEvent.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TaskManager.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TaskRecord.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "test",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "CallerIdentityTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CorrelationIdFilterTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OutputGuardrailTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PlaceholderToolsTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RateLimiterTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ReflectionDecisionTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ScopeEnforcerTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ScratchpadTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TaskManagerTest.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tool",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderTools.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "AIAgentApplication.java.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "api",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "CorrelationIdFilter.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GlobalExceptionHandler.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OpenAPIConfig.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SecurityHeadersFilter.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WebConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "controller",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "EventController.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HealthController.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PlaceholderController.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PlaceholderJobController.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "resources",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "application.yml.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "logback-spring.xml.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Application.java.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "eventconsumer",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "KafkaConfig.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PubSubConfig.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RabbitConfig.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SqsConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "listener",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderEventListener.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "resources",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "application.yml.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "logback-spring.xml.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "test",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderEventListenerTest.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "EventConsumerApplication.java.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "events",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PubSubPublisherConfig.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RabbitConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "EventPublisher.java.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jobs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "PlaceholderJobService.java.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "model",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dto",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderRequest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PlaceholderResponse.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "entities",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "Placeholder.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PlaceholderDocument.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PlaceholderRecord.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "events",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderCreatedEvent.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PlaceholderEvent.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "jobs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderJobRequest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ProcessPlaceholderJobRequest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ProcessPlaceholderJobRequestHandler.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ImmutableStyle.java.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "nosqldatastore",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "NoSQLConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "repository",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderDocumentRepository.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "resources",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "application.yml.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "test",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderDocumentRepositoryTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TestConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "shared",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "CircuitBreakerConfiguration.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SharedConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "resources",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "application.yml.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "service",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderService.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "test",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ArchitectureTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PlaceholderServiceTest.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "sqldatastore",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "DatabaseConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "migration",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "V1__baseline.sql.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "repository",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderRepository.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "resources",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "application.yml.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "test",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PlaceholderRepositoryTest.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TestConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "worker",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "JobRunrConfig.java.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RecurringJobsConfig.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "handler",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ProcessPlaceholderJobRequestHandler.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "resources",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "application.yml.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "logback-spring.xml.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "test",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ProcessPlaceholderJobRequestHandlerTest.java.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "WorkerApplication.java.tmpl",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "pom",
+            "type": "directory",
+            "children": [
+              {
+                "name": "aiagent.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "api.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "eventconsumer.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "events.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "jobs.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "model.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "nosqldatastore.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "parent.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "shared.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "sqldatastore.xml.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "worker.xml.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "add-a2a-skill.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-endpoint.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-entity.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-event.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-guardrail-rule.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-job.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-knowledge-entry.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-migration.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-repository-method.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-service.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-test.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "add-tool.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "commit.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "pr.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "review-performance.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "review-prompts.body.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "review.body.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "trabuco",
+            "type": "directory",
+            "children": [
+              {
+                "name": "review.config.json.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "embed.go",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "testdata",
+        "type": "directory",
+        "children": [
+          {
+            "name": "migration-fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "spring-boot-27-gradle",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "main",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "java",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "com",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "acme",
+                                    "type": "directory",
+                                    "children": [
+                                      {
+                                        "name": "inventory",
+                                        "type": "directory",
+                                        "children": [
+                                          {
+                                            "name": "InventoryApplication.java",
+                                            "type": "file"
+                                          },
+                                          {
+                                            "name": "Item.java",
+                                            "type": "file"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "resources",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "application.properties",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "build.gradle",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "settings.gradle",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "spring-boot-27-kafka",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "main",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "java",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "com",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "acme",
+                                    "type": "directory",
+                                    "children": [
+                                      {
+                                        "name": "orders",
+                                        "type": "directory",
+                                        "children": [
+                                          {
+                                            "name": "consumer",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "OrderConsumer.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "event",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "OrderPlacedEvent.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "publisher",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "OrderPublisher.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "OrdersEventsApplication.java",
+                                            "type": "file"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "resources",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "application.properties",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pom.xml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "spring-boot-27-mongo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "main",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "java",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "com",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "acme",
+                                    "type": "directory",
+                                    "children": [
+                                      {
+                                        "name": "blog",
+                                        "type": "directory",
+                                        "children": [
+                                          {
+                                            "name": "post",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "Post.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "PostController.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "PostRepository.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "PostService.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "user",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "User.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "UserRepository.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "UserService.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "BlogApplication.java",
+                                            "type": "file"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "resources",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "application.properties",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pom.xml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "spring-boot-27-monolith",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".github",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "workflows",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "ci.yml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "main",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "java",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "com",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "acme",
+                                    "type": "directory",
+                                    "children": [
+                                      {
+                                        "name": "shop",
+                                        "type": "directory",
+                                        "children": [
+                                          {
+                                            "name": "customer",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "Customer.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "CustomerController.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "CustomerNotFoundException.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "CustomerRepository.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "CustomerService.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "jobs",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "DailyOrderReportJob.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "order",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "Order.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "OrderController.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "OrderLine.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "OrderRepository.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "OrderService.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "web",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "ErrorResponse.java",
+                                                "type": "file"
+                                              },
+                                              {
+                                                "name": "GlobalExceptionHandler.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": "ShopApplication.java",
+                                            "type": "file"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "resources",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "application-prod.properties",
+                                "type": "file"
+                              },
+                              {
+                                "name": "application.properties",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "test",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "java",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "com",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "acme",
+                                    "type": "directory",
+                                    "children": [
+                                      {
+                                        "name": "shop",
+                                        "type": "directory",
+                                        "children": [
+                                          {
+                                            "name": "customer",
+                                            "type": "directory",
+                                            "children": [
+                                              {
+                                                "name": "CustomerServiceTest.java",
+                                                "type": "file"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pom.xml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "gen_test.go",
+        "type": "file"
+      },
+      {
+        "name": "go.mod",
+        "type": "file"
+      },
+      {
+        "name": "go.sum",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "Makefile",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      }
+    ]
+  }
+}

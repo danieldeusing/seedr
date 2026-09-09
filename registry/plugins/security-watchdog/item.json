@@ -1,0 +1,124 @@
+{
+  "slug": "security-watchdog",
+  "name": "Security Watchdog",
+  "type": "plugin",
+  "description": "> Automatic security scanner for Claude Code plugins — detects new or updated extensions at session start and scans them for prompt injection, malicious hook scripts, and data exfiltration.\n\n## The Problem\n\nLLM extension ecosystems are a novel attack surface. Traditional security tooling does not cover two threats unique to AI extensions:\n\n- **Host attacks** — hook scripts run shell commands automatically on session start, with full user privileges\n- **Mind attacks** — skill and command files are injected directly into the model's reasoning context, enabling prompt injection\n\nNo existing security scanner understands these threat classes. Security Watchdog is purpose-built for them.\n\n## How It Works\n\n```\nYou run: /plugin install someone/new-plugin\n↓\nNext session starts (SessionStart hook fires)\n↓\ncheck-new-plugins.sh diffs installed_plugins.json\nagainst a snapshot from the previous session\n↓\nNew/updated plugin detected\n↓\nInjects into session context:\n\"SECURITY WATCHDOG ALERT: forge@forge was installed.\nRun /scan-plugin forge@forge before proceeding.\"\n↓\nClaude runs /scan-plugin, reads all plugin files,\napplies security checks, and reports findings\n```\n\nThe snapshot is updated on detection — each change event fires the alert exactly once.",
+  "longDescription": "Ships **1 skill**, **1 command** and **1 hook**.\n\n- **Skills** (1): `plugin-security` (LLM extension security analysis — threat model, attack patterns, and heuristics for evaluating Claude Code plugins and skills…)\n- **Commands** (1): `scan-plugin` (Security scan a specific installed Claude Code plugin for prompt injection, malicious hooks, data exfiltration, and permission abuse)\n- **Hooks** (1): `SessionStart`\n\nInstalls with `claude plugin install security-watchdog@claude-community` from `Entelligentsia/skillforge` (`security-watchdog`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "hook": 1,
+    "command": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Entelligentsia",
+    "url": "https://github.com/Entelligentsia"
+  },
+  "externalUrl": "https://github.com/Entelligentsia/skillforge/tree/1abfa8b6f22d3116b6ccd0147fbeb217b06f7e38/security-watchdog",
+  "marketplace": "claude-community",
+  "version": "0.1.0",
+  "sourceRevision": "1abfa8b6f22d3116b6ccd0147fbeb217b06f7e38",
+  "contentDigest": "c6c7db2a0334bd483bb78de80ab0fdfcde9f25fbef18c7cc43763b3f2e311133",
+  "contentHash": "9e1620b244f1dfa3",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "security-watchdog",
+    "url": "https://github.com/Entelligentsia/skillforge.git",
+    "ref": "main",
+    "sha": "1abfa8b6f22d3116b6ccd0147fbeb217b06f7e38"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "security-watchdog/LICENSE"
+  },
+  "updatedAt": "2026-07-27T06:30:06Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "banner.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scan-plugin.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-new-plugins.js",
+            "type": "file"
+          },
+          {
+            "name": "check-new-plugins.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin-security",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "EXAMPLE_USECASES.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

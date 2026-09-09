@@ -1,0 +1,4113 @@
+{
+  "slug": "game-of-cards",
+  "name": "Game Of Cards",
+  "type": "plugin",
+  "description": "**Game of Cards (GoC)** — agile for the age of agents. GoC turns work\ninto durable, inspectable Markdown cards that humans and AI agents\ncollaborate on. Agents pull cards autonomously, work them under a\nper-card Definition of Done, and close them via a DoD-gated\n`finish-card` skill; humans steer by curating the queue and resolving\ndecision gates. Lineage: XP user stories + Kanban pull + Scrum DoD.\nThe plugin ships 14 skills (`kickoff`, `scan-deck`, `create-card`,\n`finish-card`, `pull-card`, `audit-deck`, `refine-deck`, `standup`,\n`retrospective`, …) and 3 runtime hooks that surface active cards,\nroute work-initiating prompts, and prompt the agent to consider\nfiling a generalization card after code-mutating turns. Self-contained\n— skills invoke plain `goc <verb>` and the engine ships with the\nplugin; no `pipx install` or host-side package step required (the\nplugin's bundled CLI is on PATH automatically while the plugin is\nenabled).",
+  "longDescription": "Ships **15 skills**.\n\n- **Skills** (15): `advance-card` (Mutate a card's status (open / active / blocked / disproved / superseded — everything except `done`)), `audit-deck` (Hunt for one previously-undocumented defect, derivation gap, doc drift, missing test or wrong concept), `card-schema` (Card schema reference — required/optional fields, status/stage/contribution/human_gate enums, canonical tags with predicates, DoD detection, relationship invariants, title naming…), `claude-kickoff` (Claude Code-specific complement to the generic kickoff skill — handle Bash(goc:*) permission grant, /plugin install cadence, and CLAUDE.md…), `create-card` (File a new card with frontmatter, DoD scaffold, and (for bugs) reproduce.py stub), `decide-card` (Record a decision (what + why) on a parked card and lower the human gate from `decision` or…), `deck` (Front door for the deck — the operating substrate for ALL persistent work), `finish-card` (Close a card with DoD enforcement, log.md closure entry, and project-specific post-close / commit handoff), and 7 more\n\nInstalls with `claude plugin install game-of-cards@claude-community` from `zauberzeug/game-of-cards`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Community"
+  },
+  "externalUrl": "https://github.com/zauberzeug/game-of-cards/tree/4e4c5a10f1703e81c1a36236786ca0a3fbfcf27f",
+  "marketplace": "claude-community",
+  "sourceRevision": "4e4c5a10f1703e81c1a36236786ca0a3fbfcf27f",
+  "contentDigest": "720cae70ccf66994e78bccb3a1068797a6135dc2acd4e9a5bd3133b04d9db430",
+  "contentHash": "5f76e439e314d506",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/zauberzeug/game-of-cards.git",
+    "sha": "4e4c5a10f1703e81c1a36236786ca0a3fbfcf27f"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-11T15:26:23Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "deck_prompt_router.py",
+                "type": "file"
+              },
+              {
+                "name": "deck_session_start.py",
+                "type": "file"
+              },
+              {
+                "name": "pattern_generalization_check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "advance-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "card-schema",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "schema.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-kickoff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "create-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "decide-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "finish-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kickoff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "next-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pull-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "refine-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "retrospective",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scan-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "standup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "_goc-bootstrap.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex",
+        "type": "directory",
+        "children": [
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "advance-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "card-schema",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "schema.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "create-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "decide-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "finish-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kickoff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "next-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pull-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "refine-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "retrospective",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scan-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "standup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "_goc-bootstrap.sh",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".game-of-cards",
+        "type": "directory",
+        "children": [
+          {
+            "name": "deck",
+            "type": "directory",
+            "children": [
+              {
+                "name": "add-contributing-md-with-setup-pr-and-release-flow",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "add-openclaw-coverage-to-readme-personas-and-website",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "add-openclaw-install-section-to-llms-txt",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "add-plausible-analytics-to-marketing-site",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "add-plugin-update-instructions-to-marketplace-readme",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "add-privacy-policy-page-for-marketplace-submission",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "add-readme-to-claude-code-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "add-worker-field-and-filter-to-cards",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "advance-command-can-create-value-graph-cycles",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "agent-flags-unfiled-pattern-generalization-cards-before-stop",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "align-skill-names-with-agile-vocabulary",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "author-openclaw-kickoff-skill-for-host-specific-onboarding",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "auto-publish-npm-and-clawhub-on-tag-push",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "automate-version-bumping-from-git-tag-at-release-time",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "bootstrap-error-when-cli-not-on-path",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "build-game-of-cards-project-website",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "bundle-goc-engine-inside-plugin-payload",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "card-rename-leaves-old-title-in-body-and-skips-log-entry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "card-skills-document-html-as-sibling-artifact-pattern",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ci-calls-sync-plugin-assets-check-script",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "clarify-agent-unblockable-blocked-cards",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-install-defaults-to-plugin-path",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-install-registers-runtime-hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-md-template-must-import-agents-md-content",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "clawhub-publish-fails-with-package-belongs-to-another-publisher",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cli-build-install-step-fails",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cli-output-suggests-next-step-after-each-verb",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "codex-harness-installs-skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "configurable-auto-commit",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "create-project-website-explanatory-illustration",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cut-v0-0-7-release-before-openclaw-publish",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "decide-card-body-format-readme-vs-html-vs-flexible",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "default-config-omits-goc-closure-checks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "define-personas-and-use-cases-for-game-of-cards",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "derive-claude-hook-manifest-from-templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "design-claim-protocol-with-branch-and-author-metadata",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "document-gitignored-deck-workflow-for-oss-maintainers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "done-command-overwrites-terminal-cards",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "done-rerun-rewrites-closure-date",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "done-shortcut-overrides-status-filter",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "drain-pull-card-queue-per-cron-tick",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "drop-card-redirect-directories",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "drop-prepare-commit-from-shipped-skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "drop-third-party-runtime-dependencies-from-goc",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "emit-advances-and-advanced-by-as-block-style-yaml-lists",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "engine-refuses-to-start-when-both-deck-trees-exist",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "evaluate-deck-as-separate-repo-or-submodule",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "explore-saas-deck-hosting-with-optional-tracker-sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "extend-skill-parity-tripwire-to-claude-plugin-mirrors",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "find-single-trigger-release-flow-for-all-three-registries",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "finish-card-records-implicit-dod-attestation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "generate-plugin-payloads-from-templates-on-release",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "generated-agents-guidance-overstates-done-commit",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "how-it-works-section-introduces-vocabulary-with-example-prompts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "install-claude-harness",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "install-codex-harness",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "install-command-scaffolds-repo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "install-openclaw-harness",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "integrate-github-issues-discussions-and-pull-requests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "invalid-since-date-silently-empties-done-query",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "invalid-stage-range-crashes-queue-view",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "invalid-status-filter-silently-empties-queue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "invalid-tag-filter-silently-empties-queue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "investigate-fix-version-drift",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kickoff-and-install-handle-non-git-directories",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kickoff-asks-where-goc-briefing-lives",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kickoff-crashes-when-user-declines-merge-question",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kickoff-offers-autonomy-setup-options",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lead-llms-txt-with-claude-code-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "list-game-of-cards-on-anthropic-community-marketplace",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "submission-draft.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "llms-txt-still-recommends-uv-tool-install-as-preferred",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "make-claude-md-and-agents-md-merge-opt-in-via-skill",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "make-kickoff-idempotent-on-restart",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "make-skill-and-hook-installation-optional",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "manual-new-examples-use-invalid-card-titles",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "move-bypasses-title-antipattern-guard",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "move-deck-config-to-game-of-cards-config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "move-deck-into-game-of-cards-directory",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "move-fallback-leaks-git-fatal",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "multi-agent-shim-which-agents-at-v1",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "negative-board-row-limit-hides-cards",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "openclaw-plugin-goc-tool-fails-at-runtime-with-spawn-argv-error",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "openclaw-plugin-goc-tool-fails-with-python3-enoent-on-stale-cwd",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "openclaw-plugin-release-smoke-blockers-build-and-spawn-api",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "openclaw-subagent-plugin-tools-alsoallow-ignored",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "openclaw-subagent-spawn-doesnt-project-plugin-tools",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package-pyproject-and-pypi-release",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "audit_catalogue.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pattern-generalization-hook-missing-from-local-skills-install",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pin-opus-on-autonomous-github-workflows",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "plugin-bootstraps-cli-and-project-state-on-first-use",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "plugin-install-doesnt-refresh-stale-marketplace-cache",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "plugin-wrapper-drops-uv",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "polish-persona-section-headline-and-accepts-alignment",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "populate-advances-graph-deeper-pass",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "prevent-skill-rename-from-breaking-ci-silently",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "prompt-hook-misses-rename-work-requests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "provide-claude-code-plugin-for-skills-and-hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "provide-codex-plugin-for-skills-and-hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "provide-openclaw-plugin-for-skills-and-hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "publish-claude-code-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "publish-codex-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "publish-game-of-cards-0-0-3",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "publish-game-of-cards-agent-plugins",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "publish-npm-package-under-zauberzeug-org-not-personal",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "publish-openclaw-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pull-card-action-needs-oidc-and-half-hour-schedule",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pull-card-self-trigger-blocked-by-claude-action-bot-allowlist",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pull-card-self-trigger-needs-empirical-verification",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pypi-trusted-publisher-missing-for-release-workflow",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "readme-frames-game-of-cards-as-agile-methodology",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "readme-introduces-autonomously-in-the-background-once",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "readme-starter-card-and-doc-polish-session",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "recommend-autocommit-strongly-when-deck-is-version-controlled",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "record-card-timestamps-as-utc-datetime",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "redesign-readme-as-llm-first-marketing-page",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "refuse-local-skills-flag-when-running-under-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "regression-tests-fail-on-stale-install-behavior-assertions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "release-smoke-references-renamed-skills-fails-dry-run",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "release-smoke-test-plugin-auto-bootstrap",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "release-workflow-leaves-plugin-manifest-version-stale-on-main",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "release-workflow-skips-dogfood-version-markers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "release-yml-smoke-job-fails-on-tag-push-events",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rename-blocks-to-advances-and-design-value-sort",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rename-bootstrap-to-kickoff-as-onboarding-dialog",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "replace-click-with-argparse",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "replace-pyyaml-with-vendored-parser",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "restructure-comic-as-three-panels-and-add-audience-preamble",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "schedule-audit-deck-cloud",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "schedule-pull-card-cloud",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scheduled-pull-card-completes-a-round",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "second-install-exits-nonzero",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "self-trigger-pull-card-workflow-for-fresh-context-per-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "session-start-hook-flags-closed-cards-as-active",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ship-game-of-cards-as-cross-agent-cli",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "shrink-root-guidance-files-by-moving-content-into-skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "since-filter-without-done-hides-open-queue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "spike-worktree-auto-resolves-deck-from-main-repo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "split-card-frontmatter-from-body",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "split-claude-specific-content-out-of-generic-kickoff-skill",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "state-flip-verbs-skip-log-md-entry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "status-command-reopens-terminal-cards",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "superseded-cards-hidden-from-board",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "support-custom-card-workflows-and-statuses",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "support-external-game-of-cards-state-location",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "support-worktrees-and-multi-agent-deck-sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "surface-active-cards-in-board",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "surface-html-artifact-pattern-in-deck-views",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "test-install-assertions-still-target-old-next-hint",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "test-move-asserts-old-inline-advances-format",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "title-guard-shows-regex-error-instead-of-helpful-suggestion",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "triage-render-loop-hardcodes-gate-buckets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "unblock-scheduled-pull-card-secret",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "upgrade-default-adds-claude-to-codex-repos",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproduce.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "validate-plugin-mirror-fails-when-openclaw-omits-hooks-dir",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "workflows-write-in-yaml-permissions-block-breaks-autonomous-workflows",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "write-agentsmd-alongside-claudemd",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "yaml-lite-empty-block-scalar-consumes-next-key",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".goc-version",
+                "type": "file"
+              },
+              {
+                "name": "log.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit-deck.md",
+                "type": "file"
+              },
+              {
+                "name": "create-card.md",
+                "type": "file"
+              },
+              {
+                "name": "decide-card.md",
+                "type": "file"
+              },
+              {
+                "name": "finish-card.md",
+                "type": "file"
+              },
+              {
+                "name": "pull-card.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "canonical-tags.md",
+            "type": "file"
+          },
+          {
+            "name": "config.yaml",
+            "type": "file"
+          },
+          {
+            "name": "documentation-conventions.md",
+            "type": "file"
+          },
+          {
+            "name": "domain-examples.md",
+            "type": "file"
+          },
+          {
+            "name": "domain-vocabulary.md",
+            "type": "file"
+          },
+          {
+            "name": "file-path-map.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "tooling-conventions.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit-deck.yml",
+                "type": "file"
+              },
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "claude-code-review.yml",
+                "type": "file"
+              },
+              {
+                "name": "claude.yml",
+                "type": "file"
+              },
+              {
+                "name": "pages.yml",
+                "type": "file"
+              },
+              {
+                "name": "pull-card.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "game-of-cards-dark.png",
+            "type": "file"
+          },
+          {
+            "name": "game-of-cards.excalidraw",
+            "type": "file"
+          },
+          {
+            "name": "game-of-cards.png",
+            "type": "file"
+          },
+          {
+            "name": "how-it-works-dark.png",
+            "type": "file"
+          },
+          {
+            "name": "how-it-works.excalidraw",
+            "type": "file"
+          },
+          {
+            "name": "how-it-works.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".claude-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "goc",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "goc",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_vendor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "yaml_lite.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agents",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "claude",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "manifest.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "codex",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "manifest.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "bootstrap",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "_goc-bootstrap.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "game_of_cards",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "hooks",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "audit-deck.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "create-card.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "decide-card.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "finish-card.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "pull-card.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "canonical-tags.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "documentation-conventions.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "domain-examples.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "domain-vocabulary.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "file-path-map.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tooling-conventions.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "hooks",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "deck_prompt_router.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "deck_session_start.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pattern_generalization_check.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "AGENTS_GOC.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CLAUDE_GOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "engine.py",
+                "type": "file"
+              },
+              {
+                "name": "install.py",
+                "type": "file"
+              },
+              {
+                "name": "schema.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "deck_prompt_router.py",
+                "type": "file"
+              },
+              {
+                "name": "deck_session_start.py",
+                "type": "file"
+              },
+              {
+                "name": "hooks.json",
+                "type": "file"
+              },
+              {
+                "name": "pattern_generalization_check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "advance-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "card-schema",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "schema.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-kickoff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "create-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "decide-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "finish-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kickoff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "next-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pull-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "refine-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "retrospective",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scan-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "standup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "pyproject.toml",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "settings.json",
+            "type": "file"
+          },
+          {
+            "name": "uv.lock",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "goc",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_vendor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "yaml_lite.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "manifest.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "codex",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "manifest.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "bootstrap",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_goc-bootstrap.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "game_of_cards",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "hooks",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "audit-deck.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "create-card.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "decide-card.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "finish-card.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pull-card.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "canonical-tags.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "documentation-conventions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "domain-examples.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "domain-vocabulary.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "file-path-map.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tooling-conventions.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "deck_prompt_router.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "deck_session_start.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pattern_generalization_check.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "advance-card",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "audit-deck",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "card-schema",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "schema.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "claude-kickoff",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "create-card",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "decide-card",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "deck",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "finish-card",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "kickoff",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "next-card",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "openclaw-kickoff",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "pull-card",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "refine-deck",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "retrospective",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scan-deck",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "standup",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "AGENTS_GOC.md",
+                "type": "file"
+              },
+              {
+                "name": "CLAUDE_GOC.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "cli.py",
+            "type": "file"
+          },
+          {
+            "name": "engine.py",
+            "type": "file"
+          },
+          {
+            "name": "install.py",
+            "type": "file"
+          },
+          {
+            "name": "schema.yaml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "openclaw-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "dist",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "goc",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_vendor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "yaml_lite.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agents",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "claude",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "manifest.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "codex",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "manifest.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "bootstrap",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "_goc-bootstrap.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "game_of_cards",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "hooks",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "audit-deck.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "create-card.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "decide-card.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "finish-card.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "pull-card.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "canonical-tags.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "documentation-conventions.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "domain-examples.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "domain-vocabulary.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "file-path-map.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tooling-conventions.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "AGENTS_GOC.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CLAUDE_GOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "engine.py",
+                "type": "file"
+              },
+              {
+                "name": "install.py",
+                "type": "file"
+              },
+              {
+                "name": "schema.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "advance-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "card-schema",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "create-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "decide-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "finish-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kickoff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "next-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "openclaw-kickoff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pull-card",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "refine-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "retrospective",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scan-deck",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "standup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          },
+          {
+            "name": "openclaw.plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "port_skills_to_openclaw.py",
+            "type": "file"
+          },
+          {
+            "name": "release_rewrite_versions.py",
+            "type": "file"
+          },
+          {
+            "name": "smoke_release.sh",
+            "type": "file"
+          },
+          {
+            "name": "sync_plugin_assets.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "site",
+        "type": "directory",
+        "children": [
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "llms.txt",
+            "type": "file"
+          },
+          {
+            "name": "privacy.html",
+            "type": "file"
+          },
+          {
+            "name": "stars.js",
+            "type": "file"
+          },
+          {
+            "name": "styles.css",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "test_board.py",
+            "type": "file"
+          },
+          {
+            "name": "test_guidance_accuracy.py",
+            "type": "file"
+          },
+          {
+            "name": "test_install.py",
+            "type": "file"
+          },
+          {
+            "name": "test_plugin_mirror_parity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_start_hook.py",
+            "type": "file"
+          },
+          {
+            "name": "test_since_filter.py",
+            "type": "file"
+          },
+          {
+            "name": "test_stage_filter.py",
+            "type": "file"
+          },
+          {
+            "name": "test_status_filter.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tag_filter.py",
+            "type": "file"
+          },
+          {
+            "name": "test_version_surfaces.py",
+            "type": "file"
+          },
+          {
+            "name": "test_yaml_lite.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".pre-commit-config.yaml",
+        "type": "file"
+      },
+      {
+        "name": "ABOUT.md",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "DECK_LOCATION.md",
+        "type": "file"
+      },
+      {
+        "name": "goc.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PERSONAS.md",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      }
+    ]
+  }
+}

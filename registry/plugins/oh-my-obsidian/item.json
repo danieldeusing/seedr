@@ -1,0 +1,725 @@
+{
+  "slug": "oh-my-obsidian",
+  "name": "Oh My Obsidian",
+  "type": "plugin",
+  "description": "Claude Code를 위한 영구적인 '두 번째 뇌(Second Brain)'입니다.\n\noh-my-obsidian은 로컬 Obsidian Vault와 Claude Code를 직접 연결하여 AI 에이전트의 가장 큰 취약점인 '문맥 단절(Amnesia)'을 해결합니다. 과거의 아키텍처 의사결정 내역을 자동으로 기록(session-save)하고, 유사한 이슈 발생 시 관련 컨텍스트를 즉시 인출(recall)하여 대화에 다시 통합합니다.\n\n소크라테스식 인터뷰를 기반으로 한 초기 폴더 설계(setup)부터 방대해진 문서 트리를 꼬임 없이 안전하게 재구조화하는 리팩토링(refactor) 기능까지, 내장된 특수 서브 에이전트(Vault Architect 등)들이 개발 팀의 완벽한 로컬 지식베이스 구축을 돕습니다. 자동 Git 동기화 스크립트 기능이 포함되어 새로운 팀원의 지식 온보딩도 단 몇 초 만에 완료됩니다.",
+  "longDescription": "Ships **3 skills**, **5 agents**, **7 commands**, **1 hook** and **1 MCP server**.\n\n- **Skills** (3): `obsidian-vault-manager` (Manage the Obsidian vault structure, organize documents, add new files, and maintain the team's knowledge base), `recall` (Automatically recall relevant past context from the Obsidian vault when the user asks about past decisions, previous work,…), `session-save` (Save current session context and work summary to the Obsidian vault when the user asks to record or…)\n- **Agents** (5): `migration-verifier` (Expert at validating file and directory migration plans, ensuring no data loss or overwrite conflicts occur during vault…), `socratic-interviewer` (Expert at conducting Socratic interviews to clarify vault setup requirements — asks focused questions, never builds), `transcript-summarizer` (Expert at reading Claude Code session transcripts and extracting structured summaries with decisions, errors, and action items), `vault-architect` (Expert at designing Obsidian vault structures for team knowledge management, categorizing information, and organizing document hierarchies), `vault-auditor` (Expert at analyzing existing Obsidian vault structures and conducting Socratic interviews to identify pain points and refactoring needs)\n- **Commands** (7): `enable-auto-save` (Enable automatic session save on exit (Registers SessionEnd hook)), `recall` (Search and recall past documents, decisions, and troubleshooting from the vault), `refactor` (Interactive vault refactoring wizard to reorganize an existing Obsidian vault), `restore-history` (과거 Claude Code / Codex 세션 기록을 vault에 구조화된 문서로 복원), `session-save` (Save current session context and work summary to the vault), `setup` (Interactive setup wizard for Obsidian vault integration), `vault` (Manage Obsidian vault — list contents, add documents, organize structure)\n- **Hooks** (1): `Stop`\n- **MCP servers** (1): `.mcp.json`\n\nInstalls with `claude plugin install oh-my-obsidian@claude-community` from `hongdangmoo49/oh-my-obsidian`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 3,
+    "agent": 5,
+    "hook": 1,
+    "command": 7,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "hongdangmoo49"
+  },
+  "externalUrl": "https://github.com/hongdangmoo49/oh-my-obsidian/tree/22ed2569b67116ed13755571148dc3aa785f6e3c",
+  "marketplace": "claude-community",
+  "version": "0.3.2",
+  "sourceRevision": "22ed2569b67116ed13755571148dc3aa785f6e3c",
+  "contentDigest": "ab0cff5456f92777679c1a67481bb8375047f61dd826a51fdf92a567993788a3",
+  "contentHash": "8783559696635b2a",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/hongdangmoo49/oh-my-obsidian.git",
+    "sha": "22ed2569b67116ed13755571148dc3aa785f6e3c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-08-03T07:21:44Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "migration-verifier.md",
+            "type": "file"
+          },
+          {
+            "name": "socratic-interviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "transcript-summarizer.md",
+            "type": "file"
+          },
+          {
+            "name": "vault-architect.md",
+            "type": "file"
+          },
+          {
+            "name": "vault-auditor.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "obsidian-app-preflight",
+            "type": "file"
+          },
+          {
+            "name": "obsidian-git-setup",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "enable-auto-save.md",
+            "type": "file"
+          },
+          {
+            "name": "recall.md",
+            "type": "file"
+          },
+          {
+            "name": "refactor.md",
+            "type": "file"
+          },
+          {
+            "name": "restore-history.md",
+            "type": "file"
+          },
+          {
+            "name": "session-save.md",
+            "type": "file"
+          },
+          {
+            "name": "setup.md",
+            "type": "file"
+          },
+          {
+            "name": "vault.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docker",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-code-rocky",
+            "type": "directory",
+            "children": [
+              {
+                "name": "configure-zai-claude",
+                "type": "file"
+              },
+              {
+                "name": "Dockerfile",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "handoff",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-04-23-codex-plugin-handoff.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-hooks-implementation-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "codex-hooks-research-2026-04-27.md",
+            "type": "file"
+          },
+          {
+            "name": "codex-plugin-implementation-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "obsidian-app-installation-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "setup-owner-followups.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "stop-hook.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plugins",
+        "type": "directory",
+        "children": [
+          {
+            "name": "oh-my-obsidian",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".codex-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "plugin.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "config-snippets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "codex-hook-runner.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks-preview",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stop-save-reminder.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex-history.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex-hooks.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-preview.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "obsidian-app-preflight.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "obsidian-app-preflight.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "obsidian-app-preflight.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "obsidian-git-setup.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parse-codex-rollout.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setup-vault.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript-preextract.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vault-core.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vault-ops.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "oh-my-obsidian-recall",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "oh-my-obsidian-restore-history",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "oh-my-obsidian-session-save",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "oh-my-obsidian-setup",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "references",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "interviewer.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "vault-architect.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "oh-my-obsidian-vault-manager",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bases",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "decisions.base",
+                        "type": "file"
+                      },
+                      {
+                        "name": "meeting-notes.base",
+                        "type": "file"
+                      },
+                      {
+                        "name": "session-logs.base",
+                        "type": "file"
+                      },
+                      {
+                        "name": "troubleshooting.base",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "decision.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "meeting-notes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "troubleshooting.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex-hooks.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-preview.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "obsidian-git-setup.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setup-vault.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vault-core.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vault-ops.test.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "qa",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scenarios",
+            "type": "directory",
+            "children": [
+              {
+                "name": "linux-native",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "attach-existing.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fresh-setup.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-preview.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-save-ambiguous.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "windows-native",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "preflight.yaml",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assert-git-safe.sh",
+                "type": "file"
+              },
+              {
+                "name": "assert-hook-merge.sh",
+                "type": "file"
+              },
+              {
+                "name": "assert-setup-state.sh",
+                "type": "file"
+              },
+              {
+                "name": "check-public-safety.sh",
+                "type": "file"
+              },
+              {
+                "name": "make-bare-remote.sh",
+                "type": "file"
+              },
+              {
+                "name": "reset-home.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "install.ps1",
+            "type": "file"
+          },
+          {
+            "name": "install.sh",
+            "type": "file"
+          },
+          {
+            "name": "obsidian-app-preflight.mjs",
+            "type": "file"
+          },
+          {
+            "name": "obsidian-app-preflight.ps1",
+            "type": "file"
+          },
+          {
+            "name": "obsidian-app-preflight.sh",
+            "type": "file"
+          },
+          {
+            "name": "obsidian-git-setup.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test-obsidian-git-setup.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-obsidian-preflight.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "obsidian-vault-manager",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "recall",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-save",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.yml",
+        "type": "file"
+      },
+      {
+        "name": "HANDOFF.ko.md",
+        "type": "file"
+      },
+      {
+        "name": "HANDOFF.md",
+        "type": "file"
+      },
+      {
+        "name": "project-context.ko.md",
+        "type": "file"
+      },
+      {
+        "name": "project-context.md",
+        "type": "file"
+      },
+      {
+        "name": "README.ko.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SPEC.md",
+        "type": "file"
+      },
+      {
+        "name": "USAGE_SCENARIOS.ko.md",
+        "type": "file"
+      },
+      {
+        "name": "USAGE_SCENARIOS.md",
+        "type": "file"
+      },
+      {
+        "name": "WORKFLOW.md",
+        "type": "file"
+      }
+    ]
+  }
+}

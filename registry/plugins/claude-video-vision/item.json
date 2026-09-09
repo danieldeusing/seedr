@@ -1,0 +1,495 @@
+{
+  "slug": "claude-video-vision",
+  "name": "Claude Video Vision",
+  "type": "plugin",
+  "description": "A perception layer that gives Claude Code the ability to watch and understand videos. Extracts frames via ffmpeg and processes audio through multiple configurable backends (Gemini API, local Whisper, or OpenAI Whisper API). Claude receives the frames as images plus an audio transcription with timestamps and reasons about them together. Includes an interactive setup wizard, adaptive extraction (fps, resolution, and time ranges automatically adjust to the user's question), and auto-download of Whisper models. 100% free and open source.",
+  "longDescription": "Ships **1 skill**, **1 agent**, **2 commands** and **1 MCP server**.\n\n- **Skills** (1): `video-perception` (Use when the user mentions a video file (.mp4, .mov, .avi, .mkv, .webm), a YouTube URL, asks to…)\n- **Agents** (1): `frame-describer` (Describes video frames as detailed text)\n- **Commands** (2): `setup-video-vision` (Interactive setup wizard for claude-video-vision — configure backend, whisper, frames, and verify dependencies), `watch-video` (Watch and analyze a video file or YouTube URL — extracts frames and audio for understanding)\n- **MCP servers** (1): `claude-video-vision`\n\nInstalls with `claude plugin install claude-video-vision@claude-community` from `jordanrendric/claude-video-vision`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "agent": 1,
+    "command": 2,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Jordan Vasconcelos",
+    "url": "https://github.com/jordanrendric"
+  },
+  "externalUrl": "https://github.com/jordanrendric/claude-video-vision/tree/ac47d1f4dfbaa7006b34252ecc792f861a2f4058",
+  "marketplace": "claude-community",
+  "version": "1.2.0",
+  "sourceRevision": "ac47d1f4dfbaa7006b34252ecc792f861a2f4058",
+  "contentDigest": "7a882de1bb5971010471d7841c329984962192f35b970ac7bf05c77d2a32626b",
+  "contentHash": "6b5054d29e836998",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/jordanrendric/claude-video-vision.git",
+    "sha": "ac47d1f4dfbaa7006b34252ecc792f861a2f4058"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-07T02:28:19Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "frame-describer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hero.avif",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "setup-video-vision.md",
+            "type": "file"
+          },
+          {
+            "name": "watch-video.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-25-smart-video-analysis.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-25-smart-video-analysis-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "mcp-server",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "measure-tokens.ts",
+                "type": "file"
+              },
+              {
+                "name": "test-analyze.ts",
+                "type": "file"
+              },
+              {
+                "name": "test-gemini-api.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "backends",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "gemini-api.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openai.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "extractors",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analyzers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "audio-chunker.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "audio.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frames.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "session",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "manager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tools",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "video-analyze.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "video-configure.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "video-detail.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "video-info.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "video-setup.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "video-watch.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "utils",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "installer.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platform.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "timestamps.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "video-source.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "config.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "backends",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "gemini-api.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "extractors",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analyzers.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "audio-chunker.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "audio.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frames-segments.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frames.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "silence-5s.mp4",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-3s.mp4",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "session",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "manager.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tools",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "video-watch.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "utils",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platform.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "timestamps.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "video-source.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "config.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "video-perception",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

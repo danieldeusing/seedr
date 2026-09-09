@@ -1,0 +1,637 @@
+{
+  "slug": "playwright-pro",
+  "name": "Playwright Pro",
+  "type": "plugin",
+  "description": "Playwright Pro turns your AI coding agent into a senior test automation engineer.\n\nInstead of generating tutorial-quality tests with brittle CSS selectors, Playwright Pro enforces battle-tested patterns from production test suites: role-based locators, web-first assertions, proper fixture architecture, and isolated test design.\n\nIt doesn't reinvent Claude Code — it orchestrates it. /pw:generate uses the built-in Explore subagent for codebase analysis. /pw:migrate delegates to /batch for parallel file conversion. /pw:fix leverages /debug for trace inspection. Every skill builds on what Claude Code already does well.\n\n55 ready-to-use test templates across 11 categories — authentication, CRUD, checkout, search, forms, dashboard, settings, onboarding, notifications, API testing, and accessibility. Each template includes TypeScript and JavaScript variants with parametrizable placeholders. Not generic stubs — real patterns like Stripe iframe handling, GraphQL mutation testing, and RBAC permission flows.\n\n3 specialized agents handle complex planning before a single test is written: test-architect maps your application surface, test-debugger diagnoses flaky failures systematically, and migration-planner creates ordered conversion plans from Cypress or Selenium.\n\n2 MCP integrations (TypeScript) connect to TestRail (8 tools) and BrowserStack (7 tools) for teams that need test management and cross-browser coverage. Both are optional — the plugin works fully without them.\n\nSmart hooks auto-validate every test file you write (catches waitForTimeout, hardcoded URLs, non-web-first assertions) and auto-detect Playwright projects on session start. Zero overhead — they run silently.",
+  "longDescription": "Ships **10 skills**, **3 agents**, **2 hooks** and **2 MCP servers**.\n\n- **Skills** (10): `browserstack` (Run tests on BrowserStack), `coverage` (Analyze test coverage gaps), `fix` (Fix failing or flaky Playwright tests), `generate` (Generate Playwright tests), `init` (Set up Playwright in a project), `migrate` (Migrate from Cypress or Selenium to Playwright), `pw` (Production-grade Playwright testing toolkit), `report` (Generate test report), and 2 more\n- **Agents** (3): `migration-planner` (Analyzes Cypress or Selenium test suites and creates a file-by-file migration plan), `test-architect` (Plans test strategy for complex applications), `test-debugger` (Diagnoses flaky or failing Playwright tests using systematic taxonomy)\n- **Hooks** (2): `PostToolUse`, `SessionStart`\n- **MCP servers** (2): `pw-testrail`, `pw-browserstack`\n\nInstalls with `claude plugin install playwright-pro@claude-community` from `alirezarezvani/claude-skills` (`engineering-team/playwright-pro`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 10,
+    "agent": 3,
+    "hook": 2,
+    "mcp": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Alireza Rezvani",
+    "url": "https://alirezarezvani.com"
+  },
+  "externalUrl": "https://github.com/alirezarezvani/claude-skills/tree/4a3c05b69e64f4925f7fc65c88890f614f79caf0/engineering-team/playwright-pro",
+  "marketplace": "claude-community",
+  "version": "2.9.0",
+  "sourceRevision": "4a3c05b69e64f4925f7fc65c88890f614f79caf0",
+  "contentDigest": "facdab219ed3a1b5d2edf833e97bb3a0db3e07a266a72e4c0da209969f5002bf",
+  "contentHash": "840d8f7e7bc24e58",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "engineering-team/playwright-pro",
+    "url": "https://github.com/alirezarezvani/claude-skills.git",
+    "ref": "main",
+    "sha": "4a3c05b69e64f4925f7fc65c88890f614f79caf0"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "engineering-team/playwright-pro/LICENSE"
+  },
+  "updatedAt": "2026-06-10T14:32:43Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "migration-planner.md",
+            "type": "file"
+          },
+          {
+            "name": "test-architect.md",
+            "type": "file"
+          },
+          {
+            "name": "test-debugger.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "detect-playwright.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "validate-test.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "integrations",
+        "type": "directory",
+        "children": [
+          {
+            "name": "browserstack-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "client.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "testrail-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "client.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "browserstack",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coverage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fix",
+            "type": "directory",
+            "children": [
+              {
+                "name": "flaky-taxonomy.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "migrate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cypress-mapping.md",
+                "type": "file"
+              },
+              {
+                "name": "selenium-mapping.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pw",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "assertions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "common-pitfalls.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixtures.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flaky-tests.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "golden-rules.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "locators.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "accessibility",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "color-contrast.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "keyboard-navigation.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "screen-reader.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "api",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "auth-headers.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "error-responses.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "graphql.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rate-limiting.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rest-crud.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "auth",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "login.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "logout.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mfa.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "password-reset.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rbac.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "remember-me.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "session-timeout.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sso.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "checkout",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "add-to-cart.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "apply-coupon.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "order-confirm.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "order-history.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "payment.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "update-quantity.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "crud",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "bulk-operations.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "create.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "delete.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "read.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "soft-delete.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "update.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "dashboard",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "chart-rendering.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "data-loading.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "date-range-filter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "export.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "realtime-updates.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "forms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "autosave.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "conditional-fields.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "file-upload.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "multi-step.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "single-step.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "validation.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "notifications",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "in-app.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "notification-center.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "toast-messages.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "onboarding",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "email-verification.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "first-time-setup.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "registration.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "welcome-tour.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "search",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "basic-search.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "empty-state.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "filters.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pagination.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sorting.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "settings",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "account-delete.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "notification-prefs.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "password-change.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "profile-update.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "report",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "anti-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "testrail",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "settings.json",
+        "type": "file"
+      }
+    ]
+  }
+}

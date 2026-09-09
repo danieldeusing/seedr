@@ -1,0 +1,711 @@
+{
+  "slug": "gnosis-mcp",
+  "name": "Gnosis Mcp",
+  "type": "plugin",
+  "description": "Zero-config knowledge base for AI coding agents. Loads your markdown docs into a searchable database and exposes them as MCP tools — search, read, and manage documentation without leaving your editor. Works instantly with SQLite (no setup), upgrades to PostgreSQL + pgvector for hybrid semantic search. Includes skills for searching docs (/gnosis:search), health checks (/gnosis:status), doc management (/gnosis:manage), and first-time setup (/gnosis:setup). 6 MCP tools, 3 resources, F...",
+  "longDescription": "Ships **8 skills**, **6 agents**, **1 hook** and **1 MCP server**.\n\n- **Skills** (8): `context` (Load usage-weighted context from Gnosis MCP), `eval` (Measure retrieval quality on your corpus — Hit@5, MRR, nDCG@10, Precision@5), `ingest` (Populate the gnosis-mcp knowledge base — from local files, git history, or a crawled website), `manage` (CRUD operations on the knowledge base — add, delete, update metadata), `search` (Search the gnosis-mcp knowledge base), `setup` (First-time setup wizard for Gnosis MCP), `status` (Verify gnosis-mcp server connectivity, schema integrity, and corpus health), `tune` (Find the chunk-size and retrieval config that maximizes quality on YOUR corpus)\n- **Agents** (6): `context-loader` (Lightweight context primer — loads relevant docs into conversation context before starting work), `corpus-sync` (Bulk-ingestion specialist — runs the full ingest / re-ingest / prune / crawl / git-history lifecycle via shell…), `doc-explorer` (Fast documentation navigator — search, read, follow the link graph, cross-reference code), `doc-keeper` (Documentation maintainer — index new docs, update stale content, run the full corpus lifecycle (files, git history, web…), `doc-reviewer` (Code-aware documentation reviewer — checks docs for accuracy against the actual codebase), `README`\n- **Hooks** (1): `SessionStart`\n- **MCP servers** (1): `gnosis`\n\nInstalls with `claude plugin install gnosis-mcp@claude-community` from `nicholasglazer/gnosis-mcp`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 8,
+    "agent": 6,
+    "hook": 1,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Nicholas Glazer",
+    "url": "https://github.com/nicholasglazer"
+  },
+  "externalUrl": "https://github.com/nicholasglazer/gnosis-mcp/tree/34a76b12e4a293406ff28ef7131516a85f963f3b",
+  "marketplace": "claude-community",
+  "version": "0.13.3",
+  "sourceRevision": "34a76b12e4a293406ff28ef7131516a85f963f3b",
+  "contentDigest": "9911bddb7c75bf289d2a5006797e50db970839225f5babc4dd26f0737a1f2a49",
+  "contentHash": "6af13ca912128bf3",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/nicholasglazer/gnosis-mcp.git",
+    "sha": "34a76b12e4a293406ff28ef7131516a85f963f3b"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-30T20:09:42Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "docker.yml",
+                "type": "file"
+              },
+              {
+                "name": "ingest-docs.yml.example",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "context-loader.md",
+            "type": "file"
+          },
+          {
+            "name": "corpus-sync.md",
+            "type": "file"
+          },
+          {
+            "name": "doc-explorer.md",
+            "type": "file"
+          },
+          {
+            "name": "doc-keeper.md",
+            "type": "file"
+          },
+          {
+            "name": "doc-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "demo",
+        "type": "directory",
+        "children": [
+          {
+            "name": "demo-crawl.gif",
+            "type": "file"
+          },
+          {
+            "name": "demo-hero.gif",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bench-experiments-2026-04-18.md",
+            "type": "file"
+          },
+          {
+            "name": "benchmarks.md",
+            "type": "file"
+          },
+          {
+            "name": "cli.md",
+            "type": "file"
+          },
+          {
+            "name": "config.md",
+            "type": "file"
+          },
+          {
+            "name": "deployment.md",
+            "type": "file"
+          },
+          {
+            "name": "embeddings-service.md",
+            "type": "file"
+          },
+          {
+            "name": "how-we-measure-search.md",
+            "type": "file"
+          },
+          {
+            "name": "overview.md",
+            "type": "file"
+          },
+          {
+            "name": "releasing.md",
+            "type": "file"
+          },
+          {
+            "name": "rest-api.md",
+            "type": "file"
+          },
+          {
+            "name": "show-hn.md",
+            "type": "file"
+          },
+          {
+            "name": "tools.md",
+            "type": "file"
+          },
+          {
+            "name": "troubleshooting.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "pkg",
+        "type": "directory",
+        "children": [
+          {
+            "name": "arch",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".SRCINFO",
+                "type": "file"
+              },
+              {
+                "name": "PKGBUILD",
+                "type": "file"
+              },
+              {
+                "name": "PKGBUILD-git",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bench-embedders.sh",
+            "type": "file"
+          },
+          {
+            "name": "bump-version.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-versions.sh",
+            "type": "file"
+          },
+          {
+            "name": "release.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup-labels.sh",
+            "type": "file"
+          },
+          {
+            "name": "update-arch-sums.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "context",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eval",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ingest",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tune",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "gnosis_mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "parsers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git_history.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "backend.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "config.py",
+                "type": "file"
+              },
+              {
+                "name": "crawl.py",
+                "type": "file"
+              },
+              {
+                "name": "db.py",
+                "type": "file"
+              },
+              {
+                "name": "embed.py",
+                "type": "file"
+              },
+              {
+                "name": "ingest.py",
+                "type": "file"
+              },
+              {
+                "name": "local_embed.py",
+                "type": "file"
+              },
+              {
+                "name": "pg_backend.py",
+                "type": "file"
+              },
+              {
+                "name": "py.typed",
+                "type": "file"
+              },
+              {
+                "name": "rerank.py",
+                "type": "file"
+              },
+              {
+                "name": "rest.py",
+                "type": "file"
+              },
+              {
+                "name": "schema.py",
+                "type": "file"
+              },
+              {
+                "name": "server.py",
+                "type": "file"
+              },
+              {
+                "name": "sqlite_backend.py",
+                "type": "file"
+              },
+              {
+                "name": "sqlite_schema.py",
+                "type": "file"
+              },
+              {
+                "name": "watch.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bench",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "bench_beir.py",
+                "type": "file"
+              },
+              {
+                "name": "bench_compare.py",
+                "type": "file"
+              },
+              {
+                "name": "bench_mcp_e2e.py",
+                "type": "file"
+              },
+              {
+                "name": "bench_rag.py",
+                "type": "file"
+              },
+              {
+                "name": "bench_real_corpus.py",
+                "type": "file"
+              },
+              {
+                "name": "bench_search.py",
+                "type": "file"
+              },
+              {
+                "name": "bench_sweep.py",
+                "type": "file"
+              },
+              {
+                "name": "golden-knowledge.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "summarize.py",
+                "type": "file"
+              },
+              {
+                "name": "sweep_new_knobs.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eval",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "cases.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "test_search_quality.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_backend.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "test_config.py",
+            "type": "file"
+          },
+          {
+            "name": "test_crawl.py",
+            "type": "file"
+          },
+          {
+            "name": "test_db.py",
+            "type": "file"
+          },
+          {
+            "name": "test_embed.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_history.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ingest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_local_embed.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_e2e.py",
+            "type": "file"
+          },
+          {
+            "name": "test_prune.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rerank.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rest_auth.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rrf.py",
+            "type": "file"
+          },
+          {
+            "name": "test_schema.py",
+            "type": "file"
+          },
+          {
+            "name": "test_server.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sqlite_backend.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sqlite_hybrid.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sqlite_schema.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".dockerignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.yaml",
+        "type": "file"
+      },
+      {
+        "name": "Dockerfile",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "llms-full.txt",
+        "type": "file"
+      },
+      {
+        "name": "llms-install.md",
+        "type": "file"
+      },
+      {
+        "name": "llms.txt",
+        "type": "file"
+      },
+      {
+        "name": "marketplace.json",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      }
+    ]
+  }
+}

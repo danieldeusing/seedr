@@ -1,0 +1,634 @@
+{
+  "slug": "slipstream",
+  "name": "Slipstream",
+  "type": "plugin",
+  "description": "A tool that makes AI coding agents more effective for Dart and Flutter projects.\n\nAI agents working on Dart and Flutter run into two recurring problems. First, their training data has a cutoff — they'll reach for discontinued packages, pin outdated major versions, or produce subtly wrong API signatures that compile only after a correction loop. Second, Flutter development is inherently visual and stateful, and agents have no way to see a running app: they can't observe a layout failure, verify that a state change took effect, or confirm that a navigation worked.\n\nThis tool addresses both. It adds hooks that catch stale package choices before they land in `pubspec.yaml`, an MCP server that retrieves accurate package API signatures directly from the local pub cache, and a suite of MCP commands for launching, inspecting, and interacting with a running Flutter app.",
+  "longDescription": "Ships **3 skills** and **2 MCP servers**.\n\n- **Skills** (3): `add-package` (This skill should be used when about to add a Dart or Flutter package dependency — running flutter…), `slipstream-inspector` (This skill should be used when the user asks to \"run the Flutter app\", \"flutter run\", \"start the…), `slipstream-packages` (This skill should be used when about to write Dart or Flutter code that calls into a pub…)\n- **MCP servers** (2): `packages`, `inspector`\n\nInstalls with `claude plugin install slipstream@claude-community` from `devoncarew/flutter-slipstream`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 3,
+    "mcp": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Community"
+  },
+  "externalUrl": "https://github.com/devoncarew/flutter-slipstream/tree/0062c14e4906fa5517bca3f6e3945627c593c43b",
+  "marketplace": "claude-community",
+  "version": "1.6.0",
+  "sourceRevision": "0062c14e4906fa5517bca3f6e3945627c593c43b",
+  "contentDigest": "e176922904e652efdc68975bba302a7647aa66d5745d3e51514cfcb2b5af15d3",
+  "contentHash": "69d2ed8b34e6f57f",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/devoncarew/flutter-slipstream.git",
+    "sha": "0062c14e4906fa5517bca3f6e3945627c593c43b"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "BSD-3-Clause",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-01T12:50:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "readme.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "readme.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gemini-extension",
+        "type": "directory",
+        "children": [
+          {
+            "name": "GEMINI.md",
+            "type": "file"
+          },
+          {
+            "name": "readme.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              },
+              {
+                "name": "readme.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "integration.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "inspector_mcp.dart",
+            "type": "file"
+          },
+          {
+            "name": "packages_mcp.dart",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "DESIGN.md",
+            "type": "file"
+          },
+          {
+            "name": "flutter_inspection.md",
+            "type": "file"
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          },
+          {
+            "name": "inspector_design.md",
+            "type": "file"
+          },
+          {
+            "name": "inspector_mcp.md",
+            "type": "file"
+          },
+          {
+            "name": "inspector_protocol.md",
+            "type": "file"
+          },
+          {
+            "name": "packages_mcp.md",
+            "type": "file"
+          },
+          {
+            "name": "privacy_policy.md",
+            "type": "file"
+          },
+          {
+            "name": "slipstream_agent.md",
+            "type": "file"
+          },
+          {
+            "name": "slipstream_banner.png",
+            "type": "file"
+          },
+          {
+            "name": "slipstream_logo_512.png",
+            "type": "file"
+          },
+          {
+            "name": "smoke-test.md",
+            "type": "file"
+          },
+          {
+            "name": "study-setup.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "inspector",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tools",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "close_app_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "evaluate_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "get_output_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "get_route_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "get_semantics_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "inspect_layout_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "navigate_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "perform_scroll_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "perform_scroll_until_visible_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "perform_semantic_action_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "perform_set_text_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "perform_tap_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reload_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "run_app_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "take_screenshot_tool.dart",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "app_session.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "diagnostics_node.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error_summarizers.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flutter_service_extensions.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inspector_mcp.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "layout_formatter.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "route_formatter.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "semantic_node.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "semantics_formatter.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tool_context.dart",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "shorthand",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tools",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "class_stub_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "library_stub_tool.dart",
+                        "type": "file"
+                      },
+                      {
+                        "name": "package_summary_tool.dart",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "context.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "packages_mcp.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "resolver.dart",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stub_emitter.dart",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "common.dart",
+                "type": "file"
+              },
+              {
+                "name": "utils.dart",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-package",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "slipstream-inspector",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "slipstream-packages",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "test",
+        "type": "directory",
+        "children": [
+          {
+            "name": "inspector",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "errors",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "failed_assertion.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "null_check.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "overflow_error.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unbounded_viewport.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "render_trees",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "overflow_details_formatted.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "overflow_details.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "route_widget_tree.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "flutter_error_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "inspector_mcp_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "layout_formatter_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "route_formatter_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "semantic_node_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "semantics_formatter_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "summarizers_test.dart",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "inspector_script.dart",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "inspector_mcp_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "packages_mcp_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "support.dart",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "shorthand",
+            "type": "directory",
+            "children": [
+              {
+                "name": "package_info_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "packages_mcp_integration_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "resolver_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "stub_emitter_golden_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "stub_emitter_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "test_utils_test.dart",
+                "type": "file"
+              },
+              {
+                "name": "test_utils.dart",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test_utils.dart",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tool",
+        "type": "directory",
+        "children": [
+          {
+            "name": "repo.dart",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".prettierrc",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "analysis_options.yaml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "privacy_policy.md",
+        "type": "file"
+      },
+      {
+        "name": "pubspec.lock",
+        "type": "file"
+      },
+      {
+        "name": "pubspec.yaml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

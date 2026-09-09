@@ -1,0 +1,707 @@
+{
+  "slug": "review-all",
+  "name": "Review All",
+  "type": "plugin",
+  "description": "Comprehensive, project-agnostic, multi-agent code review for Claude Code with verification to eliminate false positives.",
+  "longDescription": "Ships **1 skill**, `review-all` (Multi-agent code review for diffs (project-agnostic)).\n\nInstalls with `claude plugin install review-all@claude-community` from `ncoevoet/claude-review-all`.\n\nProject-agnostic code review for Claude Code. One slash command runs deterministic gates, ten parallel review agents, and an adversarial verification pass. Every finding cites `file:line` and is independently re-checked before the report — false positives stay out.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Nicolas Coevoet",
+    "url": "https://github.com/ncoevoet"
+  },
+  "externalUrl": "https://github.com/ncoevoet/claude-review-all/tree/36c88b03bb7d1c529937317d5fede5a4102965f4",
+  "marketplace": "claude-community",
+  "version": "0.7.1",
+  "sourceRevision": "36c88b03bb7d1c529937317d5fede5a4102965f4",
+  "contentDigest": "0a308c745f8ed223d69551a98208bb5871a4ae778fc3fa201fbe4d88a1f6a8e1",
+  "contentHash": "ea237ca4d1b5bc6b",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/ncoevoet/claude-review-all.git",
+    "sha": "36c88b03bb7d1c529937317d5fede5a4102965f4"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-29T08:12:15Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "demo.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "review-all",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_shared.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "01-standards.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "02-bugs-security.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "03-dry-smells.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "04-consistency-history.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "05-simplification.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "06-security-deep-dive.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "07-performance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "08-test-quality.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "09-api-contract.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "10-a11y-i18n.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verifier.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "01-small-diff-null-deref.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "02-large-refactor-no-noise.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "03-auth-crypto-change.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "04-empty-diff-noop.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "05-false-positive-resistance.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "06-preexisting-vuln-in-audit.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "07-dry-duplication.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "08-n-plus-one.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "09-missing-test-gate.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "10-api-contract-break.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "11-a11y-missing-label.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "12-i18n-hardcoded-string.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "13-race-lost-update.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "14-resource-leak.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "15-deleted-file-breaks-importer.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "16-unit-mismatch-seconds-ms.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "17-unguarded-request-body.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "18-swallowed-exception.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "19-generated-file-noise-floor.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "20-cache-invalidation-storm.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "21-subscription-leak.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "22-cache-on-failure.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "23-missing-await-floating-promise.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "24-off-by-one-pagination.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "25-inverted-access-guard.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "26-uninitialized-field.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "27-path-traversal.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "28-secret-in-log.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "29-memoize-key-collision.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "30-switch-missing-case.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "31-xss-innerhtml.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "32-open-redirect.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "33-unbounded-cache-growth.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "34-command-injection.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "35-regex-redos.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "36-insecure-randomness.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "37-ssrf.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "38-tls-verification-disabled.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "39-integer-precision-loss.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "40-missing-query-limit.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "41-async-foreach.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "42-concurrent-modification.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "43-jdbc-resource-leak.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "44-blank-secret-auth-bypass.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "45-non-thread-safe-map.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "46-broken-double-checked-locking.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "47-io-under-lock.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "48-swallowed-interrupt.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "49-locale-dependent-case.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "50-negative-count-underflow.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "51-exception-as-control-flow.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "52-non-atomic-id-collision.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "53-db-column-truncation.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "54-mutable-internal-exposure.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "55-thread-confined-no-race.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "56-format-string-specifier-mismatch.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "57-default-charset-encode-decode.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "58-lock-ordering-deadlock.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "59-signal-before-state.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "60-shallow-clone-shared-collection.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "61-comparator-vs-head-insert.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "62-python-import-shadowing.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "63-python-clock-domain-mismatch.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "64-python-bare-except-platform.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "65-python-dict-mutation-unlocked.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "66-sql-null-three-valued-logic.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "67-sql-fk-cascade-orphans.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "68-csv-formula-injection.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "69-stale-async-response.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "70-generation-counter-correct.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "71-monotonic-timeout-correct.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "72-go-nil-map-write.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "73-go-err-shadowing.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "74-go-goroutine-leak.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "75-go-defer-in-loop.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "76-rust-unwrap-panic.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "77-rust-blocking-in-async.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "78-rust-mutex-across-await.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "79-go-goroutine-cancellation-correct.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "80-rust-guard-dropped-before-await.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "81-boundary-catch-correct.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "82-sql-intentional-equality-correct.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "83-consistent-lock-discipline-correct.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "84-csv-formula-neutralized-correct.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "85-todo-not-defect.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "86-gate-blocking-critical.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "87-gate-debt-only-pass.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "88-stale-profile-cache.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "89-warm-profile-cache.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config-keys.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "init-wizard.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-1.5-runtime.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-2-agents.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-2.5-verification.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-3-report.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-4-menu.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-gate.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state-file.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dedupe.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detect-toolchain.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dev-server-probe.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discover.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval-scorecard.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "export-findings.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gate-verdict.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "materialize-fixture.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "preflight.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-evals-headless.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-evals.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state-sweep.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-pattern-probe.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate-evals.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "anonymization-blocklist.example.txt",
+            "type": "file"
+          },
+          {
+            "name": "check-anonymization.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-claim-class.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-dismissed-digest.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-phase4-menu.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-verifier-votes.sh",
+            "type": "file"
+          },
+          {
+            "name": "run.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_dedupe.py",
+            "type": "file"
+          },
+          {
+            "name": "test_eval_scorecard.py",
+            "type": "file"
+          },
+          {
+            "name": "test_export_findings.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gate_verdict.py",
+            "type": "file"
+          },
+          {
+            "name": "test_materialize.py",
+            "type": "file"
+          },
+          {
+            "name": "test_scripts.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_state_sweep.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validate_evals.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "Makefile",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

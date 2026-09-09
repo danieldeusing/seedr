@@ -1,0 +1,390 @@
+{
+  "slug": "stetkeep",
+  "name": "Stetkeep",
+  "type": "plugin",
+  "description": "stetkeep stops Claude from refactoring code that's intentionally the way it is. Two pillars:\n\n1) XML-structured behavior protocols (BRAIN/CRAFT/PERF, ~1.8K tokens each) encode routing, refactor discipline, and measurement-first performance rules using the XML tagging pattern Anthropic's prompting guide recommends for reliable parsing.\n\n2) A 16-entry false-positive catalog of patterns Claude commonly mis-flags as anti-patterns: 1000-line constants files (not God Files, just data tables), V8-optimized .map().map().map() chains, below-fold <img> tags, useMemo that fixes reference-equality bugs. No other plugin in the directory ships this.\n\nEnforcement is mechanical, not prompted: permission deny-lists, PreToolUse hooks (safety-net.sh / .ps1), tool-scoped subagents that cannot Write new files, and path-scoped rules that auto-load CRAFT/PERF on src/** access. Honest 5-layer breakdown in ARCHITECTURE.md §1.\n\nSupply chain hardened: zero runtime dependencies, OIDC Trusted Publisher (no long-lived npm token), Sigstore SLSA v1 provenance on every tarball, GitHub Actions pinned by commit SHA.\n\nCoexists with existing CLAUDE.md and memory/ without overwriting. Distributed via npm (npx stetkeep install) and the self-hosted Claude Code plugin marketplace. MIT license.",
+  "longDescription": "Ships **3 agents**, **3 commands** and **1 hook**.\n\n- **Agents** (3): `brain-router` (Use PROACTIVELY for ambiguous or compound code-quality requests), `craft-specialist` (Structural refactor agent), `perf-specialist` (Performance optimization agent)\n- **Commands** (3): `brain-scan` (Map the project's MD ecosystem and propose next steps), `craft-audit` (Scan the codebase for anti-patterns per CRAFT.md (read-only, no edits)), `perf-audit` (Baseline measurements + Top 5 bottlenecks per PERF.md (measurement-only, no edits))\n- **Hooks** (1): `PreToolUse`\n\nInstalls with `claude plugin install stetkeep@claude-community` from `chanjoongx/stetkeep`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "agent": 3,
+    "hook": 1,
+    "command": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "CJ Kim",
+    "url": "https://github.com/chanjoongx"
+  },
+  "externalUrl": "https://github.com/chanjoongx/stetkeep/tree/434e7b337aff22e31964981053c89205e2330088",
+  "marketplace": "claude-community",
+  "version": "0.4.6",
+  "sourceRevision": "434e7b337aff22e31964981053c89205e2330088",
+  "contentDigest": "4d1236e028850356bdeaa88b2dee6dd1f7557d7780a79db55b1e0a82e52d6505",
+  "contentHash": "111b8b1950ae9204",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/chanjoongx/stetkeep.git",
+    "sha": "434e7b337aff22e31964981053c89205e2330088"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-20T23:56:47Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "brain-router.md",
+                "type": "file"
+              },
+              {
+                "name": "craft-specialist.md",
+                "type": "file"
+              },
+              {
+                "name": "perf-specialist.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "brain-scan.md",
+                "type": "file"
+              },
+              {
+                "name": "craft-audit.md",
+                "type": "file"
+              },
+              {
+                "name": "perf-audit.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "safety-net.ps1",
+                "type": "file"
+              },
+              {
+                "name": "safety-net.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "craft-rules.md",
+                "type": "file"
+              },
+              {
+                "name": "perf-rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "settings.example.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "false_positive.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mirror-sync-check.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "brain-router.md",
+            "type": "file"
+          },
+          {
+            "name": "craft-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "perf-specialist.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "benchmark",
+        "type": "directory",
+        "children": [
+          {
+            "name": "SPEC.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "stetkeep.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "brain-scan.md",
+            "type": "file"
+          },
+          {
+            "name": "craft-audit.md",
+            "type": "file"
+          },
+          {
+            "name": "perf-audit.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "releases",
+            "type": "directory",
+            "children": [
+              {
+                "name": "v0.3.0.md",
+                "type": "file"
+              },
+              {
+                "name": "v0.4.0.md",
+                "type": "file"
+              },
+              {
+                "name": "v0.4.1.md",
+                "type": "file"
+              },
+              {
+                "name": "v0.4.2.md",
+                "type": "file"
+              },
+              {
+                "name": "v0.4.3.md",
+                "type": "file"
+              },
+              {
+                "name": "v0.4.4.md",
+                "type": "file"
+              },
+              {
+                "name": "v0.4.5.md",
+                "type": "file"
+              },
+              {
+                "name": "v0.4.6.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "safety-net.ps1",
+            "type": "file"
+          },
+          {
+            "name": "safety-net.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "install.js",
+            "type": "file"
+          },
+          {
+            "name": "scan.js",
+            "type": "file"
+          },
+          {
+            "name": "utils.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "validators",
+        "type": "directory",
+        "children": [
+          {
+            "name": "validate-protocol.ps1",
+            "type": "file"
+          },
+          {
+            "name": "validate-protocol.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".craftignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".perfignore",
+        "type": "file"
+      },
+      {
+        "name": "ARCHITECTURE.md",
+        "type": "file"
+      },
+      {
+        "name": "BOOTSTRAP_GUIDE.md",
+        "type": "file"
+      },
+      {
+        "name": "BRAIN.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.template.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "CRAFT.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "PERF.md",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

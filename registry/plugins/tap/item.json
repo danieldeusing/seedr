@@ -1,0 +1,1519 @@
+{
+  "slug": "tap",
+  "name": "Tap",
+  "type": "plugin",
+  "description": "Cross-model AI agent communication protocol. Connect Claude, Codex, and Gemini agents through a shared file-based messaging layer. Features include: control tower orchestration, cross-model code review routing, broadcast/DM/CC messaging, agent heartbeat monitoring, mission tracking with kanban board, web GUI dashboard, and generational knowledge transfer through retros, letters, and findings.\n\nOther tools give agents instructions. tap gives them context.",
+  "longDescription": "Ships **2 skills**, **4 commands** and **1 hook**.\n\n- **Skills** (2): `autopilot` (Control tower autonomous loop — monitors agents, routes reviews, updates missions, detects round completion), `tap` (tap — Multi-session control tower)\n- **Commands** (4): `autopilot` (Control tower autonomous loop — review-routing/status loop with CHAIN integration), `findings` (List all out-of-scope findings from agents, grouped by type), `inbox` (Check the tap comms inbox for new messages, reviews, and findings), `tap` (Multi-session orchestration control tower)\n- **Hooks** (1): `hooks.json`\n\nInstalls with `claude plugin install tap@claude-community` from `HUA-Labs/tap`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 2,
+    "hook": 1,
+    "command": 4
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "HUA Labs"
+  },
+  "externalUrl": "https://github.com/HUA-Labs/tap/tree/1c258e31e52e427085433307d03d6198cd83c460",
+  "marketplace": "claude-community",
+  "version": "0.1.0",
+  "sourceRevision": "1c258e31e52e427085433307d03d6198cd83c460",
+  "contentDigest": "e8f4365655757141263df857458ca5209e0e7e909e4c3c3ed0999d06cfa4f4d5",
+  "contentHash": "c1a32aed36176d7e",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/HUA-Labs/tap.git",
+    "sha": "1c258e31e52e427085433307d03d6198cd83c460"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-04-05T15:47:33Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tap.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bridges",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bridge-candidates.ts",
+            "type": "file"
+          },
+          {
+            "name": "bridge-config.ts",
+            "type": "file"
+          },
+          {
+            "name": "bridge-dispatch.ts",
+            "type": "file"
+          },
+          {
+            "name": "bridge-format.ts",
+            "type": "file"
+          },
+          {
+            "name": "bridge-logging.ts",
+            "type": "file"
+          },
+          {
+            "name": "bridge-main.ts",
+            "type": "file"
+          },
+          {
+            "name": "bridge-routing.ts",
+            "type": "file"
+          },
+          {
+            "name": "bridge-types.ts",
+            "type": "file"
+          },
+          {
+            "name": "bridge-ws-client.ts",
+            "type": "file"
+          },
+          {
+            "name": "codex-app-server-bridge.ts",
+            "type": "file"
+          },
+          {
+            "name": "codex-app-server-probe.ts",
+            "type": "file"
+          },
+          {
+            "name": "gemini-polling-bridge.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "channels",
+        "type": "directory",
+        "children": [
+          {
+            "name": "__tests__",
+            "type": "directory",
+            "children": [
+              {
+                "name": "tap-bridge-dedup.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-claims.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-identity.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-io.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-peer-dm-rate-limit.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-presence.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-utils-bootstrap.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-utils.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-validate.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-watcher.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "test-helpers.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "tap-claims.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-comms.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-db.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-identity.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-io.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-peer-dm-rate-limit.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-poll-fallback.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-presence.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-utils.ts",
+            "type": "file"
+          },
+          {
+            "name": "tap-watcher.ts",
+            "type": "file"
+          },
+          {
+            "name": "test-mcp.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "autopilot.md",
+            "type": "file"
+          },
+          {
+            "name": "findings.md",
+            "type": "file"
+          },
+          {
+            "name": "inbox.md",
+            "type": "file"
+          },
+          {
+            "name": "tap.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "configs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "codex-agents-example.md",
+            "type": "file"
+          },
+          {
+            "name": "codex-config-example.toml",
+            "type": "file"
+          },
+          {
+            "name": "codex-mcp-example.json",
+            "type": "file"
+          },
+          {
+            "name": "codex-review-memory.md",
+            "type": "file"
+          },
+          {
+            "name": "codex-session-bootstrap.md",
+            "type": "file"
+          },
+          {
+            "name": "mcp-claude-example.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "settings-local-example.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bridges",
+            "type": "directory",
+            "children": [
+              {
+                "name": "codex-app-server-auth-gateway.d.mts",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-auth-gateway.mjs",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-auth-gateway.mjs.map",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge.d.mts",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge.mjs",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge.mjs.map",
+                "type": "file"
+              },
+              {
+                "name": "codex-bridge-runner.d.mts",
+                "type": "file"
+              },
+              {
+                "name": "codex-bridge-runner.mjs",
+                "type": "file"
+              },
+              {
+                "name": "codex-bridge-runner.mjs.map",
+                "type": "file"
+              },
+              {
+                "name": "gemini-ide-companion-runner.d.mts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-ide-companion-runner.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gemini-ide-companion-runner.mjs.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cli.d.mts",
+            "type": "file"
+          },
+          {
+            "name": "cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "cli.mjs.map",
+            "type": "file"
+          },
+          {
+            "name": "index.d.mts",
+            "type": "file"
+          },
+          {
+            "name": "index.mjs",
+            "type": "file"
+          },
+          {
+            "name": "index.mjs.map",
+            "type": "file"
+          },
+          {
+            "name": "mcp-server.d.mts",
+            "type": "file"
+          },
+          {
+            "name": "mcp-server.mjs",
+            "type": "file"
+          },
+          {
+            "name": "mcp-server.mjs.map",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "devlogs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-03",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "devlog-2026-03-30-온-m198-m199-bridge-hotfix-sync.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "bridge-startup-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "cli-reference.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "01-logic-battle-known-broken.md",
+            "type": "file"
+          },
+          {
+            "name": "02-cross-model-review-root-cause.md",
+            "type": "file"
+          },
+          {
+            "name": "03-convergence-pattern.md",
+            "type": "file"
+          },
+          {
+            "name": "04-tower-broadcast.md",
+            "type": "file"
+          },
+          {
+            "name": "05-self-awareness-paradox.md",
+            "type": "file"
+          },
+          {
+            "name": "06-session-resurrection.md",
+            "type": "file"
+          },
+          {
+            "name": "07-ghost-agent.md",
+            "type": "file"
+          },
+          {
+            "name": "08-naming-creates-identity.md",
+            "type": "file"
+          },
+          {
+            "name": "09-ceo-as-middleware.md",
+            "type": "file"
+          },
+          {
+            "name": "10-files-as-interface.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "inbox-check.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "packages",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tap-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "channels",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__tests__",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "tap-bridge-dedup.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-claims.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-identity.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-io.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-peer-dm-rate-limit.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-presence.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-utils-bootstrap.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-utils.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-validate.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tap-watcher.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test-helpers.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-claims.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-comms.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-db.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-identity.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-io.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-peer-dm-rate-limit.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-poll-fallback.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-presence.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-utils.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-watcher.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-mcp.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "types",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bun-shims.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bridge",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bridge-candidates.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-config.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-dispatch.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-format.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-logging.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-main.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-routing.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-types.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-ws-client.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "chain-review-router-core.mjs",
+                "type": "file"
+              },
+              {
+                "name": "tap-config.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "windows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tap-launch-common.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-launch-exec.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-launch-mission.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tap-launch-runtime.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "codex-app-server-bridge-start.ps1",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge-status.ps1",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge-stop.ps1",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-self-check.ps1",
+                "type": "file"
+              },
+              {
+                "name": "tap-ops-dashboard.ps1",
+                "type": "file"
+              },
+              {
+                "name": "tap-session-launch.ps1",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-app-server-bridge.ts",
+            "type": "file"
+          },
+          {
+            "name": "codex-app-server-probe.ts",
+            "type": "file"
+          },
+          {
+            "name": "comms-auto-push.sh",
+            "type": "file"
+          },
+          {
+            "name": "generate-missions.sh",
+            "type": "file"
+          },
+          {
+            "name": "tap-autopilot.mjs",
+            "type": "file"
+          },
+          {
+            "name": "tap-launch.sh",
+            "type": "file"
+          },
+          {
+            "name": "tap-setup.sh",
+            "type": "file"
+          },
+          {
+            "name": "tap-watch.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "autopilot",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tap",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "__tests__",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapter-common.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "add-command.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "agent-router.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "api-state.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-app-server.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-auto-appserver-command.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-command.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-enhancements.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-inbox-cutoff.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-paths-traversal.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-process-control.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-readyz-health.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-restart-command.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-runner.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-stop-isolation.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-tcp-health.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-unix-spawn.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-ux.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "chain-review-router-core.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "claude-adapter.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "cli-suggest.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-adapter.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-auth-gateway.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge-headless.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge-logging.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge-options.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-command-unwrap.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-session-state.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "dashboard-snapshot.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "doctor-command.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "drift-detector.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-adapter.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-ide-companion.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-ide-process.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "headless-e2e.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "headless-regression.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "health-monitor.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "http-csrf.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "identity-restart.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "instance-config.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "instance-resolution.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "m224-approval-mode.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "m224-command-path.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "managed-server.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "migration.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "missions.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "output.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "package-metadata.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "permissions.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "pull-requests.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "resolve-node.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "scoped-config.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "scripts-modules.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "status-command.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tap-autopilot.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "termination.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "turn-stuck-detection.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "up-down-command.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "version.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "adapters",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex.ts",
+                "type": "file"
+              },
+              {
+                "name": "common.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "api",
+            "type": "directory",
+            "children": [
+              {
+                "name": "http.ts",
+                "type": "file"
+              },
+              {
+                "name": "state.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bridges",
+            "type": "directory",
+            "children": [
+              {
+                "name": "codex-app-server-auth-gateway.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-app-server-bridge.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-bridge-runner.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-ide-companion-runner.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-ide-companion.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-ide-process.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "add.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-heartbeat.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-helpers.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-restart.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-start.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-status.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-stop.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-tui.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-watch.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge.ts",
+                "type": "file"
+              },
+              {
+                "name": "comms.ts",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.ts",
+                "type": "file"
+              },
+              {
+                "name": "doctor.ts",
+                "type": "file"
+              },
+              {
+                "name": "down.ts",
+                "type": "file"
+              },
+              {
+                "name": "gui.ts",
+                "type": "file"
+              },
+              {
+                "name": "init-worktree.ts",
+                "type": "file"
+              },
+              {
+                "name": "init.ts",
+                "type": "file"
+              },
+              {
+                "name": "remove.ts",
+                "type": "file"
+              },
+              {
+                "name": "serve.ts",
+                "type": "file"
+              },
+              {
+                "name": "status.ts",
+                "type": "file"
+              },
+              {
+                "name": "up.ts",
+                "type": "file"
+              },
+              {
+                "name": "watch.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "config-hash.ts",
+                "type": "file"
+              },
+              {
+                "name": "drift-detector.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "instance-config.ts",
+                "type": "file"
+              },
+              {
+                "name": "resolve.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "engine",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bridge-app-server-auth.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-app-server-health.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-app-server-lifecycle.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-codex-command.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-config.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-file-io.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-observability.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-orchestrator.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-paths.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-port-network.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-process-control.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-startup.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-state.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-unix-spawn.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge-windows-spawn.ts",
+                "type": "file"
+              },
+              {
+                "name": "bridge.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-session-state.ts",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.ts",
+                "type": "file"
+              },
+              {
+                "name": "headless-loop.ts",
+                "type": "file"
+              },
+              {
+                "name": "health-monitor.ts",
+                "type": "file"
+              },
+              {
+                "name": "missions.ts",
+                "type": "file"
+              },
+              {
+                "name": "pull-requests.ts",
+                "type": "file"
+              },
+              {
+                "name": "review.ts",
+                "type": "file"
+              },
+              {
+                "name": "rollback.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-lifecycle.ts",
+                "type": "file"
+              },
+              {
+                "name": "termination.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "permissions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "presets.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "routing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-router.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "runtime",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "resolve-node.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "artifact-backups.ts",
+            "type": "file"
+          },
+          {
+            "name": "cli-suggest.ts",
+            "type": "file"
+          },
+          {
+            "name": "cli.ts",
+            "type": "file"
+          },
+          {
+            "name": "error-codes.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          },
+          {
+            "name": "mcp-server.ts",
+            "type": "file"
+          },
+          {
+            "name": "output.ts",
+            "type": "file"
+          },
+          {
+            "name": "permissions.ts",
+            "type": "file"
+          },
+          {
+            "name": "state.ts",
+            "type": "file"
+          },
+          {
+            "name": "toml.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.ts",
+            "type": "file"
+          },
+          {
+            "name": "utils.ts",
+            "type": "file"
+          },
+          {
+            "name": "version.ts",
+            "type": "file"
+          },
+          {
+            "name": "ws-shims.d.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "finding.md",
+            "type": "file"
+          },
+          {
+            "name": "handoff.md",
+            "type": "file"
+          },
+          {
+            "name": "mission.md",
+            "type": "file"
+          },
+          {
+            "name": "MISSIONS.md",
+            "type": "file"
+          },
+          {
+            "name": "retro.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "ARCHITECTURE.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tap-config.json",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "tsup.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

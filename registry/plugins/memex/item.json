@@ -1,0 +1,698 @@
+{
+  "slug": "memex",
+  "name": "Memex",
+  "type": "plugin",
+  "description": "Local AI memory system for Claude Code and Cursor. Remembers your preferences, decisions, and project context across sessions using a Go HTTP service and Qdrant vector database running locally in Docker. All data stays on your machine — nothing is sent to the cloud.",
+  "longDescription": "Ships **1 skill**, `memex` (Use when you learn something about the user, their preferences, decisions, or project context that should be remembered…).\n\nInstalls with `claude plugin install memex@claude-community` from `Shvmvrshny/memex`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Shivam Varshney"
+  },
+  "externalUrl": "https://github.com/Shvmvrshny/memex/tree/dc271418fde22597350f1fc5a1582e151e1ab1b3",
+  "marketplace": "claude-community",
+  "version": "1.0.0",
+  "sourceRevision": "dc271418fde22597350f1fc5a1582e151e1ab1b3",
+  "contentDigest": "2c1de752ade5c788c030788e341da92cd63958176acbd0b1562895705395c810",
+  "contentHash": "03f6ea0fce4d00f2",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/Shvmvrshny/memex.git",
+    "sha": "dc271418fde22597350f1fc5a1582e151e1ab1b3"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-04-18T18:16:26Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "cmd",
+        "type": "directory",
+        "children": [
+          {
+            "name": "memex",
+            "type": "directory",
+            "children": [
+              {
+                "name": "main.go",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-06-memex-implementation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-07-tracer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-10-phase1-structured-memory.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-10-phase2-memory-layers.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-10-phase3-knowledge-graph.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-10-phase4-transcript-mining.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-10-phase5-mcp-tools.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-12-v2-test-suite.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-13-memex-vision-graph-ui.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-18-code-kg-pipeline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-18-phase2-llm-enrichment.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memex_mempalace_hybrid_plan_doc.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-06-memex-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-07-tracer-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-09-current-vs-new-state.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-09-memex-v2-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-13-memex-vision-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "test-case",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-09-memex-test-cases.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-18-phase3-eval-set.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "internal",
+        "type": "directory",
+        "children": [
+          {
+            "name": "testdata",
+            "type": "directory",
+            "children": [
+              {
+                "name": "golden",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "session_start_full.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session_start_identity_only.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session_start_no_identity.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "transcripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "decision_single_turn.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discovery_resolution.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "duplicate_session.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "noisy_debug_loop.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "procedure_multistep.jsonl",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "benchmark_test.go",
+            "type": "file"
+          },
+          {
+            "name": "classifier_ambiguity_test.go",
+            "type": "file"
+          },
+          {
+            "name": "classifier_test.go",
+            "type": "file"
+          },
+          {
+            "name": "classifier.go",
+            "type": "file"
+          },
+          {
+            "name": "code_indexer_test.go",
+            "type": "file"
+          },
+          {
+            "name": "code_indexer.go",
+            "type": "file"
+          },
+          {
+            "name": "config_test.go",
+            "type": "file"
+          },
+          {
+            "name": "config.go",
+            "type": "file"
+          },
+          {
+            "name": "distill_test.go",
+            "type": "file"
+          },
+          {
+            "name": "distill.go",
+            "type": "file"
+          },
+          {
+            "name": "duplicate_threshold_test.go",
+            "type": "file"
+          },
+          {
+            "name": "enricher_test.go",
+            "type": "file"
+          },
+          {
+            "name": "enricher.go",
+            "type": "file"
+          },
+          {
+            "name": "fake_store_test.go",
+            "type": "file"
+          },
+          {
+            "name": "handlers_test.go",
+            "type": "file"
+          },
+          {
+            "name": "handlers.go",
+            "type": "file"
+          },
+          {
+            "name": "hook_golden_test.go",
+            "type": "file"
+          },
+          {
+            "name": "hook_test.go",
+            "type": "file"
+          },
+          {
+            "name": "hook.go",
+            "type": "file"
+          },
+          {
+            "name": "index_cmd.go",
+            "type": "file"
+          },
+          {
+            "name": "kg_concurrency_test.go",
+            "type": "file"
+          },
+          {
+            "name": "kg_handlers_test.go",
+            "type": "file"
+          },
+          {
+            "name": "kg_handlers.go",
+            "type": "file"
+          },
+          {
+            "name": "kg_test.go",
+            "type": "file"
+          },
+          {
+            "name": "kg.go",
+            "type": "file"
+          },
+          {
+            "name": "mcp_chain_test.go",
+            "type": "file"
+          },
+          {
+            "name": "mcp_test.go",
+            "type": "file"
+          },
+          {
+            "name": "mcp.go",
+            "type": "file"
+          },
+          {
+            "name": "mine_cmd.go",
+            "type": "file"
+          },
+          {
+            "name": "miner_race_test.go",
+            "type": "file"
+          },
+          {
+            "name": "miner_test.go",
+            "type": "file"
+          },
+          {
+            "name": "miner.go",
+            "type": "file"
+          },
+          {
+            "name": "models_test.go",
+            "type": "file"
+          },
+          {
+            "name": "models.go",
+            "type": "file"
+          },
+          {
+            "name": "qdrant_filter_test.go",
+            "type": "file"
+          },
+          {
+            "name": "qdrant_test.go",
+            "type": "file"
+          },
+          {
+            "name": "qdrant.go",
+            "type": "file"
+          },
+          {
+            "name": "server.go",
+            "type": "file"
+          },
+          {
+            "name": "store_contract_test.go",
+            "type": "file"
+          },
+          {
+            "name": "store.go",
+            "type": "file"
+          },
+          {
+            "name": "tracer_handlers_test.go",
+            "type": "file"
+          },
+          {
+            "name": "tracer_handlers.go",
+            "type": "file"
+          },
+          {
+            "name": "tracer_models.go",
+            "type": "file"
+          },
+          {
+            "name": "tracer_test.go",
+            "type": "file"
+          },
+          {
+            "name": "tracer.go",
+            "type": "file"
+          },
+          {
+            "name": "transcript_fixture_test.go",
+            "type": "file"
+          },
+          {
+            "name": "transcript_test.go",
+            "type": "file"
+          },
+          {
+            "name": "transcript.go",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks-cursor.json",
+                "type": "file"
+              },
+              {
+                "name": "hooks.json",
+                "type": "file"
+              },
+              {
+                "name": "post-tool-use",
+                "type": "file"
+              },
+              {
+                "name": "post-tool-use 2",
+                "type": "file"
+              },
+              {
+                "name": "pre-tool-use",
+                "type": "file"
+              },
+              {
+                "name": "pre-tool-use 2",
+                "type": "file"
+              },
+              {
+                "name": "session-start",
+                "type": "file"
+              },
+              {
+                "name": "session-stop",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "memex",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "tracer-hook 2.sh",
+            "type": "file"
+          },
+          {
+            "name": "tracer-hook.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "vision",
+        "type": "directory",
+        "children": [
+          {
+            "name": "public",
+            "type": "directory",
+            "children": [
+              {
+                "name": "favicon.svg",
+                "type": "file"
+              },
+              {
+                "name": "icons.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "hero.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vite.svg",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "components",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "GraphCanvas.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryNode.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "NodeInspector.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SearchBar.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Sidebar.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "buildEdges.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "buildEdges.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "buildNodes.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "buildNodes.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "colors.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "layout.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "api.ts",
+                "type": "file"
+              },
+              {
+                "name": "App.tsx",
+                "type": "file"
+              },
+              {
+                "name": "index.css",
+                "type": "file"
+              },
+              {
+                "name": "main.tsx",
+                "type": "file"
+              },
+              {
+                "name": "store.tsx",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "Dockerfile",
+            "type": "file"
+          },
+          {
+            "name": "eslint.config.js",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "nginx.conf",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.app.json",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.node.json",
+            "type": "file"
+          },
+          {
+            "name": "vite.config.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.yml",
+        "type": "file"
+      },
+      {
+        "name": "Dockerfile",
+        "type": "file"
+      },
+      {
+        "name": "go.mod",
+        "type": "file"
+      },
+      {
+        "name": "go.sum",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

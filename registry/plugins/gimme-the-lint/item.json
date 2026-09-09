@@ -1,0 +1,1303 @@
+{
+  "slug": "gimme-the-lint",
+  "name": "Gimme The Lint",
+  "type": "plugin",
+  "description": "Progressive linting system that only blocks on new violations, never on legacy code. Baselines existing lint issues by directory, then enforces clean code going forward. Supports Python (Ruff) and JavaScript/TypeScript (ESLint) in monorepo configurations. Includes drift detection, auto-healing, git hooks, and a GitHub Action for CI enforcement. Directory-chunked baselines allow gradual adoption without a big-bang cleanup.",
+  "longDescription": "Ships **1 agent**, **8 commands** and **1 hook**.\n\n- **Agents** (1): `linting-agent` (Runs progressive linting and entity-contract checks via gimme-the-lint and reports violations)\n- **Commands** (8): `contract` (Check whether your data model agrees with the schemas that expose it (entity-contract drift)), `lint-baseline` (Create or refresh progressive-lint baselines (captures existing violations so only NEW ones block future commits)), `lint-status` (Show the progressive linting dashboard — per-app baseline status and drift detection), `lint` (Run progressive linting checks on the current project (only NEW violations above the baseline are flagged)), `policy` (Get or set the gimme-the-lint update policy (auto | nudge | off)), `relink` (Re-run the skill linker — refresh symlinks from node_modules into .claude/skills/), `status` (Show installed version, latest available version, current update policy, and hook registration state), `update` (Update gimme-the-lint to the latest version (runs npm update + re-links skills))\n- **Hooks** (1): `SessionStart`\n\nInstalls with `claude plugin install gimme-the-lint@claude-community` from `TheGlitchKing/gimme-the-lint`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "agent": 1,
+    "hook": 1,
+    "command": 8
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "TheGlitchKing"
+  },
+  "externalUrl": "https://github.com/TheGlitchKing/gimme-the-lint/tree/345323bcd853a3989c8a04fb774beb8c80422d27",
+  "marketplace": "claude-community",
+  "version": "2.8.1",
+  "sourceRevision": "345323bcd853a3989c8a04fb774beb8c80422d27",
+  "contentDigest": "2bf33520b7af044a5c9d48cfb1ed1127f9b287cbee813e4e9d792567fc4f0e6c",
+  "contentHash": "ff23b937e7090972",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/TheGlitchKing/gimme-the-lint.git",
+    "sha": "345323bcd853a3989c8a04fb774beb8c80422d27"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-18T17:44:05Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "memory",
+            "type": "directory",
+            "children": [
+              {
+                "name": "checkpoint.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "guiding-principles.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".documentation",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "api",
+            "type": "directory",
+            "children": [
+              {
+                "name": "codegen-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "contract-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              },
+              {
+                "name": "schema-lockfile-guide.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "architecture",
+            "type": "directory",
+            "children": [
+              {
+                "name": "architecture-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "archive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "backups",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "database",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "devops",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "drafts",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "features",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "incidents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "knowledge-base",
+            "type": "directory",
+            "children": [
+              {
+                "name": "facts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fastapi-omits-response-schema-without-response-model.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fastapi-operation-ids-derive-from-function-names.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hand-written-client-types-drift-by-inventing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "metadata-is-reserved-on-sqlalchemy-models.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "update-schema-defaults-overwrite-stored-data.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "incidents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-07-06-blank-zip-field-and-invented-columns",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "facts.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "narrative.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "symptoms",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "procedures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              },
+              {
+                "name": "upgrade-guide.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "quickstart",
+            "type": "directory",
+            "children": [
+              {
+                "name": "how-to-use-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "installation-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              },
+              {
+                "name": "when-to-use-guide.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reports",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "audit-2026-07-13T18-59-26.md",
+                "type": "file"
+              },
+              {
+                "name": "links-2026-07-13T18-58-19.md",
+                "type": "file"
+              },
+              {
+                "name": "maintenance-2026-07-13T18-57-22.md",
+                "type": "file"
+              },
+              {
+                "name": "maintenance-2026-07-13T18-58-36.md",
+                "type": "file"
+              },
+              {
+                "name": "maintenance-2026-07-13T18-58-44.md",
+                "type": "file"
+              },
+              {
+                "name": "maintenance-2026-07-18T17-30-14.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "security",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "standards",
+            "type": "directory",
+            "children": [
+              {
+                "name": "contract-rules-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "decision-vs-debt-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "lint-rules-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "principles-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "testing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "troubleshooting",
+            "type": "directory",
+            "children": [
+              {
+                "name": "contract-troubleshooting-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              },
+              {
+                "name": "troubleshooting-guide.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "INDEX.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "REGISTRY.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "linting-agent.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "gimme-the-lint.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "contract.md",
+            "type": "file"
+          },
+          {
+            "name": "lint-baseline.md",
+            "type": "file"
+          },
+          {
+            "name": "lint-status.md",
+            "type": "file"
+          },
+          {
+            "name": "lint.md",
+            "type": "file"
+          },
+          {
+            "name": "policy.md",
+            "type": "file"
+          },
+          {
+            "name": "relink.md",
+            "type": "file"
+          },
+          {
+            "name": "status.md",
+            "type": "file"
+          },
+          {
+            "name": "update.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "githooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "install.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-commit",
+            "type": "file"
+          },
+          {
+            "name": "pre-push",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "session-start.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adapters",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapter.js",
+                "type": "file"
+              },
+              {
+                "name": "alembic-check.js",
+                "type": "file"
+              },
+              {
+                "name": "ansible.js",
+                "type": "file"
+              },
+              {
+                "name": "biome.js",
+                "type": "file"
+              },
+              {
+                "name": "buf.js",
+                "type": "file"
+              },
+              {
+                "name": "clippy.js",
+                "type": "file"
+              },
+              {
+                "name": "codegen-drift.js",
+                "type": "file"
+              },
+              {
+                "name": "contract.js",
+                "type": "file"
+              },
+              {
+                "name": "eslint.js",
+                "type": "file"
+              },
+              {
+                "name": "golangci-lint.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "mypy.js",
+                "type": "file"
+              },
+              {
+                "name": "openapi.js",
+                "type": "file"
+              },
+              {
+                "name": "ruff.js",
+                "type": "file"
+              },
+              {
+                "name": "spectral.js",
+                "type": "file"
+              },
+              {
+                "name": "squawk.js",
+                "type": "file"
+              },
+              {
+                "name": "tflint.js",
+                "type": "file"
+              },
+              {
+                "name": "tsc.js",
+                "type": "file"
+              },
+              {
+                "name": "typecheck-identity.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "baseline-store.js",
+            "type": "file"
+          },
+          {
+            "name": "baseline.js",
+            "type": "file"
+          },
+          {
+            "name": "check.js",
+            "type": "file"
+          },
+          {
+            "name": "config-manager.js",
+            "type": "file"
+          },
+          {
+            "name": "dashboard.js",
+            "type": "file"
+          },
+          {
+            "name": "diff-engine.js",
+            "type": "file"
+          },
+          {
+            "name": "directory-discovery.js",
+            "type": "file"
+          },
+          {
+            "name": "drift.js",
+            "type": "file"
+          },
+          {
+            "name": "fingerprint.js",
+            "type": "file"
+          },
+          {
+            "name": "git-hooks-manager.js",
+            "type": "file"
+          },
+          {
+            "name": "git-ref.js",
+            "type": "file"
+          },
+          {
+            "name": "gtl-manifest.js",
+            "type": "file"
+          },
+          {
+            "name": "index.js",
+            "type": "file"
+          },
+          {
+            "name": "installer.js",
+            "type": "file"
+          },
+          {
+            "name": "linter-configs.js",
+            "type": "file"
+          },
+          {
+            "name": "manifest-manager.js",
+            "type": "file"
+          },
+          {
+            "name": "migrate.js",
+            "type": "file"
+          },
+          {
+            "name": "project-model.js",
+            "type": "file"
+          },
+          {
+            "name": "report.js",
+            "type": "file"
+          },
+          {
+            "name": "rule-aliases.js",
+            "type": "file"
+          },
+          {
+            "name": "toolchain.js",
+            "type": "file"
+          },
+          {
+            "name": "units.js",
+            "type": "file"
+          },
+          {
+            "name": "venv-manager.js",
+            "type": "file"
+          },
+          {
+            "name": "verify.js",
+            "type": "file"
+          },
+          {
+            "name": "violation.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "python",
+        "type": "directory",
+        "children": [
+          {
+            "name": "gtl_contract",
+            "type": "directory",
+            "children": [
+              {
+                "name": "providers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sqlalchemy_pydantic",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "checks.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "inventory.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "base.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "config.py",
+                "type": "file"
+              },
+              {
+                "name": "openapi.py",
+                "type": "file"
+              },
+              {
+                "name": "rules.py",
+                "type": "file"
+              },
+              {
+                "name": "violation.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "brokenapp",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "models",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "__init__.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "schemas",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "__init__.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "budget.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "conversation.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "deal.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "document.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "main.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "cleanapp",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "models",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "__init__.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "schemas",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "__init__.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "conftest.py",
+                "type": "file"
+              },
+              {
+                "name": "test_config.py",
+                "type": "file"
+              },
+              {
+                "name": "test_found_in_the_wild.py",
+                "type": "file"
+              },
+              {
+                "name": "test_rules.py",
+                "type": "file"
+              },
+              {
+                "name": "test_skip_is_not_pass.py",
+                "type": "file"
+              },
+              {
+                "name": "test_spec_quality.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "pyproject.toml",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "dashboard.sh",
+            "type": "file"
+          },
+          {
+            "name": "eslint-baseline.sh",
+            "type": "file"
+          },
+          {
+            "name": "link-skills.mjs",
+            "type": "file"
+          },
+          {
+            "name": "ruff-baseline.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-checks.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup-venv.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-facts.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".ansible-lint.template.yml",
+            "type": "file"
+          },
+          {
+            "name": ".gitleaks.template.toml",
+            "type": "file"
+          },
+          {
+            "name": ".golangci.template.yml",
+            "type": "file"
+          },
+          {
+            "name": ".pre-commit-config.template.yaml",
+            "type": "file"
+          },
+          {
+            "name": ".prettierrc.template.json",
+            "type": "file"
+          },
+          {
+            "name": ".tflint.template.hcl",
+            "type": "file"
+          },
+          {
+            "name": "biome.template.json",
+            "type": "file"
+          },
+          {
+            "name": "clippy-cargo-lints.template.toml",
+            "type": "file"
+          },
+          {
+            "name": "clippy.template.toml",
+            "type": "file"
+          },
+          {
+            "name": "commitlint.config.template.js",
+            "type": "file"
+          },
+          {
+            "name": "eslint.config.template.js",
+            "type": "file"
+          },
+          {
+            "name": "lint.workflow.template.yml",
+            "type": "file"
+          },
+          {
+            "name": "pyproject.template.toml",
+            "type": "file"
+          },
+          {
+            "name": "requirements.linting.txt",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adapters-polyglot.test.js",
+            "type": "file"
+          },
+          {
+            "name": "adapters.test.js",
+            "type": "file"
+          },
+          {
+            "name": "ansible.test.js",
+            "type": "file"
+          },
+          {
+            "name": "baseline-store.test.js",
+            "type": "file"
+          },
+          {
+            "name": "biome.test.js",
+            "type": "file"
+          },
+          {
+            "name": "check.test.js",
+            "type": "file"
+          },
+          {
+            "name": "codegen-drift.test.js",
+            "type": "file"
+          },
+          {
+            "name": "config-location.test.js",
+            "type": "file"
+          },
+          {
+            "name": "config-manager.test.js",
+            "type": "file"
+          },
+          {
+            "name": "contract-adapter.test.js",
+            "type": "file"
+          },
+          {
+            "name": "diff-engine.test.js",
+            "type": "file"
+          },
+          {
+            "name": "directory-discovery.test.js",
+            "type": "file"
+          },
+          {
+            "name": "drift.test.js",
+            "type": "file"
+          },
+          {
+            "name": "fingerprint-key.test.js",
+            "type": "file"
+          },
+          {
+            "name": "fingerprint.test.js",
+            "type": "file"
+          },
+          {
+            "name": "hook-contract.test.js",
+            "type": "file"
+          },
+          {
+            "name": "idl-adapters.test.js",
+            "type": "file"
+          },
+          {
+            "name": "install-modes.test.js",
+            "type": "file"
+          },
+          {
+            "name": "invariants.test.js",
+            "type": "file"
+          },
+          {
+            "name": "linter-configs.test.js",
+            "type": "file"
+          },
+          {
+            "name": "manifest-manager.test.js",
+            "type": "file"
+          },
+          {
+            "name": "migrate.test.js",
+            "type": "file"
+          },
+          {
+            "name": "migration-bugs.test.js",
+            "type": "file"
+          },
+          {
+            "name": "never-baseline.test.js",
+            "type": "file"
+          },
+          {
+            "name": "openapi-lockfile.test.js",
+            "type": "file"
+          },
+          {
+            "name": "project-model.test.js",
+            "type": "file"
+          },
+          {
+            "name": "report-guidance.test.js",
+            "type": "file"
+          },
+          {
+            "name": "rule-migration.test.js",
+            "type": "file"
+          },
+          {
+            "name": "squawk.test.js",
+            "type": "file"
+          },
+          {
+            "name": "stale-baseline.test.js",
+            "type": "file"
+          },
+          {
+            "name": "stale-scoped-runs.test.js",
+            "type": "file"
+          },
+          {
+            "name": "tflint-config-resolution.test.js",
+            "type": "file"
+          },
+          {
+            "name": "tflint-genericize.test.js",
+            "type": "file"
+          },
+          {
+            "name": "tflint.test.js",
+            "type": "file"
+          },
+          {
+            "name": "tier-stage.test.js",
+            "type": "file"
+          },
+          {
+            "name": "typecheck-adapters.test.js",
+            "type": "file"
+          },
+          {
+            "name": "verify.test.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".npmignore",
+        "type": "file"
+      },
+      {
+        "name": "action.yml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "marketplace-entry.json",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "uninstall.sh",
+        "type": "file"
+      }
+    ]
+  }
+}

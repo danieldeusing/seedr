@@ -1,0 +1,822 @@
+{
+  "slug": "hit-em-with-the-docs",
+  "name": "Hit Em With The Docs",
+  "type": "plugin",
+  "description": "Self-managing documentation system with a 15-domain hierarchy, 22-field metadata schema, intelligent pattern discovery, and GitHub Actions automation. Generates and maintains hierarchical documentation with rich metadata, auto-discovers undocumented patterns, and self-heals stale or missing docs. Available as both a CLI tool and GitHub Action for CI/CD integration.",
+  "longDescription": "Ships **4 commands** and **1 hook**.\n\n- **Commands** (4): `policy` (Get or set the hit-em-with-the-docs update policy (auto | nudge | off)), `relink` (Re-run the skill linker — refresh symlinks from node_modules into .claude/skills/), `status` (Show installed version, latest available version, current update policy, and hook registration state), `update` (Update hit-em-with-the-docs to the latest version (runs npm update))\n- **Hooks** (1): `SessionStart`\n\nInstalls with `claude plugin install hit-em-with-the-docs@claude-community` from `TheGlitchKing/hit-em-with-the-docs`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "hook": 1,
+    "command": 4
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "TheGlitchKing"
+  },
+  "externalUrl": "https://github.com/TheGlitchKing/hit-em-with-the-docs/tree/91f1278b5f44d22add082a0df97c642f9bea36dd",
+  "marketplace": "claude-community",
+  "version": "2.2.0",
+  "sourceRevision": "91f1278b5f44d22add082a0df97c642f9bea36dd",
+  "contentDigest": "4c097f48475c0594da15588e200aa4ed62cc222e86e4afe110680cf2722801ea",
+  "contentHash": "4c4eece781f63e46",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/TheGlitchKing/hit-em-with-the-docs.git",
+    "sha": "91f1278b5f44d22add082a0df97c642f9bea36dd"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-08T04:45:08Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "policy.md",
+            "type": "file"
+          },
+          {
+            "name": "relink.md",
+            "type": "file"
+          },
+          {
+            "name": "status.md",
+            "type": "file"
+          },
+          {
+            "name": "update.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plan-tier-frontmatter.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "basic-health-check.yml",
+                "type": "file"
+              },
+              {
+                "name": "full-maintenance.yml",
+                "type": "file"
+              },
+              {
+                "name": "pattern-discovery.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "session-start.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "link-skills.js",
+            "type": "file"
+          },
+          {
+            "name": "validate-version.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "action",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auditor.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rules.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "discover",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "antipatterns.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dependencies.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "patterns.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "standards.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "domains",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "classifier.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "constants.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detector.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "integrate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "integrator.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "links",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "checker.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tracker.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "maintain",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "orchestrator.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "metadata",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "generator.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sync.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "generators",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "document.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "domain-index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "domain-registry.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index-generator.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry-generator.ts",
+                "type": "file"
+              },
+              {
+                "name": "scaffold.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reports",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit-report.ts",
+                "type": "file"
+              },
+              {
+                "name": "health-report.ts",
+                "type": "file"
+              },
+              {
+                "name": "link-report.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "frontmatter.ts",
+                "type": "file"
+              },
+              {
+                "name": "glob.ts",
+                "type": "file"
+              },
+              {
+                "name": "logger.ts",
+                "type": "file"
+              },
+              {
+                "name": "markdown.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude",
+            "type": "directory",
+            "children": [
+              {
+                "name": "CLAUDE.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "test-project",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".documentation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "api",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "endpoints-guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "architecture",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "backups",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "database",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema-guide.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devops",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "docker-setup.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "drafts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "features",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "procedures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "quickstart",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "reports",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "security",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auth-guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "standards",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "testing",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "troubleshooting",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "workflows",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REGISTRY.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "INDEX.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "REGISTRY.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".documentation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "api",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "endpoints-reference.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "INDEX.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "security",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "auth-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "INDEX.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "unit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "rules.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "domains",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "classifier.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "constants.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detector.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "links",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "checker.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "metadata",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "generator.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.test.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "action.yml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "MIGRATION.md",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.backup.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

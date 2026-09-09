@@ -1,0 +1,1591 @@
+{
+  "slug": "devflow",
+  "name": "Devflow",
+  "type": "plugin",
+  "description": "Structured AI development workflows for Claude Code. Enforces planning, approval, task tracking, and code review gates\nthrough MCP — so AI agents work within a defined process instead of writing code without oversight.",
+  "longDescription": "Ships **7 commands** and **1 MCP server**.\n\n- **Commands** (7): `devflow-create` (Create a new flow with a one-line summary), `devflow-list` (List open flows as a Markdown table (⭐ marks own flows)), `devflow-next` (Show the next allowed action and step for the current flow), `devflow-review` (Submit the current flow for review (transitions to 'review' state)), `devflow-start` (Start a DevFlow session for a specific flow), `devflow-status` (Show the current DevFlow status (state, tasks, next step)), `devflow-tasks` (List tasks for the current DevFlow flow)\n- **MCP servers** (1): `devflow`\n\nInstalls with `claude plugin install devflow@claude-community` from `KlausFreiberufler/devflow-mcp`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "command": 7,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "DevFlow",
+    "url": "https://dev-flow.tech"
+  },
+  "externalUrl": "https://github.com/KlausFreiberufler/devflow-mcp/tree/0164522bf1d08715c8724109a8e8d5af977de98b",
+  "marketplace": "claude-community",
+  "version": "4.29.0",
+  "sourceRevision": "0164522bf1d08715c8724109a8e8d5af977de98b",
+  "contentDigest": "9b8866d33fb81585ab0c6815ed2d8245096d06a4d8f7b2fecfe47d66e9bb1df6",
+  "contentHash": "77588ea4d27c517b",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/KlausFreiberufler/devflow-mcp.git",
+    "sha": "0164522bf1d08715c8724109a8e8d5af977de98b"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-09T12:15:02Z",
+  "contents": {
+    "files": [
+      {
+        "name": "__tests__",
+        "type": "directory",
+        "children": [
+          {
+            "name": "codex-plugin.test.js",
+            "type": "file"
+          },
+          {
+            "name": "cursor-bundle.test.js",
+            "type": "file"
+          },
+          {
+            "name": "gemini-extension.test.js",
+            "type": "file"
+          },
+          {
+            "name": "server-split.test.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devflow-create.md",
+                "type": "file"
+              },
+              {
+                "name": "devflow-list.md",
+                "type": "file"
+              },
+              {
+                "name": "devflow-next.md",
+                "type": "file"
+              },
+              {
+                "name": "devflow-review.md",
+                "type": "file"
+              },
+              {
+                "name": "devflow-start.md",
+                "type": "file"
+              },
+              {
+                "name": "devflow-status.md",
+                "type": "file"
+              },
+              {
+                "name": "devflow-tasks.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks.json",
+                "type": "file"
+              },
+              {
+                "name": "pre-flow-update.sh",
+                "type": "file"
+              },
+              {
+                "name": "pre-tool-use.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devflow-adr-compliance",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-area-ideation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-collision-acknowledged",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-core",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-debugging",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-error-investigator",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-executing",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-flow-display",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-idea-curator",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-knowledge-completer",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-pattern-reuse",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-plan-reconciliation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-planning",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-receiving-review",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-reviewing",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-tdd",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-verification-gate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-wiki-lint",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devflow-worktrees",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": ".mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pre-flow-update.sh",
+                "type": "file"
+              },
+              {
+                "name": "pre-tool-use.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devflow.mdc",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gemini-extension",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks.json",
+                "type": "file"
+              },
+              {
+                "name": "pre-flow-update.sh",
+                "type": "file"
+              },
+              {
+                "name": "pre-tool-use.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gemini-extension.json",
+            "type": "file"
+          },
+          {
+            "name": "GEMINI.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "devflow-create.md",
+            "type": "file"
+          },
+          {
+            "name": "devflow-list.md",
+            "type": "file"
+          },
+          {
+            "name": "devflow-next.md",
+            "type": "file"
+          },
+          {
+            "name": "devflow-review.md",
+            "type": "file"
+          },
+          {
+            "name": "devflow-start.md",
+            "type": "file"
+          },
+          {
+            "name": "devflow-status.md",
+            "type": "file"
+          },
+          {
+            "name": "devflow-tasks.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "api",
+            "type": "directory",
+            "children": [
+              {
+                "name": "client.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auth",
+            "type": "directory",
+            "children": [
+              {
+                "name": "browser-auth.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sync.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "version-check.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "version.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auto-logger.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "auto-status.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "client-detect.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "permissions.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "session.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prompts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devflowPrompts.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "resources",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devflowResources.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "start-server.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "os-detect.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "setup.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "setup.js",
+                "type": "file"
+              },
+              {
+                "name": "uninstall.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "wrapper.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents-md.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "claude-md.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "cursorrules.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-md.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "windsurfrules.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adrs.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "agent-session.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "attachment.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "bootstrapAudit.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "connect.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "disciplineTokens.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "disconnect.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "docs.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "flow.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "guidelines.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "init.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "knowledgeDrafts.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "planningContext.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "project.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "release.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "search.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "stateAware.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "status.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "task.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "wiki.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "attachments.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "errors.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "git.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "resolve-flow-id.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "tiptap.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "working-dir.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index-flows.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "index-flows.js",
+            "type": "file"
+          },
+          {
+            "name": "index-wiki.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "index-wiki.js",
+            "type": "file"
+          },
+          {
+            "name": "index.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "CLAUDE-WORKFLOW-RULES.md",
+            "type": "file"
+          },
+          {
+            "name": "SKILL-ACTIVATION-AUDIT.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "post-tool-use.json",
+            "type": "file"
+          },
+          {
+            "name": "pre-tool-use.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "session-start.json",
+            "type": "file"
+          },
+          {
+            "name": "stop.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "packages",
+        "type": "directory",
+        "children": [
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__tests__",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skill-schema.test.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "build-index.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "devflow-adr-compliance",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-area-ideation",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-code-critic",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-collision-acknowledged",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-core",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-debugging",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-error-investigator",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-executing",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-flow-attachment",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-flow-display",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-idea-curator",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-knowledge-completer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-pattern-reuse",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-plan-critic",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-plan-reconciliation",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-planning",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-receiving-review",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-reviewing",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-tdd",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-verification-gate",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-wiki-lint",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "devflow-worktrees",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "index.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devflow-state.sh",
+                "type": "file"
+              },
+              {
+                "name": "version-check.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "check-active-flow.bats",
+                "type": "file"
+              },
+              {
+                "name": "check-plugin-update.test.js",
+                "type": "file"
+              },
+              {
+                "name": "hooks-matcher.test.js",
+                "type": "file"
+              },
+              {
+                "name": "post-flow-update.test.js",
+                "type": "file"
+              },
+              {
+                "name": "pre-flow-update-suffix-match.test.js",
+                "type": "file"
+              },
+              {
+                "name": "session-start-config.test.js",
+                "type": "file"
+              },
+              {
+                "name": "session-start-info.bats",
+                "type": "file"
+              },
+              {
+                "name": "stop-check.test.js",
+                "type": "file"
+              },
+              {
+                "name": "version-check-lib.test.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "build-codex-plugin.js",
+            "type": "file"
+          },
+          {
+            "name": "build-cursor-bundle.js",
+            "type": "file"
+          },
+          {
+            "name": "build-gemini-extension.js",
+            "type": "file"
+          },
+          {
+            "name": "build.js",
+            "type": "file"
+          },
+          {
+            "name": "bump-version.js",
+            "type": "file"
+          },
+          {
+            "name": "check-active-flow.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-plugin-update.js",
+            "type": "file"
+          },
+          {
+            "name": "check-versions.js",
+            "type": "file"
+          },
+          {
+            "name": "post-flow-update.js",
+            "type": "file"
+          },
+          {
+            "name": "pre-flow-update-code-critic.js",
+            "type": "file"
+          },
+          {
+            "name": "pre-flow-update-knowledge-auto-resolve.js",
+            "type": "file"
+          },
+          {
+            "name": "pre-flow-update-plan-critic.js",
+            "type": "file"
+          },
+          {
+            "name": "pre-flow-update-self-approval.js",
+            "type": "file"
+          },
+          {
+            "name": "session-start-info.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup-cursor.sh",
+            "type": "file"
+          },
+          {
+            "name": "stop-check.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "api",
+            "type": "directory",
+            "children": [
+              {
+                "name": "client.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auth",
+            "type": "directory",
+            "children": [
+              {
+                "name": "browser-auth.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sync.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              },
+              {
+                "name": "version-check.ts",
+                "type": "file"
+              },
+              {
+                "name": "version.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auto-logger.ts",
+                "type": "file"
+              },
+              {
+                "name": "auto-status.ts",
+                "type": "file"
+              },
+              {
+                "name": "client-detect.ts",
+                "type": "file"
+              },
+              {
+                "name": "permissions.ts",
+                "type": "file"
+              },
+              {
+                "name": "session.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prompts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devflowPrompts.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "resources",
+            "type": "directory",
+            "children": [
+              {
+                "name": "devflowResources.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "start-server.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "os-detect.ts",
+                "type": "file"
+              },
+              {
+                "name": "setup.ts",
+                "type": "file"
+              },
+              {
+                "name": "uninstall.ts",
+                "type": "file"
+              },
+              {
+                "name": "wrapper.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents-md.ts",
+                "type": "file"
+              },
+              {
+                "name": "claude-md.ts",
+                "type": "file"
+              },
+              {
+                "name": "cursorrules.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-md.ts",
+                "type": "file"
+              },
+              {
+                "name": "windsurfrules.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adrs.ts",
+                "type": "file"
+              },
+              {
+                "name": "agent-session.ts",
+                "type": "file"
+              },
+              {
+                "name": "attachment.ts",
+                "type": "file"
+              },
+              {
+                "name": "bootstrapAudit.ts",
+                "type": "file"
+              },
+              {
+                "name": "connect.ts",
+                "type": "file"
+              },
+              {
+                "name": "disciplineTokens.ts",
+                "type": "file"
+              },
+              {
+                "name": "disconnect.ts",
+                "type": "file"
+              },
+              {
+                "name": "docs.ts",
+                "type": "file"
+              },
+              {
+                "name": "flow.ts",
+                "type": "file"
+              },
+              {
+                "name": "guidelines.ts",
+                "type": "file"
+              },
+              {
+                "name": "init.ts",
+                "type": "file"
+              },
+              {
+                "name": "knowledgeDrafts.ts",
+                "type": "file"
+              },
+              {
+                "name": "planningContext.ts",
+                "type": "file"
+              },
+              {
+                "name": "project.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry.ts",
+                "type": "file"
+              },
+              {
+                "name": "release.ts",
+                "type": "file"
+              },
+              {
+                "name": "search.ts",
+                "type": "file"
+              },
+              {
+                "name": "stateAware.ts",
+                "type": "file"
+              },
+              {
+                "name": "status.ts",
+                "type": "file"
+              },
+              {
+                "name": "task.ts",
+                "type": "file"
+              },
+              {
+                "name": "wiki.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "attachments.ts",
+                "type": "file"
+              },
+              {
+                "name": "errors.ts",
+                "type": "file"
+              },
+              {
+                "name": "git.ts",
+                "type": "file"
+              },
+              {
+                "name": "resolve-flow-id.ts",
+                "type": "file"
+              },
+              {
+                "name": "tiptap.ts",
+                "type": "file"
+              },
+              {
+                "name": "working-dir.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index-flows.ts",
+            "type": "file"
+          },
+          {
+            "name": "index-wiki.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "auth",
+            "type": "directory",
+            "children": [
+              {
+                "name": "credentials-mode.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mockDevFlowClient.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "strictness",
+            "type": "directory",
+            "children": [
+              {
+                "name": "git.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "happy-path-paranoid.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rules.test.ts",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".npmignore",
+        "type": "file"
+      },
+      {
+        "name": "A.1-findings.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

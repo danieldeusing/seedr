@@ -1,0 +1,603 @@
+{
+  "slug": "event-outbound",
+  "name": "Event Outbound",
+  "type": "plugin",
+  "description": "Create buyer-first email and LinkedIn outreach for B2B trade shows and conferences.\n\nGive event details, ICP, target personas, and sender context. event-outbound drafts pre-event, day-of, and post-event touches, then validates each one locally for channel length, subject quality, inbox preview, buyer focus, CTA clarity, forced event phrasing, and common AI-sales cliches.\n\nBuilt by Luminik from 20K+ outbound touches reviewed across 50+ events. Runs inside Claude Code with no extra API key.",
+  "longDescription": "Ships **1 skill**, `event-outbound` (Create validated email and LinkedIn outreach sequences for B2B events, from pre-event to post-event, grounded in buyer priorities…).\n\nInstalls with `claude plugin install event-outbound@claude-community` from `luminik-io/event-outbound-skill`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Luminik",
+    "url": "https://www.luminik.io"
+  },
+  "externalUrl": "https://github.com/luminik-io/event-outbound-skill/tree/c32943596d54a8f18f7d6b5314356d48baf0aa04",
+  "marketplace": "claude-community",
+  "version": "0.2.5",
+  "sourceRevision": "c32943596d54a8f18f7d6b5314356d48baf0aa04",
+  "contentDigest": "36a99d4cb599571d099330424a22f9ec2ff79fac390d94ffb25bfeeefcdd8383",
+  "contentHash": "05f3de18da253a94",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/luminik-io/event-outbound-skill.git",
+    "sha": "c32943596d54a8f18f7d6b5314356d48baf0aa04"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-06T14:38:42Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "verify.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "data",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cold-email-benchmarks.json",
+            "type": "file"
+          },
+          {
+            "name": "cold-email-benchmarks.md",
+            "type": "file"
+          },
+          {
+            "name": "cold-email-data-report-stats.md",
+            "type": "file"
+          },
+          {
+            "name": "cold-outbound-canonical-examples.json",
+            "type": "file"
+          },
+          {
+            "name": "cold-outbound-craft.md",
+            "type": "file"
+          },
+          {
+            "name": "cold-outbound-frameworks.md",
+            "type": "file"
+          },
+          {
+            "name": "cold-outbound-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "cold-outbound-rules.json",
+            "type": "file"
+          },
+          {
+            "name": "llm-cliche-blocklist.md",
+            "type": "file"
+          },
+          {
+            "name": "quality-bar-refinements.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "evals",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cold-outbound-craft-quality.eval.ts",
+            "type": "file"
+          },
+          {
+            "name": "cold-outbound-evals.eval.ts",
+            "type": "file"
+          },
+          {
+            "name": "evals.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "black-hat-usa-2026",
+            "type": "directory",
+            "children": [
+              {
+                "name": "company-icp.json",
+                "type": "file"
+              },
+              {
+                "name": "event-context.json",
+                "type": "file"
+              },
+              {
+                "name": "final_sequence.md",
+                "type": "file"
+              },
+              {
+                "name": "sequence-params.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude-showcase",
+            "type": "directory",
+            "children": [
+              {
+                "name": "impossible-cadence",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-output.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rich-positive-availability-unknown",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-output.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "final_sequence.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sequencer-output.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "thin-input-probe",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-output.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "wrong-persona-guard",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-output.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "money2020-europe-2026",
+            "type": "directory",
+            "children": [
+              {
+                "name": "company-icp.json",
+                "type": "file"
+              },
+              {
+                "name": "event-context.json",
+                "type": "file"
+              },
+              {
+                "name": "final_sequence.md",
+                "type": "file"
+              },
+              {
+                "name": "sequence-params.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "singapore-fintech-festival-2026",
+            "type": "directory",
+            "children": [
+              {
+                "name": "company-icp.json",
+                "type": "file"
+              },
+              {
+                "name": "event-context.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "sequence-params.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "marketplace",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cover-1200x630.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cover-1200x630.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-claude-showcase.mjs",
+            "type": "file"
+          },
+          {
+            "name": "check-dependency-compat.mjs",
+            "type": "file"
+          },
+          {
+            "name": "claude-full-sequence-cases.json",
+            "type": "file"
+          },
+          {
+            "name": "claude-matrix-cases.json",
+            "type": "file"
+          },
+          {
+            "name": "plan-timeline.mjs",
+            "type": "file"
+          },
+          {
+            "name": "run-claude-full-sequence.mjs",
+            "type": "file"
+          },
+          {
+            "name": "run-claude-matrix.mjs",
+            "type": "file"
+          },
+          {
+            "name": "run-claude-showcase.mjs",
+            "type": "file"
+          },
+          {
+            "name": "run-example.ts",
+            "type": "file"
+          },
+          {
+            "name": "scan-deliverables.ts",
+            "type": "file"
+          },
+          {
+            "name": "validate-artifact.mjs",
+            "type": "file"
+          },
+          {
+            "name": "validate-sequence.mjs",
+            "type": "file"
+          },
+          {
+            "name": "validate-touch.mjs",
+            "type": "file"
+          },
+          {
+            "name": "verify-install.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "event-outbound",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "event-scraper.ts",
+                "type": "file"
+              },
+              {
+                "name": "icp-analyser.ts",
+                "type": "file"
+              },
+              {
+                "name": "persona-analyser.ts",
+                "type": "file"
+              },
+              {
+                "name": "sequencer.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ruleService.ts",
+                "type": "file"
+              },
+              {
+                "name": "timeline.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "types",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "persona-analyser.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "event-pages",
+            "type": "directory",
+            "children": [
+              {
+                "name": "generic-no-jsonld.html",
+                "type": "file"
+              },
+              {
+                "name": "generic-with-jsonld.html",
+                "type": "file"
+              },
+              {
+                "name": "missing-fields.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "event-pages",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "eventbrite-event.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eventbrite.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "generic-event.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "js-rendered.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jsonld-event.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "luma-event.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "luma.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "microdata-event.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "simple-html.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "static-jsonld.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "linkedin-profiles",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixture1.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixture2.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixture3.txt",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "basic.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "cliche-validator.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "event-scraper.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "timeline.test.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".editorconfig",
+        "type": "file"
+      },
+      {
+        "name": ".eslintrc.cjs",
+        "type": "file"
+      },
+      {
+        "name": ".gitallowed",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".prettierrc",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

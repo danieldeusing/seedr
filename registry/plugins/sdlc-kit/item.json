@@ -1,0 +1,942 @@
+{
+  "slug": "sdlc-kit",
+  "name": "Sdlc Kit",
+  "type": "plugin",
+  "description": "Spec-Driven Development for Claude Code. 11 skills for the daily PR loop — init, PRDs, ADRs, SDD specs (EARS), tasks, git worktrees, code reviews (Code Reviewer + AppSec dual-axis), retrospectives. Includes a PostToolUse hook that auto-indexes every .md save into a SQLite tracker. Self-contained HTML dashboard (Kanban + branch graph) included.",
+  "longDescription": "Ships **11 skills**.\n\n- **Skills** (11): `sdlc-adr` (Use when the user wants to record, review, or transition an Architecture Decision Record (ADR) — one file…), `sdlc-dash` (Use when the user wants to open the SDLC Kit vault dashboard in their default browser — a…), `sdlc-init` (Use when the user wants to initialize an SDLC (Spec-Driven Development) vault in a Git project), `sdlc-prd` (Use when the user wants to create, review, or transition a Product Requirements Document (PRD) — the top-level…), `sdlc-retro` (Use when the user wants to hold, facilitate, or close out a sprint / iteration retrospective — the…), `sdlc-review` (Use when the user wants to record, finalize, or transition a code-review record for a Pull Request —…), `sdlc-spec` (Use when the user wants to create or mature a Spec-Driven Development (SDD) trio — `requirements.md` (EARS notation,…), `sdlc-status` (Use at the start of any session or when the user asks for a quick health check of…), and 3 more\n\nInstalls with `claude plugin install sdlc-kit@claude-community` from `vellus-ai/sdlc-kit` (`plugins/core`).",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Vellus",
+    "url": "https://vellus.tech/"
+  },
+  "externalUrl": "https://github.com/vellus-ai/sdlc-kit/tree/0a555d842f2f759debde485f69be9fb047646316/plugins/core",
+  "marketplace": "claude-community",
+  "version": "0.8.0",
+  "sourceRevision": "0a555d842f2f759debde485f69be9fb047646316",
+  "contentDigest": "dc771a683de53eceac12f23064e2f1fe157f568ccb79bf002bedb4af716746e4",
+  "contentHash": "7248808469f4cb78",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/core",
+    "url": "https://github.com/vellus-ai/sdlc-kit.git",
+    "ref": "main",
+    "sha": "0a555d842f2f759debde485f69be9fb047646316"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-04-20T19:20:28Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "vault-tree",
+            "type": "directory",
+            "children": [
+              {
+                "name": "00-steering",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "product.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "standards.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tech.md.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_MOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "01-planning",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "epic.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "milestone.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prd.md.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "epics",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "milestones",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "prd",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_MOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "02-architecture",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "api",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "async.md.tpl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "grpc.md.tpl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "rest.md.tpl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "webhook.md.tpl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "adr.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "c4-component.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "c4-container.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "c4-context.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "trd.md.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "adr",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "api",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "async",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": ".gitkeep",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "grpc",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": ".gitkeep",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "rest",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": ".gitkeep",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "webhook",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": ".gitkeep",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "c4",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "trd",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_MOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "03-domain",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "aggregate.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "context-map.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "contract.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "domain-event.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ubiquitous-language.md.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "aggregates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "contracts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "events",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_MOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "04-specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "design.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "requirements.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tasks.md.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_MOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "05-development",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "branch.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "worktree.md.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "branches",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "worktrees",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_MOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "06-design-system",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "component.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pattern.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "token.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "user-flows.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ux-criteria.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "wireframe.md.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "components",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "patterns",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tokens",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_MOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "07-retrospectives",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "incident-lessons.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "incident.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "retro.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "review.md.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "incidents",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "retros",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "reviews",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_MOC.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "_INDEX.md.tpl",
+                "type": "file"
+              },
+              {
+                "name": "CLAUDE.md.tpl",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.html",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "core",
+        "type": "directory",
+        "children": [
+          {
+            "name": "migrations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "001_initial.sql",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "cli.py",
+            "type": "file"
+          },
+          {
+            "name": "db.py",
+            "type": "file"
+          },
+          {
+            "name": "frontmatter.py",
+            "type": "file"
+          },
+          {
+            "name": "git.py",
+            "type": "file"
+          },
+          {
+            "name": "i18n.py",
+            "type": "file"
+          },
+          {
+            "name": "parser.py",
+            "type": "file"
+          },
+          {
+            "name": "paths.py",
+            "type": "file"
+          },
+          {
+            "name": "regexes.py",
+            "type": "file"
+          },
+          {
+            "name": "scanner.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "post-vault-write.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sdlc-adr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "flow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adr.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-dash",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dash.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "detect.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scaffold.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-prd",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "flow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "prd.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-retro",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "flow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "retro.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "flow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "review.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-spec",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "flow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "spec.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "status.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-sync",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sync.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-task",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "flow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "task.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdlc-worktree",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "flow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "worktree.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

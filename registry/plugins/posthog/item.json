@@ -1,0 +1,4462 @@
+{
+  "slug": "posthog",
+  "name": "Posthog",
+  "type": "plugin",
+  "description": "Access PostHog analytics, feature flags, experiments, error tracking, and insights directly from Claude Code.",
+  "longDescription": "Ships **164 skills**, **1 agent**, **3 commands**, **2 hooks** and **1 MCP server**.\n\n- **Skills** (164): `adding-warehouse-person-properties` (Sync columns from a synced data warehouse table onto PostHog person or group properties, so warehouse data becomes…), `analyzing-expensive-users` (Analyze the most expensive users in AI observability and explain why they cost so much), `analyzing-experiment-session-replays` (Analyze session replay patterns across experiment variants to understand user behavior differences), `analyzing-task-runs` (Analyze a completed PostHog task run for inefficiencies — environment failures, missing CLI tools, verbose commands, redundant work,…), `assessing-heatmaps` (Assesses what a page's heatmap is telling you and recommends concrete changes), `auditing-endpoints` (Audit every endpoint in a PostHog project for staleness, failed materialisations, and unused materialised versions), `auditing-experiments-flags` (Audit PostHog experiments and feature flags for configuration issues, staleness, and best-practice violations), `auditing-warehouse-source-health` (Audit the health of a PostHog project's data warehouse sources and syncs — find every broken or degraded…), and 156 more\n- **Agents** (1): `error-analyzer` (Analyze multiple PostHog errors in parallel to identify patterns, root causes, and prioritize fixes based on user impact)\n- **Commands** (3): `llma-cc-ingest` (Manually send a Claude Code session log to PostHog LLM Analytics), `llma-cc-setup` (Set up PostHog LLM Analytics to capture Claude Code sessions), `llma-cc-status` (Check if Claude Code sessions are being sent to PostHog LLM Analytics)\n- **Hooks** (2): `SessionEnd`, `PreToolUse`\n- **MCP servers** (1): `posthog`\n\nInstalls with `claude plugin install posthog@claude-plugins-official` from `PostHog/ai-plugin`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 164,
+    "agent": 1,
+    "hook": 2,
+    "command": 3,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "PostHog",
+    "url": "https://posthog.com"
+  },
+  "externalUrl": "https://github.com/PostHog/ai-plugin/tree/19e4737aa8ab3db315e43f35f796976a1ac37787",
+  "marketplace": "claude-plugins-official",
+  "version": "1.1.62",
+  "sourceRevision": "19e4737aa8ab3db315e43f35f796976a1ac37787",
+  "contentDigest": "22d63df6a033136a0f6cf50cac50217e0ac2a1dfe52b5c96c6b5c1d58ab0102f",
+  "contentHash": "2a1230feb3735019",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/PostHog/ai-plugin.git",
+    "sha": "19e4737aa8ab3db315e43f35f796976a1ac37787"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-09-03T17:05:46Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sync-skills.yml",
+                "type": "file"
+              },
+              {
+                "name": "tests.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "error-analyzer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "logo.svg",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "llma-cc-ingest.md",
+            "type": "file"
+          },
+          {
+            "name": "llma-cc-ingest.toml",
+            "type": "file"
+          },
+          {
+            "name": "llma-cc-setup.md",
+            "type": "file"
+          },
+          {
+            "name": "llma-cc-setup.toml",
+            "type": "file"
+          },
+          {
+            "name": "llma-cc-status.md",
+            "type": "file"
+          },
+          {
+            "name": "llma-cc-status.toml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "codex-hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "gate-exec-write.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "session-end-llma.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "posthog_llma",
+        "type": "directory",
+        "children": [
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "config.py",
+            "type": "file"
+          },
+          {
+            "name": "event_builder.py",
+            "type": "file"
+          },
+          {
+            "name": "events.py",
+            "type": "file"
+          },
+          {
+            "name": "parser.py",
+            "type": "file"
+          },
+          {
+            "name": "sender.py",
+            "type": "file"
+          },
+          {
+            "name": "trace_naming.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "dev_test_session.py",
+            "type": "file"
+          },
+          {
+            "name": "generate-gemini-commands.sh",
+            "type": "file"
+          },
+          {
+            "name": "llma_cc_ingest.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adding-warehouse-person-properties",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analyzing-expensive-users",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analyzing-experiment-session-replays",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analyzing-task-runs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "insight-schema.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log-schema.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "assessing-heatmaps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auditing-endpoints",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auditing-experiments-flags",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "experiment-checks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "finding-taxonomy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flag-checks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "remediation-actions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "synthesis-patterns.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auditing-warehouse-source-health",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auditing-warehouse-view-health",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "authoring-data-quality-checks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "authoring-error-tracking-alerts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "block-templates.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "event-triggers.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "authoring-log-alerts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "threshold-defaults.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "volume-floor-alerts.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "baseline_stats.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "authoring-scouts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dedupe-and-memory.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lifecycle-and-testing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "report-contract.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scout-anatomy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scout-patterns.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "building-a-dashboard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "building-canvases",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "building-html-canvases",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "building-react-quill-canvases",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "checklist-example.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platform-libraries.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "starter-scaffold.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "building-workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "graph-schema.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lifecycle-and-debugging.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "checking-deploy-timing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "choosing-trend-or-slope-view",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cleaning-up-stale-feature-flags",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "composing-grid-canvases",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "component-example.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "configuring-experiment-analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "interpreting-results.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "metric-configuration.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "configuring-experiment-rollout",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "changing-distribution-after-launch.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "consuming-endpoints-from-client-code",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context-layer-consolidation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context-layer-dreaming",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context-layer-health-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copying-endpoints-across-projects",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copying-flags-across-projects",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "creating-ai-subscription",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "creating-an-endpoint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "materializing.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "creating-box-plot-insights",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sql-examples.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "creating-experiments",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "creating-online-evaluations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "evaluation-payload.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "creating-replay-vision-scanners",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "debugging-experiments",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "customer-reply.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pulling-the-data.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "real-vs-noise.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "srm_check.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "debugging-local-replay",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "common-failures.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "debugging-mcp-analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "event-vocabulary.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local-repos.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stateless-and-sessions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wizard-and-onboarding.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "debugging-signals-pipeline",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "debugging-surveys",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "diagnostic-queries.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local-repos.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reading-responses.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "repos.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "designing-email-templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design-guidelines.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unlayer-design-json.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnosing-ci-and-merge-bottlenecks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnosing-endpoint-performance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnosing-experiment-results",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bias-and-skew.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "diagnostic-snapshot.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "empty-experiment.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "interpretation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mid-run-changes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "numbers-vs-sql.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "qualitative-feedback.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnosing-failed-warehouse-syncs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnosing-missing-recordings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "diagnosis-logic.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "diagnostic-signals.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "examples.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnosing-sdk-health",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnosing-stacktrace-symbolication",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "javascript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "inspect_sourcemaps.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "downloading-batch-export-files",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-ai-failures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "finding-traces.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-apm-traces",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "spans-and-fields.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_common.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_span.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "print_summary.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "print_timeline.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search_spans.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "show_structure.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-autocapture-events",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "elements-chain-format.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-queries.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-endpoint-execution-logs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-live-traffic",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-llm-clusters",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "print_clusters.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-llm-costs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "breakdown-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cache-accounting.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cost-properties.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cost-sources.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "materializing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "regression-debugging.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-llm-evaluations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-llm-traces",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "events-and-properties.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-llm-trace.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-llm-traces-list.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "extract_conversation.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_span.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "print_summary.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "print_timeline.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search_traces.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "show_structure.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-mcp-intent-clusters",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-mcp-sessions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-mcp-tool-original-user-motive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "facet-schemas.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "notebook-assembly.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "audit_intentions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "canonicalize_intentions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_facets.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-mcp-tool-quality",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-mcp-tool-usage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-replay-vision-observations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploring-scouts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "assessing-performance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scout-data-model.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "assess_health.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fleet_survey.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "render_run_report.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "feature-usage-feed",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "filtering-bot-traffic",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "finding-deleted-feature-flags",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "strip_deleted_suffix.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "finding-experiments",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "finding-replay-for-issue",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "finding-sessions-to-watch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "formatting-insight-axes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "grouping-noisy-errors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "improving-mcp-tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "campaign-journal.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "inbox-exploration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "instrument-error-tracking",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "alerts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "android.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "angular.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "assigning-issues.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "COMMANDMENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "django.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dotnet.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "elixir.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fingerprints.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flask.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flutter.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "go.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hono.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ios.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "laravel.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "monitoring.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nextjs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "node.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nuxt-3-6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nuxt-3-7.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "php.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-native.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ruby-on-rails.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ruby.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "svelte.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "upload-source-maps.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "web.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "instrument-feature-flags",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adding-feature-flag-code.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "android.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "best-practices.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "COMMANDMENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "django.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dotnet.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "elixir.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flask.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flutter.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "go.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ios.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "java.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "laravel.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "next-js.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nodejs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "php.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-native.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ruby-on-rails.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ruby.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rust.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "usage.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "web.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "instrument-integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "android.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "angular.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "astro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "COMMANDMENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "configuration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "django.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dotnet.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "elixir.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-android.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-angular.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-astro-hybrid.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-astro-ssr.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-astro-static.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-astro-view-transitions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-django.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-expo.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-fastapi.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-flask.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-javascript-node.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-javascript-web.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-laravel.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-next-app-router.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-next-pages-router.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-nuxt-3-6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-nuxt-4.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-php.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-native.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-react-router-6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-react-router-7-data.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-react-router-7-declarative.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-react-router-7-framework.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-tanstack-router-code-based.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-tanstack-router-file-based.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-vite.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-ruby-on-rails.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-ruby.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-sveltekit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-swift.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-tanstack-start.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-vue-3.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flask.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flutter.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "go.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "identify-users.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ios.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "js.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "laravel.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "next-js.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "node.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nuxt-js-3-6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nuxt-js.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "php.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "posthog-js.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "posthog-node.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "posthog-python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-native.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-router-v6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-router-v7-data-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-router-v7-declarative-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-router-v7-framework-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ruby-on-rails.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ruby.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "svelte.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tanstack-start.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "usage.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vue-js.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "instrument-llm-analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "anthropic.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "autogen.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "azure-openai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "basics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "calculating-costs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cerebras.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cohere.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "COMMANDMENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "crewai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "deepseek.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dspy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fireworks-ai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "google.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "groq.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "helicone.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hugging-face.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "instructor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "langchain.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "langgraph.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "litellm.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llamaindex.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manual-capture.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mastra.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mirascope.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mistral.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ollama.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openai-agents.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openrouter.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "perplexity.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "portkey.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pydantic-ai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "semantic-kernel.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "smolagents.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "together-ai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "traces.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vercel-ai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "xai.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "instrument-logs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "android.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "best-practices.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "COMMANDMENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "datadog.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flutter.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "go.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ios.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "java.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "link-session-replay.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nextjs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nodejs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "other.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-native.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "start-here.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "troubleshooting.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "instrument-metrics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "architecture.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "basics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "COMMANDMENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "javascript.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kubernetes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nodejs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "other.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "start-here.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "instrument-product-analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "android.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "angular.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "astro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "COMMANDMENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "configuration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "django.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dotnet.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "elixir.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-android.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-angular.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-astro-hybrid.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-astro-ssr.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-astro-static.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-astro-view-transitions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-django.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-expo.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-fastapi.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-flask.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-laravel.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-next-app-router.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-next-pages-router.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-nuxt-3-6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-nuxt-4.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-php.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-native.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-react-router-6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-react-router-7-data.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-react-router-7-declarative.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-react-router-7-framework.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-tanstack-router-code-based.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-react-tanstack-router-file-based.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-ruby-on-rails.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-ruby.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-sveltekit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-swift.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-tanstack-start.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EXAMPLE-vue-3.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flask.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flutter.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "go.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "identify-users.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ios.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "laravel.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "next-js.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nuxt-js-3-6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nuxt-js.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "php.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "posthog-python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-native.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-router-v6.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-router-v7-data-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-router-v7-declarative-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-router-v7-framework-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ruby-on-rails.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ruby.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "svelte.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tanstack-start.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "usage.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vue-js.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigate-metric",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "box-plot-playbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "common-causes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "funnel-playbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lifecycle-playbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "paths-playbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "retention-playbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "shared-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stickiness-playbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trend-playbook.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "breakdown_attribution.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compare_to_prior_periods.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigating-ci-failures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "investigation-queries.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigating-error-issue",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigating-logs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigating-metric-anomalies",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigating-replay",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "managing-endpoint-versions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "managing-experiment-lifecycle",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "managing-path-cleaning-rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "managing-reminders",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "managing-streamlit-apps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "managing-subscriptions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modeling-activation-metrics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dbt",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dim_activation_criteria.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fct_user_activation.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schema.yml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "posthog",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "activation_flag.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "activation_retention_lift.sql",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "activation-method.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modeling-conversion-metrics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dbt",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fct_conversion.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schema.yml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "stg_funnel_events.sql",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "posthog",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "conversion_by_breakdown.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "funnel_conversion.sql",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "conversion-metric-definitions.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modeling-dimension-tables",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dbt",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dim_country.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dim_date.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schema.yml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "posthog",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dim_country.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dim_plan.sql",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "dimension-catalog.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modeling-product-usage-metrics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dbt",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fct_lifecycle.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fct_retention.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fct_stickiness.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schema.yml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "posthog",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "lifecycle.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "retention_matrix.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "stickiness.sql",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "usage-metric-definitions.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modeling-revenue-metrics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dbt",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "_sources_stripe.yml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dim_customer.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fct_mrr.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fct_revenue_item.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schema.yml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "posthog",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "gross_revenue_by_month.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mrr_and_arr.sql",
+                        "type": "file"
+                      },
+                      {
+                        "name": "revenue_by_customer.sql",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "revenue-metric-definitions.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modeling-warehouse-foundations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dbt-skeleton",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "models",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "marts",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "fct_daily_active_users.sql",
+                                "type": "file"
+                              },
+                              {
+                                "name": "schema.yml",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "staging",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "_sources.yml",
+                                "type": "file"
+                              },
+                              {
+                                "name": "stg_events.sql",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "dbt_project.yml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "dbt-project.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "governance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "joins-and-dimensions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "posthog-views.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "organizing-conversations-code",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "planning-voice-agent-user-interviews",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "querying-canvas-data",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "canvas-sdk.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "querying-posthog-data",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "available-functions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-error-tracking.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-event-taxonomy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-funnel-breakdown.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-funnel-trends.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-lifecycle.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-llm-trace.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-llm-traces-list.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-logs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-observability-correlation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-paths.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-person-property-taxonomy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-retention.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-session-replay.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-sessions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-stickiness.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-team-taxonomy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-trends-breakdowns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-trends-unique-users.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-web-overview.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-web-path-stats.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-web-traffic-by-device-type.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "example-web-traffic-channels.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "guidelines.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hogql-extensions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-actions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-activity-logs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-ai-observability-evaluations.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-ai-observability-events.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-ai-observability-reviews.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-alerts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-annotations.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-apm-spans.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-batch-exports.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-cohorts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-customer-analytics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-dashboards-insights.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-data-warehouse.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-datasets.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-early-access-features.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-endpoints.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-error-tracking.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-flags-experiments.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-heatmaps.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-hog-flows.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-hog-functions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-integrations.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-logs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-mcp.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-messaging-opt-outs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-metrics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-notebooks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-session-recording-playlists.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-session-recordings.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-support-tickets.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-surveys.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-usage-metrics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "models-variables.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "person-property-modes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "taxonomy-dynamic-properties.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "taxonomy-skipped-events.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "resolving-ingestion-warnings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixing-ai-endpoint-rejections.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-cannot-merge-already-identified.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-capture-replay-rejections.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-cookieless-warnings.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-event-dropped-by-transformation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-event-dropped-too-old.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-group-key-too-long.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-ignored-invalid-timestamp.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-invalid-ai-token-property.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-invalid-distinct-ids.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-invalid-heatmap-data.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-merge-race-condition.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-message-size-too-large.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-person-properties-size-violation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-process-person-profile-warnings.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixing-session-replay-warnings.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-hog-authoring",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-hog-blind-spots-general",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-hog-perspective-contracts-security",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-hog-perspective-logic-correctness",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-hog-perspective-performance-reliability",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-hog-resolution-criteria",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-hog-validation-criteria",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scanning-experiments-with-replay-vision",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setting-up-a-custom-rest-source",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "manifest-reference.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setting-up-a-data-warehouse-source",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sync-types.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setting-up-data-catalog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setting-up-support-slack-locally",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "troubleshooting.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setting-up-warehouse-properties",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-ai-observability",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lenses.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-anomaly-detection",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "anomaly-methods.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "report-contract.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watchlist-and-memory.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ks2.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-apm",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-conversations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-csp-violations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-customer-analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-customer-analytics-billing-and-usage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-data-pipelines",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-data-warehouse",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-error-tracking",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-experiments",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-feature-flags",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-general",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "conventions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discovery.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-health-checks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-inbox-validation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-insight-alerts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-logs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-mcp-tool-calls",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "queries.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-observability-gaps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-product-analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-replay-vision",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-revenue-analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-session-replay",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-skills-store",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-surveys",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "response-querying.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-tasks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "queries.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-web-analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "signals-scout-web-vitals",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "onset-correlation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "remediation.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills-store",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "suggesting-data-imports",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "suggesting-path-cleaning-rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "suppressing-noisy-errors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "testing-mcp-tools-locally",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "seed-data.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "triaging-error-issues",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "triaging-visual-review-runs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tuning-incremental-sync-config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "turning-engineering-analytics-into-insights",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "hogql-recipes.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "understanding-billing-usage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "spike-alert-mechanics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "usage-type-routing.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "validating-and-publishing-canvases",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "working-with-scouts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "delegation-recipes.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "working-with-skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "working-with-task-comments",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "writing-simplified-technical-english",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "before-after.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "writing-rules.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "writing-streamlit-apps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".sync-manifest",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "test_gate_exec_write.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_posthog_llma.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_parser.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

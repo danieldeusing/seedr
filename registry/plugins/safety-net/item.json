@@ -1,0 +1,1762 @@
+{
+  "slug": "safety-net",
+  "name": "Safety Net",
+  "type": "plugin",
+  "description": "Block destructive git and filesystem commands before execution",
+  "longDescription": "Ships **1 skill**, `cc-safety-net` (Configure CC Safety Net rulebooks for user, project, or shareable GitHub scope) and **1 hook**, `PreToolUse`.\n\nInstalls with `claude plugin install safety-net@claude-community` from `kenryu42/claude-code-safety-net`.\n\nA PreToolUse hook that intercepts and blocks destructive git and filesystem commands before AI coding agents run them. CC Safety Net parses command semantics — so flag reordering, shell wrappers, and interpreter one-liners can't bypass it.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "hook": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "J Liew"
+  },
+  "externalUrl": "https://github.com/kenryu42/claude-code-safety-net/tree/9fa3c5bdd9270776c7aafec08c0d51f6e323bbe5",
+  "marketplace": "claude-community",
+  "version": "1.0.6",
+  "sourceRevision": "9fa3c5bdd9270776c7aafec08c0d51f6e323bbe5",
+  "contentDigest": "dad3152b37eaf0fd666ef276301faf4fca1812576dfd08311f5b04c068f2ccd4",
+  "contentHash": "58d530b715569f2e",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/kenryu42/claude-code-safety-net.git",
+    "sha": "9fa3c5bdd9270776c7aafec08c0d51f6e323bbe5"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-06-30T02:36:33Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cc-safety-net-header-logo-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "cc-safety-net-header-logo-light.svg",
+                "type": "file"
+              },
+              {
+                "name": "cc-safety-net.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "safety-net.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "lint-github-actions-workflows.yml",
+                "type": "file"
+              },
+              {
+                "name": "notify-landing-page-release.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              },
+              {
+                "name": "pullfrog.yml",
+                "type": "file"
+              },
+              {
+                "name": "test-windows.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".husky",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-commit",
+            "type": "file"
+          },
+          {
+            "name": "pre-push",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cc-safety-net.schema.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "ast-grep",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rule-tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__snapshots__",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "no-dynamic-import-snapshot.yml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "no-dynamic-import-test.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "no-dynamic-import.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "doctor.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "explain.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rule.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "statusline.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "doctor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "activity.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "environment.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flags.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "system-info.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "updates.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "explain",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analyze.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flags.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format-helpers.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redact.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "segment.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hook",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "install",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "kimi-code.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.d.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "claude-code.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "common.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config-edit.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "constants.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "copilot-cli.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini-cli.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "install.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "integrations.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kimi-code.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rule",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "doc.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "migrate.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verify.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "utils",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "colors.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cc-safety-net.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "cc-safety-net.js",
+                "type": "file"
+              },
+              {
+                "name": "help.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "integration-metadata.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "statusline.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "builtin-commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cc-safety-net.d.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyze",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analyze-command.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "awk.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "child-analyzer.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "child-command.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "constants.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dangerous-text.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "find.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "interpreters.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parallel.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rm-flags.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rm.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "segment.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "shell-git-env.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "shell-wrappers.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tmpdir.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "xargs.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "git",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "env.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parse.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rules.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worktree-relaxation.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worktree.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rules",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "policy",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "config-file.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lockfile.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "paths.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "resolver.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scope-policy.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sources.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sync.d.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.d.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "custom-rule-validation.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "custom.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rulebook.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "shell",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "command.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "options.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "segments.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "shared.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wrappers.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "env.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "format.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "path.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "opencode",
+            "type": "directory",
+            "children": [
+              {
+                "name": "builtin-commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.d.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "pi",
+            "type": "directory",
+            "children": [
+              {
+                "name": "builtin-commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "tool-call.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.js",
+            "type": "file"
+          },
+          {
+            "name": "types.d.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "build-output.ts",
+            "type": "file"
+          },
+          {
+            "name": "build-schema.ts",
+            "type": "file"
+          },
+          {
+            "name": "build.ts",
+            "type": "file"
+          },
+          {
+            "name": "generate-changelog.ts",
+            "type": "file"
+          },
+          {
+            "name": "publish-options.ts",
+            "type": "file"
+          },
+          {
+            "name": "publish.ts",
+            "type": "file"
+          },
+          {
+            "name": "subprocess-output.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cc-safety-net",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "doctor.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "explain.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rule.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "statusline.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "doctor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "activity.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "environment.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flags.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "system-info.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "updates.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "explain",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analyze.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flags.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format-helpers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redact.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "segment.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hook",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "install",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "kimi-code.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "claude-code.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "common.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config-edit.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "constants.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "copilot-cli.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini-cli.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "install.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "integrations.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kimi-code.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rule",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "doc.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "migrate.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verify.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "utils",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "colors.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cc-safety-net.ts",
+                "type": "file"
+              },
+              {
+                "name": "help.ts",
+                "type": "file"
+              },
+              {
+                "name": "integration-metadata.ts",
+                "type": "file"
+              },
+              {
+                "name": "statusline.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "builtin-commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cc-safety-net.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyze",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analyze-command.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "awk.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "child-analyzer.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "child-command.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "constants.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dangerous-text.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "find.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "interpreters.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parallel.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rm-flags.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rm.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "segment.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "shell-git-env.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "shell-wrappers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tmpdir.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "xargs.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "git",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "env.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parse.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rules.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worktree-relaxation.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worktree.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rules",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "policy",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "config-file.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lockfile.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "paths.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "resolver.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scope-policy.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sources.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sync.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "custom-rule-validation.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "custom.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rulebook.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "shell",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "command.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "options.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "segments.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "shared.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wrappers.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.ts",
+                "type": "file"
+              },
+              {
+                "name": "env.ts",
+                "type": "file"
+              },
+              {
+                "name": "format.ts",
+                "type": "file"
+              },
+              {
+                "name": "path.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "opencode",
+            "type": "directory",
+            "children": [
+              {
+                "name": "builtin-commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "pi",
+            "type": "directory",
+            "children": [
+              {
+                "name": "builtin-commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "tool-call.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "doctor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "activity.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "environment.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "system-info.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "explain",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cli.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "command.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flags.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "paranoid.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redact.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-code-hook.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "copilot-cli-hook.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini-cli-hook.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-adapter-direct.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-helpers.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-helpers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-install.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-integrations.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-routing.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kimi-code-hook.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cli-statusline.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "colors.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "commands.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "help.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "integration-metadata.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rule.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyze",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analyze-coverage.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "edge-cases.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fail-closed-repair.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "find.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parsing-helpers.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tmpdir.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "git",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "env.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worktree.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "env.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "format.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "git.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rulebook.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rules-custom-integration.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rules-custom.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rules-policy-recovery.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rules-rm.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "helpers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rulebook.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "opencode",
+            "type": "directory",
+            "children": [
+              {
+                "name": "builtin-commands.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pi",
+            "type": "directory",
+            "children": [
+              {
+                "name": "builtin-commands.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "package.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tool-call.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "build-output.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "ci-workflow.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "generate-changelog.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "publish-options.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "subprocess-output.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependencies.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "helpers.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "helpers.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".ignore",
+        "type": "file"
+      },
+      {
+        "name": ".lintstagedrc.json",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "biome.json",
+        "type": "file"
+      },
+      {
+        "name": "bun.lock",
+        "type": "file"
+      },
+      {
+        "name": "bunfig.toml",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "codecov.yml",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "knip.ts",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "sgconfig.yml",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.build.json",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      }
+    ]
+  }
+}

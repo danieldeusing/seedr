@@ -1,0 +1,3394 @@
+{
+  "slug": "coral",
+  "name": "Coral",
+  "type": "plugin",
+  "description": "Coral turns any git repo into a queryable Karpathy-style LLM wiki\n(.wiki/), preserves a bi-temporal history of the codebase + the\ndocs about the codebase, and exposes it to Claude Code via an MCP\nserver so you can ask architecture questions without re-reading\nthe whole codebase.\n\nFive auto-invoked skills (bootstrap, query, onboard, ui, doctor)\nplus two deterministic slash commands cover the entire lifecycle:\ngenerate the wiki with cost-confirmed bootstrap, query it\nconversationally, onboard new contributors, browse a force-\ndirected graph WebUI, or diagnose environment issues. A\nSessionStart hook reports repo state to Claude on every session\nopen so the right next action is suggested without the user\nneeding to know skill names. A 4-path provider mini-wizard\n(Anthropic API key / Gemini / Ollama / claude CLI) onboards users\nwho don't have claude CLI yet.\n\nSingle-binary distribution (~14 MiB stripped) with Sigstore\nprovenance, cross-platform install (Linux / macOS / Windows),\nSLSA L3-equivalent attestation on every release, and a 7-week\ninternal audit cycle behind it (docs/audits/ in the repo).",
+  "longDescription": "Ships **1 MCP server**, `coral`.\n\nInstalls with `claude plugin install coral@claude-community` from `agustincbajo/Coral`.\n\nCoral is a Karpathy-style LLM wiki for your code, scaled to microservice-shaped projects: declare your repos in a `coral.toml`, bring up a multi-service environment, run functional tests, and expose the whole thing to coding agents (Claude Code, Cursor, Continue, Cline, Goose, Codex, Copilot) via Model Context Protocol — one binary, open source, all local. Hardened across five multi-agent audit cycles.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "mcp",
+  "sourceType": "community",
+  "author": {
+    "name": "Agustin Bajo",
+    "url": "https://github.com/agustincbajo"
+  },
+  "externalUrl": "https://github.com/agustincbajo/Coral/tree/f159e9cb3edaf469ac65824ddf64dcb32f19bea3",
+  "marketplace": "claude-community",
+  "version": "0.41.0",
+  "sourceRevision": "f159e9cb3edaf469ac65824ddf64dcb32f19bea3",
+  "contentDigest": "5eab1010a8360686b8e516134e29dfc6510020552d1fd44a19632582b88efced",
+  "contentHash": "3cd04f7cd3c80ded",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/agustincbajo/Coral.git",
+    "sha": "f159e9cb3edaf469ac65824ddf64dcb32f19bea3"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-17T23:08:08Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "coral-bootstrap.md",
+                "type": "file"
+              },
+              {
+                "name": "coral-doctor.md",
+                "type": "file"
+              },
+              {
+                "name": "coral-status.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "on-session-start",
+                "type": "file"
+              },
+              {
+                "name": "on-session-start.ps1",
+                "type": "file"
+              },
+              {
+                "name": "on-session-start.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "coral-bootstrap",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "coral-doctor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "coral-onboard",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "coral-query",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "coral-ui",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".dxt",
+        "type": "directory",
+        "children": [
+          {
+            "name": "manifest.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "actions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "consolidate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action.yml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "embeddings-cache",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action.yml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ingest",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action.yml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lint",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action.yml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "validate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action.yml",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bench-allocator.yml",
+                "type": "file"
+              },
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "nightly.yml",
+                "type": "file"
+              },
+              {
+                "name": "playwright-ci.yml.disabled",
+                "type": "file"
+              },
+              {
+                "name": "post-release-smoke.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "sbom.yml",
+                "type": "file"
+              },
+              {
+                "name": "scorecard.yml",
+                "type": "file"
+              },
+              {
+                "name": "ui-build.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".wiki",
+        "type": "directory",
+        "children": [
+          {
+            "name": "concepts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cost-estimation.md",
+                "type": "file"
+              },
+              {
+                "name": "embeddings.md",
+                "type": "file"
+              },
+              {
+                "name": "frontmatter.md",
+                "type": "file"
+              },
+              {
+                "name": "mcp-sampling.md",
+                "type": "file"
+              },
+              {
+                "name": "observability.md",
+                "type": "file"
+              },
+              {
+                "name": "runner-trait.md",
+                "type": "file"
+              },
+              {
+                "name": "search.md",
+                "type": "file"
+              },
+              {
+                "name": "wikilinks.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "decisions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adr-multi-runner.md",
+                "type": "file"
+              },
+              {
+                "name": "adr-rust.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "entities",
+            "type": "directory",
+            "children": [
+              {
+                "name": "page.md",
+                "type": "file"
+              },
+              {
+                "name": "prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "wiki-index.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "flows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bootstrap-flow.md",
+                "type": "file"
+              },
+              {
+                "name": "ingest-cycle.md",
+                "type": "file"
+              },
+              {
+                "name": "mcp-transport.md",
+                "type": "file"
+              },
+              {
+                "name": "session-distill.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli.md",
+                "type": "file"
+              },
+              {
+                "name": "core.md",
+                "type": "file"
+              },
+              {
+                "name": "env.md",
+                "type": "file"
+              },
+              {
+                "name": "lint.md",
+                "type": "file"
+              },
+              {
+                "name": "mcp.md",
+                "type": "file"
+              },
+              {
+                "name": "runner.md",
+                "type": "file"
+              },
+              {
+                "name": "session.md",
+                "type": "file"
+              },
+              {
+                "name": "stats.md",
+                "type": "file"
+              },
+              {
+                "name": "test.md",
+                "type": "file"
+              },
+              {
+                "name": "ui.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "operations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "release-checklist.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          },
+          {
+            "name": "SCHEMA.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "audit",
+        "type": "directory",
+        "children": [
+          {
+            "name": "findings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "001-windows-gnu-build-dlltool.md",
+                "type": "file"
+              },
+              {
+                "name": "002-mcp-wikistate-stale-data.md",
+                "type": "file"
+              },
+              {
+                "name": "003-distill-patch-path-traversal.md",
+                "type": "file"
+              },
+              {
+                "name": "004-guarantee-false-green-on-unreadable-wiki.md",
+                "type": "file"
+              },
+              {
+                "name": "005-project-lock-no-flock.md",
+                "type": "file"
+              },
+              {
+                "name": "006-bm25-index-non-atomic-write.md",
+                "type": "file"
+              },
+              {
+                "name": "007-stats-non-deterministic-json.md",
+                "type": "file"
+              },
+              {
+                "name": "008-mcp-jsonrpc-error-codes.md",
+                "type": "file"
+              },
+              {
+                "name": "009-readme-mcp-counts-drift.md",
+                "type": "file"
+              },
+              {
+                "name": "010-mcp-http-sse-no-notifications.md",
+                "type": "file"
+              },
+              {
+                "name": "011-batch-medium-low.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "raw",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mcp-audit.md",
+                "type": "file"
+              },
+              {
+                "name": "test-quality.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "SUMMARY.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "crates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "coral-cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "bootstrap",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "estimate.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "state.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "common",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "untrusted_fence.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "monitor",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "history.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "list.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "run.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "stop.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "up.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "project",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "add.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "doctor.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "graph.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "list.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "lock.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "new.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "sync.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "chaos.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ci.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "consolidate.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "context_build.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "contract.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "diff.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "doctor.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "down.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "embed_cmd.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "env_resolve.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "env.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "export_agents.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "export_skill.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "export.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "feedback.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "filters.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "find_cmd.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "graph_cmd.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "guarantee.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "history.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "implement_cmd.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index_cmd.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ingest.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "init.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "interface.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lint.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mcp.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "migrate.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mutants.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "notion_push.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "onboard.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pins.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plan.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prompt_loader.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prompts.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "query.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "runner_helper.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scaffold.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "search.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "self_check.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "self_register_marketplace.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "self_uninstall.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "self_upgrade.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "session.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "setup.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "skill.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "stale.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "stats.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "status.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sync.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_discover.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tour.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ui.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "up.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "validate_pin.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "verify.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "wiki.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "tiny-repo-50loc",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "src",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "lib.rs",
+                                "type": "file"
+                              },
+                              {
+                                "name": "main.rs",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "Cargo.toml",
+                            "type": "file"
+                          },
+                          {
+                            "name": "README.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "snapshots",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "snapshot_cli__diff_order_outbox.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__export_html_head_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__export_json_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__export_markdown_bundle_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__history_outbox_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__lint_fix_dry_run_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__lint_json_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__lint_rule_source_not_found_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__lint_rule_two_codes_or_semantics_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__lint_severity_critical_json_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__lint_severity_warning_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__lint_structural_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__prompts_list_against_embedded_bundle.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__search_outbox_dispatcher_bm25.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__search_outbox_dispatcher_tfidf.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__stats_default_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__stats_json_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__status_4_page_seed.snap",
+                        "type": "file"
+                      },
+                      {
+                        "name": "snapshot_cli__validate_pin_no_pins_file.snap",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "bc_regression.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli_smoke.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cross_process_lock.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "doctor_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e2e_full_lifecycle.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e2e_multi_repo.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e2e_query_cycle.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "env_devcontainer_emit_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "full_lifecycle_v019.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp_card_smoke.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp_http_smoke.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "monitor_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "multi_repo_interface_change.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "multi_repo_project.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "naming_collision.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ollama_bootstrap.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "quick_output_size.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "release_flow.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill_build.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "snapshot_cli.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stress_large_wiki.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "template_validation.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_emit_k6.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui_api_smoke.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watch_macos_banner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watch_smoke.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "benches",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "allocator.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontmatter_bench.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search_bench.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "walk_bench.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wikilinks_bench.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "project",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "lock.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "manifest.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "atomic.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cache.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cost.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "embeddings_sqlite.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "embeddings.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontmatter.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gc.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git_remote.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gitdiff.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "governance.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "late_chunking.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llms_txt.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "narrative.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "observability.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "page.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "path.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pgvector.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reranker.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search_index.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slug.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "storage.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "symbols.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tantivy_backend.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vocab.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "walk.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wikilinks.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "concurrency.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "embeddings_backends_parity.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "proptest_embeddings_index.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "proptest_frontmatter.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "proptest_index.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "proptest_log.proptest-regressions",
+                    "type": "file"
+                  },
+                  {
+                    "name": "proptest_log.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "proptest_page.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "proptest_search.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "proptest_wikilinks.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "readme_examples_parse.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-env",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "compose_yaml.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compose.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "devcontainer.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "healthcheck.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "import.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mock.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "readme_environment_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watch_yaml_render.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-graph",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "builder.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pagerank.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "query.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "store.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-implement",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "execute.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "impact.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "orchestrate.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "patterns.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plans.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sketch.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "staging.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-index",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "extract_c.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_cpp.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_go.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_helpers.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_java.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_python.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_rust.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_ts.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "indexer.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parser.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "references.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "store.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "symbol.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-lint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "benches",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "structural_bench.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dump_schema.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "report.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "semantic.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "structural.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "proptest_lint.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "transport",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "http_sse.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "stdio.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "card.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompts.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "resources.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sampling.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tools.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watcher.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "mcp_http_sse_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp_pagination_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp_resources_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp_stdio_golden.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp_unreviewed_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sampling_e2e.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-runner",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "anthropic_api.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "body_tempfile.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "embeddings.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "host_sampling.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "http.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mock.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "multi_step.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onnx.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "runner.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "common",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "cross_runner_contract.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "streaming_failure_modes.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wiremock_http.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "engine.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fuzzy.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hybrid.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "keyword.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "semantic.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "structural.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vecstore.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-session",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "capture.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude_code.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "distill_patch.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "distill.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "forget.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scrub.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "claude_code_with_secrets.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "distill_patch_e2e.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "secrets_fixture.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-stats",
+            "type": "directory",
+            "children": [
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "print_schema.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "browser_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "contract_check.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "contract_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "coverage.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discover.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "emit_k6.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "event_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "healthcheck_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "history.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hurl_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mock.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "orchestrator.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "perf.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "probe.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "property_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "recorded_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "report.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "semantic_diff.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trace_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "user_defined_runner.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "walk_tests.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "emit_k6_smoke.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openapi_adversarial.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "recorded.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coral-ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dist",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "assets",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "index.css",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "favicon.svg",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.html",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "e2e",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "graph.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "manifest.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "nav.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "pages.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "query.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "README.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "public",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "favicon.svg",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "components",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "ui",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "badge.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "button.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "card.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "dialog.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "input.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "label.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "select.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "separator.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "skeleton.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "slider.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "tabs.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "textarea.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "toaster.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "tooltip.tsx",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "ConfidenceBar.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "Layout.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "LocaleSwitcher.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "PageTypeBadge.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "StatusBadge.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "ThemeToggle.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "TokenDialog.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "features",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "affected",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "useAffected.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "drift",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "useDrift.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "graph",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "GraphCanvas.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "GraphErrorBoundary.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "useGraph.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "guarantee",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "useGuarantee.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "interfaces",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "useInterfaces.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "manifest",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "useManifest.ts",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "useStats.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "pages",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "FiltersSidebar.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "MarkdownRenderer.tsx",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "usePageDetail.ts",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "usePages.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "query",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "useQueryStream.test.ts",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "useQueryStream.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "tools",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "useTools.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "i18n",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "en.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "es.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "index.ts",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "lib",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "api.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "config.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "repo.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "types.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "useWikiEvents.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "utils.ts",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "routes",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "AffectedView.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "DriftView.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "GraphView.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "GuaranteeView.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "InterfacesView.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "ManifestView.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "PageDetail.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "PagesList.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "QueryPlayground.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "ToolsView.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "stores",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "auth.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "filters.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "graph.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "locale.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "query.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "theme.ts",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "App.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "index.css",
+                            "type": "file"
+                          },
+                          {
+                            "name": "main.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "types.d.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": ".gitignore",
+                        "type": "file"
+                      },
+                      {
+                        "name": "components.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.html",
+                        "type": "file"
+                      },
+                      {
+                        "name": "package-lock.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "package.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "playwright.config.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "postcss.config.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tailwind.config.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tsconfig.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "vite.config.ts",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "routes",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "affected.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "contracts.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "events.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "graph.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "guarantee.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "health.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "interfaces.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "manifest.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pages.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "query.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "search.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tools.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "auth.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "static_assets.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "build.rs",
+                "type": "file"
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "0001-rust-cli-architecture.md",
+                "type": "file"
+              },
+              {
+                "name": "0002-claude-cli-vs-api.md",
+                "type": "file"
+              },
+              {
+                "name": "0003-template-distribution-via-include-dir.md",
+                "type": "file"
+              },
+              {
+                "name": "0004-multi-agent-development-flow.md",
+                "type": "file"
+              },
+              {
+                "name": "0005-versioning-and-sync.md",
+                "type": "file"
+              },
+              {
+                "name": "0006-local-semantic-search-storage.md",
+                "type": "file"
+              },
+              {
+                "name": "0007-unified-export-vs-per-target-commands.md",
+                "type": "file"
+              },
+              {
+                "name": "0008-multi-provider-runner-and-embeddings-traits.md",
+                "type": "file"
+              },
+              {
+                "name": "0009-auto-fix-scope-and-yaml-plan.md",
+                "type": "file"
+              },
+              {
+                "name": "0010-blocking-io-substrate.md",
+                "type": "file"
+              },
+              {
+                "name": "0011-msrv-policy.md",
+                "type": "file"
+              },
+              {
+                "name": "0012-mimalloc-allocator.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ui-graph-en.png",
+                "type": "file"
+              },
+              {
+                "name": "ui-graph.png",
+                "type": "file"
+              },
+              {
+                "name": "ui-manifest-en.png",
+                "type": "file"
+              },
+              {
+                "name": "ui-manifest.png",
+                "type": "file"
+              },
+              {
+                "name": "ui-pages-en.png",
+                "type": "file"
+              },
+              {
+                "name": "ui-pages.png",
+                "type": "file"
+              },
+              {
+                "name": "ui-query-en.png",
+                "type": "file"
+              },
+              {
+                "name": "ui-query.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "audits",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AUDIT-ARCHITECTURE-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "AUDIT-CONCURRENCY-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "AUDIT-PERFORMANCE-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "AUDIT-QUALITY-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "AUDIT-SECURITY-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "AUDIT-TESTING-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "HANDOFF-7-WINDOWS-NEXTEST-2026-05-13.md",
+                "type": "file"
+              },
+              {
+                "name": "SYNTHESIS-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-ARCHITECTURE-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-CONCURRENCY-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-CP1-2026-05-13.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-CP2-2026-05-13.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-CP3-2026-05-13.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-CP4-2026-05-13.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-PERFORMANCE-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-PHASE-C-2026-05-13.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-QUALITY-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-SECURITY-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-TESTING-2026-05-12.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-V036-PREP-2026-05-13.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-V037-PREP-2026-05-13.md",
+                "type": "file"
+              },
+              {
+                "name": "VALIDATION-V038-PREP-2026-05-13.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bench",
+            "type": "directory",
+            "children": [
+              {
+                "name": "MIMALLOC-BASELINE-2026-05-13.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "schemas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "lint.schema.json",
+                "type": "file"
+              },
+              {
+                "name": "stats.schema.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "CLAUDE_CODE.md",
+            "type": "file"
+          },
+          {
+            "name": "DEVELOPMENT.md",
+            "type": "file"
+          },
+          {
+            "name": "getting-started.gif.placeholder",
+            "type": "file"
+          },
+          {
+            "name": "GTM-DRAFTS.md",
+            "type": "file"
+          },
+          {
+            "name": "INSTALL.md",
+            "type": "file"
+          },
+          {
+            "name": "PERF.md",
+            "type": "file"
+          },
+          {
+            "name": "prd-deep-code-intelligence.md",
+            "type": "file"
+          },
+          {
+            "name": "PRD-v0.24-evolution.md",
+            "type": "file"
+          },
+          {
+            "name": "PRD-v0.32-webui.md",
+            "type": "file"
+          },
+          {
+            "name": "PRD-v0.34-onboarding.md",
+            "type": "file"
+          },
+          {
+            "name": "PRD-v0.41-claude-code-native.md",
+            "type": "file"
+          },
+          {
+            "name": "PUBLISH.md",
+            "type": "file"
+          },
+          {
+            "name": "ROADMAP.md",
+            "type": "file"
+          },
+          {
+            "name": "runner-tiered.md",
+            "type": "file"
+          },
+          {
+            "name": "SESSIONS.md",
+            "type": "file"
+          },
+          {
+            "name": "SLSA-VERIFICATION.md",
+            "type": "file"
+          },
+          {
+            "name": "SMOKE-TESTS.md",
+            "type": "file"
+          },
+          {
+            "name": "SUBMISSION-DRAFT.md",
+            "type": "file"
+          },
+          {
+            "name": "TUTORIAL.md",
+            "type": "file"
+          },
+          {
+            "name": "UI.md",
+            "type": "file"
+          },
+          {
+            "name": "USAGE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "orchestra-ingest",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".github",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "workflows",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "wiki-maintenance.yml",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ".wiki",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "concepts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "outbox.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "flows",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "http-to-kafka.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "modules",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ingest-pipeline.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "operations",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "runbook.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "index.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SCHEMA.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "main.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".coral-pins.toml",
+                "type": "file"
+              },
+              {
+                "name": "Cargo.lock",
+                "type": "file"
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ci-locally.sh",
+            "type": "file"
+          },
+          {
+            "name": "dev-cleanup.ps1",
+            "type": "file"
+          },
+          {
+            "name": "dev-cleanup.sh",
+            "type": "file"
+          },
+          {
+            "name": "dev-setup.ps1",
+            "type": "file"
+          },
+          {
+            "name": "dev-setup.sh",
+            "type": "file"
+          },
+          {
+            "name": "extract-changelog-section.sh",
+            "type": "file"
+          },
+          {
+            "name": "install.ps1",
+            "type": "file"
+          },
+          {
+            "name": "install.sh",
+            "type": "file"
+          },
+          {
+            "name": "release-gh.sh",
+            "type": "file"
+          },
+          {
+            "name": "release.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "template",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "wiki-bibliotecario.md",
+                "type": "file"
+              },
+              {
+                "name": "wiki-consolidator.md",
+                "type": "file"
+              },
+              {
+                "name": "wiki-linter.md",
+                "type": "file"
+              },
+              {
+                "name": "wiki-onboarder.md",
+                "type": "file"
+              },
+              {
+                "name": "wiki-validator.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "wiki-ingest.md",
+                "type": "file"
+              },
+              {
+                "name": "wiki-lint.md",
+                "type": "file"
+              },
+              {
+                "name": "wiki-onboard.md",
+                "type": "file"
+              },
+              {
+                "name": "wiki-query.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pre-commit.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prompts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bootstrap.md",
+                "type": "file"
+              },
+              {
+                "name": "consolidate.md",
+                "type": "file"
+              },
+              {
+                "name": "diff-semantic.md",
+                "type": "file"
+              },
+              {
+                "name": "ingest.md",
+                "type": "file"
+              },
+              {
+                "name": "lint-auto-fix-broken-wikilink.md",
+                "type": "file"
+              },
+              {
+                "name": "lint-auto-fix-low-confidence.md",
+                "type": "file"
+              },
+              {
+                "name": "lint-auto-fix.md",
+                "type": "file"
+              },
+              {
+                "name": "lint-semantic.md",
+                "type": "file"
+              },
+              {
+                "name": "lint-suggest-sources.md",
+                "type": "file"
+              },
+              {
+                "name": "qa-pairs.md",
+                "type": "file"
+              },
+              {
+                "name": "query.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "schema",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SCHEMA.base.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "wiki-maintenance.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CLAUDE.md.tmpl",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "BACKLOG.md",
+        "type": "file"
+      },
+      {
+        "name": "Cargo.lock",
+        "type": "file"
+      },
+      {
+        "name": "Cargo.toml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "deny.toml",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "release.toml",
+        "type": "file"
+      },
+      {
+        "name": "rust-toolchain.toml",
+        "type": "file"
+      }
+    ]
+  }
+}

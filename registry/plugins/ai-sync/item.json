@@ -1,0 +1,926 @@
+{
+  "slug": "ai-sync",
+  "name": "Ai Sync",
+  "type": "plugin",
+  "description": "Cross-platform AI agent synchronization. When you switch \n  between AI coding tools (Claude Code, Cursor, Codex,     \n  Aider, Cline, Windsurf, Copilot), ai-sync maintains a    \n  shared .ai-sync/ directory so the next agent picks up    \n  exactly where the last one left off — with full context  \n  of what was done, what's next, blockers, and build       \n  status. Features conflict detection, auto-progress       \n  tracking, session audit trails, and adapter files for 9  \n  tools.",
+  "longDescription": "Ships **1 skill**, **8 commands** and **2 hooks**.\n\n- **Skills** (1): `ai-sync-protocol` (This skill should be used when the project has a `.ai-sync/` directory, when the user mentions \"handoff\", \"switch…)\n- **Commands** (8): `handoff` (Write handoff state before switching to another AI agent), `sync-adapter` (Generate an adapter file for a specific AI tool — points the tool to .ai-sync/), `sync-diff` (Show what changed in the project since the last handoff), `sync-hooks` (Install or remove git hooks that auto-save .ai-sync/ context on every commit), `sync-init` (Bootstrap .ai-sync/ cross-agent synchronization in the current project), `sync-resume` (Resume work from last handoff — load context, apply state, and continue where the previous agent left off), `sync-status` (Show current .ai-sync/ state — progress, handoff status, and next steps), `sync-transfer` (Transfer session context from another AI tool into .ai-sync/ using continues)\n- **Hooks** (2): `SessionStart`, `Stop`\n\nInstalls with `claude plugin install ai-sync@claude-community` from `oreolion/ai-sync-plugin`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "hook": 2,
+    "command": 8
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Oreolion",
+    "url": "https://github.com/Oreolion"
+  },
+  "externalUrl": "https://github.com/oreolion/ai-sync-plugin/tree/7d59f37e3b59960352efdf22ebfb2e63bf048d05",
+  "marketplace": "claude-community",
+  "version": "1.1.0",
+  "sourceRevision": "7d59f37e3b59960352efdf22ebfb2e63bf048d05",
+  "contentDigest": "d3a4d7469d09a54b1359a9ee0397944317934cfd04894a6bb0f68d3713fdae55",
+  "contentHash": "5854c05d32d21948",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/oreolion/ai-sync-plugin.git",
+    "sha": "7d59f37e3b59960352efdf22ebfb2e63bf048d05"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-03-31T08:18:18Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "settings.local.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              },
+              {
+                "name": "new_adapter.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "handoff.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-adapter.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-diff.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-hooks.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-init.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-resume.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-status.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-transfer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "packages",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ai-sync.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adapters",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "templates.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "commands",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "adapter.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "diff.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "handoff.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "hooks.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "init.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "resume.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "status.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "transfer.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "protocol",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reader.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "writer.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "utils.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dashboard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "app",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "projects",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "[id]",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "layout.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "page.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "globals.css",
+                        "type": "file"
+                      },
+                      {
+                        "name": "layout.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "page.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "components",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ProgressBar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ProjectCard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "StatusBadge.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Timeline.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "lib",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "api.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.ts",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "next.config.ts",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "postcss.config.js",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tailwind.config.ts",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "github-action",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dist",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sourcemap-register.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "action.yml",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "launch-video",
+            "type": "directory",
+            "children": [
+              {
+                "name": "out",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "frames",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "bold-features.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "bold-opening.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cta-new.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "demo-init.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "demo-status-full.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "demo-status.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene01-opening.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene02-contextloss.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene03-silos.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene04-logoreveal.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene05-protocol.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene06-handoff.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene07-features.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene08-tools.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene09-shipday.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene10-cta.png",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ai-sync-launch.mp4",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "scenes",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ContextLoss.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CTA.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Demo.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Features.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HandoffFlow.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "LogoReveal.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Opening.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Protocol.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ShipDay.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Silos.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ToolsGrid.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "AiSyncLaunch.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Background.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "constants.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "helpers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Root.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "styles.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mcp-server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ai-sync-mcp.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "protocol",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "reader.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "writer.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tools",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "createHandoff.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "getHandoff.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "getPlan.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "getProgress.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "getSessionHistory.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "updateProgress.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "remote-sync",
+            "type": "directory",
+            "children": [
+              {
+                "name": "migrations",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "0001_initial.sql",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "db",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "schema.sql",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "routes",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "handoff.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "progress.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "projects.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sessions.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              },
+              {
+                "name": "wrangler.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vercel-skill",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ai-sync-protocol.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vscode-extension",
+            "type": "directory",
+            "children": [
+              {
+                "name": "resources",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "icon.svg",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "handoff.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "resume.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "extension.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "protocol.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sessionProvider.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "statusProvider.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": ".vscodeignore",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai-sync-protocol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "validate-plugin.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LAUNCH_POST.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "ROADMAP.md",
+        "type": "file"
+      }
+    ]
+  }
+}

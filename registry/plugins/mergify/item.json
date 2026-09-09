@@ -1,0 +1,967 @@
+{
+  "slug": "mergify",
+  "name": "Mergify",
+  "type": "plugin",
+  "description": "Skills for the Mergify CLI: manage merge queues, stacked pull requests, Test Insights (flaky tests, quarantine), merge protections, and Mergify configuration directly from the terminal.",
+  "longDescription": "Ships **6 skills**.\n\n- **Skills** (6): `mergify-ci` (Use Mergify CI commands to upload JUnit test results, detect git references, manage CI scopes, and retrieve merge…), `mergify-config` (Use Mergify config commands to validate configuration files, simulate Mergify actions, and write Mergify configuration), `mergify-events` (Use `mergify events` to browse the Mergify activity log — every event Mergify recorded for a repository or…), `mergify-merge-protections` (Use Mergify merge protections to control when PRs merge — PR dependencies (Depends-On header), delayed merges (Merge-After header),…), `mergify-merge-queue` (Use Mergify merge queue to queue/dequeue PRs, to monitor and inspect the queue, and to diagnose a dequeued…), `mergify-stack` (Use Mergify stacks for git push, commit, branch, and PR creation)\n\nInstalls with `claude plugin install mergify@claude-plugins-official` from `mergifyio/mergify-cli`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Mergify"
+  },
+  "externalUrl": "https://github.com/mergifyio/mergify-cli/tree/727ce50b8fb3be8a9a24025807e159d644dbba80",
+  "marketplace": "claude-plugins-official",
+  "sourceRevision": "727ce50b8fb3be8a9a24025807e159d644dbba80",
+  "contentDigest": "aa5a89da9f8ab5c25a32e4212d1784aaac7ef8f3d494196602a39a6b5d229a1c",
+  "contentHash": "7a522338f26aac48",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/mergifyio/mergify-cli.git",
+    "sha": "727ce50b8fb3be8a9a24025807e159d644dbba80"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-27T10:50:49Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "build-wheels.yml",
+                "type": "file"
+              },
+              {
+                "name": "ci.yaml",
+                "type": "file"
+              },
+              {
+                "name": "func-tests-live.yaml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "release.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "mergify-icon-black.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "crates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "mergify-ci",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "junit_process",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "command.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "junit.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "quarantine.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spans.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "split.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "upload.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scopes_detect",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "changed_files.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "matching.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "outputs.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "detector.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git_refs.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "github_event.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "github_output.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "queue_info.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "queue_metadata.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scopes_send.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "testing.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tests_quarantine.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tests_show.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "snapshots",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "mergify__tests__cli_schema_golden.snap",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "cli_schema.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "self_update.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "junit_fail.xml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "live_smoke.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill_references.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_drop.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_edit.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_fixup.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_push_github_native.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_reorder.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_reword.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_squash.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_sync.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "build.rs",
+                "type": "file"
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "paths.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "simulate.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auth.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "command_context.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "env.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "exit_code.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "http.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "output.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pull_request.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-events",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "client.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "event.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "queue_leave.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "window.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-freeze",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "common.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "create.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "delete.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "update.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-queue",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pause.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "show.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "status.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unpause.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-stack",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "scripts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "commit-msg.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "post-commit.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pre-push.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prepare-commit-msg.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "wrappers",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "commit-msg",
+                        "type": "file"
+                      },
+                      {
+                        "name": "post-commit",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pre-push",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prepare-commit-msg",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "checkout.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "drop.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "edit.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fixup.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "list.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "move_cmd.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "new.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "note.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "open.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "push.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reorder.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reword.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "setup.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "squash.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sync.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "approvals.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "change_id.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "change_type.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "changes.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "comment_upsert.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local_commits.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "match_commit.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "native_stack.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "notes_push.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan_display.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pr_upsert.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "progress.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "push_helpers.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rebase_log.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rebase_todo.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "remote_changes.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "replay.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "revision_history.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "revision_note.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slug.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_comment.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack_context.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sync_status.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_env.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trunk.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-test-support",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-tui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "glyph.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "select.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "theme.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "time.rs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tree.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "mergify-ci",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-events",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-merge-protections",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-merge-queue",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mergify-stack",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "_typos.toml",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mergify.yml",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "Cargo.lock",
+        "type": "file"
+      },
+      {
+        "name": "Cargo.toml",
+        "type": "file"
+      },
+      {
+        "name": "deny.toml",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "RELEASING.md",
+        "type": "file"
+      },
+      {
+        "name": "renovate.json",
+        "type": "file"
+      },
+      {
+        "name": "rust-toolchain.toml",
+        "type": "file"
+      }
+    ]
+  }
+}

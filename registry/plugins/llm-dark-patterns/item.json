@@ -1,0 +1,3092 @@
+{
+  "slug": "llm-dark-patterns",
+  "name": "Llm Dark Patterns",
+  "type": "plugin",
+  "description": "A 10-hook suite that suppresses LLM dark-pattern defaults at the textual boundary. Bundles three branches: interaction-style hooks (no-vibes false-success closeouts, time-anchor training-cutoff confusion, no-curfew unsolicited paternalism, no-sycophancy praise-spam at turn open, no-cliffhanger dangling permission-loop endings, honest-eta vibe time estimates plus linear-scaling claims), fact-fabrication hooks (no-fake-recall false-memory claims without quoted prior content, no-fake-stats fabricated percentages without source, no-fake-cite academic citations without verifiable URL), and one continuity hook (no-amnesia, snapshots working state on Stop / PreCompact / PostCompact, rehydrates on SessionStart so context survives auto-compaction). Each hook is conservative on purpose with explicit allow-clauses documented in its RECEIPTS.md. Backed by AbstentionBench, Anthropic's Constitution, AAAI 2026 sycophancy research, the CoT-faithfulness literature, and the Frontiers in AI 2026 paper on LLM-mediated cost drivers. Includes a METHODOLOGY.md harness-engineering playbook for shipping new hooks against newly discovered dark patterns.",
+  "longDescription": "Ships **10 hooks**.\n\n- **Hooks** (10): `Stop`, `SubagentStop`, `PreToolUse`, `PostToolUse`, `TaskCreated`, `TaskCompleted`, `PreCompact`, `PostCompact`, and 2 more\n\nInstalls with `claude plugin install llm-dark-patterns@claude-community` from `waitdeadai/llm-dark-patterns`.\n\nThis repo is the umbrella for a series of small hook repos, umbrella-only legacy hooks that still live here, and the research-grade closeout physics engine in waitdeadai/agent-closeout-bench. Each public standalone hook remains separately installable. The physics-backed lane uses one reproducible engine with per-category rule packs, fixtures, and decision JSON.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "hook",
+  "sourceType": "community",
+  "author": {
+    "name": "waitdeadai",
+    "url": "https://github.com/waitdeadai"
+  },
+  "externalUrl": "https://github.com/waitdeadai/llm-dark-patterns/tree/e45815bb1df7510462ae88078b3d2d5b8e2155ed",
+  "marketplace": "claude-community",
+  "version": "1.2.1",
+  "sourceRevision": "e45815bb1df7510462ae88078b3d2d5b8e2155ed",
+  "contentDigest": "ea475c17b3e8e4606533fe9bd15518018f3a0c01ea667103d1cd3ad3b3e9ce51",
+  "contentHash": "69c6c1592f5b1a85",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/waitdeadai/llm-dark-patterns.git",
+    "sha": "e45815bb1df7510462ae88078b3d2d5b8e2155ed"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-26T05:56:32Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".taste",
+        "type": "directory",
+        "children": [
+          {
+            "name": "specqa",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace-2026-05-16",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "spec-qa.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec-qa.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "community-comment-draft.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "methodology",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixture-driven-iteration.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "no-wrap-up-no-roleplay-drift-restoration-plan.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "evaluation",
+        "type": "directory",
+        "children": [
+          {
+            "name": "v2",
+            "type": "directory",
+            "children": [
+              {
+                "name": "extract_train_evidence.py",
+                "type": "file"
+              },
+              {
+                "name": "RESULTS.md",
+                "type": "file"
+              },
+              {
+                "name": "score_v2.py",
+                "type": "file"
+              },
+              {
+                "name": "SPEC.md",
+                "type": "file"
+              },
+              {
+                "name": "split_summary.json",
+                "type": "file"
+              },
+              {
+                "name": "split.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ids.json",
+                "type": "file"
+              },
+              {
+                "name": "train_ids.json",
+                "type": "file"
+              },
+              {
+                "name": "v1_baseline_test.json",
+                "type": "file"
+              },
+              {
+                "name": "v1_baseline_train.json",
+                "type": "file"
+              },
+              {
+                "name": "v2_full_test.json",
+                "type": "file"
+              },
+              {
+                "name": "v2_full_train.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "v3",
+            "type": "directory",
+            "children": [
+              {
+                "name": "staged-rules",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "roleplay_drift.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "RESULTS-crosscutting.md",
+                "type": "file"
+              },
+              {
+                "name": "RESULTS-spanish-smoke.md",
+                "type": "file"
+              },
+              {
+                "name": "RESULTS-task1-sycophancy.md",
+                "type": "file"
+              },
+              {
+                "name": "RESULTS-task2-roleplay.md",
+                "type": "file"
+              },
+              {
+                "name": "RESULTS-task3-honest-eta.md",
+                "type": "file"
+              },
+              {
+                "name": "RESULTS.md",
+                "type": "file"
+              },
+              {
+                "name": "spanish_smoke.sh",
+                "type": "file"
+              },
+              {
+                "name": "SPEC.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "v4",
+            "type": "directory",
+            "children": [
+              {
+                "name": "RESULTS-v4-sycophancy.md",
+                "type": "file"
+              },
+              {
+                "name": "SPEC.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "v5",
+            "type": "directory",
+            "children": [
+              {
+                "name": "RESULTS.md",
+                "type": "file"
+              },
+              {
+                "name": "SPEC.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "v6",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "independent_eval.py",
+                "type": "file"
+              },
+              {
+                "name": "recall_probe.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "RESULTS.md",
+                "type": "file"
+              },
+              {
+                "name": "score_count_drift.py",
+                "type": "file"
+              },
+              {
+                "name": "SPEC.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eval.py",
+            "type": "file"
+          },
+          {
+            "name": "fill_results.py",
+            "type": "file"
+          },
+          {
+            "name": "IMPROVEMENT_NOTES.md",
+            "type": "file"
+          },
+          {
+            "name": "MAST-RESULTS.md",
+            "type": "file"
+          },
+          {
+            "name": "observe.py",
+            "type": "file"
+          },
+          {
+            "name": "raw_results.jsonl",
+            "type": "file"
+          },
+          {
+            "name": "raw_results.rust.jsonl",
+            "type": "file"
+          },
+          {
+            "name": "rescore_v1_rust.py",
+            "type": "file"
+          },
+          {
+            "name": "results_summary_v1.5_rust.json",
+            "type": "file"
+          },
+          {
+            "name": "results_summary.json",
+            "type": "file"
+          },
+          {
+            "name": "RESULTS-v1.5-rust.md",
+            "type": "file"
+          },
+          {
+            "name": "RESULTS.md",
+            "type": "file"
+          },
+          {
+            "name": "RESULTS.template.md",
+            "type": "file"
+          },
+          {
+            "name": "score_v1_rust.py",
+            "type": "file"
+          },
+          {
+            "name": "score.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "honest-eta.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "no-aggregator-hallucination.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-ai-tells.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-anthropomorphization.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-approval-sneak.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-chat-retention.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-cherry-pick-rollup.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-cliffhanger.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-count-drift.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-credential-leak-in-handoff.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-curfew.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-disclaimer-spam.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-emoji-spam.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-fake-cite.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-fake-recall.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-fake-stats.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-handoff-loop.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-meta-commentary.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-ownership-violation.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-phantom-tool-call.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-prompt-restate.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-roleplay-drift.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-rollback-claim-without-evidence.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-sandbagging-disguise.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-silent-worker-success.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-sycophancy-warn.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-sycophancy.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-tldr-bait.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-unreachable-symbol.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-vibes.sh",
+            "type": "file"
+          },
+          {
+            "name": "no-wrap-up.sh",
+            "type": "file"
+          },
+          {
+            "name": "state-postcompact.sh",
+            "type": "file"
+          },
+          {
+            "name": "state-precompact.sh",
+            "type": "file"
+          },
+          {
+            "name": "state-sessionstart.sh",
+            "type": "file"
+          },
+          {
+            "name": "state-stop.sh",
+            "type": "file"
+          },
+          {
+            "name": "state.sh",
+            "type": "file"
+          },
+          {
+            "name": "time-anchor.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "count_drift.py",
+            "type": "file"
+          },
+          {
+            "name": "packs.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "packs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "destructive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cloud-prod.txt",
+                "type": "file"
+              },
+              {
+                "name": "config-overwrite.txt",
+                "type": "file"
+              },
+              {
+                "name": "container.txt",
+                "type": "file"
+              },
+              {
+                "name": "database.txt",
+                "type": "file"
+              },
+              {
+                "name": "filesystem.txt",
+                "type": "file"
+              },
+              {
+                "name": "git-protected.txt",
+                "type": "file"
+              },
+              {
+                "name": "service.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evidence",
+            "type": "directory",
+            "children": [
+              {
+                "name": "binaries.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "locale",
+            "type": "directory",
+            "children": [
+              {
+                "name": "de.txt",
+                "type": "file"
+              },
+              {
+                "name": "en.txt",
+                "type": "file"
+              },
+              {
+                "name": "es.txt",
+                "type": "file"
+              },
+              {
+                "name": "fr.txt",
+                "type": "file"
+              },
+              {
+                "name": "pl.txt",
+                "type": "file"
+              },
+              {
+                "name": "pt.txt",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "paper",
+        "type": "directory",
+        "children": [
+          {
+            "name": "heldout-negative-result.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "providers",
+        "type": "directory",
+        "children": [
+          {
+            "name": "conformance_test.py",
+            "type": "file"
+          },
+          {
+            "name": "CONTRACT.md",
+            "type": "file"
+          },
+          {
+            "name": "fixtures.py",
+            "type": "file"
+          },
+          {
+            "name": "normalize.py",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "SPEC.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_gen-destructive-packs.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "no-unreachable-symbol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "smoke.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "stress",
+            "type": "directory",
+            "children": [
+              {
+                "name": "honest-eta",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-no-eta-keyword.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-agent-native-shape.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-honest-hedge-range.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-explicit-blocked-unknown.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-no-eta-at-all.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-insufficient-data.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-somewhere-between-range.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-stop-hook-active.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-pretooluse-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-bare-3-hours.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-takes-2-days.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-eta-in-weeks.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-completion-in-hours.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-linear-scaling-claim.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-divided-by-lane-count.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-bare-1-month.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-aggregator-hallucination",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-with-per-worker-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-aggregation-claim.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-with-blockquote-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-stop-hook-active.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-synthesizing-no-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-based-on-agents-findings.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-combining-results.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-the-workers-all-report.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-ai-tells",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-plain-language.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-discuss-not-delve.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-delve-into.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-tapestry.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-navigate-intricacies.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-leverage-cutting-edge.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-approval-sneak",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-approval-token.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-approval-token.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-non-sensitive-path.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-non-sensitive-path.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-non-write-tool.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-non-write-tool.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-edit-env-no-approval.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-edit-env-no-approval.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-write-secrets-no-approval.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-write-secrets-no-approval.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-edit-kube-config.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-edit-kube-config.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-cherry-pick-rollup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-failed-handled-explicitly.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-partial-claim.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-partial-with-status-blocked.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-4-out-of-5-then-positive.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-N-failed-then-done.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-3-of-7-succeeded-shipped.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-cliffhanger",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-cliffhanger-not-at-end.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-cliffhanger-not-at-end.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-honest-status-partial.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-explicit-yn-decision.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-pick-one-of.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-status-blocked.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-no-cliffhanger-just-summary.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-status-verified.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-stop-hook-active.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-pretooluse-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-want-me-to-continue.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-let-me-know.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-happy-to-continue.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-should-i-proceed.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-shall-i-continue.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-ready-when-you-are.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-just-say-the-word.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-let-me-know-how-proceed.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-credential-leak-in-handoff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty-task.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-empty-task.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-env-var-name-only.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-env-var-name-only.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-credentials.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-credentials.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-stop-hook-active.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-anthropic-key-in-task.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-anthropic-key-in-task.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-github-pat-in-prompt.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-github-pat-in-prompt.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-aws-key-in-message.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-aws-key-in-message.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-bearer-in-instructions.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-bearer-in-instructions.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-curfew",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-curfew-mid-message.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-curfew-mid-message.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-pure-technical.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-operator-asked-for-break.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-since-you-mentioned-tired.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-talking-about-test-sleep.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-rest-in-different-context.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-stop-hook-active.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pretooluse-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-go-to-sleep.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-take-a-break.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-call-it-a-night.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-self-care.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-recharge-tomorrow.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-burnout-warning.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-late-stop.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-disclaimer-spam",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-no-disclaimer.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-direct-warning.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-please-note.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-its-important-to-mention.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-keep-in-mind.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-emoji-spam",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-no-emoji.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-one-emoji.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-three-at-threshold.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-five-emojis.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-eight-mixed.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-fake-cite",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-cite-with-url.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-cite-with-doi-link.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-arxiv-with-link.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-no-citation-pattern.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-cite-with-webfetch.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-stop-hook-active.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pretooluse-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-author-year.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-author-year-no-comma.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-arxiv-prefix.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-doi-prefix.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-bare-doi-pattern.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-published-in-conference.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-numeric-bracket-citation.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-fake-recall",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-quoted-prior-content-blockquote.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-quoted-prior-content-inline.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-neutral-phrasing.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-no-recall-claim.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-different-discussed-context.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-stop-hook-active.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pretooluse-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-as-we-discussed.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-as-i-mentioned.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-from-my-previous.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-you-mentioned-earlier.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-remember-when-we-discussed.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-building-on-what-we-said.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-recap-of-our-earlier.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-as-i-established.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-fake-stats",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-pct-with-url.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-pct-with-according-to.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-pct-with-year-citation.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-pct-with-author-citation.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-pct-with-arxiv.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-pct-with-doi.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pct-with-source-prefix.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-explicit-insufficient-data.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "09-explicit-unverified.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "10-no-stat-at-all.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "11-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "11-stop-hook-active.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "12-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "12-pretooluse-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-precise-decimal-pct.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-int-pct-of-users.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-int-pct-of-developers.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-large-usd-billion.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-large-usd-million.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-decimal-pct-bare.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pct-of-conversations.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-handoff-loop",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-no-loop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-no-loop.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-payload-shape-fail-open.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-payload-shape-fail-open.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-wrong-event-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-wrong-event-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-three-same-agents.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-three-same-agents.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-loop-via-task-field.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-loop-via-task-field.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-meta-commentary",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-direct-answer.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-think-mid-message.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-let-me-think.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-now-i-will-consider.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-first-i-need-to-think.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-ownership-violation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-edit-within-owned.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-edit-within-owned.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-payload-shape-fail-open.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-payload-shape-fail-open.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-wrong-event-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-wrong-event-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-edit-outside-owned.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-edit-outside-owned.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-edit-outside-scope-field.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-edit-outside-scope-field.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-phantom-tool-call",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-ran-with-fenced-output.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-tool-result-header.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-no-tool-call-claim.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-stop-hook-active.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-ran-tool-no-output.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-tool-returned-no-block.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-called-no-evidence.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-prompt-restate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-direct-start.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-clarification-question.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-you-asked-me-to.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-i-understand-you-want.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-so-youd-like-me-to.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-roleplay-drift",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-specific-blocker.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-direct-answer.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-as-an-ai-assistant.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-im-just-an-ai.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-as-a-language-model.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-do-not-have-opinions.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-rollback-claim-without-evidence",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-rolled-back-with-git-revert.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-reverted-with-kubectl-undo.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-no-rollback-claim.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-rolled-back-bare.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-reverted-bare.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-restored-prior-state.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-sandbagging-disguise",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-tried-with-specific-error.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-tried-status-blocked.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-no-sandbag-claim.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-stop-hook-active.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-tried-but-couldnt-vague.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-gave-best-shot.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-attempted-without-success.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-silent-worker-success",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-per-worker-exit-codes.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-rollup-claim.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-stop-hook-active.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-all-5-workers-completed.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-spawned-N-all-done.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-every-worker-succeeded.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-N-parallel-agents-finished.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-sycophancy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-markdown-prefix.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-markdown-prefix.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-direct-answer.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-praise-after-context.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-operator-asked-for-praise.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-question-mid-message.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-perfect-as-adjective.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-stop-hook-active.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-stop-hook-active.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-pretooluse-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-great-question.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-excellent-question.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-absolutely-right.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-perfect.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-brilliant.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-great-point.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-amazing-question.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-glad-you-asked.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-tldr-bait",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-short-message.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-no-tldr.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-tldr-tail.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-in-summary.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-bottom-line.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-vibes",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty-message.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-no-event-name.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-very-long-message.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-unicode-emoji-positive.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-unicode-emoji-positive.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-positive-with-bash-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-positive-with-verification-passed.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-status-partial-honest-shape.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-explicit-not-complete.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-readonly-with-files-inspected.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-investigation-not-positive.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-tests-passed-explicit.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-incomplete-flag.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "09-stop-hook-active-bypass.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "09-stop-hook-active-bypass.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "10-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "10-pretooluse-noop.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "11-posttooluse-write-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "11-posttooluse-write-noop.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "12-backtick-with-ran-action-verb.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "13-explicit-not-complete-em-dash.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "14-status-partial-not-run-shape.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "15-spanish-todavia-no-listo.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "15-spanish-todavia-no-listo.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "16-polish-jeszcze-nie-skonczone.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "16-polish-jeszcze-nie-skonczone.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "17-spanish-trigger-without-es-locale.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "17-spanish-trigger-without-es-locale.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "18-docker-evidence-passes.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "19-kubectl-evidence-passes.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "20-psql-evidence-passes.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "21-jq-shell-tool-evidence-passes.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "22-terraform-iac-evidence-passes.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "23-docker-ps-safe.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "23-docker-ps-safe.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "24-git-push-feature-branch.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "24-git-push-feature-branch.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "25-terraform-plan-readonly.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "25-terraform-plan-readonly.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "26-kubectl-get-pods.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "26-kubectl-get-pods.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "40-echo-mentions-force-push.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-bare-implemented.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-all-done-no-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-shipped-no-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-tests-not-run-but-positive.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-failed-verification-positive-closeout.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-verification-skipped-but-positive.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-implemented-with-blank-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "08-fixed-no-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "09-shipped-after-failed-build.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "10-completed-without-tests.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "11-pretooluse-rm-recursive-root.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "11-pretooluse-rm-recursive-root.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "12-pretooluse-git-reset-hard.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "12-pretooluse-git-reset-hard.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "13-pretooluse-dd-to-dev.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "13-pretooluse-dd-to-dev.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "14-write-to-env-file.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "14-write-to-env-file.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "15-write-to-secrets-dir.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "15-write-to-secrets-dir.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "16-backtick-disclaimed-evidence.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "17-backtick-mid-message-no-action.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "18-hedge-then-positive-bypass.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "19-negation-far-from-verb.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "20-incomplete-flag-then-positive.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "21-spanish-implementado-listo.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "21-spanish-implementado-listo.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "22-polish-gotowe-dziala.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "22-polish-gotowe-dziala.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "23-mixed-spanish-english-positive.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "23-mixed-spanish-english-positive.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "24-fake-binary-not-in-pack.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "25-pretooluse-docker-stop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "25-pretooluse-docker-stop.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "26-pretooluse-git-force-push-main.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "26-pretooluse-git-force-push-main.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "27-pretooluse-terraform-destroy.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "27-pretooluse-terraform-destroy.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "28-pretooluse-drop-table.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "28-pretooluse-drop-table.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "29-pretooluse-systemctl-stop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "29-pretooluse-systemctl-stop.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "30-pretooluse-sed-overwrite-env.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "30-pretooluse-sed-overwrite-env.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "31-pretooluse-terraform-state-rm.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "31-pretooluse-terraform-state-rm.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "32-pretooluse-kubectl-delete-namespace.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "32-pretooluse-kubectl-delete-namespace.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "33-pretooluse-aws-s3-rm-recursive.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "33-pretooluse-aws-s3-rm-recursive.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "34-pretooluse-redis-flushall.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "34-pretooluse-redis-flushall.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "35-german-fertig-funktioniert.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "35-german-fertig-funktioniert.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "36-french-termine-fonctionne.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "36-french-termine-fonctionne.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "37-portuguese-pronto-funciona.env",
+                        "type": "file"
+                      },
+                      {
+                        "name": "37-portuguese-pronto-funciona.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "no-wrap-up",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty-message.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-malformed-json.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-substantive-close-no-tail.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-operator-asked-closure-allow-clause.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-specific-followup-grounded-in-work.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-stop-hook-active-bypass.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-stop-hook-active-bypass.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-pretooluse-noop.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-pretooluse-noop.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "positive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-anything-else-classic.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-let-me-know-other-questions.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-hope-this-helps-bare.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-feel-free-to-reach-out.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-happy-to-help-with-anything-else.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "06-do-you-have-other-questions.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "07-should-we-wrap-up.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "state",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-unknown-command.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "01-unknown-command.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-status-empty-workspace.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-snapshot-roundtrip.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-prune-empty.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "time-anchor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-empty-input.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-unknown-mode.expected",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-unknown-mode.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "negative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "01-text-mode.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "02-json-mode.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "03-hook-mode.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "04-prompt-mode.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "05-session-mode.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "_gen_fixtures.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "run.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test-count-drift.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pack-loader.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-rm-command-position.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "MARKETPLACE_SUBMISSION_LOG.md",
+        "type": "file"
+      },
+      {
+        "name": "METHODOLOGY.md",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "RESUBMIT_PASTE.md",
+        "type": "file"
+      },
+      {
+        "name": "ROADMAP.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY_AUDIT.md",
+        "type": "file"
+      },
+      {
+        "name": "SPEC-marketplace-submission.md",
+        "type": "file"
+      },
+      {
+        "name": "SPEC.md",
+        "type": "file"
+      },
+      {
+        "name": "SUBMISSION_FORM.md",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,2517 @@
+{
+  "slug": "agentic-swe",
+  "name": "Agentic Swe",
+  "type": "plugin",
+  "description": "agentic-swe is a Claude Code plugin that turns a normal repo session into a structured software-engineering pipeline—without a separate runtime.\nIt ships markdown policies, phase prompts, slash commands, templates, and 135+ specialist subagents. Work is organized with explicit states, human gates (e.g. ambiguity and approval), evidence-friendly artifacts under .worklogs/<id>/, and three pipeline tracks (lean, standard, rigorous) so you can match rigor to risk. Session hooks load policy early; /install helps merge CLAUDE.md into a target project safely.",
+  "longDescription": "Ships **3 agents**, **22 commands** and **3 hooks**.\n\n- **Agents** (3): `developer-agent` (Primary implementation specialist for bounded code changes; spawned via the Agent tool), `git-operations-agent` (Repository git specialist for branches, remote sync, and conflict resolution via the Agent tool), `pr-manager-agent` (Pull request workflow specialist for PR creation and lifecycle via the Agent tool)\n- **Commands** (22): `author-pipeline` (Extend phases, commands, agents, templates, or references while keeping the pipeline consistent), `brainstorm` (Design-first exploration aligned with the design phase (optional visual companion, design.md)), `check` (Enforce budget, transition, and artifact checks (permission-gated)), `ci-status` (Check CI/CD status for a branch or PR with structured reporting), `conflict-resolver` (Detect, classify, and resolve git merge/rebase conflicts with structured reporting), `diff-review` (Review code changes against structured criteria with evidence-backed findings), `doubt`, `evaluate-work` (Inspect an existing work item and assess its health), and 14 more\n- **Hooks** (3): `SessionStart`, `UserPromptSubmit`, `Stop`\n\nInstalls with `claude plugin install agentic-swe@claude-community` from `surajSFDC/agentic-swe`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "agent": 3,
+    "hook": 3,
+    "command": 22
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Suraj Gupta"
+  },
+  "externalUrl": "https://github.com/surajSFDC/agentic-swe/tree/f1927500c3c738f1077c66042c41b6da11931e09",
+  "marketplace": "claude-community",
+  "version": "3.3.0",
+  "sourceRevision": "f1927500c3c738f1077c66042c41b6da11931e09",
+  "contentDigest": "b14fc8681a29cbd050d8a13322366b89c7ecd5c80111a4b8d6253ff1de9eaefd",
+  "contentHash": "dc0c8b953f163b36",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/surajSFDC/agentic-swe.git",
+    "sha": "f1927500c3c738f1077c66042c41b6da11931e09"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-17T20:52:13Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex",
+        "type": "directory",
+        "children": [
+          {
+            "name": "INSTALL.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci-llm.yml",
+                "type": "file"
+              },
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "main-merge-source.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".opencode",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agentic-swe.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "INSTALL.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "panel",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adversarial-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "architect-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-model-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "security-reviewer.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plugin-runtime",
+            "type": "directory",
+            "children": [
+              {
+                "name": "brainstorm-server",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "public",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "index.html",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "package-lock.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "start-server.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stop-server.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "subagent-catalog",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fetch.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "invalidate.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prompts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adversarial-reviewer-prompt.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "subagents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "business-product",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "business-analyst.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "content-marketer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "customer-success-manager.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "legal-advisor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "product-manager.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-manager.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sales-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scrum-master.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "technical-writer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ux-researcher.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wordpress-master.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "core-development",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "api-designer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "backend-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "electron-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontend-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fullstack-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graphql-architect.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "microservices-architect.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mobile-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui-designer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "websocket-engineer.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "custom",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "data-ai",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ai-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-analyst.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-scientist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "database-optimizer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llm-architect.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "machine-learning-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ml-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mlops-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nlp-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "postgres-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reinforcement-learning-engineer.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "developer-experience",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "build-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dependency-manager.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "documentation-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dx-optimizer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git-workflow-manager.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "legacy-modernizer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "powershell-module-architect.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "powershell-ui-architect.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "refactoring-specialist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slack-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tooling-engineer.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "infrastructure",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "azure-infra-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cloud-architect.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "database-administrator.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "deployment-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "devops-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "devops-incident-responder.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "docker-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "incident-responder.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kubernetes-specialist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "network-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platform-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "security-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sre-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "terraform-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "terragrunt-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "windows-infra-admin.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "language-specialists",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "angular-architect.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cpp-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "csharp-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "django-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dotnet-core-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dotnet-framework-4.8-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "elixir-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expo-react-native-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fastapi-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flutter-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "golang-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "java-architect.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "javascript-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kotlin-specialist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "laravel-specialist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nextjs-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "php-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "powershell-5.1-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "powershell-7-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rails-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-specialist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rust-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spring-boot-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sql-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "swift-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "symfony-specialist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "typescript-pro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vue-expert.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "meta-orchestration",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-installer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-organizer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context-manager.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error-coordinator.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "it-ops-orchestrator.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "knowledge-synthesizer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "multi-agent-coordinator.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "performance-monitor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-distributor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workflow-orchestrator.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "quality-security",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "accessibility-tester.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ad-security-reviewer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "architect-reviewer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chaos-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "code-reviewer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compliance-auditor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "debugger.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error-detective.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "penetration-tester.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "performance-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "powershell-security-hardening.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "qa-expert.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "security-auditor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-automator.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "research-analysis",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "competitive-analyst.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-researcher.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "market-researcher.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "research-analyst.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scientific-literature-researcher.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search-specialist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trend-analyst.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specialized-domains",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "api-documenter.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "blockchain-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "embedded-systems.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fintech-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "game-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "iot-engineer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "m365-admin.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mobile-app-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "payment-integration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "quant-analyst.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "risk-manager.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "salesforce-agentforce.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "salesforce-developer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "salesforce-headless.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "seo-specialist.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "developer-agent.md",
+            "type": "file"
+          },
+          {
+            "name": "git-operations-agent.md",
+            "type": "file"
+          },
+          {
+            "name": "pr-manager-agent.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bench",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tasks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "01-off-by-one",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "patterns.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "repo",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "counter.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "test",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "counter.test.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "package.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scoring.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "02-add-retry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "patterns.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "repo",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "http-client.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "test",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "http-client.test.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "package.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scoring.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "03-rate-limiter",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "patterns.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "repo",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "rate-limiter.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "test",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "rate-limiter.test.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "package.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scoring.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task.json",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agentic-swe.cjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "author-pipeline.md",
+            "type": "file"
+          },
+          {
+            "name": "brainstorm.md",
+            "type": "file"
+          },
+          {
+            "name": "check.md",
+            "type": "file"
+          },
+          {
+            "name": "ci-status.md",
+            "type": "file"
+          },
+          {
+            "name": "conflict-resolver.md",
+            "type": "file"
+          },
+          {
+            "name": "diff-review.md",
+            "type": "file"
+          },
+          {
+            "name": "doubt.md",
+            "type": "file"
+          },
+          {
+            "name": "evaluate-work.md",
+            "type": "file"
+          },
+          {
+            "name": "execute-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "install.md",
+            "type": "file"
+          },
+          {
+            "name": "lint.md",
+            "type": "file"
+          },
+          {
+            "name": "plan-only.md",
+            "type": "file"
+          },
+          {
+            "name": "policy.md",
+            "type": "file"
+          },
+          {
+            "name": "receipt.md",
+            "type": "file"
+          },
+          {
+            "name": "repo-scan.md",
+            "type": "file"
+          },
+          {
+            "name": "security-scan.md",
+            "type": "file"
+          },
+          {
+            "name": "subagent.md",
+            "type": "file"
+          },
+          {
+            "name": "swe-dashboard.md",
+            "type": "file"
+          },
+          {
+            "name": "swe-tui.md",
+            "type": "file"
+          },
+          {
+            "name": "test-runner.md",
+            "type": "file"
+          },
+          {
+            "name": "work.md",
+            "type": "file"
+          },
+          {
+            "name": "write-plan.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "config",
+        "type": "directory",
+        "children": [
+          {
+            "name": "budget-thresholds.default.json",
+            "type": "file"
+          },
+          {
+            "name": "catalog.default.json",
+            "type": "file"
+          },
+          {
+            "name": "default-policy.json",
+            "type": "file"
+          },
+          {
+            "name": "memory.default.json",
+            "type": "file"
+          },
+          {
+            "name": "model-routing.default.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sample-receipt.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-05-17-positioning-and-receipt.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "specs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "catalog-routing.md",
+                "type": "file"
+              },
+              {
+                "name": "memory-graph.md",
+                "type": "file"
+              },
+              {
+                "name": "owai-1.0.md",
+                "type": "file"
+              },
+              {
+                "name": "positioning-and-receipt.md",
+                "type": "file"
+              },
+              {
+                "name": "work-item-engine.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "branch-workflow.md",
+            "type": "file"
+          },
+          {
+            "name": "capabilities-overview.md",
+            "type": "file"
+          },
+          {
+            "name": "compliance-mapping.md",
+            "type": "file"
+          },
+          {
+            "name": "launch-week-1.md",
+            "type": "file"
+          },
+          {
+            "name": "PUBLISHING.md",
+            "type": "file"
+          },
+          {
+            "name": "RELEASE-CHECKLIST.md",
+            "type": "file"
+          },
+          {
+            "name": "roadmap.md",
+            "type": "file"
+          },
+          {
+            "name": "the-north-star.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "golden-path-demo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "counter.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "test",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "counter.test.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "DEMO_SCRIPT.md",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "brainstorm-on-prompt.sh",
+            "type": "file"
+          },
+          {
+            "name": "dashboard-on-prompt.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks-cursor.json",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "run-hook.cmd",
+            "type": "file"
+          },
+          {
+            "name": "session-start",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "phases",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ambiguity-wait.md",
+            "type": "file"
+          },
+          {
+            "name": "approval-wait.md",
+            "type": "file"
+          },
+          {
+            "name": "code-review.md",
+            "type": "file"
+          },
+          {
+            "name": "design-review.md",
+            "type": "file"
+          },
+          {
+            "name": "design.md",
+            "type": "file"
+          },
+          {
+            "name": "escalate-code.md",
+            "type": "file"
+          },
+          {
+            "name": "escalate-validation.md",
+            "type": "file"
+          },
+          {
+            "name": "feasibility.md",
+            "type": "file"
+          },
+          {
+            "name": "implementation.md",
+            "type": "file"
+          },
+          {
+            "name": "initialized.md",
+            "type": "file"
+          },
+          {
+            "name": "lean-track-check.md",
+            "type": "file"
+          },
+          {
+            "name": "lean-track-implementation.md",
+            "type": "file"
+          },
+          {
+            "name": "merge-completion.md",
+            "type": "file"
+          },
+          {
+            "name": "permissions-check.md",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-failed.md",
+            "type": "file"
+          },
+          {
+            "name": "pr-creation.md",
+            "type": "file"
+          },
+          {
+            "name": "self-review.md",
+            "type": "file"
+          },
+          {
+            "name": "subagent-selection.md",
+            "type": "file"
+          },
+          {
+            "name": "test-strategy.md",
+            "type": "file"
+          },
+          {
+            "name": "validation.md",
+            "type": "file"
+          },
+          {
+            "name": "verification.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "references",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adaptive-track-router.md",
+            "type": "file"
+          },
+          {
+            "name": "authoring-pipeline-capabilities.md",
+            "type": "file"
+          },
+          {
+            "name": "codex-tools.md",
+            "type": "file"
+          },
+          {
+            "name": "condition-based-waiting.md",
+            "type": "file"
+          },
+          {
+            "name": "context-engineering.md",
+            "type": "file"
+          },
+          {
+            "name": "copilot-tools.md",
+            "type": "file"
+          },
+          {
+            "name": "cross-model-escalation.md",
+            "type": "file"
+          },
+          {
+            "name": "cross-repo-coordination.md",
+            "type": "file"
+          },
+          {
+            "name": "debugging-playbook.md",
+            "type": "file"
+          },
+          {
+            "name": "defense-in-depth.md",
+            "type": "file"
+          },
+          {
+            "name": "deprecation-and-migration.md",
+            "type": "file"
+          },
+          {
+            "name": "design-approaches-format.md",
+            "type": "file"
+          },
+          {
+            "name": "doubt-driven-verification.md",
+            "type": "file"
+          },
+          {
+            "name": "frontend-aesthetics.md",
+            "type": "file"
+          },
+          {
+            "name": "gemini-tools.md",
+            "type": "file"
+          },
+          {
+            "name": "github-workflow.md",
+            "type": "file"
+          },
+          {
+            "name": "implicit-routing.md",
+            "type": "file"
+          },
+          {
+            "name": "lessons-feedback-loop.md",
+            "type": "file"
+          },
+          {
+            "name": "opencode-tools.md",
+            "type": "file"
+          },
+          {
+            "name": "parallel-dispatch.md",
+            "type": "file"
+          },
+          {
+            "name": "plan-quality-bar.md",
+            "type": "file"
+          },
+          {
+            "name": "policy-as-code.md",
+            "type": "file"
+          },
+          {
+            "name": "root-cause-tracing.md",
+            "type": "file"
+          },
+          {
+            "name": "session-routing-hint.md",
+            "type": "file"
+          },
+          {
+            "name": "slicing-strategies.md",
+            "type": "file"
+          },
+          {
+            "name": "source-driven-development.md",
+            "type": "file"
+          },
+          {
+            "name": "task-decomposition-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "tdd-discipline.md",
+            "type": "file"
+          },
+          {
+            "name": "tdd-examples.md",
+            "type": "file"
+          },
+          {
+            "name": "testing-anti-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "tooling-expectations.md",
+            "type": "file"
+          },
+          {
+            "name": "verification-standard.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "schemas",
+        "type": "directory",
+        "children": [
+          {
+            "name": "owai",
+            "type": "directory",
+            "children": [
+              {
+                "name": "state.schema.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agentic-swe-policy.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "context-pack.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "dashboard-event.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "memory-config.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "memory-import-bundle.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "phase-prompt.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "typed-actions.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "work-item.schema.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bench",
+            "type": "directory",
+            "children": [
+              {
+                "name": "run.cjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "github",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agentic-swe-site-main-ruleset.json",
+                "type": "file"
+              },
+              {
+                "name": "apply-agentic-swe-site-main-ruleset.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "catalog",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "catalog-config.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "counts.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "embed-rank.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lexical-rank.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "model-routing.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parse-frontmatter.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "walk-subagents.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cross-model",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "invoke.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "probe.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "memory",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "chunk-embed.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chunk-ingest.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chunk-split.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "embeddings-backend.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "glob-match.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graph-ingest.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graph-query.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graph-store.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "import-extract.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-compact.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-import-apply.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-pipeline.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-prime.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript-sliding.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "phase-lint",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lint.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "policy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "merge.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "receipt",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "extract.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "replay",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "snapshot.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "router",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "track-router.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "runtime",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-code.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scope",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "diff-scope-check.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "work-engine",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "artifacts.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "budget-config.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "budget.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collect-work-dashboard.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discover-workdir.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "engine.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-record-cost.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "paths.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pricing.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state-lock.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tracks.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript-cost.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transitions.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate-schema.cjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "state-machine-edges.cjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bump-version.sh",
+            "type": "file"
+          },
+          {
+            "name": "catalog-index.cjs",
+            "type": "file"
+          },
+          {
+            "name": "catalog-lint.cjs",
+            "type": "file"
+          },
+          {
+            "name": "catalog-route.cjs",
+            "type": "file"
+          },
+          {
+            "name": "install-cursor-plugin.sh",
+            "type": "file"
+          },
+          {
+            "name": "memory-compact.cjs",
+            "type": "file"
+          },
+          {
+            "name": "memory-import.cjs",
+            "type": "file"
+          },
+          {
+            "name": "memory-index.cjs",
+            "type": "file"
+          },
+          {
+            "name": "memory-prime.cjs",
+            "type": "file"
+          },
+          {
+            "name": "memory-reflect.cjs",
+            "type": "file"
+          },
+          {
+            "name": "memory-sliding-summary.cjs",
+            "type": "file"
+          },
+          {
+            "name": "merge-claude-policy.js",
+            "type": "file"
+          },
+          {
+            "name": "migrate-lean-track-state.js",
+            "type": "file"
+          },
+          {
+            "name": "migrate-work-state.js",
+            "type": "file"
+          },
+          {
+            "name": "owai-conformance.cjs",
+            "type": "file"
+          },
+          {
+            "name": "render-catalog-counts.cjs",
+            "type": "file"
+          },
+          {
+            "name": "render-receipt.cjs",
+            "type": "file"
+          },
+          {
+            "name": "run-node-tests.js",
+            "type": "file"
+          },
+          {
+            "name": "seed-dashboard-demo.cjs",
+            "type": "file"
+          },
+          {
+            "name": "session-model-tier-hint.cjs",
+            "type": "file"
+          },
+          {
+            "name": "summarize-work.js",
+            "type": "file"
+          },
+          {
+            "name": "swe-dashboard-server.cjs",
+            "type": "file"
+          },
+          {
+            "name": "swe-tui-server.cjs",
+            "type": "file"
+          },
+          {
+            "name": "verify-sanity.js",
+            "type": "file"
+          },
+          {
+            "name": "work-engine.cjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "prompts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "code-quality-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "implementer-prompt-template.md",
+                "type": "file"
+              },
+              {
+                "name": "plan-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "spec-reviewer-prompt.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "artifact-format.md",
+            "type": "file"
+          },
+          {
+            "name": "audit.log",
+            "type": "file"
+          },
+          {
+            "name": "capability-gaps-section.md",
+            "type": "file"
+          },
+          {
+            "name": "context-pack.md",
+            "type": "file"
+          },
+          {
+            "name": "cursor-rules-stub.md",
+            "type": "file"
+          },
+          {
+            "name": "evaluation-rubric.md",
+            "type": "file"
+          },
+          {
+            "name": "evidence-standard.md",
+            "type": "file"
+          },
+          {
+            "name": "metrics-summary.md",
+            "type": "file"
+          },
+          {
+            "name": "new-phase-stub.md",
+            "type": "file"
+          },
+          {
+            "name": "nudge-event.md",
+            "type": "file"
+          },
+          {
+            "name": "phase-checklist.md",
+            "type": "file"
+          },
+          {
+            "name": "playbook-entry.md",
+            "type": "file"
+          },
+          {
+            "name": "progress.md",
+            "type": "file"
+          },
+          {
+            "name": "repo-knowledge-stub.md",
+            "type": "file"
+          },
+          {
+            "name": "spec-self-review-checklist.md",
+            "type": "file"
+          },
+          {
+            "name": "state.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "test",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "receipt",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lean-happy",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "audit.log",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cicd.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "feasibility.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "implementation.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pr-link.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "state.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "validation-results.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "work-engine",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "transition-cases.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "transcript-cost-sample.jsonl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "llm",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ambiguous-task.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lean-track-prompt.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "resume-work-prompt.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rigorous-track-prompt.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "standard-scope-prompt.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "run-llm-tests.cjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "smoke",
+            "type": "directory",
+            "children": [
+              {
+                "name": "prompts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lean-track-bug-fix.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rigorous-track-new-feature.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "run-smoke.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agents-catalog.test.js",
+            "type": "file"
+          },
+          {
+            "name": "bench-tasks.test.js",
+            "type": "file"
+          },
+          {
+            "name": "bin-agentic-swe.test.js",
+            "type": "file"
+          },
+          {
+            "name": "brainstorm-server.test.js",
+            "type": "file"
+          },
+          {
+            "name": "budget-thresholds-config.test.js",
+            "type": "file"
+          },
+          {
+            "name": "catalog-counts.test.js",
+            "type": "file"
+          },
+          {
+            "name": "catalog-lint.test.js",
+            "type": "file"
+          },
+          {
+            "name": "catalog-route.test.js",
+            "type": "file"
+          },
+          {
+            "name": "catalog-semantic.test.js",
+            "type": "file"
+          },
+          {
+            "name": "claude-md-consistency.test.js",
+            "type": "file"
+          },
+          {
+            "name": "cross-model-probe.test.js",
+            "type": "file"
+          },
+          {
+            "name": "install-platform-stubs.test.js",
+            "type": "file"
+          },
+          {
+            "name": "install-tree.test.js",
+            "type": "file"
+          },
+          {
+            "name": "memory-chunk-prime.test.js",
+            "type": "file"
+          },
+          {
+            "name": "memory-compact.test.js",
+            "type": "file"
+          },
+          {
+            "name": "memory-config.test.js",
+            "type": "file"
+          },
+          {
+            "name": "memory-embed-prime.test.js",
+            "type": "file"
+          },
+          {
+            "name": "memory-graph-ingest.test.js",
+            "type": "file"
+          },
+          {
+            "name": "memory-import-bundle.test.js",
+            "type": "file"
+          },
+          {
+            "name": "merge-claude-policy.test.js",
+            "type": "file"
+          },
+          {
+            "name": "model-routing.test.js",
+            "type": "file"
+          },
+          {
+            "name": "owai-conformance.test.js",
+            "type": "file"
+          },
+          {
+            "name": "phase-anatomy.test.js",
+            "type": "file"
+          },
+          {
+            "name": "phase-structure.test.js",
+            "type": "file"
+          },
+          {
+            "name": "policy-merge.test.js",
+            "type": "file"
+          },
+          {
+            "name": "readme-version-badge.test.js",
+            "type": "file"
+          },
+          {
+            "name": "receipt-cli.test.js",
+            "type": "file"
+          },
+          {
+            "name": "receipt-extract.test.js",
+            "type": "file"
+          },
+          {
+            "name": "receipt-format.test.js",
+            "type": "file"
+          },
+          {
+            "name": "references-integrity.test.js",
+            "type": "file"
+          },
+          {
+            "name": "replay.test.js",
+            "type": "file"
+          },
+          {
+            "name": "seed-dashboard-demo.test.js",
+            "type": "file"
+          },
+          {
+            "name": "state-machine-json.test.js",
+            "type": "file"
+          },
+          {
+            "name": "state-schema.test.js",
+            "type": "file"
+          },
+          {
+            "name": "swe-dashboard-collect.test.js",
+            "type": "file"
+          },
+          {
+            "name": "swe-dashboard-server.test.js",
+            "type": "file"
+          },
+          {
+            "name": "swe-tui.test.js",
+            "type": "file"
+          },
+          {
+            "name": "transcript-cost.test.js",
+            "type": "file"
+          },
+          {
+            "name": "transcript-sliding.test.js",
+            "type": "file"
+          },
+          {
+            "name": "work-engine-apply.test.js",
+            "type": "file"
+          },
+          {
+            "name": "work-engine-budget.test.js",
+            "type": "file"
+          },
+          {
+            "name": "work-engine-cli.test.js",
+            "type": "file"
+          },
+          {
+            "name": "work-engine-paths.test.js",
+            "type": "file"
+          },
+          {
+            "name": "work-engine-schema.test.js",
+            "type": "file"
+          },
+          {
+            "name": "work-engine-tracks.test.js",
+            "type": "file"
+          },
+          {
+            "name": "work-engine-transition-fixtures.test.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".npmrc",
+        "type": "file"
+      },
+      {
+        "name": ".version-bump.json",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "mcp-servers.json",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "state-machine.json",
+        "type": "file"
+      }
+    ]
+  }
+}

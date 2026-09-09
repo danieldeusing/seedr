@@ -1,0 +1,848 @@
+{
+  "slug": "perf",
+  "name": "Perf",
+  "type": "plugin",
+  "description": "Structured performance investigation with baselines, profiling, and evidence-backed decisions — run by AI agents inside your editor. `/perf` enforces a rigorous 10-phase methodology derived from recorded real investigation sessions: establish a baseline, identify the breaking point, generate hypotheses, profile, run controlled experiments, measure, document. No random micro-optimizations; every change is baselined, isolated, measured, and either kept or reverted with evidence. Designed to keep the agent honest in a domain where intuition is usually wrong.",
+  "longDescription": "Ships **8 skills**, **6 agents** and **1 command**.\n\n- **Skills** (8): `perf-analyzer` (Use when synthesizing perf findings into evidence-backed recommendations and decisions), `perf-baseline-manager` (Use when managing perf baselines, consolidating results, or comparing versions), `perf-benchmarker` (Use when running performance benchmarks, establishing baselines, or validating regressions with sequential runs), `perf-code-paths` (Use when mapping code paths, entrypoints, and likely hot files before profiling), `perf-investigation-logger` (Use when appending structured perf investigation notes and evidence), `perf-profiler` (Use when profiling CPU/memory hot paths, generating flame graphs, or capturing JFR/perf evidence), `perf-theory-gatherer` (Use when generating performance hypotheses backed by git history and code evidence), `perf-theory-tester` (Use when running controlled perf experiments to validate hypotheses)\n- **Agents** (6): `perf-analyzer` (Synthesize perf findings into evidence-backed recommendations and decisions), `perf-code-paths` (Map likely code paths for perf scenarios before profiling), `perf-investigation-logger` (Append structured investigation notes with exact user quotes and rationale), `perf-orchestrator` (Coordinate /perf investigations across all phases, enforcing non-negotiable perf rules), `perf-theory-gatherer` (Generate top performance hypotheses after reviewing git history and current metrics), `perf-theory-tester` (Execute controlled perf experiments, one change at a time, with rollback between runs)\n- **Commands** (1): `perf` (Structured performance investigation with baselines, profiling, and evidence-backed decisions)\n\nInstalls with `claude plugin install perf@claude-community` from `agent-sh/perf`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 8,
+    "agent": 6,
+    "command": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Avi Fenesh",
+    "url": "https://github.com/avifenesh"
+  },
+  "externalUrl": "https://github.com/agent-sh/perf/tree/18416de01e88814b26a6dc5ee1de3bb6c278736c",
+  "marketplace": "claude-community",
+  "version": "5.1.0",
+  "sourceRevision": "18416de01e88814b26a6dc5ee1de3bb6c278736c",
+  "contentDigest": "b5f37a6d957abb8f26388de9dcf5f15254e85376a363b93946994f2f696d1064",
+  "contentHash": "27636e165382a56f",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/agent-sh/perf.git",
+    "sha": "18416de01e88814b26a6dc5ee1de3bb6c278736c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-07-22T13:27:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "add-to-project.yml",
+                "type": "file"
+              },
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "claude-code-review.yml",
+                "type": "file"
+              },
+              {
+                "name": "claude.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "perf-analyzer.md",
+            "type": "file"
+          },
+          {
+            "name": "perf-code-paths.md",
+            "type": "file"
+          },
+          {
+            "name": "perf-investigation-logger.md",
+            "type": "file"
+          },
+          {
+            "name": "perf-orchestrator.md",
+            "type": "file"
+          },
+          {
+            "name": "perf-theory-gatherer.md",
+            "type": "file"
+          },
+          {
+            "name": "perf-theory-tester.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "perf.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "checkpoint.md",
+            "type": "file"
+          },
+          {
+            "name": "constraint-tester.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "binary",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "index.test.js",
+                "type": "file"
+              },
+              {
+                "name": "shared-helpers.js",
+                "type": "file"
+              },
+              {
+                "name": "version.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "collectors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyzer-queries.js",
+                "type": "file"
+              },
+              {
+                "name": "codebase.js",
+                "type": "file"
+              },
+              {
+                "name": "docs-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "documentation.js",
+                "type": "file"
+              },
+              {
+                "name": "git.js",
+                "type": "file"
+              },
+              {
+                "name": "github.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cross-platform",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "RESEARCH.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "discovery",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "drift-detect",
+            "type": "directory",
+            "children": [
+              {
+                "name": "collectors.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "enhance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-analyzer.js",
+                "type": "file"
+              },
+              {
+                "name": "agent-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "auto-suppression.js",
+                "type": "file"
+              },
+              {
+                "name": "benchmark.js",
+                "type": "file"
+              },
+              {
+                "name": "cross-file-analyzer.js",
+                "type": "file"
+              },
+              {
+                "name": "cross-file-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "docs-analyzer.js",
+                "type": "file"
+              },
+              {
+                "name": "docs-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "fixer.js",
+                "type": "file"
+              },
+              {
+                "name": "hook-analyzer.js",
+                "type": "file"
+              },
+              {
+                "name": "hook-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "plugin-analyzer.js",
+                "type": "file"
+              },
+              {
+                "name": "plugin-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "projectmemory-analyzer.js",
+                "type": "file"
+              },
+              {
+                "name": "projectmemory-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "prompt-analyzer.js",
+                "type": "file"
+              },
+              {
+                "name": "prompt-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "reporter.js",
+                "type": "file"
+              },
+              {
+                "name": "security-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "skill-analyzer.js",
+                "type": "file"
+              },
+              {
+                "name": "skill-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "suppression.js",
+                "type": "file"
+              },
+              {
+                "name": "tool-patterns.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "patterns",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli-enhancers.js",
+                "type": "file"
+              },
+              {
+                "name": "pipeline.js",
+                "type": "file"
+              },
+              {
+                "name": "review-patterns.js",
+                "type": "file"
+              },
+              {
+                "name": "slop-analyzers.js",
+                "type": "file"
+              },
+              {
+                "name": "slop-patterns.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyzer",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "profilers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "go.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "java.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "node.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rust.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "argument-parser.js",
+                "type": "file"
+              },
+              {
+                "name": "baseline-comparator.js",
+                "type": "file"
+              },
+              {
+                "name": "baseline-store.js",
+                "type": "file"
+              },
+              {
+                "name": "benchmark-runner.js",
+                "type": "file"
+              },
+              {
+                "name": "breaking-point-finder.js",
+                "type": "file"
+              },
+              {
+                "name": "breaking-point-runner.js",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint.js",
+                "type": "file"
+              },
+              {
+                "name": "code-paths.js",
+                "type": "file"
+              },
+              {
+                "name": "consolidation.js",
+                "type": "file"
+              },
+              {
+                "name": "constraint-runner.js",
+                "type": "file"
+              },
+              {
+                "name": "experiment-runner.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "investigation-state.js",
+                "type": "file"
+              },
+              {
+                "name": "optimization-runner.js",
+                "type": "file"
+              },
+              {
+                "name": "profiling-runner.js",
+                "type": "file"
+              },
+              {
+                "name": "schemas.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "platform",
+            "type": "directory",
+            "children": [
+              {
+                "name": "detect-platform.js",
+                "type": "file"
+              },
+              {
+                "name": "detection-configs.js",
+                "type": "file"
+              },
+              {
+                "name": "state-dir.js",
+                "type": "file"
+              },
+              {
+                "name": "verify-tools.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "repo-intel",
+            "type": "directory",
+            "children": [
+              {
+                "name": "embed",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "binary.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "orchestrator.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "preference.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cache.js",
+                "type": "file"
+              },
+              {
+                "name": "converter.js",
+                "type": "file"
+              },
+              {
+                "name": "enrich.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "installer.js",
+                "type": "file"
+              },
+              {
+                "name": "queries.js",
+                "type": "file"
+              },
+              {
+                "name": "updater.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "repo-map",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cache.js",
+                "type": "file"
+              },
+              {
+                "name": "converter.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "installer.js",
+                "type": "file"
+              },
+              {
+                "name": "updater.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "schemas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin-manifest.schema.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "validator.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sources",
+            "type": "directory",
+            "children": [
+              {
+                "name": "custom-handler.js",
+                "type": "file"
+              },
+              {
+                "name": "policy-questions.js",
+                "type": "file"
+              },
+              {
+                "name": "source-cache.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "state",
+            "type": "directory",
+            "children": [
+              {
+                "name": "workflow-state.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "types",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-frontmatter.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "command-frontmatter.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "hook-frontmatter.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin-manifest.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "skill-frontmatter.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "atomic-write.js",
+                "type": "file"
+              },
+              {
+                "name": "cache-manager.js",
+                "type": "file"
+              },
+              {
+                "name": "command-parser.js",
+                "type": "file"
+              },
+              {
+                "name": "context-optimizer.js",
+                "type": "file"
+              },
+              {
+                "name": "deprecation.js",
+                "type": "file"
+              },
+              {
+                "name": "fs-safe.js",
+                "type": "file"
+              },
+              {
+                "name": "shell-escape.js",
+                "type": "file"
+              },
+              {
+                "name": "state-helpers.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "adapter-transforms.js",
+            "type": "file"
+          },
+          {
+            "name": "index.js",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-push-node",
+            "type": "file"
+          },
+          {
+            "name": "setup-hooks.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "perf-analyzer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf-baseline-manager",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf-benchmarker",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf-code-paths",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf-investigation-logger",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf-profiler",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf-theory-gatherer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf-theory-tester",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".agnix.toml",
+        "type": "file"
+      },
+      {
+        "name": ".gitmodules",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "components.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

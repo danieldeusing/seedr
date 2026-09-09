@@ -1,0 +1,514 @@
+{
+  "slug": "sap-gen-code",
+  "name": "Sap Gen Code",
+  "type": "plugin",
+  "description": "ABAP code generation pipeline: convert design docs, extract structured data, validate process/DDIC, generate ABAP (incl. CDS views) and ABAP Unit tests, and run an AI semantic + security review. Companion to sap-dev-core (install that first — its shared scripts are required at runtime).",
+  "longDescription": "Ships **12 skills**.\n\n- **Skills** (12): `sap-docs-check` (Validates an extracted design spec before ABAP code generation, across two dimensions: `ddic` checks DDIC objects (domains /…), `sap-docs-convert` (Applies customer-specific normalisation rules to the extracted spec files in a work folder), `sap-docs-estimate` (Turn the spec pipeline's structural signals into a transparent, falsifiable effort estimate — no gut feel), `sap-docs-extract` (Reads a SAP design document (Excel .xlsx, Word .docx, PDF) — or an existing work folder / a…), `sap-docs-layout` (Edits the structural layout of a SAP design spec template (.xlsx) by writing to the workbook's `(Meta) Layout`…), `sap-gen-abap` (Generates ABAP source code from a process text file ({doc_name}_process.txt) produced by sap-docs-extract), `sap-gen-abap-unit` (Generates ABAP Unit tests for an EXISTING object (global class / function module / report) and closes the…), `sap-gen-cds` (Generates an ABAP CDS view (Core Data Services) from a spec or a natural-language description and deploys it…), and 4 more\n\nInstalls with `claude plugin install sap-gen-code@claude-community` from `sapdev-ai/sap-dev` (`plugins/sap-gen-code`).",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "KexiHe",
+    "url": "https://sapdev.ai"
+  },
+  "externalUrl": "https://github.com/sapdev-ai/sap-dev/tree/2283c60151fab9e4dbbb9c92d931ffabd2cda9f8/plugins/sap-gen-code",
+  "marketplace": "claude-community",
+  "version": "0.8.1",
+  "sourceRevision": "2283c60151fab9e4dbbb9c92d931ffabd2cda9f8",
+  "contentDigest": "0ee703329abf5e6c4e794160ea101811cc3347ea3b2a99610faeff36d14fa2c0",
+  "contentHash": "8508d30486d87d26",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/sap-gen-code",
+    "url": "https://github.com/sapdev-ai/sap-dev.git",
+    "ref": "main",
+    "sha": "2283c60151fab9e4dbbb9c92d931ffabd2cda9f8"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "GPL-3.0-only",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-08-06T07:42:06Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sap-docs-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-docs-convert",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "migrations",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-docs-estimate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "spec_max",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "_dataElements.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_domains.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_errorMsgs.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_golden.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_interface.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_PGM_summary.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_process.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_selection_definition.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_tables.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "check_result_ddic.txt",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "spec_min",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "_PGM_summary.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_process.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "_tables.txt",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "findings_triaged.tsv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.txt",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "effort_bands.tsv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "estimate_weights.tsv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_docs_estimate.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_estimate_ledger.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-docs-extract",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-docs-layout",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "edit_meta_layout.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "spec_layout_schema.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-gen-abap",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sample_ZMTTMS0230.abap",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-gen-abap-unit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-gen-cds",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_cds_deploy.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_cds_release_probe.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_cds_verify.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Z_CDS_DDL_INSTALL.abap",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-gen-idoc-handler",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "idoc_inbound_handler_template.abap",
+                    "type": "file"
+                  },
+                  {
+                    "name": "idoc_inbound_test_template.abap",
+                    "type": "file"
+                  },
+                  {
+                    "name": "idoc_mapping_template.tsv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_idoc_type_read.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_idoc_wiring_check.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-gen-rap",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fields_zorder.tsv",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "rap_bdef_managed.bdef.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rap_bdef_projection.bdef.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rap_behavior_pool.clas.abap.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rap_manual_steps.md.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rap_projection_view.ddl.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rap_root_view_754.ddl.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rap_root_view_755.ddl.tpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rap_srvd.srvd.tpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "sap_gen_rap_generate.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_gen_rap_package.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sap_gen_rap_verify.ps1",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-gen-test-plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sap_testplan_validate.ps1",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_case_derivation_rules.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_plan_template.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sap-review-abap",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "settings.json",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,604 @@
+{
+  "slug": "specclaw",
+  "name": "Specclaw",
+  "type": "plugin",
+  "description": "Spec-driven development framework for Claude Code. Manages the propose → plan → build → verify → pr lifecycle with structured proposals, specs, designs, task lists, and GitHub/Azure DevOps/Jira integrations.",
+  "longDescription": "Ships **19 skills** and **2 agents**.\n\n- **Skills** (19): `archive` (Move a completed change to .specclaw/changes/archive/ with a date prefix), `auth-azdo` (Interactive setup for Azure DevOps authentication), `auth-jira` (Interactive setup for Jira authentication), `author-spec` (Interactively co-author spec.md for an approved proposal via the spec-author subagent), `auto` (Run the propose → plan → build → verify lifecycle autonomously across the queue of active changes), `azdo-issue` (Create or update an Azure Boards Work Item that mirrors this proposal), `build` (Implement planned tasks by executing them wave-by-wave, committing each, and logging errors and learnings), `context` (Manage the project's living context document (.specclaw/context.md)), and 11 more\n- **Agents** (2): `code-reviewer` (Reviews changed files for a specclaw change across 10 quality dimensions (correctness, security, YAGNI/simplicity, one-liner opportunities, naming, complexity,…), `spec-author` (Interactively co-authors a high-quality spec.md for a specclaw change)\n\nInstalls with `claude plugin install specclaw@claude-community` from `chan4lk/specclaw` (`plugins/specclaw`).",
+  "compatibility": [
+    "claude",
+    "copilot"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 19,
+    "agent": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Chandima Ranaweera"
+  },
+  "externalUrl": "https://github.com/chan4lk/specclaw/tree/9909032840d28d35ad69cb09e08196e81cfd6041/plugins/specclaw",
+  "marketplace": "claude-community",
+  "version": "0.6.3",
+  "sourceRevision": "9909032840d28d35ad69cb09e08196e81cfd6041",
+  "contentDigest": "ccf41b5ab7521a1c34ffaf073baf293899b442dcad52bfa2d420131007e48768",
+  "contentHash": "7d5e62331d183569",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/specclaw",
+    "url": "https://github.com/chan4lk/specclaw.git",
+    "ref": "main",
+    "sha": "9909032840d28d35ad69cb09e08196e81cfd6041"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-08-01T13:41:15Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "code-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "spec-author.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "specclaw-auth-azdo",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-auth-jira",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-azdo-issue",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-azdo-pr",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-browser-lock",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-build",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-build-context",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-check-update",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-detect-patterns",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-discover-context",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-ensure-init",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-gh-sync",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-init",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-jira-issue",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-log-error",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-log-learning",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-loop",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-parallel-budget",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-parse-tasks",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-pr",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-reconcile",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-run-long",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-set-phase",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-status-row",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-update-context",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-update-status",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-update-task-status",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-validate-change",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-verify",
+            "type": "file"
+          },
+          {
+            "name": "specclaw-verify-context",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "references",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-guardrails.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-prompts.md",
+            "type": "file"
+          },
+          {
+            "name": "build-engine.md",
+            "type": "file"
+          },
+          {
+            "name": "workflow-examples.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "archive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auth-azdo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auth-jira",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "author-spec",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auto",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "azdo-issue",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "build",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "issue",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "learn",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "loop",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "patterns",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pr-azdo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "propose",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verify",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "knowledge",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-hints.md",
+                "type": "file"
+              },
+              {
+                "name": "spec-guidelines.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config.yaml",
+            "type": "file"
+          },
+          {
+            "name": "context.md",
+            "type": "file"
+          },
+          {
+            "name": "design.md",
+            "type": "file"
+          },
+          {
+            "name": "errors.md",
+            "type": "file"
+          },
+          {
+            "name": "learnings.md",
+            "type": "file"
+          },
+          {
+            "name": "patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "proposal.md",
+            "type": "file"
+          },
+          {
+            "name": "spec.md",
+            "type": "file"
+          },
+          {
+            "name": "STATUS-dashboard.md",
+            "type": "file"
+          },
+          {
+            "name": "status.md",
+            "type": "file"
+          },
+          {
+            "name": "tasks.md",
+            "type": "file"
+          },
+          {
+            "name": "verify-report.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "discovery",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "archive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "old.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "docs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "skip.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "CHANGELOG.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CLAUDE.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llms.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "spec.md",
+                "type": "file"
+              },
+              {
+                "name": "tasks-fenced-id.md",
+                "type": "file"
+              },
+              {
+                "name": "tasks.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "run-long-orchestration-tests.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-memory-parallelism-tests.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-parser-tests.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-phase-state-tests.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-shellcheck-gate-tests.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-status-row-tests.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-synth-agent-tests.sh",
+            "type": "file"
+          },
+          {
+            "name": "shellcheck-baseline.txt",
+            "type": "file"
+          },
+          {
+            "name": "shellcheck-gate.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      }
+    ]
+  }
+}

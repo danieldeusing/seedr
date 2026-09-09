@@ -1,0 +1,242 @@
+{
+  "slug": "cost-guard",
+  "name": "Cost Guard",
+  "type": "plugin",
+  "description": "Real-time USD cost enforcement for Claude Code. Halts runaway agentic loops mid-step before they burn through your budget.\n\nThe plugin enforces real-time USD cost limits in Claude Code. It uses hooks to read the session's the moment any cap is crossed — between tool batches, between turns, or at prompt-submit time. The result: a single greedy turn cannot spiral into a $30+ spend, sessions cannot silently accumulate cost over hours, and runaway burn rates are stopped before they hurt.\n\nFive configurable USD-based caps:\n• Per-session total spend\n• Per-step (prompt → response) cost\n• Trailing 5-minute burn rate\n• Per-step subagent fan-out count\n• Compaction gate (blocks the expensive context-compaction model call when limits are tight)\n\nEleven slash commands for status, runtime config, pause/resume, and an optional bottom-row indicator.\n\nThe indicator shows session spend, rate, current step cost, context %, and (on Claude.ai Pro/Max) 5-hour slot consumption with an estimated USD plan value. It composes with any existing statusLine (preserving your starship setup, etc.) or takes over the slot — your choice at install time.\n\nPure Python 3 standard library. No runtime dependencies. No network calls. All enforcement is local; the plugin only reads the JSONL transcript Claude Code already writes.\n\nScreenshot: https://github.com/oggeh-dev/claude-cost-guard/blob/main/docs/indicator.png",
+  "longDescription": "Ships **11 skills** and **6 hooks**.\n\n- **Skills** (11): `diag` (Dump cost-guard's plugin state — file sizes, env vars, recent halts, effective config, and the current bottom-row command), `install-indicator` (Install cost-guard's bottom-row indicator), `pause` (Pause cost-guard halting), `resume` (Resume cost-guard halting after a pause), `set-rate` (Update the cost-guard per-minute cost limit in USD/min), `set-session-limit` (Update the cost-guard per-session USD cap), `set-step-limit` (Update the cost-guard per-step USD cap), `set-subagent-cap` (Update the cost-guard subagent-spawn cap per step), and 3 more\n- **Hooks** (6): `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolBatch`, `PreCompact`, `SubagentStart`\n\nInstalls with `claude plugin install cost-guard@claude-community` from `oggeh-dev/claude-cost-guard`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 11,
+    "hook": 6
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "OGGEH, Inc"
+  },
+  "externalUrl": "https://github.com/oggeh-dev/claude-cost-guard/tree/e0396485e89062799e5b1df77880bfaa7c85193b",
+  "marketplace": "claude-community",
+  "version": "0.2.0",
+  "sourceRevision": "e0396485e89062799e5b1df77880bfaa7c85193b",
+  "contentDigest": "eb9d26418988f3d529179570d8f245b9167fb0937a6af9454d8cd36a967c8e67",
+  "contentHash": "493a14bf6a2346e3",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/oggeh-dev/claude-cost-guard.git",
+    "sha": "e0396485e89062799e5b1df77880bfaa7c85193b"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-27T18:12:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cost-guard",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "indicator.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "diag",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install-indicator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pause",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "resume",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "set-rate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "set-session-limit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "set-step-limit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "set-subagent-cap",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "set-warn",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "uninstall-indicator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "test_pricing.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pricing.json",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "RELEASE.md",
+        "type": "file"
+      },
+      {
+        "name": "TESTING.md",
+        "type": "file"
+      }
+    ]
+  }
+}

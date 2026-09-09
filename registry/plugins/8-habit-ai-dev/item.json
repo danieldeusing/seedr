@@ -1,0 +1,2261 @@
+{
+  "slug": "8-habit-ai-dev",
+  "name": "8 Habit Ai Dev",
+  "type": "plugin",
+  "description": "8-habit-ai-dev replaces ad-hoc AI prompting with a structured 7-step workflow: Research →\nRequirements → Design → Breakdown → Build Brief → Review → Deploy. Each step maps to one of\nStephen Covey's 8 Habits, providing both practical discipline and principled reasoning.\n\nKey features:\n- 17 hand-crafted skills with DAG-validated handoff chain\n- 472 automated assertions across 4 validator scripts (structure, skill-graph, content,\nverbosity)\n- Whole Person Model assessment (Body/Mind/Heart/Spirit scoring)\n- Maturity-adaptive verbosity via /calibrate (Dependence → Interdependence)\n- /reflect with dream-inspired lesson consolidation\n- /cross-verify 17-question checklist covering all 8 Habits\n- Composes cleanly with claude-governance plugin for compliance enforcement\n\nPure markdown plugin — no runtime dependencies, no MCP servers, no external services.",
+  "longDescription": "Ships **24 skills**, **2 agents** and **1 hook**.\n\n- **Skills** (24): `ai-dev-log` (Generate AI-assisted development log from git history + Co-Authored-By trailers), `breakdown` (Decompose feature into atomic tasks — 1 task per agent), `build-brief` (Generate context-rich implementation brief before coding), `calibrate` (Assess your 8-habit maturity level via 5-7 questions and persist a profile to ~/.claude/habit-profile.md), `consistency-check` (Cross-artifact and incident/config consistency analyzer — runs 5 detection passes across persisted spec artifacts (PRD ↔ design ↔…), `cross-verify` (Run 17-question 8-Habit cross-verification checklist on a plan or implementation), `deploy-guide` (Step-by-step deployment assistance with rollback planning), `design` (Produce architecture decisions — DB, auth, API, constraints), and 16 more\n- **Agents** (2): `8-habit-reviewer` (Deep cross-verification reviewer — evaluates plans and code against all 8 habits), `research-verifier` (Citation-integrity verification agent — validates cited URLs, checks file path existence, flags dead links in research briefs)\n- **Hooks** (1): `SessionStart`\n\nInstalls with `claude plugin install 8-habit-ai-dev@claude-community` from `pitimon/8-habit-ai-dev`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 24,
+    "agent": 2,
+    "hook": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Pitimon"
+  },
+  "externalUrl": "https://github.com/pitimon/8-habit-ai-dev/tree/42d03b42fcbc73f43652832973faa8a411e1dae6",
+  "marketplace": "claude-community",
+  "version": "2.21.42",
+  "sourceRevision": "42d03b42fcbc73f43652832973faa8a411e1dae6",
+  "contentDigest": "729c6a9b49412d502e77daf229af459b214bddd7a07c74684f4c0695f3e1fa15",
+  "contentHash": "353123e0d684602a",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/pitimon/8-habit-ai-dev.git",
+    "sha": "42d03b42fcbc73f43652832973faa8a411e1dae6"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-12T23:25:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex",
+        "type": "directory",
+        "children": [
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "link-check.yml",
+                "type": "file"
+              },
+              {
+                "name": "secret-scan.yml",
+                "type": "file"
+              },
+              {
+                "name": "validate.yml",
+                "type": "file"
+              },
+              {
+                "name": "wiki-linkcheck.yml",
+                "type": "file"
+              },
+              {
+                "name": "wiki-sync.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "8-habit-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "research-verifier.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ADR-001-orchestration-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-002-research-modes.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-003-content-validation.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-004-wiki-as-artifact.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-005-eu-ai-act-compliance-toolkit.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-006-audience-honesty-and-superpowers-deferral.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-007-agentskills-compatibility-decision.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-008-user-maturity-calibration-design.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-009-skill-split-convention.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-010-flat-skill-dispatcher.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-011-cross-agent-discoverability.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-012-eu-ai-act-migration-completion.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-013-spec-persistence-opt-in.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-014-external-prior-art-audit.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-015-diagnose-skill-adoption-and-n1-framing.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-016-t2-bag-drop-date-eviction-policy.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-017-anthropic-skill-patterns-audit.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-018-memory-layer-activation.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-019-doctrine-only-scope-refinement.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-020-skill-authoring-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-021-dynamic-workflow-positioning.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-022-spec-driven-development-positioning.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-023-codex-native-packaging.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-024-codex-runtime-adapter-boundary.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-025-codex-project-context-files.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-026-external-prior-art-audit-karpathy-gstack.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "blog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "harness-engineering-where-are-you.md",
+                "type": "file"
+              },
+              {
+                "name": "vibe-coding-to-spec-driven-development.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "data",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skills.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "out-of-scope",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ADR-016-rfc-deferred-amendments.md",
+                "type": "file"
+              },
+              {
+                "name": "agentskills-no-go.md",
+                "type": "file"
+              },
+              {
+                "name": "anthropic-pattern-4-scripts.md",
+                "type": "file"
+              },
+              {
+                "name": "brainstorm-removed.md",
+                "type": "file"
+              },
+              {
+                "name": "codebase-orientation-skill.md",
+                "type": "file"
+              },
+              {
+                "name": "eu-ai-act-migrated.md",
+                "type": "file"
+              },
+              {
+                "name": "grill-with-docs-glossary.md",
+                "type": "file"
+              },
+              {
+                "name": "gstack-persona-pipeline.md",
+                "type": "file"
+              },
+              {
+                "name": "mirror-untracking.md",
+                "type": "file"
+              },
+              {
+                "name": "utarn-engineer-skills.md",
+                "type": "file"
+              },
+              {
+                "name": "wayfinder-issue-map.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reviews",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-06-10-fable-model-review.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "security",
+            "type": "directory",
+            "children": [
+              {
+                "name": "threat-model.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "specs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "consistency-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prd.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "diagnose-skill-v2-18-0",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prd.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mattpocock-t1-v2-17-0",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prd.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "save-spec",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prd.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skill-authoring-guide-235",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "prd.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "wiki",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_Footer.md",
+                "type": "file"
+              },
+              {
+                "name": "_Sidebar.md",
+                "type": "file"
+              },
+              {
+                "name": "Architecture.md",
+                "type": "file"
+              },
+              {
+                "name": "Changelog.md",
+                "type": "file"
+              },
+              {
+                "name": "Contributing-to-Wiki.md",
+                "type": "file"
+              },
+              {
+                "name": "FAQ.md",
+                "type": "file"
+              },
+              {
+                "name": "Getting-Started.md",
+                "type": "file"
+              },
+              {
+                "name": "Glossary.md",
+                "type": "file"
+              },
+              {
+                "name": "Habits-Reference.md",
+                "type": "file"
+              },
+              {
+                "name": "Harness-Engineering.md",
+                "type": "file"
+              },
+              {
+                "name": "Home.md",
+                "type": "file"
+              },
+              {
+                "name": "Installation.md",
+                "type": "file"
+              },
+              {
+                "name": "Limitations.md",
+                "type": "file"
+              },
+              {
+                "name": "Maturity-Model.md",
+                "type": "file"
+              },
+              {
+                "name": "Skills-Reference.md",
+                "type": "file"
+              },
+              {
+                "name": "Step-0-Research.md",
+                "type": "file"
+              },
+              {
+                "name": "Step-1-Requirements.md",
+                "type": "file"
+              },
+              {
+                "name": "Step-2-Design.md",
+                "type": "file"
+              },
+              {
+                "name": "Step-3-Breakdown.md",
+                "type": "file"
+              },
+              {
+                "name": "Step-4-Build-Brief.md",
+                "type": "file"
+              },
+              {
+                "name": "Step-5-Review-AI.md",
+                "type": "file"
+              },
+              {
+                "name": "Step-6-Deploy-Guide.md",
+                "type": "file"
+              },
+              {
+                "name": "Step-7-Monitor-Setup.md",
+                "type": "file"
+              },
+              {
+                "name": "Troubleshooting.md",
+                "type": "file"
+              },
+              {
+                "name": "Vibe-Coding-vs-Structured.md",
+                "type": "file"
+              },
+              {
+                "name": "Whole-Person-Assessment.md",
+                "type": "file"
+              },
+              {
+                "name": "Workflow-Overview.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-integration.md",
+            "type": "file"
+          },
+          {
+            "name": "compatibility-matrix.md",
+            "type": "file"
+          },
+          {
+            "name": "INTEGRATION.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "guides",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cross-verify-packs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ai-ml.md",
+                "type": "file"
+              },
+              {
+                "name": "api.md",
+                "type": "file"
+              },
+              {
+                "name": "frontend.md",
+                "type": "file"
+              },
+              {
+                "name": "infra.md",
+                "type": "file"
+              },
+              {
+                "name": "mobile.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adr-template.md",
+                "type": "file"
+              },
+              {
+                "name": "agent-brief-template.md",
+                "type": "file"
+              },
+              {
+                "name": "interview-protocol.md",
+                "type": "file"
+              },
+              {
+                "name": "issue-tracking-comments.md",
+                "type": "file"
+              },
+              {
+                "name": "lesson-template.md",
+                "type": "file"
+              },
+              {
+                "name": "prd-template.md",
+                "type": "file"
+              },
+              {
+                "name": "research-brief-template.md",
+                "type": "file"
+              },
+              {
+                "name": "review-report-template.md",
+                "type": "file"
+              },
+              {
+                "name": "task-list-template.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "advisor-pattern.md",
+            "type": "file"
+          },
+          {
+            "name": "agentskills-compatibility-eval.md",
+            "type": "file"
+          },
+          {
+            "name": "anthropic-engineering-doctrine-audit.md",
+            "type": "file"
+          },
+          {
+            "name": "behavioral-spec-craft.md",
+            "type": "file"
+          },
+          {
+            "name": "cross-verification.md",
+            "type": "file"
+          },
+          {
+            "name": "ears-notation.md",
+            "type": "file"
+          },
+          {
+            "name": "habit-nudges.md",
+            "type": "file"
+          },
+          {
+            "name": "habit-profile-schema.md",
+            "type": "file"
+          },
+          {
+            "name": "independent-source-verification.md",
+            "type": "file"
+          },
+          {
+            "name": "integrity-principles.md",
+            "type": "file"
+          },
+          {
+            "name": "orchestration-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "persistence-convention.md",
+            "type": "file"
+          },
+          {
+            "name": "project-context-contract.md",
+            "type": "file"
+          },
+          {
+            "name": "quick-reference.md",
+            "type": "file"
+          },
+          {
+            "name": "release-surface.md",
+            "type": "file"
+          },
+          {
+            "name": "script-vs-ai-workflow.md",
+            "type": "file"
+          },
+          {
+            "name": "situation-map.md",
+            "type": "file"
+          },
+          {
+            "name": "skill-authoring.md",
+            "type": "file"
+          },
+          {
+            "name": "spec-digest-pattern.md",
+            "type": "file"
+          },
+          {
+            "name": "structured-output-protocol.md",
+            "type": "file"
+          },
+          {
+            "name": "tdd-tracer-bullet.md",
+            "type": "file"
+          },
+          {
+            "name": "vendor-portability.md",
+            "type": "file"
+          },
+          {
+            "name": "verbosity-adaptation.md",
+            "type": "file"
+          },
+          {
+            "name": "whole-person-rubrics.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "habits",
+        "type": "directory",
+        "children": [
+          {
+            "name": "h1-be-proactive.md",
+            "type": "file"
+          },
+          {
+            "name": "h2-begin-with-end.md",
+            "type": "file"
+          },
+          {
+            "name": "h3-first-things-first.md",
+            "type": "file"
+          },
+          {
+            "name": "h4-win-win.md",
+            "type": "file"
+          },
+          {
+            "name": "h5-understand-first.md",
+            "type": "file"
+          },
+          {
+            "name": "h6-synergize.md",
+            "type": "file"
+          },
+          {
+            "name": "h7-sharpen-saw.md",
+            "type": "file"
+          },
+          {
+            "name": "h8-find-voice.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "pre-commit.sh.example",
+            "type": "file"
+          },
+          {
+            "name": "session-start.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".codex-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "8-habit-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "research-verifier.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adr",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ADR-001-orchestration-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-002-research-modes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-003-content-validation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-004-wiki-as-artifact.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-005-eu-ai-act-compliance-toolkit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-006-audience-honesty-and-superpowers-deferral.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-007-agentskills-compatibility-decision.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-008-user-maturity-calibration-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-009-skill-split-convention.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-010-flat-skill-dispatcher.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-011-cross-agent-discoverability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-012-eu-ai-act-migration-completion.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-013-spec-persistence-opt-in.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-014-external-prior-art-audit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-015-diagnose-skill-adoption-and-n1-framing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-016-t2-bag-drop-date-eviction-policy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-017-anthropic-skill-patterns-audit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-018-memory-layer-activation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-019-doctrine-only-scope-refinement.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-020-skill-authoring-guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-021-dynamic-workflow-positioning.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-022-spec-driven-development-positioning.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-023-codex-native-packaging.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-024-codex-runtime-adapter-boundary.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-025-codex-project-context-files.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-026-external-prior-art-audit-karpathy-gstack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "blog",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "harness-engineering-where-are-you.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vibe-coding-to-spec-driven-development.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "data",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skills.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "out-of-scope",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ADR-016-rfc-deferred-amendments.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agentskills-no-go.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "anthropic-pattern-4-scripts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "brainstorm-removed.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codebase-orientation-skill.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eu-ai-act-migrated.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "grill-with-docs-glossary.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gstack-persona-pipeline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mirror-untracking.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "utarn-engineer-skills.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wayfinder-issue-map.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "reviews",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-06-10-fable-model-review.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "security",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "threat-model.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "consistency-check",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "design.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prd.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tasks.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "diagnose-skill-v2-18-0",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "design.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prd.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tasks.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "mattpocock-t1-v2-17-0",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "design.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prd.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tasks.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "save-spec",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "design.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prd.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tasks.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "skill-authoring-guide-235",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "prd.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "wiki",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_Footer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "_Sidebar.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Architecture.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Changelog.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Contributing-to-Wiki.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FAQ.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Getting-Started.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Glossary.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Habits-Reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Harness-Engineering.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Home.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Installation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Limitations.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Maturity-Model.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Skills-Reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Step-0-Research.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Step-1-Requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Step-2-Design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Step-3-Breakdown.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Step-4-Build-Brief.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Step-5-Review-AI.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Step-6-Deploy-Guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Step-7-Monitor-Setup.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Troubleshooting.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Vibe-Coding-vs-Structured.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Whole-Person-Assessment.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Workflow-Overview.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "codex-integration.md",
+                "type": "file"
+              },
+              {
+                "name": "compatibility-matrix.md",
+                "type": "file"
+              },
+              {
+                "name": "INTEGRATION.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "guides",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cross-verify-packs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ai-ml.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontend.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "infra.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mobile.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adr-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-brief-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "interview-protocol.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "issue-tracking-comments.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lesson-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prd-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "research-brief-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "review-report-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-list-template.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "advisor-pattern.md",
+                "type": "file"
+              },
+              {
+                "name": "agentskills-compatibility-eval.md",
+                "type": "file"
+              },
+              {
+                "name": "anthropic-engineering-doctrine-audit.md",
+                "type": "file"
+              },
+              {
+                "name": "behavioral-spec-craft.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-verification.md",
+                "type": "file"
+              },
+              {
+                "name": "ears-notation.md",
+                "type": "file"
+              },
+              {
+                "name": "habit-nudges.md",
+                "type": "file"
+              },
+              {
+                "name": "habit-profile-schema.md",
+                "type": "file"
+              },
+              {
+                "name": "independent-source-verification.md",
+                "type": "file"
+              },
+              {
+                "name": "integrity-principles.md",
+                "type": "file"
+              },
+              {
+                "name": "orchestration-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "persistence-convention.md",
+                "type": "file"
+              },
+              {
+                "name": "project-context-contract.md",
+                "type": "file"
+              },
+              {
+                "name": "quick-reference.md",
+                "type": "file"
+              },
+              {
+                "name": "release-surface.md",
+                "type": "file"
+              },
+              {
+                "name": "script-vs-ai-workflow.md",
+                "type": "file"
+              },
+              {
+                "name": "situation-map.md",
+                "type": "file"
+              },
+              {
+                "name": "skill-authoring.md",
+                "type": "file"
+              },
+              {
+                "name": "spec-digest-pattern.md",
+                "type": "file"
+              },
+              {
+                "name": "structured-output-protocol.md",
+                "type": "file"
+              },
+              {
+                "name": "tdd-tracer-bullet.md",
+                "type": "file"
+              },
+              {
+                "name": "vendor-portability.md",
+                "type": "file"
+              },
+              {
+                "name": "verbosity-adaptation.md",
+                "type": "file"
+              },
+              {
+                "name": "whole-person-rubrics.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "habits",
+            "type": "directory",
+            "children": [
+              {
+                "name": "h1-be-proactive.md",
+                "type": "file"
+              },
+              {
+                "name": "h2-begin-with-end.md",
+                "type": "file"
+              },
+              {
+                "name": "h3-first-things-first.md",
+                "type": "file"
+              },
+              {
+                "name": "h4-win-win.md",
+                "type": "file"
+              },
+              {
+                "name": "h5-understand-first.md",
+                "type": "file"
+              },
+              {
+                "name": "h6-synergize.md",
+                "type": "file"
+              },
+              {
+                "name": "h7-sharpen-saw.md",
+                "type": "file"
+              },
+              {
+                "name": "h8-find-voice.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks.json",
+                "type": "file"
+              },
+              {
+                "name": "pre-commit.sh.example",
+                "type": "file"
+              },
+              {
+                "name": "session-start.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "effective-development.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "gen-habits-reference.sh",
+                "type": "file"
+              },
+              {
+                "name": "generate-ai-dev-log.sh",
+                "type": "file"
+              },
+              {
+                "name": "generate-skill-catalog.js",
+                "type": "file"
+              },
+              {
+                "name": "sync-mirror.sh",
+                "type": "file"
+              },
+              {
+                "name": "windows-preflight.ps1",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ai-dev-log",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "breakdown",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "build-brief",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "calibrate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "examples.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "consistency-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cross-verify",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "deploy-guide",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "design",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "diagnose",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "eu-ai-act-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "management-talk",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "monitor-setup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "operational-state",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "post-mortem",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "reflect",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "requirements",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "research",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "review-ai",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "save-spec",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scrutinize",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "security-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "using-8-habits",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "examples.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "whole-person-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "workflow",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "RESOLVER.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "AGENTS.md",
+            "type": "file"
+          },
+          {
+            "name": "CHANGELOG.md",
+            "type": "file"
+          },
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          },
+          {
+            "name": "CONTRIBUTING.md",
+            "type": "file"
+          },
+          {
+            "name": "DOMAIN.md",
+            "type": "file"
+          },
+          {
+            "name": "LICENSE",
+            "type": "file"
+          },
+          {
+            "name": "llms.txt",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "SECURITY.md",
+            "type": "file"
+          },
+          {
+            "name": "SELF-CHECK.md",
+            "type": "file"
+          },
+          {
+            "name": "SKILL-EFFECTIVENESS.md",
+            "type": "file"
+          },
+          {
+            "name": "SPEC.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "rules",
+        "type": "directory",
+        "children": [
+          {
+            "name": "effective-development.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "gen-habits-reference.sh",
+            "type": "file"
+          },
+          {
+            "name": "generate-ai-dev-log.sh",
+            "type": "file"
+          },
+          {
+            "name": "generate-skill-catalog.js",
+            "type": "file"
+          },
+          {
+            "name": "sync-mirror.sh",
+            "type": "file"
+          },
+          {
+            "name": "windows-preflight.ps1",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai-dev-log",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "breakdown",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "build-brief",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "calibrate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "examples.md",
+                "type": "file"
+              },
+              {
+                "name": "reference.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "consistency-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cross-verify",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "deploy-guide",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnose",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eu-ai-act-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "management-talk",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "monitor-setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "operational-state",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "post-mortem",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reflect",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "requirements",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "research",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-ai",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "save-spec",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scrutinize",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "security-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-8-habits",
+            "type": "directory",
+            "children": [
+              {
+                "name": "examples.md",
+                "type": "file"
+              },
+              {
+                "name": "reference.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "whole-person-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflow",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "RESOLVER.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ci-local.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pre-commit-hook.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-skill-graph.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-verbosity-hook.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-content.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-structure.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "DOMAIN.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "llms.txt",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "SELF-CHECK.md",
+        "type": "file"
+      },
+      {
+        "name": "SKILL-EFFECTIVENESS.md",
+        "type": "file"
+      },
+      {
+        "name": "SPEC.md",
+        "type": "file"
+      }
+    ]
+  }
+}

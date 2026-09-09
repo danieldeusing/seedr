@@ -1,0 +1,2457 @@
+{
+  "slug": "just-ship",
+  "name": "Just Ship",
+  "type": "plugin",
+  "description": "Multi-agent framework for autonomous software development. A single ticket triggers a full pipeline: triage, planning, implementation, testing, PR, merge. Includes 23 battle-tested skills, 8 specialized agents (Backend, Frontend, Data Engineer, DevOps, QA, Security, Triage, Orchestrator), and slash commands for the complete dev lifecycle. Runs locally via CLI or 24/7 on a VPS.",
+  "longDescription": "Ships **42 skills**, **10 agents**, **19 commands** and **5 hooks**.\n\n- **Skills** (42): `add-project` (Neues Projekt im aktuellen Workspace verknüpfen — nur Projekt-ID in project.json schreiben), `autonomy-boundary` (The operating system for decision-making in this team), `backend` (Use when implementing API endpoints, server-side business logic, webhook handlers, event pipelines, shared hooks, or backend integrations), `brainstorming` (You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior), `connect-board` (Board-Verbindung einrichten — via jsp_ Token oder Status prüfen), `creative-design` (Use when creating new UIs from scratch — landing pages, marketing sites, prototypes, or any greenfield frontend work…), `data-engineer` (Use when making database schema changes, writing migrations, configuring RLS policies, syncing TypeScript types, or designing data models…), `design-lead` (Your Head of Design + Head of Product-UX), and 34 more\n- **Agents** (10): `backend` (Backend-Entwickler für API-Endpoints, Shared Hooks und Business Logic), `code-review` (Code Review Agent — reviewt den Diff gegen main auf Code-Qualität, Patterns, Edge Cases, Error Handling, Performance und…), `data-engineer` (Datenbank-Spezialist für Migrations, RLS Policies, Schema-Änderungen und TypeScript-Typen), `devops` (DevOps Engineer für Build-Checks, TypeScript-Compilation und Lint), `frontend` (Design-affiner Frontend-Entwickler), `orchestrator` (Orchestriert die autonome Entwicklung), `qa` (Testing Engineer für Teststrategie, Testentwicklung und Acceptance-Criteria-Verifikation), `security` (Security Reviewer für Auth, RLS, Input Validation und Secrets), and 2 more\n- **Commands** (19): `add-project` (Neues Projekt im aktuellen Workspace verknüpfen — nur Projekt-ID in project.json schreiben), `connect-board` (Board-Verbindung einrichten — via jsp_ Token oder Status prüfen), `creative-design` (Creative Design — Greenfield UI/UX von Scratch designen mit Anti-AI-Slop Standards), `develop` (Nächstes ready_to_develop Ticket holen und autonom implementieren), `disconnect-board` (Board-Verbindung entfernen — zurück zu CLI-only), `frontend-design` (Frontend Design — UI-Komponenten mit Design-System-Qualität implementieren), `implement` (Implementiere was gerade besprochen wurde — ohne Ticket, mit vollem Agent-Workflow), `init` (Projekt-Setup — Stack erkennen, project.json erstellen), and 11 more\n- **Hooks** (5): `SessionStart`, `SubagentStart`, `SubagentStop`, `SessionEnd`, `PostToolUse`\n\nInstalls with `claude plugin install just-ship@claude-community` from `yves-s/just-ship`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 42,
+    "agent": 10,
+    "hook": 5,
+    "command": 19
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Just Ship",
+    "url": "https://just-ship.io"
+  },
+  "externalUrl": "https://github.com/yves-s/just-ship/tree/16804dff43840ad45d14a9a2181017f7a5231e55",
+  "marketplace": "claude-community",
+  "version": "1.0.0",
+  "sourceRevision": "16804dff43840ad45d14a9a2181017f7a5231e55",
+  "contentDigest": "0bb504777b1137b66971674be7f105a215baafe22e2a5fddaca512e2f0354a25",
+  "contentHash": "cdd388b827ffa40d",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/yves-s/just-ship.git",
+    "sha": "16804dff43840ad45d14a9a2181017f7a5231e55"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-04T21:22:43Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "detect-ticket-post.sh",
+                "type": "file"
+              },
+              {
+                "name": "detect-ticket.sh",
+                "type": "file"
+              },
+              {
+                "name": "main-context-edit-block.sh",
+                "type": "file"
+              },
+              {
+                "name": "on-agent-start.sh",
+                "type": "file"
+              },
+              {
+                "name": "on-agent-stop.sh",
+                "type": "file"
+              },
+              {
+                "name": "on-session-end.sh",
+                "type": "file"
+              },
+              {
+                "name": "quality-gate.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit-completeness.md",
+                "type": "file"
+              },
+              {
+                "name": "brainstorming-design-awareness.md",
+                "type": "file"
+              },
+              {
+                "name": "branch-check-before-edit.md",
+                "type": "file"
+              },
+              {
+                "name": "decision-authority-enforcement.md",
+                "type": "file"
+              },
+              {
+                "name": "detect-stuck-tickets.md",
+                "type": "file"
+              },
+              {
+                "name": "expert-audit-scope.md",
+                "type": "file"
+              },
+              {
+                "name": "framework-abstraction-check.md",
+                "type": "file"
+              },
+              {
+                "name": "framework-version-check.md",
+                "type": "file"
+              },
+              {
+                "name": "main-context-edit-block.md",
+                "type": "file"
+              },
+              {
+                "name": "no-duplicate-finishing-skill.md",
+                "type": "file"
+              },
+              {
+                "name": "no-premature-merge.md",
+                "type": "file"
+              },
+              {
+                "name": "no-settings-data-edit.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin-dependency-system.md",
+                "type": "file"
+              },
+              {
+                "name": "post-develop-feedback.md",
+                "type": "file"
+              },
+              {
+                "name": "self-install-topology.md",
+                "type": "file"
+              },
+              {
+                "name": "ship-trigger-context.md",
+                "type": "file"
+              },
+              {
+                "name": "shopify-skill-awareness.md",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-terminal-routing.md",
+                "type": "file"
+              },
+              {
+                "name": "ticket-number-format.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "active-ticket-sync.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "ask-human.sh",
+                "type": "file"
+              },
+              {
+                "name": "backfill-ticket-costs.sh",
+                "type": "file"
+              },
+              {
+                "name": "board-api.sh",
+                "type": "file"
+              },
+              {
+                "name": "board-api.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "calculate-session-cost.sh",
+                "type": "file"
+              },
+              {
+                "name": "calculate-session-cost.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "coolify-api.sh",
+                "type": "file"
+              },
+              {
+                "name": "coolify-deploy.sh",
+                "type": "file"
+              },
+              {
+                "name": "develop-epic-guardrail.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "develop-summary.sh",
+                "type": "file"
+              },
+              {
+                "name": "develop-summary.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "epic-completion-check.sh",
+                "type": "file"
+              },
+              {
+                "name": "epic-completion-check.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "get-preview-url.sh",
+                "type": "file"
+              },
+              {
+                "name": "get-preview-url.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "githook-pre-commit.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "post-comment.sh",
+                "type": "file"
+              },
+              {
+                "name": "send-event.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-summary.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-summary.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "ship-summary.sh",
+                "type": "file"
+              },
+              {
+                "name": "ship-summary.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "ship-token-tracking.sh",
+                "type": "file"
+              },
+              {
+                "name": "ship-token-tracking.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "shopify-app-deploy.sh",
+                "type": "file"
+              },
+              {
+                "name": "shopify-app-deploy.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "shopify-dev.sh",
+                "type": "file"
+              },
+              {
+                "name": "shopify-env-check.sh",
+                "type": "file"
+              },
+              {
+                "name": "shopify-preview.sh",
+                "type": "file"
+              },
+              {
+                "name": "shopify-qa.sh",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-api.sh",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-api.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-plugin-registration.sh",
+                "type": "file"
+              },
+              {
+                "name": "write-config-connect.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "write-config.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "add-project.md",
+                "type": "file"
+              },
+              {
+                "name": "autonomy-boundary.md",
+                "type": "file"
+              },
+              {
+                "name": "backend.md",
+                "type": "file"
+              },
+              {
+                "name": "brainstorming.md",
+                "type": "file"
+              },
+              {
+                "name": "connect-board.md",
+                "type": "file"
+              },
+              {
+                "name": "creative-design.md",
+                "type": "file"
+              },
+              {
+                "name": "data-engineer.md",
+                "type": "file"
+              },
+              {
+                "name": "design-lead.md",
+                "type": "file"
+              },
+              {
+                "name": "develop.md",
+                "type": "file"
+              },
+              {
+                "name": "disconnect-board.md",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-parallel-agents.md",
+                "type": "file"
+              },
+              {
+                "name": "executing-plans.md",
+                "type": "file"
+              },
+              {
+                "name": "find-skills.md",
+                "type": "file"
+              },
+              {
+                "name": "finishing-a-development-branch.md",
+                "type": "file"
+              },
+              {
+                "name": "frontend-design.md",
+                "type": "file"
+              },
+              {
+                "name": "implement.md",
+                "type": "file"
+              },
+              {
+                "name": "init.md",
+                "type": "file"
+              },
+              {
+                "name": "just-ship-review.md",
+                "type": "file"
+              },
+              {
+                "name": "just-ship-status.md",
+                "type": "file"
+              },
+              {
+                "name": "just-ship-update.md",
+                "type": "file"
+              },
+              {
+                "name": "just-ship-vps.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin--differential-review--differential-review.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin--insecure-defaults--insecure-defaults.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin--sentry-skills--code-review.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin--sentry-skills--find-bugs.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin--sentry-skills--gha-security-review.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin--sentry-skills--security-review.md",
+                "type": "file"
+              },
+              {
+                "name": "plugin-security-gate.md",
+                "type": "file"
+              },
+              {
+                "name": "product-cto.md",
+                "type": "file"
+              },
+              {
+                "name": "receiving-code-review.md",
+                "type": "file"
+              },
+              {
+                "name": "recover.md",
+                "type": "file"
+              },
+              {
+                "name": "reporter.md",
+                "type": "file"
+              },
+              {
+                "name": "requesting-code-review.md",
+                "type": "file"
+              },
+              {
+                "name": "setup-just-ship.md",
+                "type": "file"
+              },
+              {
+                "name": "ship.md",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-converse.md",
+                "type": "file"
+              },
+              {
+                "name": "sparring.md",
+                "type": "file"
+              },
+              {
+                "name": "spike-review.md",
+                "type": "file"
+              },
+              {
+                "name": "subagent-driven-development.md",
+                "type": "file"
+              },
+              {
+                "name": "systematic-debugging.md",
+                "type": "file"
+              },
+              {
+                "name": "test-driven-development.md",
+                "type": "file"
+              },
+              {
+                "name": "ticket-writer.md",
+                "type": "file"
+              },
+              {
+                "name": "ticket.md",
+                "type": "file"
+              },
+              {
+                "name": "using-git-worktrees.md",
+                "type": "file"
+              },
+              {
+                "name": "ux-planning.md",
+                "type": "file"
+              },
+              {
+                "name": "verification-before-completion.md",
+                "type": "file"
+              },
+              {
+                "name": "webapp-testing.md",
+                "type": "file"
+              },
+              {
+                "name": "writing-plans.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".githooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-commit",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "build-pipeline.yml",
+                "type": "file"
+              },
+              {
+                "name": "notify-on-failure.yml",
+                "type": "file"
+              },
+              {
+                "name": "setup-drift-check.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "backend.md",
+            "type": "file"
+          },
+          {
+            "name": "code-review.md",
+            "type": "file"
+          },
+          {
+            "name": "data-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "devops.md",
+            "type": "file"
+          },
+          {
+            "name": "frontend.md",
+            "type": "file"
+          },
+          {
+            "name": "orchestrator.md",
+            "type": "file"
+          },
+          {
+            "name": "qa.md",
+            "type": "file"
+          },
+          {
+            "name": "security.md",
+            "type": "file"
+          },
+          {
+            "name": "triage-enrichment.md",
+            "type": "file"
+          },
+          {
+            "name": "triage.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "just-ship",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-project.md",
+            "type": "file"
+          },
+          {
+            "name": "connect-board.md",
+            "type": "file"
+          },
+          {
+            "name": "creative-design.md",
+            "type": "file"
+          },
+          {
+            "name": "develop.md",
+            "type": "file"
+          },
+          {
+            "name": "disconnect-board.md",
+            "type": "file"
+          },
+          {
+            "name": "frontend-design.md",
+            "type": "file"
+          },
+          {
+            "name": "implement.md",
+            "type": "file"
+          },
+          {
+            "name": "init.md",
+            "type": "file"
+          },
+          {
+            "name": "init.mode-detection.test.sh",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-audit.md",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-review.md",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-status.md",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-update.md",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-vps.md",
+            "type": "file"
+          },
+          {
+            "name": "recover.md",
+            "type": "file"
+          },
+          {
+            "name": "setup-just-ship.md",
+            "type": "file"
+          },
+          {
+            "name": "ship.md",
+            "type": "file"
+          },
+          {
+            "name": "spike-review.md",
+            "type": "file"
+          },
+          {
+            "name": "ticket.md",
+            "type": "file"
+          },
+          {
+            "name": "ux-planning.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Just Ship Board.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "audits",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-04-25-cto-deep-audit-v2.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-04-25-cto-deep-audit.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "incidents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-04-07-pipeline-reliability.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-04-10-orchestrator-bypass-T-741.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-04-11-init-flow-broken.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-04-12-plugin-skills-not-in-project.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-04-21-workflow-bypass-design-lead.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "specs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "master-agency-os.md",
+                "type": "file"
+              },
+              {
+                "name": "p0-shopify-skills.md",
+                "type": "file"
+              },
+              {
+                "name": "p1-pipeline-stability.md",
+                "type": "file"
+              },
+              {
+                "name": "p2-agency-layer.md",
+                "type": "file"
+              },
+              {
+                "name": "p3-shopify-advanced.md",
+                "type": "file"
+              },
+              {
+                "name": "p4-ecosystem.md",
+                "type": "file"
+              },
+              {
+                "name": "p5-engine-abstraction.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spikes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "287-universal-event-streaming.md",
+                "type": "file"
+              },
+              {
+                "name": "472-monitoring-solution.md",
+                "type": "file"
+              },
+              {
+                "name": "paperclip-analysis.md",
+                "type": "file"
+              },
+              {
+                "name": "T-551-hosting-infrastructure.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-03-11-agent-sdk-migration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-13-board-project-setup-flow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-14-frontend-design-quality.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-14-monorepo-consolidation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-15-features-bento-redesign.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-15-settings-workspace-overview.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-15-setup-flow-redesign.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-15-website-cto-sections.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-16-auto-docs-check.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-16-implement-command.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-20-onboarding-flow-consolidation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-20-onboarding-flow-fix.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-22-just-ship-vps.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-22-sidekick.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-23-parallel-workers-automated-qa.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-23-pipeline-config-simplification.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-30-p0-shopify-skills-foundation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-30-workflow-modes-auto-healing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-30-workflow-reliability-board-cockpit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-31-p1-pipeline-stability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-31-recover-command.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-01-shopify-agency-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-02-intake-proposal-kalkulation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-02-proposal-prototype-embed.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-03-p2-client-reports.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-04-saas-managed-pipeline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-05-pipeline-quality-gates.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-12-just-ship-audit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-15-shopify-board-integration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-16-prototype-to-production.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-23-sidekick-reasoning-architecture.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-27-sidekick-project-id-implicit.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-03-11-agent-sdk-migration-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-12-sdk-migration-analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-12-self-install-symlinks-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-13-board-project-setup-flow-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-14-frontend-design-quality-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-14-monorepo-consolidation-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-15-features-bento-redesign-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-15-settings-workspace-overview-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-15-setup-flow-redesign.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-16-auto-docs-check-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-16-expandable-project-cards-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-16-implement-command-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-19-curl-install-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-19-human-in-the-loop-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-20-onboarding-consistency-analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-20-onboarding-flow-consolidation-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-20-onboarding-flow-fix-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-22-just-ship-vps-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-22-sidekick-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-23-parallel-workers-automated-qa-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-23-pipeline-config-simplification-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-29-shopify-hosting-integration-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-29-shopify-skills-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-30-vps-update-process-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-30-workflow-reliability-board-cockpit-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-30-worktree-review-workflow-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-31-recover-command-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-01-saas-managed-pipeline-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-01-shopify-agency-workflow-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-02-intake-proposal-kalkulation-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-02-proposal-prototype-embed-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-02-security-quality-audit-implementation-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-05-coolify-hosting-integration-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-05-enterprise-hardening-audit-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-12-just-ship-audit-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-15-shopify-board-integration-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-16-prototype-to-production-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-24-epic-develop-ship-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-27-sidekick-project-id-implicit-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "best-practices-analysis.md",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-operating-model.md",
+            "type": "file"
+          },
+          {
+            "name": "pir-2026-04-01-bot-attack-api-outage.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "migrations",
+        "type": "directory",
+        "children": [
+          {
+            "name": "001_create_tables.sql",
+            "type": "file"
+          },
+          {
+            "name": "002_telegram_users.sql",
+            "type": "file"
+          },
+          {
+            "name": "003_waitlist_signups.sql",
+            "type": "file"
+          },
+          {
+            "name": "004_enable_rls.sql",
+            "type": "file"
+          },
+          {
+            "name": "005_sidekick_threads.sql",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "pipeline",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "applies-to.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "applies-to.ts",
+                "type": "file"
+              },
+              {
+                "name": "artifact-verifier.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "artifact-verifier.ts",
+                "type": "file"
+              },
+              {
+                "name": "audit-runtime.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "audit-runtime.ts",
+                "type": "file"
+              },
+              {
+                "name": "budget.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "budget.ts",
+                "type": "file"
+              },
+              {
+                "name": "change-summary.ts",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.ts",
+                "type": "file"
+              },
+              {
+                "name": "coolify-preview.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "coolify-preview.ts",
+                "type": "file"
+              },
+              {
+                "name": "cost.ts",
+                "type": "file"
+              },
+              {
+                "name": "detect-ticket-post.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "drain.ts",
+                "type": "file"
+              },
+              {
+                "name": "error-handler.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "error-handler.ts",
+                "type": "file"
+              },
+              {
+                "name": "event-hooks.ts",
+                "type": "file"
+              },
+              {
+                "name": "github-app.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "github-app.ts",
+                "type": "file"
+              },
+              {
+                "name": "load-agents.ts",
+                "type": "file"
+              },
+              {
+                "name": "load-skills-mapping.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "load-skills.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "load-skills.ts",
+                "type": "file"
+              },
+              {
+                "name": "logger.ts",
+                "type": "file"
+              },
+              {
+                "name": "main-context-edit-block.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "model-router.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "model-router.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-inference.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-inference.ts",
+                "type": "file"
+              },
+              {
+                "name": "qa-fix-loop.ts",
+                "type": "file"
+              },
+              {
+                "name": "qa-runner.ts",
+                "type": "file"
+              },
+              {
+                "name": "rate-limiter.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rate-limiter.ts",
+                "type": "file"
+              },
+              {
+                "name": "resume.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "resume.ts",
+                "type": "file"
+              },
+              {
+                "name": "sanitize.ts",
+                "type": "file"
+              },
+              {
+                "name": "scope-guard.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "scope-guard.ts",
+                "type": "file"
+              },
+              {
+                "name": "sentry.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-config.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-allowed-tools-guard.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-attach.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-attach.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-chat.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-chat.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-conversations-store.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-conversations-store.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-converse.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-converse.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-create.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-create.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-policy.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-policy.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-reasoning-tools.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-reasoning-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-system-prompt.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-system-prompt.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-tools.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidekick-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "spawn.ts",
+                "type": "file"
+              },
+              {
+                "name": "supabase-rest.ts",
+                "type": "file"
+              },
+              {
+                "name": "supervisor.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "supervisor.ts",
+                "type": "file"
+              },
+              {
+                "name": "threads-store.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "threads-store.ts",
+                "type": "file"
+              },
+              {
+                "name": "utils.ts",
+                "type": "file"
+              },
+              {
+                "name": "vercel-preview.ts",
+                "type": "file"
+              },
+              {
+                "name": "verify-commands.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "verify-commands.ts",
+                "type": "file"
+              },
+              {
+                "name": "watchdog.ts",
+                "type": "file"
+              },
+              {
+                "name": "worktree-manager.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "run.sh",
+            "type": "file"
+          },
+          {
+            "name": "run.ts",
+            "type": "file"
+          },
+          {
+            "name": "server.ts",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          },
+          {
+            "name": "vitest.config.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "public",
+        "type": "directory",
+        "children": [
+          {
+            "name": "logos",
+            "type": "directory",
+            "children": [
+              {
+                "name": "just-ship-brand-guide.html",
+                "type": "file"
+              },
+              {
+                "name": "just-ship-brand-guide.pdf",
+                "type": "file"
+              },
+              {
+                "name": "just-ship-logos-preview.png",
+                "type": "file"
+              },
+              {
+                "name": "lockup-horizontal-blue.svg",
+                "type": "file"
+              },
+              {
+                "name": "lockup-horizontal-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "lockup-horizontal-light.svg",
+                "type": "file"
+              },
+              {
+                "name": "lockup-stacked-blue.svg",
+                "type": "file"
+              },
+              {
+                "name": "lockup-stacked-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "lockup-stacked-light.svg",
+                "type": "file"
+              },
+              {
+                "name": "mark-blue.svg",
+                "type": "file"
+              },
+              {
+                "name": "mark-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "mark-outline-blue.svg",
+                "type": "file"
+              },
+              {
+                "name": "mark-outline-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "mark-outline-light.svg",
+                "type": "file"
+              },
+              {
+                "name": "mark-white.svg",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "sails-blue.svg",
+                "type": "file"
+              },
+              {
+                "name": "sails-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "sails-white.svg",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "backfill-sidekick-to-engine.ts",
+            "type": "file"
+          },
+          {
+            "name": "detect-shopify.sh",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-smoke-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-vps-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "provision-pipeline.sh",
+            "type": "file"
+          },
+          {
+            "name": "scan-plugin-security.sh",
+            "type": "file"
+          },
+          {
+            "name": "sync-template.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-skill-frontmatter.sh",
+            "type": "file"
+          },
+          {
+            "name": "with_server.py",
+            "type": "file"
+          },
+          {
+            "name": "write-config.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "shopify-skills-workspace",
+        "type": "directory",
+        "children": [
+          {
+            "name": "evals",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "iteration-1",
+            "type": "directory",
+            "children": [
+              {
+                "name": "eval-1-trust-badges",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "with_skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "outputs",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "trust-badges.liquid",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "grading.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "timing.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "without_skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "outputs",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "trust-badges.liquid",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "grading.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "timing.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "eval-2-cart-drawer",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "with_skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "outputs",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "cart-drawer.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "grading.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "timing.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "without_skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "outputs",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "cart-drawer.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "grading.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "timing.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "eval-3-ingredients",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "with_skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "outputs",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "ingredients-section.liquid",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "grading.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "timing.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "without_skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "outputs",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "ingredients-section.liquid",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "grading.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "timing.json",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "benchmark.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-project",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "autonomy-boundary",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "backend",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "brainstorming",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "connect-board",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "creative-design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "data-engineer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-lead",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "develop",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "disconnect-board",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-parallel-agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "executing-plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "find-skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "finishing-a-development-branch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "frontend-design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "implement",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "just-ship-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "just-ship-status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "just-ship-update",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "just-ship-vps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plugin-security-gate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "threat-model.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "product-cto",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "receiving-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "recover",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reporter",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "develop-complete.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "epic-created.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-progress.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ship-complete.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ticket-created.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "requesting-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setup-just-ship",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sidekick-converse",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sparring",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spike-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "subagent-driven-development",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "systematic-debugging",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test-driven-development",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ticket",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ticket-writer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-git-worktrees",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ux-planning",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verification-before-completion",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "webapp-testing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "writing-plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          },
+          {
+            "name": "project.json",
+            "type": "file"
+          },
+          {
+            "name": "settings.standalone.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "vps",
+        "type": "directory",
+        "children": [
+          {
+            "name": "Caddyfile",
+            "type": "file"
+          },
+          {
+            "name": "connect-project.sh",
+            "type": "file"
+          },
+          {
+            "name": "docker-compose.yml",
+            "type": "file"
+          },
+          {
+            "name": "Dockerfile",
+            "type": "file"
+          },
+          {
+            "name": "entrypoint.sh",
+            "type": "file"
+          },
+          {
+            "name": "install-monitor.sh",
+            "type": "file"
+          },
+          {
+            "name": "install-updater.sh",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-bot.service",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-server@.service",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-updater.service",
+            "type": "file"
+          },
+          {
+            "name": "just-ship-updater.sh",
+            "type": "file"
+          },
+          {
+            "name": "logs.sh",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-container-monitor.integration.test.sh",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-container-monitor.sh",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-container-monitor.test.sh",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-containers.example.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "setup-vps.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".dockerignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "PRODUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "project.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "settings.json",
+        "type": "file"
+      },
+      {
+        "name": "setup.sh",
+        "type": "file"
+      }
+    ]
+  }
+}

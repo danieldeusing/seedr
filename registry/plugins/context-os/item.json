@@ -1,0 +1,1590 @@
+{
+  "slug": "context-os",
+  "name": "Context Os",
+  "type": "plugin",
+  "description": "Context OS helps Claude Code find the right files faster. It builds a local repo graph of paths, symbols, imports, line counts, and hot files, then injects a compact autocontext block with up to five likely file candidates for each prompt. It runs locally with no server, no embeddings, and no telemetry. Live proof in the repo shows 40.9 percent aggregate token reduction across 36 Claude Code calls.",
+  "longDescription": "Ships **3 skills**, **2 commands** and **2 hooks**.\n\n- **Skills** (3): `doctor` (Validate context-os setup, graph availability, and local hook health in the current repository), `init` (Initialize context-os in the current project by building the local repo graph and installing Claude Code guidance), `stats` (Show current context-os graph status, git state, and recent session signals for the active repository)\n- **Commands** (2): `outline` (Show a file's structural map (symbols + line ranges) so you can read only the slice you need), `savings` (Show your context-os token savings — all-time, this week, streak, and a shareable card)\n- **Hooks** (2): `SessionStart`, `UserPromptSubmit`\n\nInstalls with `claude plugin install context-os@claude-community` from `sravan27/context-os`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 3,
+    "hook": 2,
+    "command": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "sravan27",
+    "url": "https://github.com/sravan27"
+  },
+  "externalUrl": "https://github.com/sravan27/context-os/tree/8fa29eec99f614d2d8f09e474929f899c8984afd",
+  "marketplace": "claude-community",
+  "version": "2.10.2",
+  "sourceRevision": "8fa29eec99f614d2d8f09e474929f899c8984afd",
+  "contentDigest": "6205a7eb7fc91ff2c48b64ad3ff88c1cd5f8515b50e0ba44c33b2386a65376a7",
+  "contentHash": "43e0b23c51716a85",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/sravan27/context-os.git",
+    "sha": "8fa29eec99f614d2d8f09e474929f899c8984afd"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-28T09:26:07Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              },
+              {
+                "name": "private_audit.yml",
+                "type": "file"
+              },
+              {
+                "name": "technique_submission.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "apps",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "main.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plugin-claude",
+            "type": "directory",
+            "children": [
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "context-os-setup",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "outline.md",
+            "type": "file"
+          },
+          {
+            "name": "savings.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "crates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prompt-linter",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "proxy-core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reducer-engine",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "reducers",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "build_log.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "json.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lint_output.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mod.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "stack_trace.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_log.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "repo-memory",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-memory",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "telemetry",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sql",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "schema.sql",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "token-estimator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib.rs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "distribution",
+            "type": "directory",
+            "children": [
+              {
+                "name": "DEMO-SCRIPT.md",
+                "type": "file"
+              },
+              {
+                "name": "demo.sh",
+                "type": "file"
+              },
+              {
+                "name": "DEVTO-ARTICLE.md",
+                "type": "file"
+              },
+              {
+                "name": "DIRECT-OUTREACH.md",
+                "type": "file"
+              },
+              {
+                "name": "GH-FEATURE-REQUEST.md",
+                "type": "file"
+              },
+              {
+                "name": "LAUNCH-CHECKLIST.md",
+                "type": "file"
+              },
+              {
+                "name": "LINKEDIN.md",
+                "type": "file"
+              },
+              {
+                "name": "PAID-AUDIT-LAUNCH.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "REDDIT.md",
+                "type": "file"
+              },
+              {
+                "name": "RESEARCH.md",
+                "type": "file"
+              },
+              {
+                "name": "SHOW-HN.md",
+                "type": "file"
+              },
+              {
+                "name": "SUBMIT.md",
+                "type": "file"
+              },
+              {
+                "name": "TWEETS.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "AGENT-COST-LEAK-CHECKER.md",
+            "type": "file"
+          },
+          {
+            "name": "architecture.md",
+            "type": "file"
+          },
+          {
+            "name": "benchmark-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "claude-code-integration.md",
+            "type": "file"
+          },
+          {
+            "name": "demo.cast",
+            "type": "file"
+          },
+          {
+            "name": "demo.gif",
+            "type": "file"
+          },
+          {
+            "name": "DEMO.md",
+            "type": "file"
+          },
+          {
+            "name": "devto-article.md",
+            "type": "file"
+          },
+          {
+            "name": "FOR-CLAUDE-CODE-TEAM.md",
+            "type": "file"
+          },
+          {
+            "name": "limitations.md",
+            "type": "file"
+          },
+          {
+            "name": "METHODOLOGY.md",
+            "type": "file"
+          },
+          {
+            "name": "PITCH.md",
+            "type": "file"
+          },
+          {
+            "name": "PLUGIN-DIRECTORY-SUBMISSION.md",
+            "type": "file"
+          },
+          {
+            "name": "product-spec.md",
+            "type": "file"
+          },
+          {
+            "name": "PROPOSAL.md",
+            "type": "file"
+          },
+          {
+            "name": "reducer-specs.md",
+            "type": "file"
+          },
+          {
+            "name": "REVIEW-CHECKLIST.md",
+            "type": "file"
+          },
+          {
+            "name": "safety-model.md",
+            "type": "file"
+          },
+          {
+            "name": "SECURITY.md",
+            "type": "file"
+          },
+          {
+            "name": "TECHNIQUES.md",
+            "type": "file"
+          },
+          {
+            "name": "user-guide.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sample-configs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "context-os.project.json",
+                "type": "file"
+              },
+              {
+                "name": "service.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sample-logs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "stack-trace-node.txt",
+                "type": "file"
+              },
+              {
+                "name": "test-log-jest.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sample-repos",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mini-next",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "app",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "users",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "[id]",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "page.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "page.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "components",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "NavBar.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "lib",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "api.ts",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "next.config.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sample-sessions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "long-prompt.txt",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "state.json",
+                "type": "file"
+              },
+              {
+                "name": "update.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "stacks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "django",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "manage.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "nextjs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "app",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "page.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rust",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "crates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "app",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "src",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "main.rs",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "Cargo.toml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Cargo.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "Formula",
+        "type": "directory",
+        "children": [
+          {
+            "name": "context-os.rb",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "python",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auto_context.py",
+                "type": "file"
+              },
+              {
+                "name": "build_repo_graph.py",
+                "type": "file"
+              },
+              {
+                "name": "dedup_guard.py",
+                "type": "file"
+              },
+              {
+                "name": "file_size_guard.py",
+                "type": "file"
+              },
+              {
+                "name": "loop_guard.py",
+                "type": "file"
+              },
+              {
+                "name": "prewarm.py",
+                "type": "file"
+              },
+              {
+                "name": "savings_tracker.py",
+                "type": "file"
+              },
+              {
+                "name": "session_profile.py",
+                "type": "file"
+              },
+              {
+                "name": "smart_bash.py",
+                "type": "file"
+              },
+              {
+                "name": "smart_read.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "python",
+        "type": "directory",
+        "children": [
+          {
+            "name": "evals",
+            "type": "directory",
+            "children": [
+              {
+                "name": "autocontext_fixture",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "api",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "rate_limit.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "router.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "auth",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "login.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "middleware.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "session.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "config",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "database.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "settings.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "db",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "migrations.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "models.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "queries.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "utils",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "crypto.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "logging.py",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "test_crypto.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_login.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_migrations.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_rate_limit.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_session.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "autocontext_fixture_js",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "api",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "rateLimit.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "auth",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "login.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "middleware.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "session.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "config",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "database.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "settings.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "db",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "migrations.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "users.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "server",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "app.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "router.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "utils",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "crypto.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "logging.ts",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "login.test.ts",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "autocontext_fixture_rust",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "api",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "rate_limit.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "router.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "auth",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "login.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "middleware.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "session.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "config",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "database.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "settings.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "db",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "migrations.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "models.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "queries.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "utils",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "crypto.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "logging.rs",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mod.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "lib.rs",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "datasets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "compaction_survival_cases.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "safe_mode_cases.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "multi_repo_prompts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "axios.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requests.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ripgrep.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "reports",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "autocontext-ablation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "autocontext-eval.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "baseline-comparison.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "benchmark-fixture-20260415.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compaction-survival-report.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compaction-survival-report.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dogfood-eval.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "latency-bench-raw.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "latency-bench.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "live-session-bench-raw.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "live-session-bench-stats.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "live-session-bench.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "multi-repo-eval.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "robustness.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "safe-mode-report.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "safe-mode-report.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-replay.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "runners",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_ablation_child.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "autocontext_ablation.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "autocontext_eval.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "baseline_comparison.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compaction_survival_runner.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dogfood_eval.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git_commit_eval.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "latency_bench.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "live_bench_stats.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "live_session_bench.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "multi_repo_eval.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ranker_floor.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "replay_history.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "robustness_test.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "safe_mode_runner.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "savings_test.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session_replay.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "smoke_runner.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scorers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compaction_survival.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "safe_mode.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "autocontext_prompts.json",
+                "type": "file"
+              },
+              {
+                "name": "dogfood_prompts.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "outline.py",
+                "type": "file"
+              },
+              {
+                "name": "savings_report.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "agent_cost_leak_check.py",
+            "type": "file"
+          },
+          {
+            "name": "pyproject.toml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "schemas",
+        "type": "directory",
+        "children": [
+          {
+            "name": "config.schema.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "benchmark.sh",
+            "type": "file"
+          },
+          {
+            "name": "demo.tape",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "doctor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "stats",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "build-log-cargo.txt",
+                "type": "file"
+              },
+              {
+                "name": "large-array-response.json",
+                "type": "file"
+              },
+              {
+                "name": "large-response.json",
+                "type": "file"
+              },
+              {
+                "name": "lint-output-clippy.txt",
+                "type": "file"
+              },
+              {
+                "name": "long-prompt.txt",
+                "type": "file"
+              },
+              {
+                "name": "service-config.toml",
+                "type": "file"
+              },
+              {
+                "name": "stack-trace-node.txt",
+                "type": "file"
+              },
+              {
+                "name": "test-log-jest.txt",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claudeignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "action.yml",
+        "type": "file"
+      },
+      {
+        "name": "Cargo.lock",
+        "type": "file"
+      },
+      {
+        "name": "Cargo.toml",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LAUNCH.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "setup.sh",
+        "type": "file"
+      },
+      {
+        "name": "STATUS.md",
+        "type": "file"
+      }
+    ]
+  }
+}

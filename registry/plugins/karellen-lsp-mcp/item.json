@@ -1,0 +1,326 @@
+{
+  "slug": "karellen-lsp-mcp",
+  "name": "Karellen Lsp Mcp",
+  "type": "plugin",
+  "description": "LSP-backed code intelligence for Claude Code via MCP and native LSP. Navigate definitions, references, call hierarchies, type hierarchies, hover documentation, symbols, and diagnostics across C/C++ (clangd), Java/Kotlin (jdtls), and any language with a custom LSP server.\n\nTwo interfaces, one shared daemon:\n- **Native LSP proxy** (`karellen-lsp`): Transparent code intelligence — no permission prompts, no manual registration. Auto-detects languages and routes to backend LSP servers.\n- **MCP interface** (`karellen-lsp-mcp`): Explicit tool calls with structured responses for fine-grained control.\n\nMultiple Claude sessions share a single daemon and single LSP server per project, avoiding duplicate indexing. Supports autodetection of CMake, Meson, Gradle, Maven, and other build systems.",
+  "longDescription": "Ships **2 skills**, **1 agent**, **3 hooks** and **1 MCP server**.\n\n- **Skills** (2): `lsp-investigate` (Investigate code using LSP tools), `lsp-register` (Register a project for LSP code intelligence)\n- **Agents** (1): `lsp-investigator` (Use this agent when you need deep code understanding across a large codebase, when tracing call chains or…)\n- **Hooks** (3): `SessionStart`, `PostToolUse`, `PostToolUseFailure`\n- **MCP servers** (1): `karellen-lsp-mcp`\n\nInstalls with `claude plugin install karellen-lsp-mcp@claude-community` from `karellen/karellen-lsp-mcp`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 2,
+    "agent": 1,
+    "hook": 3,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Karellen, Inc."
+  },
+  "externalUrl": "https://github.com/karellen/karellen-lsp-mcp/tree/a811c3f17db87e378af0604c1ea4239406dbe01c",
+  "marketplace": "claude-community",
+  "version": "0.1.7",
+  "sourceRevision": "a811c3f17db87e378af0604c1ea4239406dbe01c",
+  "contentDigest": "aa2d64236afb4b4ae441b4ff5c715bbf6bf2125ab71233645159e12a55030648",
+  "contentHash": "d9fdd361b85ace33",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/karellen/karellen-lsp-mcp.git",
+    "sha": "a811c3f17db87e378af0604c1ea4239406dbe01c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-10T17:40:17Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "build.yml",
+                "type": "file"
+              },
+              {
+                "name": "notify-marketplace.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lsp-investigator.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "c-cpp.md",
+            "type": "file"
+          },
+          {
+            "name": "java-kotlin.md",
+            "type": "file"
+          },
+          {
+            "name": "python.md",
+            "type": "file"
+          },
+          {
+            "name": "rust.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-prerequisites.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-lsp-opportunity.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lsp-investigate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lsp-register",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "integrationtest",
+            "type": "directory",
+            "children": [
+              {
+                "name": "python",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "daemon_lsp_integration_tests.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jdtls_integration_tests.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server_integration_tests.py",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "main",
+            "type": "directory",
+            "children": [
+              {
+                "name": "python",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "karellen_lsp_mcp",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "daemon_client.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "daemon.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "detector.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lsp_adapter.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lsp_client.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lsp_normalizer.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lsp_server.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "project_registry.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "server.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "unittest",
+            "type": "directory",
+            "children": [
+              {
+                "name": "python",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "daemon_tests.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detector_tests.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lsp_client_tests.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lsp_normalizer_tests.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lsp_server_tests.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project_registry_tests.py",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".lsp.json",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "build.py",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "setup.py",
+        "type": "file"
+      }
+    ]
+  }
+}

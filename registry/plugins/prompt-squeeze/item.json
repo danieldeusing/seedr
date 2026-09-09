@@ -1,0 +1,414 @@
+{
+  "slug": "prompt-squeeze",
+  "name": "Prompt Squeeze",
+  "type": "plugin",
+  "description": "prompt-squeeze builds prompt-cost discipline into Claude Code via three surfaces:\n\n/squeeze skill that compresses a verbose prompt into a token-efficient equivalent and renders a side-by-side markdown comparison plus a cited receipt (dollars saved, Wh saved, CO₂e at US-grid average).\n\nUserPromptSubmit hook that meters every prompt, nudges Claude when ≥25% compressible, and (in interactive mode) blocks prompts above a configurable token limit while showing a 2-column ASCII diff so the user can review before sending.\n\nAn MCP server exposing personal_stats, team_stats, and weekly_report tools that aggregate the local hook log into shareable rollups.",
+  "longDescription": "Ships **1 skill**, **4 commands**, **1 hook** and **1 MCP server**.\n\n- **Skills** (1): `prompt-squeeze` (Rewrite the user's draft prompt into a token-efficient equivalent and report dollar + electricity savings)\n- **Commands** (4): `sq` (Resume a pending squeeze (y/n) or manage session consent (undo/off)), `squeeze-config` (Walk through prompt-squeeze settings), `squeeze-stats` (Show personal prompt-squeeze savings (last 7 days)), `squeeze` (Compress a prompt and show savings)\n- **Hooks** (1): `UserPromptSubmit`\n- **MCP servers** (1): `prompt-squeeze-stats`\n\nInstalls with `claude plugin install prompt-squeeze@claude-community` from `joshua-burnell-1/prompt-squeeze`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "hook": 1,
+    "command": 4,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Josh Burnell"
+  },
+  "externalUrl": "https://github.com/joshua-burnell-1/prompt-squeeze/tree/df120d6ac3851d22acfaabf831ff3b6efc550864",
+  "marketplace": "claude-community",
+  "version": "0.4.0",
+  "sourceRevision": "df120d6ac3851d22acfaabf831ff3b6efc550864",
+  "contentDigest": "d8b7ef82702015aa30399057dd07b41e90f23bbb8fe9763573b2a0ec1de98800",
+  "contentHash": "fd35049e904e59dc",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/joshua-burnell-1/prompt-squeeze.git",
+    "sha": "df120d6ac3851d22acfaabf831ff3b6efc550864"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-05T14:44:04Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sq.md",
+            "type": "file"
+          },
+          {
+            "name": "squeeze-config.md",
+            "type": "file"
+          },
+          {
+            "name": "squeeze-stats.md",
+            "type": "file"
+          },
+          {
+            "name": "squeeze.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-05-04-plan-a-compression-layer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-05-04-plan-b-runtime-layer.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-05-04-prompt-squeeze-v04-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "explain_artifact.py",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "pending_cache.py",
+            "type": "file"
+          },
+          {
+            "name": "redaction.py",
+            "type": "file"
+          },
+          {
+            "name": "session_state.py",
+            "type": "file"
+          },
+          {
+            "name": "user_prompt_submit.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "mcp",
+        "type": "directory",
+        "children": [
+          {
+            "name": "stats_server.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "prompt-squeeze",
+            "type": "directory",
+            "children": [
+              {
+                "name": "data",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "baseline_fidelity.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "energy.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval_set.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pricing.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "eval",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "run_eval.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "compress.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "estimate.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "explain.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rollup.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rules.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "status_line.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "receipt.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_block_recovery_flow.py",
+                "type": "file"
+              },
+              {
+                "name": "test_end_to_end.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_explain_artifact.py",
+                "type": "file"
+              },
+              {
+                "name": "test_hook.py",
+                "type": "file"
+              },
+              {
+                "name": "test_manifest.py",
+                "type": "file"
+              },
+              {
+                "name": "test_mcp_server.py",
+                "type": "file"
+              },
+              {
+                "name": "test_pending_cache.py",
+                "type": "file"
+              },
+              {
+                "name": "test_redaction.py",
+                "type": "file"
+              },
+              {
+                "name": "test_session_state.py",
+                "type": "file"
+              },
+              {
+                "name": "test_settings_schema.py",
+                "type": "file"
+              },
+              {
+                "name": "test_side_by_side.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skill",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_artifacts.py",
+                "type": "file"
+              },
+              {
+                "name": "test_compress.py",
+                "type": "file"
+              },
+              {
+                "name": "test_data_files.py",
+                "type": "file"
+              },
+              {
+                "name": "test_estimate.py",
+                "type": "file"
+              },
+              {
+                "name": "test_explain.py",
+                "type": "file"
+              },
+              {
+                "name": "test_rollup.py",
+                "type": "file"
+              },
+              {
+                "name": "test_rules.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "settings.schema.json",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      }
+    ]
+  }
+}

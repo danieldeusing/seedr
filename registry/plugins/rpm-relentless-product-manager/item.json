@@ -1,0 +1,439 @@
+{
+  "slug": "rpm-relentless-product-manager",
+  "name": "Rpm Relentless Product Manager",
+  "type": "plugin",
+  "description": "rpm persists project state across Claude Code sessions and prevents guidance and documentation drift.\n\nIt uses hooks to automate most of the effort, and stores everything in human readable files.\n\nUser initiated /audit command catches drift in three tiers: mechanical scan, scored subagent review, and full project review.\n\nAll implemented with zero dependencies and all bash.",
+  "longDescription": "Ships **8 skills**, **3 agents** and **8 hooks**.\n\n- **Skills** (8): `audit` (On-demand audit), `backlog` (Manage the rpm backlog (long-term project tasks in docs/rpm/future/tasks.org — distinct from Claude's native TaskCreate list, which is…), `init-rpm` (rpm project setup and verification), `next` (One-step rpm orchestrator, or a bounded internal sequence when given a count or scope), `research` (Exhaustive multi-agent research on any topic), `rpm` (Explain the rpm plugin and list its commands), `session-end` (End the current rpm session), `version` (Report the installed rpm plugin version)\n- **Agents** (3): `auditor` (Background agent that scans project documentation for staleness, contradictions, broken references, and session drift), `guidance-aligner` (Read-only agent that classifies project memory rules (feedback_*.md, MEMORY.md) against active directive docs (CLAUDE.md, AGENTS.md, skill bodies)), `preflight` (Preflight agent for /next)\n- **Hooks** (8): `SessionStart`, `SessionEnd`, `PreCompact`, `PostCompact`, `PostToolUse`, `Stop`, `TaskCreated`, `TaskCompleted`\n\nInstalls with `claude plugin install rpm-relentless-product-manager@claude-community` from `dppdppd/rpm`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 8,
+    "agent": 3,
+    "hook": 8
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "dppdppd"
+  },
+  "externalUrl": "https://github.com/dppdppd/rpm/tree/5ac6f3b08e17d552f7cd1c85afd394e418d80ccc",
+  "marketplace": "claude-community",
+  "version": "2.30.1",
+  "sourceRevision": "5ac6f3b08e17d552f7cd1c85afd394e418d80ccc",
+  "contentDigest": "9fd211af11c19df8c9ac241ec3ff426584f9d5549f90ad9aeb115550e1513bba",
+  "contentHash": "8156eb7a59c64d49",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/dppdppd/rpm.git",
+    "sha": "5ac6f3b08e17d552f7cd1c85afd394e418d80ccc"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-13T22:16:12Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "guidance-aligner.md",
+            "type": "file"
+          },
+          {
+            "name": "preflight.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_directives.sh",
+            "type": "file"
+          },
+          {
+            "name": "_scoring.sh",
+            "type": "file"
+          },
+          {
+            "name": "codex-sync-reminder.sh",
+            "type": "file"
+          },
+          {
+            "name": "context-monitor.sh",
+            "type": "file"
+          },
+          {
+            "name": "handoff-validator.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "post-compact.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-compact.sh",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "session-end.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-start-auto.sh",
+            "type": "file"
+          },
+          {
+            "name": "stop-learn-capture.sh",
+            "type": "file"
+          },
+          {
+            "name": "task-capture.sh",
+            "type": "file"
+          },
+          {
+            "name": "tips.txt",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "findings-menu.md",
+                "type": "file"
+              },
+              {
+                "name": "project-mode.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "backlog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "init-rpm",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "detect.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "repair.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "next",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "contradiction-check.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "is-pre-completed.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log-decision.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "preflight-due.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "review-ready.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "status.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "research",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rpm-research.workflow.js",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rpm",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-end",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "scan.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "score-natives.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "version",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "version.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-id-pairing.bats",
+            "type": "file"
+          },
+          {
+            "name": "auditor-phase-0.bats",
+            "type": "file"
+          },
+          {
+            "name": "codex-port.bats",
+            "type": "file"
+          },
+          {
+            "name": "context-monitor.bats",
+            "type": "file"
+          },
+          {
+            "name": "contradiction-check.bats",
+            "type": "file"
+          },
+          {
+            "name": "handoff-validator.bats",
+            "type": "file"
+          },
+          {
+            "name": "helpers.bash",
+            "type": "file"
+          },
+          {
+            "name": "init-rpm-repair.bats",
+            "type": "file"
+          },
+          {
+            "name": "is-pre-completed.bats",
+            "type": "file"
+          },
+          {
+            "name": "next-preflight-delegation.bats",
+            "type": "file"
+          },
+          {
+            "name": "next-status-noops.bats",
+            "type": "file"
+          },
+          {
+            "name": "no-placeholder-paths.bats",
+            "type": "file"
+          },
+          {
+            "name": "post-compact.bats",
+            "type": "file"
+          },
+          {
+            "name": "pre-compact.bats",
+            "type": "file"
+          },
+          {
+            "name": "preflight-due.bats",
+            "type": "file"
+          },
+          {
+            "name": "research.bats",
+            "type": "file"
+          },
+          {
+            "name": "review-ready-nudge.bats",
+            "type": "file"
+          },
+          {
+            "name": "review-ready.bats",
+            "type": "file"
+          },
+          {
+            "name": "run.sh",
+            "type": "file"
+          },
+          {
+            "name": "scan.bats",
+            "type": "file"
+          },
+          {
+            "name": "score-natives.bats",
+            "type": "file"
+          },
+          {
+            "name": "session-end-hook.bats",
+            "type": "file"
+          },
+          {
+            "name": "session-start.bats",
+            "type": "file"
+          },
+          {
+            "name": "stop-learn-capture.bats",
+            "type": "file"
+          },
+          {
+            "name": "task-capture.bats",
+            "type": "file"
+          },
+          {
+            "name": "version.bats",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

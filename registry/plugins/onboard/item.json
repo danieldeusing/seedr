@@ -1,0 +1,680 @@
+{
+  "slug": "onboard",
+  "name": "Onboard",
+  "type": "plugin",
+  "description": "End-to-end Claude tooling generator for existing codebases. Performs deep codebase analysis (languages, frameworks, conventions, complexity), walks you through an interactive wizard, then generates a complete suite of Claude artifacts — CLAUDE.md files, path-scoped rules, project-specific skills and agents, hook configuration, PR templates, and commit conventions. Unlike recommendation-only tools, onboard produces actual files tailored to your project's detected patterns and enforced configs. Includes drift detection via /onboard:evolve to keep tooling aligned as your codebase changes. Also serves as the generation engine for the companion forge plugin (new projects) via headless invocation.",
+  "longDescription": "Ships **10 skills** and **5 agents**.\n\n- **Skills** (10): `adopt` (Bring a repo's existing hand-crafted Claude tooling under onboard management — synthesizes an onboard baseline (retrofit-mode meta +…), `check` (Health check for Claude tooling setup), `evolve` (Apply accumulated tooling drift to Claude configuration), `generate` (Internal v3 generation step — turns the onboard:start v3 context (analysis + wizardAnswers + research) into Claude tooling…), `generation` (Invoked by the config-generator agent during /onboard:start and /onboard:generate to produce the Claude tooling artifacts), `research` (Internal research engine for onboard v3 — fans out read-only specialists per dimension, adversarially verifies their claims, synthesizes…), `start` (Use ONLY when the user explicitly runs /onboard:start), `update` (Update existing Claude tooling against latest best practices — re-analyzes the codebase, fetches current Claude Code documentation, presents…), and 2 more\n- **Agents** (5): `codebase-analyzer` (Performs deep, read-only analysis of a software project and produces a structured report with stack detection, file inventories,…), `config-generator` (Generates all Claude Code tooling artifacts (CLAUDE.md, rules, skills, agents, hooks, MCP, output styles, snapshots, telemetry) from a…), `feature-evaluator` (Independently verifies features in a running application against the verification steps in docs/feature-list.json), `research-specialist` (Parameterized read-only deep-diver for ONE research dimension over a scoped subtree), `research-verifier` (Adversarial skeptic for the onboard:research VERIFY stage — takes the union of specialist claims and tries to REFUTE…)\n\nInstalls with `claude plugin install onboard@claude-community` from `ApurvBazari/claude-plugins` (`onboard`).",
+  "compatibility": [
+    "claude",
+    "copilot"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 10,
+    "agent": 5
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Apurv Bazari"
+  },
+  "externalUrl": "https://github.com/ApurvBazari/claude-plugins/tree/1529d2e5201f15e7a7340ebbffae7ba9e5c8d484/onboard",
+  "marketplace": "claude-community",
+  "version": "3.1.1",
+  "sourceRevision": "1529d2e5201f15e7a7340ebbffae7ba9e5c8d484",
+  "contentDigest": "753935c67ac746a88a4bb82c3c64bff283c81000dc65c59e26ae6bd17dc4c863",
+  "contentHash": "3c2c245d0795d67a",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "onboard",
+    "url": "https://github.com/ApurvBazari/claude-plugins.git",
+    "ref": "develop",
+    "sha": "1529d2e5201f15e7a7340ebbffae7ba9e5c8d484"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-07-18T09:18:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "references",
+            "type": "directory",
+            "children": [
+              {
+                "name": "config-extraction-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "model-recommendations.md",
+                "type": "file"
+              },
+              {
+                "name": "tech-stack-patterns.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codebase-analyzer.md",
+            "type": "file"
+          },
+          {
+            "name": "config-generator.md",
+            "type": "file"
+          },
+          {
+            "name": "feature-evaluator.md",
+            "type": "file"
+          },
+          {
+            "name": "research-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "research-verifier.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "schemas",
+        "type": "directory",
+        "children": [
+          {
+            "name": "examples",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "context-shape-v3--evolve-reresearch.example.json",
+                "type": "file"
+              },
+              {
+                "name": "context-shape-v3--update-regenerate.example.json",
+                "type": "file"
+              },
+              {
+                "name": "context-shape-v3--v2-version.reject.json",
+                "type": "file"
+              },
+              {
+                "name": "context-shape-v3.example.json",
+                "type": "file"
+              },
+              {
+                "name": "generation-manifest--missing-mode.reject.json",
+                "type": "file"
+              },
+              {
+                "name": "generation-manifest.example.json",
+                "type": "file"
+              },
+              {
+                "name": "research-config--absolute-agent.reject.json",
+                "type": "file"
+              },
+              {
+                "name": "research-config--both-fields.reject.json",
+                "type": "file"
+              },
+              {
+                "name": "research-config--dotdot-agent.reject.json",
+                "type": "file"
+              },
+              {
+                "name": "research-config--neither-field.reject.json",
+                "type": "file"
+              },
+              {
+                "name": "research-config--oversized-prompt.reject.json",
+                "type": "file"
+              },
+              {
+                "name": "research-config--traversal-agent.reject.json",
+                "type": "file"
+              },
+              {
+                "name": "research-config.example.json",
+                "type": "file"
+              },
+              {
+                "name": "research-dossier.example.json",
+                "type": "file"
+              },
+              {
+                "name": "research-findings.example.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check-schemas.py",
+            "type": "file"
+          },
+          {
+            "name": "context-shape-v3.json",
+            "type": "file"
+          },
+          {
+            "name": "generation-manifest.json",
+            "type": "file"
+          },
+          {
+            "name": "research-config.json",
+            "type": "file"
+          },
+          {
+            "name": "research-dossier.json",
+            "type": "file"
+          },
+          {
+            "name": "research-findings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit-tooling.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-config-changes.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-dep-changes.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-lsp-signals.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-mcp-signals.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-structure-changes.sh",
+            "type": "file"
+          },
+          {
+            "name": "install-plugins.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adopt",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "baseline-synthesis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detection-and-classification.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evolve",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "plugin-integration-rules.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "quality-gates-semantics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "research-contract.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "untrusted-input-framing.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "catalogs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "built-in-skills-catalog.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lsp-plugin-catalog.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mcp-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "output-styles-catalog.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "output-styles-guide.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "default-prompts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "user-prompt-secret-scan.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "emission",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "agent-frontmatter-emission.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "builtin-skills-emission.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "hooks-generation.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lsp-emission.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mcp-emission.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "output-styles-emission.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plugin-integration-section.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "quality-checklist.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "skill-frontmatter-emission.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "extended",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "agent-teams-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ci-cd-templates.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "evolution-hooks-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "harness-design.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sprint-contracts.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tdd-workflow-and-recommended-plugins.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "worktree-workflow.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "guides",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "aci-design-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "agents-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "claude-md-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "collaboration-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "hooks-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rules-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "skills-guide.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "plugins",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "plugin-detection-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plugin-drift-detection.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plugin-surface-probe.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "research",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "re-research-merge.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "research-consumption.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "verify-backlog-seeding.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "research",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "custom-specialist-contract.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "depth-profiles.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dossier-merge.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "render-adapter.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "specialist-roster.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "synthesis-and-dossier.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verification-procedure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wizard-inference-map.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "start",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ecosystem-plugin-install.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "empty-repo-stub-procedure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "handoff-narration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onboard-context-builder.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-tracking.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "update",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "drift-application.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "drift-classification.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "re-research.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verify",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wizard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "question-bank.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workflow-presets.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

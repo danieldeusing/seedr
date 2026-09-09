@@ -1,0 +1,943 @@
+{
+  "slug": "rc",
+  "name": "Rc",
+  "type": "plugin",
+  "description": "Configure RevenueCat projects, apps, products, entitlements, and offerings directly from Claude Code. Manage your in-app purchase backend without leaving your development workflow.",
+  "longDescription": "Ships **18 skills** and **1 MCP server**.\n\n- **Skills** (18): `create-revenuecat-project` (Set up a complete RevenueCat project from scratch — creates apps, products, entitlements, offerings, and packages in the…), `integrate-revenuecat` (End-to-end RevenueCat integration — sets up the dashboard side via the RevenueCat MCP or the `rc` CLI (project,…), `revenuecat` (Used for all interaction with RevenueCat not covered by a different skill), `revenuecat-charts` (Use when the user asks about RevenueCat data, analytics, charts, or KPIs — querying charts with get-chart-options-schema and…), `revenuecat-cli` (Drive RevenueCat from the terminal with the `rc` CLI, an alternative to the RevenueCat MCP server for humans,…), `revenuecat-customer-center` (Add the RevenueCat Customer Center (self service subscription management UI) to an app), `revenuecat-entitlements-gate` (Check whether a RevenueCat user currently has access to a paid feature via entitlements), `revenuecat-experiment-analysis` (Use when the user asks to analyze or understand a RevenueCat experiment or its results), and 10 more\n- **MCP servers** (1): `RevenueCat`\n\nInstalls with `claude plugin install rc@claude-plugins-official` from `RevenueCat/rc-claude-code-plugin`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 18,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "RevenueCat",
+    "url": "https://www.revenuecat.com"
+  },
+  "externalUrl": "https://github.com/RevenueCat/rc-claude-code-plugin/tree/b9b77b12da33213c9c2e750b06cd6270c1d8ed65",
+  "marketplace": "claude-plugins-official",
+  "version": "2.2.0",
+  "sourceRevision": "b9b77b12da33213c9c2e750b06cd6270c1d8ed65",
+  "contentDigest": "e74e82cfdafc7ba6c9c7cb8e80520f3bd8f3c9bb690f6be8000328f66c95953c",
+  "contentHash": "e68c815d9b7ee1ca",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/RevenueCat/rc-claude-code-plugin.git",
+    "sha": "b9b77b12da33213c9c2e750b06cd6270c1d8ed65"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-28T10:13:27Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "release-gemini.yml",
+                "type": "file"
+              },
+              {
+                "name": "sync-play-billing.yml",
+                "type": "file"
+              },
+              {
+                "name": "validate.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "revenuecat",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".claude-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".codex-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".cursor-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "logo.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "create-revenuecat-project",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "integrate-revenuecat",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-charts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-cli",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-customer-center",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-entitlements-gate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-experiment-analysis",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-experiments",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-identify-user",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-migrate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-paywall",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-purchase-flow",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-sdk-compatibility",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-status",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-store-state",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-testing-setup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revenuecat-troubleshoot",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platforms",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "android.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ios.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kmp.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": ".mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "gemini-extension.json",
+            "type": "file"
+          },
+          {
+            "name": "mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "revenuecat-play-billing",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".claude-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".codex-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".cursor-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "logo.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rc-alternative-billing",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-backend",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-cancellations-pauses-winback",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-catalog-management",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-configuring-the-sdk",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-error-handling",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-one-time-products",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-payment-recovery",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-plan-changes",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-price-changes",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-purchase-flow",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-revenuecat-api-quick-reference",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-revenuecat-vs-raw-billing",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-security",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-setup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-subscription-states",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-subscriptions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-testing",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-understanding-revenuecat",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rc-webhooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "LICENSE",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "schemas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-plugins-1.0.0-mcp.schema.json",
+                "type": "file"
+              },
+              {
+                "name": "agent-plugins-1.0.0-plugin.schema.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sync-play-billing.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "pnpm-lock.yaml",
+        "type": "file"
+      },
+      {
+        "name": "pnpm-workspace.yaml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

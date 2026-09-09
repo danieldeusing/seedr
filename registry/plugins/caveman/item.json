@@ -1,0 +1,1035 @@
+{
+  "slug": "caveman",
+  "name": "Caveman",
+  "type": "plugin",
+  "description": "Auto-activation works differently per agent: Claude Code uses SessionStart hooks, this repo's Codex dogfood setup uses .codex/hooks.json, Gemini uses context files. Cursor/Windsurf/Cline/Copilot can be made always-on, but npx skills add installs only the skill, not the repo rule/instruction files.\n\n¹ Codex uses $caveman syntax, not /caveman. This repo ships .codex/hooks.json, so caveman auto-starts when you run Codex inside this repo. The installed plugin itself gives you $caveman; copy the same hook into another repo if you want always-on behavior there too. caveman-commit and caveman-review are not in the Codex plugin bundle — use the SKILL.md files directly. ² Add the \"Want it always on?\" snippet below to those agents' system prompt or rule file if you want session-start activation. ³ Cursor and Windsurf receive the full SKILL.md with all intensity levels. Mode switching works on-demand via the skill; no slash command. ⁴ Available in Claude Code, but plugin install only nudges setup. Standalone install.sh / install.ps1 configures it automatically when no custom statusLine exists.",
+  "longDescription": "Ships **7 skills**, **3 agents** and **5 commands**.\n\n- **Skills** (7): `cavecrew` (Decision guide for delegating to caveman-style subagents), `caveman` (Ultra-compressed communication mode), `caveman-commit` (Ultra-compressed commit message generator), `caveman-compress` (Compress natural language memory files (CLAUDE.md, todos, preferences) into caveman format to save input tokens), `caveman-help` (Quick-reference card for all caveman modes, skills, and commands), `caveman-review` (Ultra-compressed code review comments), `caveman-stats` (Show real token usage and estimated savings for the current session)\n- **Agents** (3): `cavecrew-builder` (Surgical 1-2 file edit), `cavecrew-investigator` (Read-only code locator), `cavecrew-reviewer` (Diff/branch/file reviewer)\n- **Commands** (5): `caveman-commit` (Generate terse caveman-style commit message), `caveman-init` (Drop the always-on caveman activation rule into the current repo for every IDE agent), `caveman-review` (One-line code review comments), `caveman-stats` (Real session token usage + lifetime savings + USD), `caveman` (Switch caveman intensity level (lite/full/ultra/wenyan))\n\nInstalls with `claude plugin install caveman@claude-community` from `JuliusBrussee/caveman`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 7,
+    "agent": 3,
+    "command": 5
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Julius Brussee",
+    "url": "https://github.com/JuliusBrussee"
+  },
+  "externalUrl": "https://github.com/JuliusBrussee/caveman/tree/309834233183478e6fd7800d26e1fbaa6210274e",
+  "marketplace": "claude-community",
+  "sourceRevision": "309834233183478e6fd7800d26e1fbaa6210274e",
+  "contentDigest": "5e617e290abe5cb7a3080e572e4258feba64f23e4554f7db0806bc23f71649b2",
+  "contentHash": "eb7c97b4b793c690",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/JuliusBrussee/caveman.git",
+    "sha": "309834233183478e6fd7800d26e1fbaa6210274e"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-10T17:59:13Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex",
+        "type": "directory",
+        "children": [
+          {
+            "name": "config.toml",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "sync-skill.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cavecrew-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "cavecrew-investigator.md",
+            "type": "file"
+          },
+          {
+            "name": "cavecrew-reviewer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "benchmarks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "results",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prompts.json",
+            "type": "file"
+          },
+          {
+            "name": "requirements.txt",
+            "type": "file"
+          },
+          {
+            "name": "run.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "cli",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "openclaw.js",
+                "type": "file"
+              },
+              {
+                "name": "opencode-agent.js",
+                "type": "file"
+              },
+              {
+                "name": "settings.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "caveman-commit.md",
+            "type": "file"
+          },
+          {
+            "name": "caveman-commit.toml",
+            "type": "file"
+          },
+          {
+            "name": "caveman-init.md",
+            "type": "file"
+          },
+          {
+            "name": "caveman-init.toml",
+            "type": "file"
+          },
+          {
+            "name": "caveman-review.md",
+            "type": "file"
+          },
+          {
+            "name": "caveman-review.toml",
+            "type": "file"
+          },
+          {
+            "name": "caveman-stats.md",
+            "type": "file"
+          },
+          {
+            "name": "caveman-stats.toml",
+            "type": "file"
+          },
+          {
+            "name": "caveman.md",
+            "type": "file"
+          },
+          {
+            "name": "caveman.toml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "caveman.skill",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "atlas-cloud-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "atlas-cloud.svg",
+                "type": "file"
+              },
+              {
+                "name": "caveman-logo-banner.png",
+                "type": "file"
+              },
+              {
+                "name": "dancing-rock-32.png",
+                "type": "file"
+              },
+              {
+                "name": "dancing-rock.svg",
+                "type": "file"
+              },
+              {
+                "name": "star-history.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".nojekyll",
+            "type": "file"
+          },
+          {
+            "name": "HONEST-NUMBERS.md",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "install-windows.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "evals",
+        "type": "directory",
+        "children": [
+          {
+            "name": "prompts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "en.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "snapshots",
+            "type": "directory",
+            "children": [
+              {
+                "name": "results.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "llm_run.py",
+            "type": "file"
+          },
+          {
+            "name": "measure.py",
+            "type": "file"
+          },
+          {
+            "name": "plot.py",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plugins",
+        "type": "directory",
+        "children": [
+          {
+            "name": "caveman",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".codex-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "plugin.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cavecrew-builder.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cavecrew-investigator.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cavecrew-reviewer.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "caveman-small.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "caveman.svg",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cavecrew",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "caveman",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "agents",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "openai.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "assets",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "caveman-small.svg",
+                            "type": "file"
+                          },
+                          {
+                            "name": "caveman.svg",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "caveman-compress",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "scripts",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "__init__.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "__main__.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "benchmark.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "cli.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "compress.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "detect.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "validate.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "caveman-stats",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cavecrew",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caveman",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caveman-commit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caveman-compress",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "__main__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "benchmark.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compress.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detect.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SECURITY.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caveman-help",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caveman-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caveman-stats",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cavecrew-model-overrides.js",
+                "type": "file"
+              },
+              {
+                "name": "caveman-activate.js",
+                "type": "file"
+              },
+              {
+                "name": "caveman-config.js",
+                "type": "file"
+              },
+              {
+                "name": "caveman-mode-tracker.js",
+                "type": "file"
+              },
+              {
+                "name": "caveman-parse.js",
+                "type": "file"
+              },
+              {
+                "name": "caveman-stats.js",
+                "type": "file"
+              },
+              {
+                "name": "caveman-statusline.ps1",
+                "type": "file"
+              },
+              {
+                "name": "caveman-statusline.sh",
+                "type": "file"
+              },
+              {
+                "name": "checksums.sha256",
+                "type": "file"
+              },
+              {
+                "name": "install.ps1",
+                "type": "file"
+              },
+              {
+                "name": "install.sh",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "uninstall.ps1",
+                "type": "file"
+              },
+              {
+                "name": "uninstall.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mcp-servers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "caveman-shrink",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "compress.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spawn-options.js",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "opencode",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "caveman-commit.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "caveman-compress.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "caveman-help.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "caveman-review.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "caveman-stats.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "caveman.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plugin.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "caveman-activate.md",
+                "type": "file"
+              },
+              {
+                "name": "caveman-openclaw-bootstrap.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "caveman-init.js",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "caveman-compress",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-md-preferences.md",
+                "type": "file"
+              },
+              {
+                "name": "claude-md-preferences.original.md",
+                "type": "file"
+              },
+              {
+                "name": "claude-md-project.md",
+                "type": "file"
+              },
+              {
+                "name": "claude-md-project.original.md",
+                "type": "file"
+              },
+              {
+                "name": "mixed-with-code.md",
+                "type": "file"
+              },
+              {
+                "name": "mixed-with-code.original.md",
+                "type": "file"
+              },
+              {
+                "name": "project-notes.md",
+                "type": "file"
+              },
+              {
+                "name": "project-notes.original.md",
+                "type": "file"
+              },
+              {
+                "name": "todo-list.md",
+                "type": "file"
+              },
+              {
+                "name": "todo-list.original.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "installer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "e2e.dryrun.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "e2e.freshinstall.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "hermes.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "opencode-agent.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "opencode.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "ps1-pipe.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "slash-commands.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "unit.argv.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "unit.settings.test.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test_cavecrew_model_overrides.js",
+            "type": "file"
+          },
+          {
+            "name": "test_caveman_init.js",
+            "type": "file"
+          },
+          {
+            "name": "test_caveman_parse.js",
+            "type": "file"
+          },
+          {
+            "name": "test_caveman_stats.js",
+            "type": "file"
+          },
+          {
+            "name": "test_compress_safety.py",
+            "type": "file"
+          },
+          {
+            "name": "test_detect.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hooks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_shrink.js",
+            "type": "file"
+          },
+          {
+            "name": "test_mode_tracker_stdin.js",
+            "type": "file"
+          },
+          {
+            "name": "test_mode_tracker.py",
+            "type": "file"
+          },
+          {
+            "name": "test_repo_local_config.js",
+            "type": "file"
+          },
+          {
+            "name": "test_symlink_flag.js",
+            "type": "file"
+          },
+          {
+            "name": "test_validate_inline.py",
+            "type": "file"
+          },
+          {
+            "name": "verify_repo.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".editorconfig",
+        "type": "file"
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "INSTALL.md",
+        "type": "file"
+      },
+      {
+        "name": "install.ps1",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "skills-lock.json",
+        "type": "file"
+      }
+    ]
+  }
+}

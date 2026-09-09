@@ -1,0 +1,3121 @@
+{
+  "slug": "trove",
+  "name": "Trove",
+  "type": "plugin",
+  "description": "Reference tools for underused public healthcare data. Two Claude skills: hcris-analyst looks up nonprofit U.S. hospital reporting (CMS S-10 vs. IRS 990 Schedule H, side by side) and fda-analyst looks up FDA novel drug approvals 2021–2024 with links to the approval-package PDFs.",
+  "longDescription": "Ships **2 skills**, `fda-analyst` (Answer questions about FDA drug approvals — the basis for approval, the trials, the endpoints, the regulatory pathway,…), `hcris-analyst` (Answer questions about U.S).\n\nInstalls with `claude plugin install trove@claude-community` from `cbetz/trove`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Chris Betz",
+    "url": "https://github.com/cbetz"
+  },
+  "externalUrl": "https://github.com/cbetz/trove/tree/75b5dfe391e4af41fc7a13a9a12cdeeaa9353dfa",
+  "marketplace": "claude-community",
+  "version": "1.0.1",
+  "sourceRevision": "75b5dfe391e4af41fc7a13a9a12cdeeaa9353dfa",
+  "contentDigest": "59486e094e4503fa46025f0c07532667b459b913c834dc8331fe37bab3a9540c",
+  "contentHash": "ba9858e897c86e72",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/cbetz/trove.git",
+    "sha": "75b5dfe391e4af41fc7a13a9a12cdeeaa9353dfa"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-28T21:37:21Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "data-question.yml",
+                "type": "file"
+              },
+              {
+                "name": "methodology.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "artifacts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "charity_care_gap_index_2022.md",
+            "type": "file"
+          },
+          {
+            "name": "community_benefit_gap_2022_summary.md",
+            "type": "file"
+          },
+          {
+            "name": "community_benefit_gap_2022.csv",
+            "type": "file"
+          },
+          {
+            "name": "fda_approvals_nme_recent.csv",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "index.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "notebooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "packages",
+        "type": "directory",
+        "children": [
+          {
+            "name": "analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analytics",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "community_benefit.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "test_community_benefit.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_smoke.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "crosswalk",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "crosswalk",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "data",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "__init__.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "cbi.parquet",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "load.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "refresh.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "test_load.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_smoke.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fda_sba",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fda_sba",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cber.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "overview.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scrape.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "test_cber.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_overview.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_parse.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "form990",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "form990",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "download.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "parquet.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "parse.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schedule_h.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schema.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "conftest.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_download.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_index.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_integration.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_parquet.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_parse.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_smoke.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hcris",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "hcris",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dictionaries",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "__init__.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "2552-10.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dictionary.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "download.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "parquet.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "parse.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pivot.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "resolve.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "schema.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "conftest.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_dictionary.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_download.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_integration.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_parquet.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_parse.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_pivot.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_resolve.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_schema.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_smoke.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdoh",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sdoh",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "adi.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "svi.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "test_adi.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_svi.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "pipelines",
+        "type": "directory",
+        "children": [
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "build_drug_pages.py",
+            "type": "file"
+          },
+          {
+            "name": "build_fda_index.py",
+            "type": "file"
+          },
+          {
+            "name": "build_gap_dataset.py",
+            "type": "file"
+          },
+          {
+            "name": "build_gap_index.py",
+            "type": "file"
+          },
+          {
+            "name": "build_og_image.py",
+            "type": "file"
+          },
+          {
+            "name": "build_skill_references.py",
+            "type": "file"
+          },
+          {
+            "name": "build_web_bundles.py",
+            "type": "file"
+          },
+          {
+            "name": "build_web_data.py",
+            "type": "file"
+          },
+          {
+            "name": "demo_community_benefit_gap.py",
+            "type": "file"
+          },
+          {
+            "name": "demo_hospital_summary.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fda-analyst",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "document_types.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "examples.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sources.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hcris-analyst",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cohorts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dictionary.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "examples.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parquet_layout.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schedule_h.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "web",
+        "type": "directory",
+        "children": [
+          {
+            "name": "data",
+            "type": "directory",
+            "children": [
+              {
+                "name": "charity_care_gap_index_2022.json",
+                "type": "file"
+              },
+              {
+                "name": "community_benefit_gap_2022.csv",
+                "type": "file"
+              },
+              {
+                "name": "community_benefit_gap_2022.json",
+                "type": "file"
+              },
+              {
+                "name": "community_benefit_gap_2022.parquet",
+                "type": "file"
+              },
+              {
+                "name": "fda_approvals_nme_recent.json",
+                "type": "file"
+              },
+              {
+                "name": "fda_approvals_nme_recent.parquet",
+                "type": "file"
+              },
+              {
+                "name": "hcris_2023_wide.parquet",
+                "type": "file"
+              },
+              {
+                "name": "schedule_h_2022.parquet",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fda-nme",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hcris",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "schedule-h",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "drugs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "abecma",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "adbry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "adstiladrin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "aduhelm",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "agamree",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "alhemo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "alyftrek",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "amondys-45",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "amtagvi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "amvuttra",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "anktiva",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "aphexda",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "aqneursa",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "attruby",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "aucatzyl",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "augtyro",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "azstarys",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "beqvez",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "besremi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "beyfortus",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "bimzelx",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "bizengri",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "brenzavvy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "brexafemme",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "breyanzi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "briumvi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "bylvay",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cabenuva",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "camzyos",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "carvykti",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "casgevy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cibinqo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cobenfy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "columvi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cosela",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "crenessity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cytalux",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "daxxify",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "daybue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "defencath",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "duvyzat",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ebglyss",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "elahere",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "elevidys",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "elfabrio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "elrexfio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "elucirem",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "empaveli",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "enjaymo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ensacove",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "epkinly",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "evkeeza",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "exblifep",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "exkivity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "exxua",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fabhalta",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fexinidazole",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "filspari",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "filsuvez",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "flyrcado",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fotivda",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fruzaqla",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hemgenix",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hympavzi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "imdelltra",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "imjudo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "imlygic",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "inpefa",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "iomervu",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "iqirvo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "itovebi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "izervay",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jaypirca",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jemperli",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jesduvroq",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "joenja",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kebilidi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kerendia",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kimmtrak",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kisunla",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "korsuva",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "krazati",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lamzede",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lantidra",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lazcluze",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lenmeldy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "leqembi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "leqselvi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "leqvio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "letybo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "litfulo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "livdelzi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "livmarli",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "livtencity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "loqtorzi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lumakras",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lumisight",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lunsumio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lupkynis",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lybalvi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lyfgenia",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lytgobi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "miebo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "miplyffa",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mounjaro",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "nemluvio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "nexobrid",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "nextstellis",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "nexviazyme",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ngenla",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "niktimvo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "nulibry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ogsiveo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ohtuvayre",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ojemda",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ojjaara",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "omisirge",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "omlonti",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "omvoh",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "opdualag",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "orlynvah",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "orserdu",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "paxlovid",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pepaxto",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "piasky",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pluvicto",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pombiliti",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ponvory",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "posluma",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pylarify",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pyrukynd",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "qalsody",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "qelbree",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "qulipta",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "quviviq",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rapiblyk",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "regenecyte",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "relyvrio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rethymic",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "revuforj",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rezdiffra",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rezlidhia",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rezurock",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rezzayo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rivfloza",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "roctavian",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rolvedon",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rybrevant",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rylaze",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ryoncil",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rystiggo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rytelo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ryzneuta",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "saphnelo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scemblix",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skyclarys",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skysona",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skytrofa",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sofdra",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sohonos",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sotyktu",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "spevigo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "stratagraft",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sunlenca",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "symvess",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "talvey",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tavneos",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tecelra",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tecvayli",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tepmetko",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "terlivaz",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tevimbra",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tezspire",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tivdak",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "truqap",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "truseltiq",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tryngolza",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tryvio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tzield",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ukoniq",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "unloxcyt",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vabysmo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vafseo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vanflyta",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "velsipity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "veopoz",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "veozah",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "verquvo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vivjoa",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vonjo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "voquezna",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "voranigo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "voxzogo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "voydeya",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vtama",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vyjuvek",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vyloy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "vyvgart",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "wainua",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "welireg",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "winrevair",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "xacduro",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "xdemvy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "xenoview",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "xenpozyme",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "xolremdi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "yorvipath",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zavzpret",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zegalogue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zelsuvmi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zevtera",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ziihera",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zilbrysq",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ztalmy",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zurzuvae",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zynlonta",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zynteglo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "zynyz",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hospitals",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "notes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "charity-care-gap",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fda-analyst",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hcris-analyst",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "favicon.svg",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "og-20260505c.jpg",
+            "type": "file"
+          },
+          {
+            "name": "og-20260725.jpg",
+            "type": "file"
+          },
+          {
+            "name": "og.jpg",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "robots.txt",
+            "type": "file"
+          },
+          {
+            "name": "sitemap.xml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".python-version",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CITATION.cff",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "mkdocs.yml",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      },
+      {
+        "name": "vercel.json",
+        "type": "file"
+      }
+    ]
+  }
+}

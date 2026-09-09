@@ -1,0 +1,558 @@
+{
+  "slug": "eight-eyes",
+  "name": "Eight Eyes",
+  "type": "plugin",
+  "description": "Multi-agent code review with 8 hook-enforced roles. Each role targets a different failure surface — the skeptic reviews blind without the implementer's narrative, the security auditor can only run approved scan commands, the test writer cannot touch source code, and the implementer cannot run Bash. Scope boundaries are enforced through deterministic Python hooks at the PreToolUse layer, not through prompt instructions.\n\nThe 8 roles: implementer (scoped writes, no Bash), test-writer (test directories only), skeptic (blind read-only review), security auditor (read-only + approved scan commands), performance profiler (benchmarks in isolated worktree), accessibility checker (a11y tools + WCAG 2.1 checks), docs writer (doc paths only), and verifier (approved verification commands only).\n\nFeatures include parallel audit phase (4 review agents run concurrently), TDD mode (hook-level test-first enforcement), custom roles via manifest (--custom-role), REVIEW.md injection for project-specific review criteria, mission timeout and failure tracking.\n\n96 tests. 100% Python stdlib. Zero external dependencies.",
+  "longDescription": "Ships **1 skill**, **8 agents**, **2 commands** and **7 hooks**.\n\n- **Skills** (1): `collab` (Failure-aware multi-agent mission coordinator)\n- **Agents** (8): `collab-accessibility` (Checks code changes for accessibility issues in an active /collab mission), `collab-docs` (Updates documentation for verified changes in an active /collab mission), `collab-implementer` (Implements code changes for an active /collab mission), `collab-performance` (Profiles code changes for performance issues in an active /collab mission), `collab-security` (Audits code changes for security vulnerabilities in an active /collab mission), `collab-skeptic` (Performs a blind review of an active /collab mission), `collab-test-writer` (Writes tests for code changes in an active /collab mission), `collab-verifier` (Verifies an active /collab mission against acceptance criteria and approved test commands)\n- **Commands** (2): `8eyes-copilot` (Start a multi-agent review mission (Copilot CLI adapter notes)), `8eyes` (Start a failure-aware multi-agent code review mission)\n- **Hooks** (7): `SessionStart`, `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `PreCompact`, `Stop`\n\nInstalls with `claude plugin install eight-eyes@claude-community` from `AgentBuildersApp/eight-eyes`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "agent": 8,
+    "hook": 7,
+    "command": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "AgentBuildersApp"
+  },
+  "externalUrl": "https://github.com/AgentBuildersApp/eight-eyes/tree/12e0d60ea8007bce76100b9a43b0db3032266456",
+  "marketplace": "claude-community",
+  "version": "5.0.0-alpha",
+  "sourceRevision": "12e0d60ea8007bce76100b9a43b0db3032266456",
+  "contentDigest": "42e38085723a897df54ed810b8e359d86c1bce9730ad91ec04668f728c615317",
+  "contentHash": "980e5ed510125690",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/AgentBuildersApp/eight-eyes.git",
+    "sha": "12e0d60ea8007bce76100b9a43b0db3032266456"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-02T22:34:02Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "adapters",
+        "type": "directory",
+        "children": [
+          {
+            "name": "codex_cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "collab-accessibility.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-docs.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-implementer.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-performance.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-security.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-skeptic.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-test-writer.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-verifier.toml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "AGENTS.md",
+                "type": "file"
+              },
+              {
+                "name": "hooks.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copilot_cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "collab-accessibility.agent.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-docs.agent.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-implementer.agent.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-performance.agent.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-security.agent.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-skeptic.agent.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-test-writer.agent.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "collab-verifier.agent.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "8eyes",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "eval.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "hooks.json",
+                "type": "file"
+              },
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "collab-accessibility.md",
+            "type": "file"
+          },
+          {
+            "name": "collab-docs.md",
+            "type": "file"
+          },
+          {
+            "name": "collab-implementer.md",
+            "type": "file"
+          },
+          {
+            "name": "collab-performance.md",
+            "type": "file"
+          },
+          {
+            "name": "collab-security.md",
+            "type": "file"
+          },
+          {
+            "name": "collab-skeptic.md",
+            "type": "file"
+          },
+          {
+            "name": "collab-test-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "collab-verifier.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "8eyes-copilot.md",
+            "type": "file"
+          },
+          {
+            "name": "8eyes.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "images",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "architecture.png",
+                "type": "file"
+              },
+              {
+                "name": "header.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "MIGRATION.md",
+            "type": "file"
+          },
+          {
+            "name": "research-gate.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "core",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "circuit_breaker.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "contracts.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "enforcement_contract.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "engine.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "paths.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "role_spec_loader.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "roles.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "collab_common.py",
+                "type": "file"
+              },
+              {
+                "name": "collab_post_tool.py",
+                "type": "file"
+              },
+              {
+                "name": "collab_pre_compact.py",
+                "type": "file"
+              },
+              {
+                "name": "collab_pre_tool.py",
+                "type": "file"
+              },
+              {
+                "name": "collab_session_start.py",
+                "type": "file"
+              },
+              {
+                "name": "collab_stop.py",
+                "type": "file"
+              },
+              {
+                "name": "collab_subagent_start.py",
+                "type": "file"
+              },
+              {
+                "name": "collab_subagent_stop.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "collabctl.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "collab",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "hook-failure-policy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook-map.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "result-schemas.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "role-catalog.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "smoke-test.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state-model.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "trust-model.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "schemas",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "accessibility.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "docs.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "implementer.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "performance.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "security.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skeptic.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-writer.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verifier.schema.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "spec",
+        "type": "directory",
+        "children": [
+          {
+            "name": "roles",
+            "type": "directory",
+            "children": [
+              {
+                "name": "builtin_roles.yaml",
+                "type": "file"
+              },
+              {
+                "name": "roles_compiled.json",
+                "type": "file"
+              },
+              {
+                "name": "roles.schema.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "enforcement_compiled.json",
+            "type": "file"
+          },
+          {
+            "name": "enforcement.yaml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "test_collab_hooks.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "install.py",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "VERSION",
+        "type": "file"
+      }
+    ]
+  }
+}

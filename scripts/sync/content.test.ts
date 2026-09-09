@@ -107,13 +107,21 @@ describe("collectContent", () => {
     expect(fake.requests.filter((request) => request.includes("/tarball/"))).toEqual([`GET https://api.github.com/repos/o/r/tarball/${SHA_A}`]);
     expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com"))).toEqual([]);
 
+    // a file the tree lists but the archive left out (export-ignore) comes from the raw host
+    const partial = new Map((await client.getArchive("o/r", SHA_A)).entries());
+    partial.delete("a/ref.md");
+    vi.spyOn(client, "getArchive").mockResolvedValueOnce(partial);
+    fake.requests.length = 0;
+    const withFallback = await collectContent(client, { repo: "o/r", sha: SHA_A, path: "a" }, tree);
+    expect(withFallback.entries.map((entry) => entry.path).sort()).toEqual(["SKILL.md", "ref.md"]);
+    expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com"))).toEqual([`GET https://raw.githubusercontent.com/o/r/${SHA_A}/a/ref.md`]);
+    fake.requests.length = 0;
+
     // the item fits, but the repository around it does not
     const huge = tree.map((item) => (item.path === "b/SKILL.md" ? { ...item, size: 201 * 1024 * 1024 } : item));
     const fromRaw = await collectContent(client, { repo: "o/r", sha: SHA_A, path: "a" }, huge);
     expect(fromRaw.entries.map((entry) => entry.path).sort()).toEqual(["SKILL.md", "ref.md"]);
-    expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com")).sort()).toEqual([
-      `GET https://raw.githubusercontent.com/o/r/${SHA_A}/a/SKILL.md`,
-      `GET https://raw.githubusercontent.com/o/r/${SHA_A}/a/ref.md`,
-    ]);
+    // ref.md was fetched above and its blob is cached for the run; only SKILL.md is new to the raw host
+    expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com"))).toEqual([`GET https://raw.githubusercontent.com/o/r/${SHA_A}/a/SKILL.md`]);
   });
 });

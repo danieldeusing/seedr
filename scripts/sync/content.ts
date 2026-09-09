@@ -40,17 +40,18 @@ type ReadFile = (fullPath: string, blobSha: string) => Promise<Buffer>;
 /**
  * One archive download serves every file of a repository that fits the size cap; a
  * repository beyond it (a monorepo the plugin is a corner of) is read file by file from
- * the raw host, which costs one request per file.
+ * the raw host, which costs one request per file. A file the tree lists but the archive
+ * lacks (`export-ignore` in .gitattributes) is read from the raw host as well: the CLI
+ * installs it, so the digest covers it.
  */
 async function fileReader(client: GitHubClient, location: Pick<ContentLocation, "repo" | "sha">, repoFiles: readonly TreeFile[]): Promise<ReadFile> {
   const { repo, sha } = location;
   const repoBytes = repoFiles.reduce((sum, file) => sum + file.size, 0);
   if (repoBytes > MAX_CONTENT_BYTES) return (fullPath, blobSha) => client.getRawBytes(repo, sha, fullPath, blobSha);
   const archive = await client.getArchive(repo, sha);
-  return async (fullPath) => {
+  return (fullPath, blobSha) => {
     const bytes = archive.get(fullPath);
-    if (!bytes) throw new Error(`${fullPath} is in the tree of ${repo} at ${sha} but not in its archive`);
-    return bytes;
+    return bytes ? Promise.resolve(bytes) : client.getRawBytes(repo, sha, fullPath, blobSha);
   };
 }
 

@@ -1,0 +1,5883 @@
+{
+  "slug": "great-cto",
+  "name": "Great Cto",
+  "type": "plugin",
+  "description": "Full SDLC pipeline with 7 agents: architecture, code review, QA, security. Two decisions per feature, the rest is automated.",
+  "longDescription": "Ships **35 skills**, **69 agents**, **44 commands** and **2 MCP servers**.\n\n- **Skills** (35): `anti-patterns` (Catalogue of known SDLC anti-patterns that great_cto agents must actively reject when reviewing architecture, plans, code, or post-mortems), `anydesign` (Analyze images, websites, and Figma files to extract their design and generate a `design.md` with token system, component…), `archetype-review-base` (Shared review framework that every domain reviewer (pci, oracle, gov, edtech, healthcare, mlops, etc.) MUST follow), `brainstorming` (Structured idea generation + multi-LLM debate for the product-owner stage), `cost-model` (Standardized cost-estimation framework for great_cto plans), `crystallize` (Distils repeating patterns from session logs and lessons.md into draft skill files), `decision-eval` (Spawns the decision-scorer agent after architect proposes 2+ variants in an ADR), `discovery` (Structured pre-design questioning to surface hidden constraints before any architecture decision is locked in), and 27 more\n- **Agents** (69): `accounting-reviewer` (Bookkeeping / general-ledger / financial-close specialist pre-implementation reviewer for fintech and enterprise-saas archetypes), `adtech-privacy-reviewer` (US adtech / web-tracking privacy-litigation pre-implementation reviewer), `ai-eval-engineer` (Builds and maintains the eval pipeline for ai-system / agent-product archetypes), `ai-prompt-architect` (Designs and versions LLM system prompts for ai-system / agent-product archetypes), `ai-security-reviewer` (AI-specific pre-implementation threat modelling for ai-system / agent-product archetypes), `api-platform-reviewer` (API platform / dev-API pre-implementation reviewer), `app-scaffolder` (Project-scaffolding builder that stands up a working base application from the pinned stack-baseline so senior-dev implements FEATURES, not…), `architect` (Use when starting any new feature), and 61 more\n- **Commands** (44): `aedt-bias-audit` (HR-AI / AEDT bias audit), `agent-retire` (Gracefully retire an LLM agent from the workforce), `agent-review` (Performance review for an LLM agent (or all agents)), `api-contract-review` (API platform contract review), `audit` (Audit an existing codebase), `board` (Open the great_cto admin board at http://localhost:3141 (Kanban, cost, pipeline, inbox, memory)), `burn` (SLO burn rate — multi-window alerting that catches budget exhaustion before it happens), `ccr` (CCR (Compressed Context with Retrieval) — recall the full original of context that great_cto compressed/filtered out, by its…), and 36 more\n- **MCP servers** (2): `llm-router`, `grafana`\n\nInstalls with `claude plugin install great-cto@claude-community` from `avelikiy/great_cto`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 35,
+    "agent": 69,
+    "command": 44,
+    "mcp": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Great CTO",
+    "url": "https://github.com/avelikiy/great_cto"
+  },
+  "externalUrl": "https://github.com/avelikiy/great_cto/tree/9f3e6e888e571f4db5dcbf5700df2c35c4885c19",
+  "marketplace": "claude-community",
+  "version": "2.95.0",
+  "sourceRevision": "9f3e6e888e571f4db5dcbf5700df2c35c4885c19",
+  "contentDigest": "d1949c7742419d542d66afde84fe34ebf8302bf597e1fdb418727b0311162162",
+  "contentHash": "4b15c3221a7d6ca7",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/avelikiy/great_cto.git",
+    "sha": "9f3e6e888e571f4db5dcbf5700df2c35c4885c19"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-10T06:37:14Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".beads",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "post-checkout",
+                "type": "file"
+              },
+              {
+                "name": "post-merge",
+                "type": "file"
+              },
+              {
+                "name": "pre-commit",
+                "type": "file"
+              },
+              {
+                "name": "pre-push",
+                "type": "file"
+              },
+              {
+                "name": "prepare-commit-msg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "config.yaml",
+            "type": "file"
+          },
+          {
+            "name": "metadata.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "settings.example.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug-report.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature-request.yml",
+                "type": "file"
+              },
+              {
+                "name": "good-first-issue.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "announce.yml",
+                "type": "file"
+              },
+              {
+                "name": "awesome-list-checker.yml",
+                "type": "file"
+              },
+              {
+                "name": "cli-ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "daily-canary.yml",
+                "type": "file"
+              },
+              {
+                "name": "evals-runner.yml",
+                "type": "file"
+              },
+              {
+                "name": "jsr-publish.yml",
+                "type": "file"
+              },
+              {
+                "name": "plugin-ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              },
+              {
+                "name": "runtime-ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "scheduled-evals-drift.yml",
+                "type": "file"
+              },
+              {
+                "name": "scorecard.yml",
+                "type": "file"
+              },
+              {
+                "name": "security-tests.yml",
+                "type": "file"
+              },
+              {
+                "name": "weekly-insights-email.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "labels.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "argument-quality.md",
+                "type": "file"
+              },
+              {
+                "name": "artifact-summary-contract.md",
+                "type": "file"
+              },
+              {
+                "name": "compress-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "contract-agent-altitude.md",
+                "type": "file"
+              },
+              {
+                "name": "deploy-failure-modes.md",
+                "type": "file"
+              },
+              {
+                "name": "handoff-format.md",
+                "type": "file"
+              },
+              {
+                "name": "memory-filter-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "phase-task.md",
+                "type": "file"
+              },
+              {
+                "name": "privacy-guardrails.md",
+                "type": "file"
+              },
+              {
+                "name": "prose-deny.txt",
+                "type": "file"
+              },
+              {
+                "name": "sandbox-cwd-policy.md",
+                "type": "file"
+              },
+              {
+                "name": "skill-catalog-browse.md",
+                "type": "file"
+              },
+              {
+                "name": "verdict-format.md",
+                "type": "file"
+              },
+              {
+                "name": "verify-by-running.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "accounting-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "adtech-privacy-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "ai-eval-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "ai-prompt-architect.md",
+            "type": "file"
+          },
+          {
+            "name": "ai-security-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "api-platform-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "app-scaffolder.md",
+            "type": "file"
+          },
+          {
+            "name": "architect.md",
+            "type": "file"
+          },
+          {
+            "name": "auth-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "cli-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "cmmc-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "cms-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "code-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "connector-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "continuous-learner.md",
+            "type": "file"
+          },
+          {
+            "name": "coordinator.md",
+            "type": "file"
+          },
+          {
+            "name": "data-platform-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "db-migration-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "decision-scorer.md",
+            "type": "file"
+          },
+          {
+            "name": "design-advisor.md",
+            "type": "file"
+          },
+          {
+            "name": "devops.md",
+            "type": "file"
+          },
+          {
+            "name": "devtools-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "dpdpa-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "e2e-test-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "edtech-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "enterprise-saas-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "firmware-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "game-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "gdpr-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "geo-routing-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "gov-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "growth-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "healthcare-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "hr-ai-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "infra-provisioner.md",
+            "type": "file"
+          },
+          {
+            "name": "infra-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "insurance-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "integrations-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "knowledge-extractor.md",
+            "type": "file"
+          },
+          {
+            "name": "l3-support.md",
+            "type": "file"
+          },
+          {
+            "name": "legal-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "library-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "marketplace-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "mcp-server-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "media-pipeline-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "migration-import-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "mlops-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "mobile-app-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "mobile-store-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "msp-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "oracle-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "pci-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "performance-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "pm.md",
+            "type": "file"
+          },
+          {
+            "name": "procurement-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "product-owner.md",
+            "type": "file"
+          },
+          {
+            "name": "project-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "qa-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "rcm-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "regulated-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "security-officer.md",
+            "type": "file"
+          },
+          {
+            "name": "senior-dev.md",
+            "type": "file"
+          },
+          {
+            "name": "streaming-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "subscription-billing-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "tax-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "us-ai-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "us-privacy-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "voice-ai-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "web-store-reviewer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "aedt-bias-audit.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-retire.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-review.md",
+            "type": "file"
+          },
+          {
+            "name": "api-contract-review.md",
+            "type": "file"
+          },
+          {
+            "name": "audit.md",
+            "type": "file"
+          },
+          {
+            "name": "board.md",
+            "type": "file"
+          },
+          {
+            "name": "burn.md",
+            "type": "file"
+          },
+          {
+            "name": "ccr.md",
+            "type": "file"
+          },
+          {
+            "name": "close-review.md",
+            "type": "file"
+          },
+          {
+            "name": "coding-audit.md",
+            "type": "file"
+          },
+          {
+            "name": "cost.md",
+            "type": "file"
+          },
+          {
+            "name": "crystallize.md",
+            "type": "file"
+          },
+          {
+            "name": "digest.md",
+            "type": "file"
+          },
+          {
+            "name": "discover.md",
+            "type": "file"
+          },
+          {
+            "name": "doctor.md",
+            "type": "file"
+          },
+          {
+            "name": "exception.md",
+            "type": "file"
+          },
+          {
+            "name": "gen-evals.md",
+            "type": "file"
+          },
+          {
+            "name": "gov-metrics.md",
+            "type": "file"
+          },
+          {
+            "name": "help.md",
+            "type": "file"
+          },
+          {
+            "name": "inbox.md",
+            "type": "file"
+          },
+          {
+            "name": "learn.md",
+            "type": "file"
+          },
+          {
+            "name": "migrate.md",
+            "type": "file"
+          },
+          {
+            "name": "msp-review.md",
+            "type": "file"
+          },
+          {
+            "name": "oncall.md",
+            "type": "file"
+          },
+          {
+            "name": "ownership.md",
+            "type": "file"
+          },
+          {
+            "name": "poc.md",
+            "type": "file"
+          },
+          {
+            "name": "prd.md",
+            "type": "file"
+          },
+          {
+            "name": "procurement-review.md",
+            "type": "file"
+          },
+          {
+            "name": "promote.md",
+            "type": "file"
+          },
+          {
+            "name": "prompt-evolve.md",
+            "type": "file"
+          },
+          {
+            "name": "recall.md",
+            "type": "file"
+          },
+          {
+            "name": "release.md",
+            "type": "file"
+          },
+          {
+            "name": "resume.md",
+            "type": "file"
+          },
+          {
+            "name": "review.md",
+            "type": "file"
+          },
+          {
+            "name": "rfc.md",
+            "type": "file"
+          },
+          {
+            "name": "save.md",
+            "type": "file"
+          },
+          {
+            "name": "sec.md",
+            "type": "file"
+          },
+          {
+            "name": "skillify.md",
+            "type": "file"
+          },
+          {
+            "name": "spec.md",
+            "type": "file"
+          },
+          {
+            "name": "start.md",
+            "type": "file"
+          },
+          {
+            "name": "tax-review.md",
+            "type": "file"
+          },
+          {
+            "name": "trace.md",
+            "type": "file"
+          },
+          {
+            "name": "upl-check.md",
+            "type": "file"
+          },
+          {
+            "name": "voice-compliance.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ADR-001-multi-tenant-board.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-002-model-tier-policy.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-003-two-axis-gate-model.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-004-tier-aware-judge-policy.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-005-mid-build-spec-reentry.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-006-harness-router.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-007-board-always-on.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-008-decisions-log-isolation.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-009-gates-follow-reversibility.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-010-pipeline-position-pull-view.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "GATE-NAMING.md",
+                "type": "file"
+              },
+              {
+                "name": "REVIEWER-NAMING.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analysis",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-05-14-archetype-deep-dive.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-14-multi-archetype-coverage-gap.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-14-pipeline-gaps.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-14-skill-resolution.md",
+                "type": "file"
+              },
+              {
+                "name": "NACL-EVALUATION.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "arch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ARCH-board-server-split.md",
+                "type": "file"
+              },
+              {
+                "name": "ARCH-quality-deepen-followups.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "architecture",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ADR-013-hook-execution-model.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-013-hook-execution-model.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-014-secret-detection-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-014-secret-detection-patterns.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-015-learning-loop-architecture.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-015-learning-loop-architecture.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-016-learning-privacy.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-016-learning-privacy.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-017-skill-candidate-promotion.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-017-skill-candidate-promotion.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-018-dynamic-workflow-orchestration.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-018-dynamic-workflow-orchestration.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-019-hook-execution-modes.md",
+                "type": "file"
+              },
+              {
+                "name": "ADR-019-hook-execution-modes.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "ARCH-judge-provenance.md",
+                "type": "file"
+              },
+              {
+                "name": "ARCH-pipeline-position.md",
+                "type": "file"
+              },
+              {
+                "name": "PHASE-agents-fleet-view.md",
+                "type": "file"
+              },
+              {
+                "name": "PHASE-agents-fleet-view.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PHASE-board-companion-extension.md",
+                "type": "file"
+              },
+              {
+                "name": "PHASE-board-companion-extension.summary.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "benchmarks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "briefs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ats.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "booking-portal.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "class-booking.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "client-portal.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "coaching-content.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dispatch-scheduling.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "instant-quoting.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lead-crm.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "profitability-dashboard.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "subcontractor-portal.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "AB-2026-07-29-dag-vs-rubric.md",
+                "type": "file"
+              },
+              {
+                "name": "BENCH-2026-07-batch1.md",
+                "type": "file"
+              },
+              {
+                "name": "MTTR.md",
+                "type": "file"
+              },
+              {
+                "name": "RESCORE-2026-07-19.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "blog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-05-22-v2.17-en.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-29-whats-new-en.md",
+                "type": "file"
+              },
+              {
+                "name": "DRAFT-2026-07-29-two-approvals.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compression",
+            "type": "directory",
+            "children": [
+              {
+                "name": "HEADROOM-MCP.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "de",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "decisions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "DISCOVERY-NO-BUILD.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "deploy",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Dockerfile.worker",
+                "type": "file"
+              },
+              {
+                "name": "great-cto-worker.service",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "DESIGN-agents-fleet-view.md",
+                "type": "file"
+              },
+              {
+                "name": "DESIGN-board-companion-extension.md",
+                "type": "file"
+              },
+              {
+                "name": "DESIGN-board-review.md",
+                "type": "file"
+              },
+              {
+                "name": "DESIGN-readme-landing-review.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "es",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ja",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ko",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "operations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "MONITORING.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "PLAN-2026-05-14-gap-closure.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-05-14-gap-closure.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-05-14-test-pyramid-expansion.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-05-14-test-pyramid-expansion.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-06-04-codex-host-support.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-06-04-codex-host-support.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-06-18-gate-tiering-reviewer-consolidation.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-07-10-public-benchmark.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-07-19-harness-close-the-loops.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-07-28-product-only-approval.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-2026-08-08-self-improving-pipeline.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-board-agent-launch.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-borrow-santander.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-headroom-context-compression.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-headroom-context-compression.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-judge-provenance.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-nacl-governance.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-nacl-governance.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-npm-multi-platform.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-npm-multi-platform.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-opus48-tuning.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-sia-self-improvement-loop.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-sia-self-improvement-loop.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-token-economy-2026-q2.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-token-economy-2026-q2.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-us-market-coverage.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-us-market-coverage.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-v2.5.8-ci-hardening.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-v2.5.8-ci-hardening.summary.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-v2.6.0-agent-prompt-linter.md",
+                "type": "file"
+              },
+              {
+                "name": "PLAN-v2.6.0-agent-prompt-linter.summary.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "positioning",
+            "type": "directory",
+            "children": [
+              {
+                "name": "vocabulary.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "product",
+            "type": "directory",
+            "children": [
+              {
+                "name": "BRIEF-board-improvements.md",
+                "type": "file"
+              },
+              {
+                "name": "BRIEF-readme-landing-review.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pt-BR",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "qa-reports",
+            "type": "directory",
+            "children": [
+              {
+                "name": "QA-2026-07-02-board-refactor.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "quality",
+            "type": "directory",
+            "children": [
+              {
+                "name": "FLEET-SCORE.md",
+                "type": "file"
+              },
+              {
+                "name": "SCORE-a1-crud.md",
+                "type": "file"
+              },
+              {
+                "name": "SCORE-a2-booking.md",
+                "type": "file"
+              },
+              {
+                "name": "SCORE-a3-crm.md",
+                "type": "file"
+              },
+              {
+                "name": "SCORE-a4-dashboard.md",
+                "type": "file"
+              },
+              {
+                "name": "SCORE-a5-marketplace.md",
+                "type": "file"
+              },
+              {
+                "name": "SCORE-a6-content.md",
+                "type": "file"
+              },
+              {
+                "name": "SCORE-gen-crud-app.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reference",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents.md",
+                "type": "file"
+              },
+              {
+                "name": "commands.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ru",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "screenshots",
+            "type": "directory",
+            "children": [
+              {
+                "name": "board.png",
+                "type": "file"
+              },
+              {
+                "name": "console-drawer.png",
+                "type": "file"
+              },
+              {
+                "name": "console-inbox.png",
+                "type": "file"
+              },
+              {
+                "name": "console-ops.png",
+                "type": "file"
+              },
+              {
+                "name": "inbox.png",
+                "type": "file"
+              },
+              {
+                "name": "logo.svg",
+                "type": "file"
+              },
+              {
+                "name": "memory.png",
+                "type": "file"
+              },
+              {
+                "name": "metrics.png",
+                "type": "file"
+              },
+              {
+                "name": "pipeline.svg",
+                "type": "file"
+              },
+              {
+                "name": "screencast.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "security",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SEC-execution-claims.md",
+                "type": "file"
+              },
+              {
+                "name": "SEC-pipeline-gate-reading.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "strategy",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AGENTSPACE-ADOPT.md",
+                "type": "file"
+              },
+              {
+                "name": "BUILD-PIPELINES.md",
+                "type": "file"
+              },
+              {
+                "name": "BUILDER-AGENTS-GAP-PLAN.md",
+                "type": "file"
+              },
+              {
+                "name": "DEEPEN-PIPELINE.md",
+                "type": "file"
+              },
+              {
+                "name": "MID-BUILD-RECOVERY.md",
+                "type": "file"
+              },
+              {
+                "name": "PIPELINE-QUALITY-ASSESSMENT.md",
+                "type": "file"
+              },
+              {
+                "name": "PRODUCT-BUILDER-DIRECTION.md",
+                "type": "file"
+              },
+              {
+                "name": "PRODUCT-QUALITY-HARNESS.md",
+                "type": "file"
+              },
+              {
+                "name": "QUALITY-DEEPEN.md",
+                "type": "file"
+              },
+              {
+                "name": "ZRS-TASK-RUNNER-DESIGN.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-05-21-jurisdiction-detection.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-05-22-adversarial-critics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-05-22-bd-upgrade-bundled-critics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-05-22-plan-critic.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-05-23-flow-compiler-ux.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "testing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-05-14-full-25-archetype-coverage.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-14-multi-archetype-real-pipeline.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-14-real-bidirectional-e2e.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-14-sprint1-packs-and-downstream.md",
+                "type": "file"
+              },
+              {
+                "name": "E2E-PLAN.md",
+                "type": "file"
+              },
+              {
+                "name": "SPRINT-2-CROSS-PROVIDER.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tutorials",
+            "type": "directory",
+            "children": [
+              {
+                "name": "getting-started.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "validation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "PHASE-TASKS-CHECKLIST.md",
+                "type": "file"
+              },
+              {
+                "name": "REPORT-2026-05-09-phase-tasks.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "zh-CN",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "zh-TW",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "AGENT-LINT-RULES.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-model-override.md",
+            "type": "file"
+          },
+          {
+            "name": "ARCHETYPES.md",
+            "type": "file"
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "BOARD-API.md",
+            "type": "file"
+          },
+          {
+            "name": "DEMO-SCRIPT.md",
+            "type": "file"
+          },
+          {
+            "name": "DESIGN-SKILLS.md",
+            "type": "file"
+          },
+          {
+            "name": "DETAILS.md",
+            "type": "file"
+          },
+          {
+            "name": "FAQ.md",
+            "type": "file"
+          },
+          {
+            "name": "GATES.md",
+            "type": "file"
+          },
+          {
+            "name": "help-card.md",
+            "type": "file"
+          },
+          {
+            "name": "HOOKS.md",
+            "type": "file"
+          },
+          {
+            "name": "LEARNING.md",
+            "type": "file"
+          },
+          {
+            "name": "LOCAL-CICD.md",
+            "type": "file"
+          },
+          {
+            "name": "MCP.md",
+            "type": "file"
+          },
+          {
+            "name": "PRIVACY.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "SECOND-OPINION.md",
+            "type": "file"
+          },
+          {
+            "name": "SITE-CREDIBILITY-PLAN.md",
+            "type": "file"
+          },
+          {
+            "name": "smoke-test.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "mcp-servers",
+        "type": "directory",
+        "children": [
+          {
+            "name": "llm-router",
+            "type": "directory",
+            "children": [
+              {
+                "name": "server.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "grafana.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "packages",
+        "type": "directory",
+        "children": [
+          {
+            "name": "board",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cloudflare-worker",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worker.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wrangler.toml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "alerts.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "beads.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-readers.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "docs.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fleet.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "metrics.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "notifications.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "portfolio.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "projects.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "routes.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "share.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sse.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcripts.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "update-alert.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "util.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verdicts.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watchers.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "public",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "assets",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fonts",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fonts.css",
+                            "type": "file"
+                          },
+                          {
+                            "name": "geist-mono-variable.woff2",
+                            "type": "file"
+                          },
+                          {
+                            "name": "geist-variable.woff2",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PROVENANCE.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "vendor",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "marked.min.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PROVENANCE.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "purify.min.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "apple-touch-icon.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "favicon-16.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "favicon-32.png",
+                        "type": "file"
+                      },
+                      {
+                        "name": "favicon.ico",
+                        "type": "file"
+                      },
+                      {
+                        "name": "favicon.svg",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "share.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sw.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "acceptance-metrics.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "beads-cache.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "data-readers.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "decisions-scope.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "degraded-ui.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "fleet-classify.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "fleet-read.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "log.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "mcp-server.mjs",
+                "type": "file"
+              },
+              {
+                "name": "metrics-shape.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "no-cdn.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "notifications-dedup.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "portfolio.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "project-scope.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "push-adapter.mjs",
+                "type": "file"
+              },
+              {
+                "name": "push-adapter.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "read-safe.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "registry.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "sec-stats.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "server.mjs",
+                "type": "file"
+              },
+              {
+                "name": "static-traversal.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "tasks-md-table.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "transcripts.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "update-alert.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "verdict-health.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "verdict-readers.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "watchers.test.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "brainstorming",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "spec-critic-prompt.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "finishing-a-development-branch",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "api-critic-prompt.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "schema-critic-prompt.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "writing-plans",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "arch-critic-prompt.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "dist",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bootstrap.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "installer.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llm-fallback.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "settings.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bundle-board.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adapt.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "archetypes.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "board-daemon.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "board-path.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ci.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "companion.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detect.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flow.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "installer.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jurisdictions.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "land.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llm-fallback.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "overlay.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "packs.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "report.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "self-upgrade.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "semver.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "serve.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "settings.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-queue.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "telemetry.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "update-check-worker.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "update-check.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "upgrade.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "webhook-cli.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "webhook-config.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "webhook-dispatch.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worker.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adapt-next-steps.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "archetypes.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "board-daemon.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "board-path.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detect.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "effective-gates.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flow.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "installer.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "integration.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jurisdictions.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llm-fallback.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "overlay.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package-files.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "packs.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "self-upgrade.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "settings.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "telemetry.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "update-check.test.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "upgrade.test.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "CONTEXT.md",
+                "type": "file"
+              },
+              {
+                "name": "index.mjs",
+                "type": "file"
+              },
+              {
+                "name": "jsr.json",
+                "type": "file"
+              },
+              {
+                "name": "LICENSE",
+                "type": "file"
+              },
+              {
+                "name": "package-lock.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "postinstall.mjs",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "test-archetypes.mjs",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cursor-ext",
+            "type": "directory",
+            "children": [
+              {
+                "name": "out",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "extension.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extension.js.map",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "extension.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".vscodeignore",
+                "type": "file"
+              },
+              {
+                "name": "great-cto-cursor-2.5.0.vsix",
+                "type": "file"
+              },
+              {
+                "name": "icon.png",
+                "type": "file"
+              },
+              {
+                "name": "LICENSE",
+                "type": "file"
+              },
+              {
+                "name": "package-lock.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cmd-data",
+            "type": "directory",
+            "children": [
+              {
+                "name": "digest-data.sh",
+                "type": "file"
+              },
+              {
+                "name": "inbox-data.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eval",
+            "type": "directory",
+            "children": [
+              {
+                "name": "asr-loop.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "artifact-lint.mjs",
+                "type": "file"
+              },
+              {
+                "name": "auto-attach-reviewers.mjs",
+                "type": "file"
+              },
+              {
+                "name": "classify-telemetry.mjs",
+                "type": "file"
+              },
+              {
+                "name": "cost-guard.mjs",
+                "type": "file"
+              },
+              {
+                "name": "edit-scope-guard.mjs",
+                "type": "file"
+              },
+              {
+                "name": "format-check.mjs",
+                "type": "file"
+              },
+              {
+                "name": "frozen-gates-guard.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-expiry.mjs",
+                "type": "file"
+              },
+              {
+                "name": "orchestrator-check.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-dispatcher.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-stall-guard.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pre-push.sh",
+                "type": "file"
+              },
+              {
+                "name": "quota-check.mjs",
+                "type": "file"
+              },
+              {
+                "name": "reviewer-nudge.mjs",
+                "type": "file"
+              },
+              {
+                "name": "secret-scan.mjs",
+                "type": "file"
+              },
+              {
+                "name": "session-end.mjs",
+                "type": "file"
+              },
+              {
+                "name": "session-pipeline-resume.mjs",
+                "type": "file"
+              },
+              {
+                "name": "subagent-stop-completion.mjs",
+                "type": "file"
+              },
+              {
+                "name": "summary-enforce.mjs",
+                "type": "file"
+              },
+              {
+                "name": "tool-failure.mjs",
+                "type": "file"
+              },
+              {
+                "name": "user-prompt-submit.py",
+                "type": "file"
+              },
+              {
+                "name": "welcome.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "leash-customize",
+            "type": "directory",
+            "children": [
+              {
+                "name": "python",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "sitecustomize.py",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "compress",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "json-minify.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "line-importance.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log-template.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "acceptance-verify.mjs",
+                "type": "file"
+              },
+              {
+                "name": "adherence.mjs",
+                "type": "file"
+              },
+              {
+                "name": "agent-transcript.mjs",
+                "type": "file"
+              },
+              {
+                "name": "approval-level.mjs",
+                "type": "file"
+              },
+              {
+                "name": "archetype-contracts.mjs",
+                "type": "file"
+              },
+              {
+                "name": "artifact-claims.mjs",
+                "type": "file"
+              },
+              {
+                "name": "ccr.mjs",
+                "type": "file"
+              },
+              {
+                "name": "change-tier.mjs",
+                "type": "file"
+              },
+              {
+                "name": "check-frozen-gates.mjs",
+                "type": "file"
+              },
+              {
+                "name": "check-lane-overlap.mjs",
+                "type": "file"
+              },
+              {
+                "name": "cost-drift.mjs",
+                "type": "file"
+              },
+              {
+                "name": "cost-meter.mjs",
+                "type": "file"
+              },
+              {
+                "name": "cost-meter.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "cross-model-review.mjs",
+                "type": "file"
+              },
+              {
+                "name": "dag-metric.mjs",
+                "type": "file"
+              },
+              {
+                "name": "deploy-preflight.mjs",
+                "type": "file"
+              },
+              {
+                "name": "diff-size-gate.mjs",
+                "type": "file"
+              },
+              {
+                "name": "eval-drift.mjs",
+                "type": "file"
+              },
+              {
+                "name": "eval-power.mjs",
+                "type": "file"
+              },
+              {
+                "name": "eval-status.mjs",
+                "type": "file"
+              },
+              {
+                "name": "exceptions.mjs",
+                "type": "file"
+              },
+              {
+                "name": "execution-claims.mjs",
+                "type": "file"
+              },
+              {
+                "name": "finding-beads.mjs",
+                "type": "file"
+              },
+              {
+                "name": "finding-closure.mjs",
+                "type": "file"
+              },
+              {
+                "name": "finding-evidence.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gap-waves.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-check.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-plan.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-retro.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-state.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gov-metrics.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gp-approve-gate.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gp-eval-trace.mjs",
+                "type": "file"
+              },
+              {
+                "name": "grant-audit.mjs",
+                "type": "file"
+              },
+              {
+                "name": "guards.mjs",
+                "type": "file"
+              },
+              {
+                "name": "harness-router.mjs",
+                "type": "file"
+              },
+              {
+                "name": "hook-install.mjs",
+                "type": "file"
+              },
+              {
+                "name": "hook-install.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "human-cost.mjs",
+                "type": "file"
+              },
+              {
+                "name": "impl-brief.mjs",
+                "type": "file"
+              },
+              {
+                "name": "improve-loop.mjs",
+                "type": "file"
+              },
+              {
+                "name": "judge-agreement.mjs",
+                "type": "file"
+              },
+              {
+                "name": "judge-model.mjs",
+                "type": "file"
+              },
+              {
+                "name": "lessons-write.mjs",
+                "type": "file"
+              },
+              {
+                "name": "log.mjs",
+                "type": "file"
+              },
+              {
+                "name": "memory-search.mjs",
+                "type": "file"
+              },
+              {
+                "name": "metrics-trend.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-position.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-tick.mjs",
+                "type": "file"
+              },
+              {
+                "name": "product-browser.mjs",
+                "type": "file"
+              },
+              {
+                "name": "product-eval.mjs",
+                "type": "file"
+              },
+              {
+                "name": "product-score.mjs",
+                "type": "file"
+              },
+              {
+                "name": "prompt-size.mjs",
+                "type": "file"
+              },
+              {
+                "name": "proof-status.mjs",
+                "type": "file"
+              },
+              {
+                "name": "prose-slop.mjs",
+                "type": "file"
+              },
+              {
+                "name": "quality.mjs",
+                "type": "file"
+              },
+              {
+                "name": "report-pii.mjs",
+                "type": "file"
+              },
+              {
+                "name": "run-shape.mjs",
+                "type": "file"
+              },
+              {
+                "name": "second-opinion.mjs",
+                "type": "file"
+              },
+              {
+                "name": "source-refs.mjs",
+                "type": "file"
+              },
+              {
+                "name": "stall-triage.mjs",
+                "type": "file"
+              },
+              {
+                "name": "stop-shape.mjs",
+                "type": "file"
+              },
+              {
+                "name": "system-map.mjs",
+                "type": "file"
+              },
+              {
+                "name": "trace.mjs",
+                "type": "file"
+              },
+              {
+                "name": "usage-from-transcript.mjs",
+                "type": "file"
+              },
+              {
+                "name": "verdict-record.mjs",
+                "type": "file"
+              },
+              {
+                "name": "waiver-check.py",
+                "type": "file"
+              },
+              {
+                "name": "worktree-state.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agent-changelog.mjs",
+            "type": "file"
+          },
+          {
+            "name": "agent-prompt-lint.mjs",
+            "type": "file"
+          },
+          {
+            "name": "apply-model-override.sh",
+            "type": "file"
+          },
+          {
+            "name": "architect-codebase-map.sh",
+            "type": "file"
+          },
+          {
+            "name": "architect-discovery-gate.sh",
+            "type": "file"
+          },
+          {
+            "name": "architect-pattern-lookup.sh",
+            "type": "file"
+          },
+          {
+            "name": "architect-pre-mortem-trigger.sh",
+            "type": "file"
+          },
+          {
+            "name": "architect-risk-register-init.sh",
+            "type": "file"
+          },
+          {
+            "name": "architect-security-gate.sh",
+            "type": "file"
+          },
+          {
+            "name": "architect-slo-seed.sh",
+            "type": "file"
+          },
+          {
+            "name": "architect-update-adr-index.sh",
+            "type": "file"
+          },
+          {
+            "name": "auditor-ai-cost-cap-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "auditor-architectural-debt-scan.sh",
+            "type": "file"
+          },
+          {
+            "name": "auditor-cache-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "auditor-pattern-lookup.sh",
+            "type": "file"
+          },
+          {
+            "name": "auditor-scaffold-dirs.sh",
+            "type": "file"
+          },
+          {
+            "name": "auditor-stack-fingerprint.sh",
+            "type": "file"
+          },
+          {
+            "name": "auditor-validate-type.sh",
+            "type": "file"
+          },
+          {
+            "name": "auditor-vulnerability-scan.sh",
+            "type": "file"
+          },
+          {
+            "name": "bd-create-if-new.sh",
+            "type": "file"
+          },
+          {
+            "name": "bench-collect.mjs",
+            "type": "file"
+          },
+          {
+            "name": "bench-env.mjs",
+            "type": "file"
+          },
+          {
+            "name": "bench-run.sh",
+            "type": "file"
+          },
+          {
+            "name": "bump-version.sh",
+            "type": "file"
+          },
+          {
+            "name": "canary.sh",
+            "type": "file"
+          },
+          {
+            "name": "cd-local.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-update.sh",
+            "type": "file"
+          },
+          {
+            "name": "ci-local.sh",
+            "type": "file"
+          },
+          {
+            "name": "coverage-gate.mjs",
+            "type": "file"
+          },
+          {
+            "name": "crystallize-hint.mjs",
+            "type": "file"
+          },
+          {
+            "name": "eval-gate.mjs",
+            "type": "file"
+          },
+          {
+            "name": "first-run-codebase.mjs",
+            "type": "file"
+          },
+          {
+            "name": "gen-docs-reference.mjs",
+            "type": "file"
+          },
+          {
+            "name": "generate-summary.mjs",
+            "type": "file"
+          },
+          {
+            "name": "handoff-package.mjs",
+            "type": "file"
+          },
+          {
+            "name": "install-local.sh",
+            "type": "file"
+          },
+          {
+            "name": "judge-calibrate.mjs",
+            "type": "file"
+          },
+          {
+            "name": "judge-validate.mjs",
+            "type": "file"
+          },
+          {
+            "name": "lessons-merge.mjs",
+            "type": "file"
+          },
+          {
+            "name": "log-verdict.sh",
+            "type": "file"
+          },
+          {
+            "name": "memory-filter.mjs",
+            "type": "file"
+          },
+          {
+            "name": "migrate-verdicts-to-projects.mjs",
+            "type": "file"
+          },
+          {
+            "name": "mock-llm.py",
+            "type": "file"
+          },
+          {
+            "name": "phase-task.sh",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-state.mjs",
+            "type": "file"
+          },
+          {
+            "name": "prompt-evolve.mjs",
+            "type": "file"
+          },
+          {
+            "name": "ralph-loop.sh",
+            "type": "file"
+          },
+          {
+            "name": "read-past-lessons.sh",
+            "type": "file"
+          },
+          {
+            "name": "record-demo.mjs",
+            "type": "file"
+          },
+          {
+            "name": "release.sh",
+            "type": "file"
+          },
+          {
+            "name": "sandbox-eval.sh",
+            "type": "file"
+          },
+          {
+            "name": "seed-demo.mjs",
+            "type": "file"
+          },
+          {
+            "name": "skill-discover.sh",
+            "type": "file"
+          },
+          {
+            "name": "submit-catalogs.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pipeline.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "shared",
+        "type": "directory",
+        "children": [
+          {
+            "name": "gp-schema.mjs",
+            "type": "file"
+          },
+          {
+            "name": "lifecycle-map.mjs",
+            "type": "file"
+          },
+          {
+            "name": "orchestrator.toml",
+            "type": "file"
+          },
+          {
+            "name": "pipeline.toml",
+            "type": "file"
+          },
+          {
+            "name": "safety-rules.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "anti-patterns",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "anydesign",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis-framework.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "capture-flows.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "element-copy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "output-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "token-extraction.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "capture_site.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "check_contrast.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "export_for_claude_design.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_colors.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_css_vars.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lint_design_md.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verify_design.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "LICENSE",
+                "type": "file"
+              },
+              {
+                "name": "requirements.txt",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "archetype-review-base",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reviewer-template.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "brainstorming",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cost-model",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "crystallize",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "decision-eval",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "discovery",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "done-blocked",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "great_cto",
+            "type": "directory",
+            "children": [
+              {
+                "name": "packs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "accounting-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "adtech-privacy-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ai-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-platform-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "browser-extension-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "commerce-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "devtools-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "edtech-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "enterprise-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "game-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gov-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hr-ai-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "infra-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "legaltech-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "library-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mobile-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "msp-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "procurement-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rcm-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tax-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "us-ai-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "voice-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "web-pack.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "web3-pack.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "playbooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "large-scale-refactor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sbom.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "security-incident.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stack-migration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "threat-model.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "reference",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "file-layout.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "file-ownership.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "findings-format.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "formal-verification.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-task-protocol.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-start.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-security.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-style.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "anti-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "arch-framework-sections.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "board-narrative.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "burn-rate.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cloud-pricing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context-discipline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cost-discipline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cost-model.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dashboard-viz.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "decision-log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "deprecations.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discovery.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dora.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gate-health.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "grafana-ops.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "incident-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "knowledge-extraction.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llm-router.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onboarding.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phases.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pm-planning.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "poc-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pre-mortem.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "quarterly-review.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reliability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "risk-register.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sec-metrics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "secure-sdlc.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "security-tiers.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skills-architecture.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vendors.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "waivers.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "21CFR11-checklist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-LLM.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-PROMPT.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ARCH-ai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ARCH-browser-extension.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ARCH-default.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ARCH-defi-protocol.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ARCH-game.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "brain.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "DORA-ICT-risk-assessment.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "DORA-third-party-register.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EVAL-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "GAP-REGISTER-template.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "GAP-WAVE-PLAN-template.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IMPL-BRIEF-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ISO27001-SoA.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "NIS2-article21-controls.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PCI-DSS-SAQ-A.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PCI-DSS-SAQ-D.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SOX-ITGC-checklist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "THREAT-MODEL-AI.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TISAX-VDA-ISA-results.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-accounting.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-api.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-hrai.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-insurance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-legal.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-msp.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-procurement.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-rcm.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-tax.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TM-voice.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ARCHETYPES.md",
+                "type": "file"
+              },
+              {
+                "name": "memory-index.md",
+                "type": "file"
+              },
+              {
+                "name": "prose-style.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "TYPE_MAP.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lifecycle-messaging",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "local-seo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "migration-ready-schema",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "observability-baseline",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "opportunity-solution-tree",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "outcome-roadmap",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pm-planning",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pre-mortem",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prose-style",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skeptical-triage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "stack-baseline",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test-strategy",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ui-ux-pro-max",
+            "type": "directory",
+            "children": [
+              {
+                "name": "data",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "stacks",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "angular.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "astro.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flutter.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "html-tailwind.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "jetpack-compose.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "laravel.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nextjs.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nuxt-ui.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nuxtjs.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react-native.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "shadcn.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "svelte.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "swiftui.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "threejs.csv",
+                        "type": "file"
+                      },
+                      {
+                        "name": "vue.csv",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_sync_all.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "app-interface.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "charts.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "colors.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "design.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "draft.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "google-fonts.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "icons.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "landing.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "products.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "react-performance.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "styles.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "typography.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui-reasoning.csv",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ux-guidelines.csv",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "core.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "design_system.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "LICENSE",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-construction",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-creator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-fitness",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-home-services",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-hr-recruiting",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-logistics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-onboarding",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-professional-services",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-real-estate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-restaurants",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vertical-retail",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "well-architected",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "gen-docs-reference.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "verdict-ordering.test.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eval",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dags",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "security-officer-finding-gate.dag.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "judge-alignment",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "architect-2026-08-04.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "disputed.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "security",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "asr-suite.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "policy.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "agent-changelog.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "asr-loop.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "coverage-gate.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-accounting-close-integrity.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-adtech-pixel-preconsent.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-ai-eval-engineer-set-design.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-ai-prompt-architect-versioning.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-ai-security-injection-chain.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-api-deprecation-warn.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-api-oauth-scope-leak.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-api-rate-limit-fairness.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-api-webhook-idempotency.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-architect-gate-compliance.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-architect-scope-creep.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-auth-engineer-tenant-isolation.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-cli-reviewer-argv-safety.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-cmmc-cui-boundary.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-cms-seo-and-ugc.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-code-reviewer-quality.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-compression-fidelity.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-continuous-learner-extraction.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-coordinator-orchestration.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-data-platform-retention.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-db-migration-rollback.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-decision-scorer-weighting.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-design-advisor-contract.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-devops-deploy-safety.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-devtools-supply-chain.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-dpdpa-consent-localisation.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-e2e-test-engineer-golden-path.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-edtech-child-consent.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-enterprise-saas-tenant-isolation.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-firmware-ota-safety.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-game-age-and-odds.md",
+                "type": "file"
+              },
+              {
+                "name": "eval-gate.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-gdpr-lawful-basis.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-gov-authorization-boundary.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-healthcare-phi-boundary.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-hr-bias-by-protected-class.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-hr-opt-out-honored.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-hr-resume-injection.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-infra-provisioner-cost-gate.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-infra-public-exposure.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-insurance-ai-discrimination.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-integrations-engineer-idempotency.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-l3-support-incident.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-legal-trust-accounting.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-library-semver-surface.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-marketplace-payout-kyc.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-mcp-server-tool-surface.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-migration-import-fidelity.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-mlops-drift-and-bias.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-mobile-store-reviewer-rejection.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-msp-client-isolation.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-oracle-defi-manipulation.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-pci-scope-reduction.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-performance-engineer-slo.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-pm-decomposition.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-procurement-three-way-match.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-product-owner-brief.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-project-auditor-findings.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-qa-engineer-boilerplate-rejection.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-qa-engineer-gherkin-mutation.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-qa-engineer-severity-accuracy.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-rcm-coding-integrity.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-regulated-dora-resilience.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-security-officer-adversarial-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-security-officer-finding-gate.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-senior-dev-scope-tdd.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-streaming-delivery-guarantees.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-subscription-billing-proration.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-tax-efile-safeguards.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-us-privacy-sale-share.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-usai-state-duties.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-voice-call-handoff-safety.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-voice-pii-leakage.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-voice-prompt-injection.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-voice-synth-disclosure.md",
+                "type": "file"
+              },
+              {
+                "name": "EVAL-web-store-reviewer-permissions.md",
+                "type": "file"
+              },
+              {
+                "name": "gp-schema.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "guards.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "judge-calibrate.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "judge-gold.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "prompt-evolve.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "runner.mjs",
+                "type": "file"
+              },
+              {
+                "name": "runner.test.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-product-langgraph",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ai-system-vercel",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "api-platform-stripe",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "browser-extension-mv3",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cli-tool-python",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "manifest.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cli.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".env.example",
+                    "type": "file"
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pyproject.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cms-sanity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "commerce-stripe",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "data-platform-dbt",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dbt_project.yml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pyproject.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "devtools-stainless",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openapi.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "enterprise-saas-workos",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fintech-plaid",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "game-unity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Assets",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ProjectSettings",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ProjectVersion.txt",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "healthcare-fhir",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hr-ai-recruiting",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "infra-terraform",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main.tf",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "variables.tf",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "insurance-acord",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "iot-zephyr",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CMakeLists.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platformio.ini",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prj.conf",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "legal-clio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "library-npm",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "marketplace-connect",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mlops-mlflow",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dvc.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pyproject.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mobile-app-expo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "msp-rmm",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "procurement-p2p",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "regulated-fedramp",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "regulated-manual",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "regulated-vanta",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "streaming-kafka",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tax-prep",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "trading-system-rust",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "manifest.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "executor.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "lib.rs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "risk.rs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Cargo.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "render.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "voice-twilio",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "web-fullstack-node",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "manifest.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "pages",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "api",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "admin.ts",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".env.local",
+                    "type": "file"
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "web-service-express",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "web3-foundry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "expected.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "foundry.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "_generate-fixtures.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "helpers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "free-port.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "artifact-lint.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "auto-attach-reviewers.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "cost-guard.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "edit-scope-guard.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "first-run-codebase.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "frozen-gates-guard.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "lessons-merge.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "log-verdict-worktree.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-dispatcher.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-stall-guard.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pre-push.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "quota-check-creds.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "reviewer-nudge.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "secret-scan.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "session-end-auto-learn.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "session-pipeline-resume.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "subagent-stop-completion.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "summary-enforce.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "tool-failure.test.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "metrics-history.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "acceptance-verify.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "adherence.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "agent-transcript.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "approval-level.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "archetype-contracts.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "artifact-claims.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "ccr.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "change-tier.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "check-frozen-gates.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "check-lane-overlap.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "compress-headroom.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "compress.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "cost-drift.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "cross-model-review.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "dag-metric.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "deploy-preflight.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "diff-size-gate.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "eval-drift.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "eval-power.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "eval-status.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "exceptions.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "execution-claims.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "finding-beads.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "finding-closure.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "finding-evidence.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gap-waves.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-check.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-plan.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-retro.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gate-state.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gov-metrics.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "gp-eval-trace.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "grant-audit.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "harness-router.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "human-cost.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "impl-brief.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "improve-loop.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "judge-agreement.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "judge-model.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "judge-validate.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "lessons-write.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "memory-search.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "metrics-trend.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "mirror-freshness.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-position.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-tick.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "product-browser.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "product-eval-parse.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "product-eval.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "product-score.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "prompt-size.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "proof-status.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "prose-slop.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "quality-null-score.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "quality.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "report-pii.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "run-shape.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "second-opinion.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "source-refs.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "stall-triage.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "stop-shape.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "trace.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "usage-from-transcript.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "verdict-record.test.mjs",
+                "type": "file"
+              },
+              {
+                "name": "worktree-state.test.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "structural",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test_agent_skills.py",
+                "type": "file"
+              },
+              {
+                "name": "test_eval_pack_mapping.py",
+                "type": "file"
+              },
+              {
+                "name": "test_new_reviewers.py",
+                "type": "file"
+              },
+              {
+                "name": "test_security_tiers.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agent-decision-scorer.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "agent-prompt-integrity.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "bench-collect.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "bench-env.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "board-gate.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "cost-correctness.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "crystallize.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "design-skills-smoke.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "gp-approve-gate.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "gp-schema-contract.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "handoff-package.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "memory-filter.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "multi-platform-parity.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "openrouter-cross-provider.mjs",
+            "type": "file"
+          },
+          {
+            "name": "openrouter-multi-archetype.mjs",
+            "type": "file"
+          },
+          {
+            "name": "openrouter-pack-overlays.mjs",
+            "type": "file"
+          },
+          {
+            "name": "openrouter-real-pipeline.mjs",
+            "type": "file"
+          },
+          {
+            "name": "openrouter-reviewer-regressions.mjs",
+            "type": "file"
+          },
+          {
+            "name": "packs-integration.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-contracts.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-e2e.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-state.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "product-owner-wiring.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "resume-e2e.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "run-archetype-e2e.mjs",
+            "type": "file"
+          },
+          {
+            "name": "run-packs-e2e.mjs",
+            "type": "file"
+          },
+          {
+            "name": "session-start-self-overwrite.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "smb-lean-pipeline.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "task-queue.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "telemetry.test.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "workers",
+        "type": "directory",
+        "children": [
+          {
+            "name": "telemetry",
+            "type": "directory",
+            "children": [
+              {
+                "name": "DEPLOY.md",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema.sql",
+                "type": "file"
+              },
+              {
+                "name": "wrangler.toml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".nvmrc",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "NOTICE.md",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

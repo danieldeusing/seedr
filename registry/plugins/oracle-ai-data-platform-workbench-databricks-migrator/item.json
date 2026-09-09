@@ -1,0 +1,533 @@
+{
+  "slug": "oracle-ai-data-platform-workbench-databricks-migrator",
+  "name": "Oracle Ai Data Platform Workbench Databricks Migrator",
+  "type": "plugin",
+  "description": "Drive the Oracle AI Data Platform (AIDP) Databricks Migration Toolkit in natural language. Plans and executes automated Databricks → AIDP migrations of notebooks, jobs, schedules, and catalog DDL — Pass-1 dependency rewrite + Pass-2 cell-by-cell execute/verify/fix on a live AIDP cluster with Claude.",
+  "longDescription": "Ships **10 skills**, **2 agents** and **4 commands**.\n\n- **Skills** (10): `aidp-acceptance-contract` (YAML-driven acceptance contract for batch and streaming pipelines that need convergence verification, not just \"no exceptions\"), `aidp-bucket-mapping` (Configure the s3:// → oci:// bucket / namespace mapping the migrator uses to rewrite paths during notebook +…), `aidp-build-dag` (Build a migration manifest (the execution DAG) from a Databricks workspace path or workflow ID), `aidp-check-data` (Pre-migration data-availability scan), `aidp-fixup-cell` (Targeted rewind of a migrated notebook), `aidp-migrate-catalog` (Migrate Databricks Unity Catalog / HMS schemas + tables onto AIDP), `aidp-migrate-job` (Run the full Databricks→AIDP migration against a manifest), `aidp-migrator-bootstrap` (One-shot environment readiness check for the Oracle AIDP Databricks migrator), and 2 more\n- **Agents** (2): `databricks-notebook-analyzer` (Use this agent when the user has pointed at a single Databricks notebook (.ipynb / .py / .scala)…), `migration-reviewer` (Use this agent after aidp-migrate-job completes to review a migrated .ipynb for correctness (NOT just \"did it run\"))\n- **Commands** (4): `check-data` (Pre-migration data-availability scan), `migrate-catalog` (Guided catalog migration flow), `migrate-job` (Guided full-job migration flow), `migration-status` (Parse + summarize the JOB_REPORT.md produced by a prior migration run)\n\nInstalls with `claude plugin install oracle-ai-data-platform-workbench-databricks-migrator@claude-plugins-official` from `oracle-samples/oracle-aidp-samples` (`ai/claude-code-plugins/oracle-ai-data-platform-workbench-databricks-migrator`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 10,
+    "agent": 2,
+    "command": 4
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Oracle"
+  },
+  "externalUrl": "https://github.com/oracle-samples/oracle-aidp-samples/tree/a88bcf3a9f9acca94663a727de42d8535e869486/ai/claude-code-plugins/oracle-ai-data-platform-workbench-databricks-migrator",
+  "marketplace": "claude-plugins-official",
+  "version": "0.2.0",
+  "sourceRevision": "a88bcf3a9f9acca94663a727de42d8535e869486",
+  "contentDigest": "4914d2ae58dbc15dfbd33b962329ea001ad0edbf9836126925fee72ecaa33c3c",
+  "contentHash": "abb11c2652ddf85c",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "ai/claude-code-plugins/oracle-ai-data-platform-workbench-databricks-migrator",
+    "url": "https://github.com/oracle-samples/oracle-aidp-samples.git",
+    "ref": "main",
+    "sha": "a88bcf3a9f9acca94663a727de42d8535e869486"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "ai/claude-code-plugins/oracle-ai-data-platform-workbench-databricks-migrator/LICENSE"
+  },
+  "updatedAt": "2026-06-25T16:24:42Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "databricks-notebook-analyzer.md",
+            "type": "file"
+          },
+          {
+            "name": "migration-reviewer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-data.md",
+            "type": "file"
+          },
+          {
+            "name": "migrate-catalog.md",
+            "type": "file"
+          },
+          {
+            "name": "migrate-job.md",
+            "type": "file"
+          },
+          {
+            "name": "migration-status.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "engine",
+        "type": "directory",
+        "children": [
+          {
+            "name": "aidp_compat",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "bucket_shard.py",
+                "type": "file"
+              },
+              {
+                "name": "credentials.py",
+                "type": "file"
+              },
+              {
+                "name": "data.py",
+                "type": "file"
+              },
+              {
+                "name": "dbutils_shim.py",
+                "type": "file"
+              },
+              {
+                "name": "display.py",
+                "type": "file"
+              },
+              {
+                "name": "fs.py",
+                "type": "file"
+              },
+              {
+                "name": "glue_compat.py",
+                "type": "file"
+              },
+              {
+                "name": "jobs.py",
+                "type": "file"
+              },
+              {
+                "name": "library.py",
+                "type": "file"
+              },
+              {
+                "name": "notebook.py",
+                "type": "file"
+              },
+              {
+                "name": "oci_throttle.py",
+                "type": "file"
+              },
+              {
+                "name": "optuna_compat.py",
+                "type": "file"
+              },
+              {
+                "name": "path_translator.py",
+                "type": "file"
+              },
+              {
+                "name": "s3_compat.py",
+                "type": "file"
+              },
+              {
+                "name": "safe_io.py",
+                "type": "file"
+              },
+              {
+                "name": "secrets.py",
+                "type": "file"
+              },
+              {
+                "name": "setup.py",
+                "type": "file"
+              },
+              {
+                "name": "spark_config.py",
+                "type": "file"
+              },
+              {
+                "name": "sql_magic.py",
+                "type": "file"
+              },
+              {
+                "name": "SUPPORTED_OPERATIONS.md",
+                "type": "file"
+              },
+              {
+                "name": "widgets.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "schemas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "acceptance_contract.schema.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "acceptance_contract.py",
+                "type": "file"
+              },
+              {
+                "name": "agent_migrate.py",
+                "type": "file"
+              },
+              {
+                "name": "aidp_executor.py",
+                "type": "file"
+              },
+              {
+                "name": "analyze_jars.py",
+                "type": "file"
+              },
+              {
+                "name": "analyze_notebooks.py",
+                "type": "file"
+              },
+              {
+                "name": "build_dag_from_workflow.py",
+                "type": "file"
+              },
+              {
+                "name": "build_dag.py",
+                "type": "file"
+              },
+              {
+                "name": "catalog_ddl_rewriter.py",
+                "type": "file"
+              },
+              {
+                "name": "cell_analyzer.py",
+                "type": "file"
+              },
+              {
+                "name": "cell_context.py",
+                "type": "file"
+              },
+              {
+                "name": "check_data_availability_for_workflow.py",
+                "type": "file"
+              },
+              {
+                "name": "check_data_availability.py",
+                "type": "file"
+              },
+              {
+                "name": "clone_workflow.py",
+                "type": "file"
+              },
+              {
+                "name": "cluster_lifecycle.py",
+                "type": "file"
+              },
+              {
+                "name": "cluster_session.py",
+                "type": "file"
+              },
+              {
+                "name": "consolidate_reports.py",
+                "type": "file"
+              },
+              {
+                "name": "context_compactor.py",
+                "type": "file"
+              },
+              {
+                "name": "context_tools.py",
+                "type": "file"
+              },
+              {
+                "name": "deep_analyze_notebook.py",
+                "type": "file"
+              },
+              {
+                "name": "deploy_aidp_compat.py",
+                "type": "file"
+              },
+              {
+                "name": "enumerate_and_download.py",
+                "type": "file"
+              },
+              {
+                "name": "extract_catalog_databricks.py",
+                "type": "file"
+              },
+              {
+                "name": "fetch_spark_logs.py",
+                "type": "file"
+              },
+              {
+                "name": "fuse_package_analyzer.py",
+                "type": "file"
+              },
+              {
+                "name": "fuse_risk_db.json",
+                "type": "file"
+              },
+              {
+                "name": "fuse_scanner.py",
+                "type": "file"
+              },
+              {
+                "name": "install_cluster_libraries.py",
+                "type": "file"
+              },
+              {
+                "name": "job_migrate_from_workflow.py",
+                "type": "file"
+              },
+              {
+                "name": "job_migrate.py",
+                "type": "file"
+              },
+              {
+                "name": "job_preflight.py",
+                "type": "file"
+              },
+              {
+                "name": "migrate_catalog.py",
+                "type": "file"
+              },
+              {
+                "name": "migrate_validate.py",
+                "type": "file"
+              },
+              {
+                "name": "migration_429_detector.py",
+                "type": "file"
+              },
+              {
+                "name": "provision_shard_buckets.sh",
+                "type": "file"
+              },
+              {
+                "name": "scan_workspace_utils.py",
+                "type": "file"
+              },
+              {
+                "name": "setup_migration_cluster.py",
+                "type": "file"
+              },
+              {
+                "name": "test_jar_functionality.py",
+                "type": "file"
+              },
+              {
+                "name": "throttle_coordinator.py",
+                "type": "file"
+              },
+              {
+                "name": "upload_migration_dependencies.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "requirements.txt",
+            "type": "file"
+          },
+          {
+            "name": "run_migration.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "references",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli-map.md",
+            "type": "file"
+          },
+          {
+            "name": "ddl-rewrite-rules.md",
+            "type": "file"
+          },
+          {
+            "name": "env-coords.template.md",
+            "type": "file"
+          },
+          {
+            "name": "gotchas.md",
+            "type": "file"
+          },
+          {
+            "name": "job-report-format.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "aidp-acceptance-contract",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-bucket-mapping",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-build-dag",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-check-data",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-fixup-cell",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-migrate-catalog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-migrate-job",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-migrator-bootstrap",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-migrator-overview",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aidp-resume-migration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "NOTICE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

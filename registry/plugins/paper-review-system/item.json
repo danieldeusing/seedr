@@ -1,0 +1,378 @@
+{
+  "slug": "paper-review-system",
+  "name": "Paper Review System",
+  "type": "plugin",
+  "description": "Automated academic paper review system for Claude Code. Integrates PDF parsing (marker-pdf + PyMuPDF), reference\nverification (CrossRef + DBLP + Semantic Scholar), SOTA comparison, and competitive paper analysis within a\nstructured multi-phase review pipeline.\n\nFeatures venue-adaptive review strategies for 15+ top CS conferences (CVPR, NeurIPS, ICML, ICLR, ECCV, ICCV, ACL,\nAAAI, KDD, MICCAI, etc.), powered by distilled methodologies from 10 senior conference reviewers. Includes\n8-dimension scoring, statistical rigor checks, automated quick assessment, rebuttal assistance, and parallel\nagent-based review architecture.\n\nComponents: 3 commands (/review-paper, /pre-screen, /rebuttal), 4 specialized agents, 1 skill with 5 reference files,\n2 MCP servers (11 tools total), automated dependency checking, and a quick assessment script.",
+  "longDescription": "Ships **1 skill**, **4 agents**, **3 commands**, **1 hook** and **2 MCP servers**.\n\n- **Skills** (1): `paper-review` (This skill should be used when the user asks to \"审稿\", \"review paper\", \"审阅论文\", \"评审论文\", \"paper review\", \"检查论文质量\",…)\n- **Agents** (4): `paper-analyzer` (Use this agent to parse and analyze academic PDF papers), `paper-comparator` (Use this agent to find and compare recent competing papers (within 12 months) against the paper being reviewed), `reference-auditor` (Use this agent to audit and verify academic paper references), `technical-reviewer` (Use this agent for technical review of academic papers including formula verification, experiment analysis, and SOTA comparison)\n- **Commands** (3): `pre-screen` (论文快速质量预筛选，不做完整审稿，仅输出量化质量信号。适合批量筛选。), `rebuttal` (辅助撰写 rebuttal / 检查修改稿是否回应了审稿意见。), `review-paper` (自动化学术论文审稿。提供 PDF 路径即可启动完整审稿流程，支持按目标会议适配评审标准。)\n- **Hooks** (1): `SessionStart`\n- **MCP servers** (2): `paper-parser`, `academic-search`\n\nInstalls with `claude plugin install paper-review-system@claude-community` from `lidapengpeng/paper-review-system`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "agent": 4,
+    "hook": 1,
+    "command": 3,
+    "mcp": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "DaPeng",
+    "url": "https://github.com/lidapengpeng"
+  },
+  "externalUrl": "https://github.com/lidapengpeng/paper-review-system/tree/6e9a2fb8c4e3b1cb9f40be5691ba40065abe474b",
+  "marketplace": "claude-community",
+  "version": "2.2.0",
+  "sourceRevision": "6e9a2fb8c4e3b1cb9f40be5691ba40065abe474b",
+  "contentDigest": "540e6b6776c63709cc38b3ff2f86f5be667d41a5b9085ea11e03ff7b51a9dc55",
+  "contentHash": "994a52cc622bd7c7",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/lidapengpeng/paper-review-system.git",
+    "sha": "6e9a2fb8c4e3b1cb9f40be5691ba40065abe474b"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-03-03T22:13:47Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "academic-search-mcp",
+        "type": "directory",
+        "children": [
+          {
+            "name": "apis",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "codesota.py",
+                "type": "file"
+              },
+              {
+                "name": "crossref.py",
+                "type": "file"
+              },
+              {
+                "name": "dblp.py",
+                "type": "file"
+              },
+              {
+                "name": "semantic_scholar.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "competing_methods.py",
+            "type": "file"
+          },
+          {
+            "name": "discovery.py",
+            "type": "file"
+          },
+          {
+            "name": "rate_limiter.py",
+            "type": "file"
+          },
+          {
+            "name": "requirements.txt",
+            "type": "file"
+          },
+          {
+            "name": "server.py",
+            "type": "file"
+          },
+          {
+            "name": "verification.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "paper-analyzer.md",
+            "type": "file"
+          },
+          {
+            "name": "paper-comparator.md",
+            "type": "file"
+          },
+          {
+            "name": "reference-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "technical-reviewer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-screen.md",
+            "type": "file"
+          },
+          {
+            "name": "rebuttal.md",
+            "type": "file"
+          },
+          {
+            "name": "review-paper.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "reviewer-perspectives",
+            "type": "directory",
+            "children": [
+              {
+                "name": "00-synthesis-and-upgrade-plan.md",
+                "type": "file"
+              },
+              {
+                "name": "01-cvpr-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "02-neurips-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "03-iccv-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "04-eccv-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "05-icml-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "06-aaai-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "07-acl-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "08-iclr-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "09-kdd-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "10-miccai-reviewer.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "paper-parser-mcp",
+        "type": "directory",
+        "children": [
+          {
+            "name": "parsers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "figure_table_extractor.py",
+                "type": "file"
+              },
+              {
+                "name": "marker_parser.py",
+                "type": "file"
+              },
+              {
+                "name": "pymupdf_parser.py",
+                "type": "file"
+              },
+              {
+                "name": "reference_parser.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "requirements.txt",
+            "type": "file"
+          },
+          {
+            "name": "server.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-deps.sh",
+            "type": "file"
+          },
+          {
+            "name": "quick-assess.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "paper-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "review-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scoring-guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "venue-profiles.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "venue-review-criteria.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_competing_methods.py",
+            "type": "file"
+          },
+          {
+            "name": "test_figure_extraction.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rate_limiter.py",
+            "type": "file"
+          },
+          {
+            "name": "test_reference_parser.py",
+            "type": "file"
+          },
+          {
+            "name": "test_semantic_scholar.py",
+            "type": "file"
+          },
+          {
+            "name": "test_verification.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "requirements.txt",
+        "type": "file"
+      }
+    ]
+  }
+}

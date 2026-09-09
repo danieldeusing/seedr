@@ -1,0 +1,680 @@
+{
+  "slug": "waterfall",
+  "name": "Waterfall",
+  "type": "plugin",
+  "description": "Multi-agent Specification-Driven Development (SDD) framework for Claude Code. Waterfall orchestrates a team of specialized agents (PM, OR, PO, TL, DV, RV, QA, DS) through a strict waterfall workflow — from product brief to validated implementation — with explicit handoffs, persistent state, and identity enforcement.",
+  "longDescription": "Ships **6 skills**, **8 agents**, **3 commands** and **1 hook**.\n\n- **Skills** (6): `wf-new` (Starts a new SDD need via the waterfall workflow — agent teams preflight, OR spawn, bootstrap_need), `wf-pm` (Sole team lead of the waterfall workflow — creates the team, dispatches OR's spawn_request, relays HO decisions via…), `wf-pm-light` (PM solo pour le mode subagent-light — élicitation, specs.md, checkpoint specs, spawn TL passe 1+2, checkpoint tasks, validation…), `wf-quit` (Cleanly stops the active wf workflow — shutdown teammates, marker cleanup, state preservation for resume), `wf-resume` (Resumes an interrupted waterfall workflow — preflight, need lookup, agent re-spawn (implicit team), OR handoff with resume brief), `wf-tl-light` (TL solo-impl pour le mode subagent-light — rédige design.md + tasks.md (passe 1), puis implémente toutes les tâches…)\n- **Agents** (8): `wf-ds` (ui.md author in TECHNICAL_DESIGN phase, spawned only if has_ui:true in PRD.md — conditional lazy spawn), `wf-dv` (Code + unit tests implementer in IMPLEMENTATION phase — receives T-xxx tasks from TL, codes, runs tests until…), `wf-or` (Deterministic driver of the wf-orchestrate.sh state machine — orchestrates the query/dispatch/complete loop, emits spawn_requests to PM, and escalates…), `wf-pm` (PM additional instructions for the VALIDATION and CLOTURE phases), `wf-po` (specs/acceptance author starting at FUNCTIONAL_SPECS — reads PRD.md authored by PM, produces specs.md and acceptance.md), `wf-qa` (Functional Test plan executor (acceptance.md) in the VALIDATION phase — produces acceptance-report.md with PASS/FAIL/MANUAL results per type (web-ui,…), `wf-rv` (Cross-reviewer — reads PO/TL/DS artifacts (PRD.md, specs.md, design.md, ui.md, tasks.md), produces review.md with structured findings B-xxx/Q-xxx/N-xxx, renders a…), `wf-tl` (Author of design.md during the TECHNICAL_DESIGN phase, manager of the DV pool and implementation pipeline during PLANNING +…)\n- **Commands** (3): `new`, `quit`, `resume`\n- **Hooks** (1): `PreToolUse`\n\nInstalls with `claude plugin install waterfall@claude-community` from `mgallet92i/waterfall`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 6,
+    "agent": 8,
+    "hook": 1,
+    "command": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "mgallet92i"
+  },
+  "externalUrl": "https://github.com/mgallet92i/waterfall/tree/22dbfd305ed97e91c99e9c7e271eeac82e52a467",
+  "marketplace": "claude-community",
+  "version": "1.4.0",
+  "sourceRevision": "22dbfd305ed97e91c99e9c7e271eeac82e52a467",
+  "contentDigest": "7821c83b0e76097f8a7cee56cb3610e84d611e55f191d2dfc11db0d21a8f593d",
+  "contentHash": "09bb5586496aa3ae",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/mgallet92i/waterfall.git",
+    "sha": "22dbfd305ed97e91c99e9c7e271eeac82e52a467"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-12T12:50:41Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "settings.json",
+            "type": "file"
+          },
+          {
+            "name": "settings.local.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pages.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "constitution.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitkeep",
+            "type": "file"
+          },
+          {
+            "name": "wf-ds.md",
+            "type": "file"
+          },
+          {
+            "name": "wf-dv.md",
+            "type": "file"
+          },
+          {
+            "name": "wf-or.md",
+            "type": "file"
+          },
+          {
+            "name": "wf-pm.md",
+            "type": "file"
+          },
+          {
+            "name": "wf-po.md",
+            "type": "file"
+          },
+          {
+            "name": "wf-qa.md",
+            "type": "file"
+          },
+          {
+            "name": "wf-rv.md",
+            "type": "file"
+          },
+          {
+            "name": "wf-tl.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "claude-design",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scraps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cascade-frame.png",
+                "type": "file"
+              },
+              {
+                "name": "cascade-frame2.png",
+                "type": "file"
+              },
+              {
+                "name": "lane-check.png",
+                "type": "file"
+              },
+              {
+                "name": "lane-check2.png",
+                "type": "file"
+              },
+              {
+                "name": "lane-check3.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "site",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "a-bad-cascade.gif",
+                    "type": "file"
+                  },
+                  {
+                    "name": "logo-wf-text-transparent.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "logo-wf-text.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "v-model.jpg",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "app.js",
+                "type": "file"
+              },
+              {
+                "name": "index.html",
+                "type": "file"
+              },
+              {
+                "name": "qa-cycle-screenshot.png",
+                "type": "file"
+              },
+              {
+                "name": "styles.css",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "uploads",
+            "type": "directory",
+            "children": [
+              {
+                "name": "a-bad-cascade.gif",
+                "type": "file"
+              },
+              {
+                "name": "logo-wf-text.png",
+                "type": "file"
+              },
+              {
+                "name": "v-model.jpg",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "new.md",
+            "type": "file"
+          },
+          {
+            "name": "quit.md",
+            "type": "file"
+          },
+          {
+            "name": "resume.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents.md",
+            "type": "file"
+          },
+          {
+            "name": "handoff-2026-06-07.md",
+            "type": "file"
+          },
+          {
+            "name": "handoff-2026-06-10.md",
+            "type": "file"
+          },
+          {
+            "name": "maquettte_dashboard.txt",
+            "type": "file"
+          },
+          {
+            "name": "mo-amelioration-continue.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "wf-auth.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "logo",
+        "type": "directory",
+        "children": [
+          {
+            "name": "logo-wf-text.png",
+            "type": "file"
+          },
+          {
+            "name": "logo-wf.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "wf-paths.sh",
+                "type": "file"
+              },
+              {
+                "name": "wf-segments.sh",
+                "type": "file"
+              },
+              {
+                "name": "wf-semgrep.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wf-check-bash.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-check-jq.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-check-teams.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-quit.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-read-config.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-registry.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-render-html.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-statusline-apply.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-statusline.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-step-agents.sh",
+            "type": "file"
+          },
+          {
+            "name": "wf-watchdog.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "wf-new",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wf-pm",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wf-pm-light",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wf-quit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wf-resume",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wf-tl-light",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "or-write-discipline",
+            "type": "directory",
+            "children": [
+              {
+                "name": "run-tf.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wf-auth-bash-guard.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-auth-codewrite.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-auth-scope.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-doc-drift.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-append.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-artifact-gate.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-complete.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-contract.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-convergence.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-dispatch.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-helper.bash",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-paths.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-query.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-skip.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-orchestrate-smoke.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-plugin-paths.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-pm-scope.bats",
+            "type": "file"
+          },
+          {
+            "name": "wf-step-agents.bats",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "wf",
+        "type": "directory",
+        "children": [
+          {
+            "name": "drafts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "epic-wf-brief-optim.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "en",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "acceptance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PRD.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "retro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "review.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "specs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tracking.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fr",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "acceptance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PRD.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "retro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "review.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "specs.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tracking.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".wf-config.example.json",
+        "type": "file"
+      },
+      {
+        "name": ".wf-config.example.md",
+        "type": "file"
+      },
+      {
+        "name": ".wf-config.json",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "backlog.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

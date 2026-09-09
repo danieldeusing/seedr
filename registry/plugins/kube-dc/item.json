@@ -1,0 +1,5083 @@
+{
+  "slug": "kube-dc",
+  "name": "Kube Dc",
+  "type": "plugin",
+  "description": "Kube-DC is a Kubernetes-native data center platform. This plugin provides 11 workflow skills for managing the full platform lifecycle — create projects, deploy VMs and containers, provision managed PostgreSQL/MariaDB databases, manage Kubernetes clusters, configure networking (EIPs, Floating IPs, Gateway Routes), handle S3 storage, and set up RBAC access controls. Includes manifest templates, post-action verification checks, and OS image catalogs for 10+ operating systems.",
+  "longDescription": "Ships **16 skills**.\n\n- **Skills** (16): `check-quota` (Check Kube-DC Organization and Project quota before creating workloads, VMs, databases, Managed Clusters, public IPs, or storage), `create-database` (Create a managed PostgreSQL or MariaDB database in a Kube-DC Project, connect workloads with Kubernetes Secrets, configure supported…), `create-project` (Create a Kube-DC Project inside an existing Organization), `create-vm` (Create a KubeVirt virtual machine in a Kube-DC Project using the live OS catalog, Project networking, supported storage,…), `deploy-app` (Deploy a containerized application to a Kube-DC Project with optional persistent storage, a managed database, external exposure, or…), `expose-service` (Expose a Service from a Kube-DC Project with a hostname-based HTTP/HTTPS/TLS Gateway route or a dedicated EIP-backed LoadBalancer…), `manage-access` (Manage Kube-DC Organization Groups and Project RBAC), `manage-certificates` (Request and manage a Project-scoped ManagedCertificate for private Organization PKI or public ACME issuance, then consume the resulting…), and 8 more\n\nInstalls with `claude plugin install kube-dc@claude-community` from `kube-dc/kube-dc-public`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Shalb",
+    "url": "https://github.com/kube-dc"
+  },
+  "externalUrl": "https://github.com/kube-dc/kube-dc-public/tree/56cecd775f386ca0b50cdc58c8dd0699fa86b4fa",
+  "marketplace": "claude-community",
+  "version": "1.1.0",
+  "sourceRevision": "56cecd775f386ca0b50cdc58c8dd0699fa86b4fa",
+  "contentDigest": "50a28a70a3d18f7428517604baa5fa7ab945d0e2e5d6a506e4fd4b44fbc2daf4",
+  "contentHash": "be1620e0da97ca91",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/kube-dc/kube-dc-public.git",
+    "sha": "56cecd775f386ca0b50cdc58c8dd0699fa86b4fa"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-07T11:14:41Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "kube-dc-conventions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "RULE.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".devin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "kube-dc-conventions.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "deploy-wordpress.md",
+                "type": "file"
+              },
+              {
+                "name": "setup-project.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli-release.yaml",
+                "type": "file"
+              },
+              {
+                "name": "deploy-docs.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".vscode",
+        "type": "directory",
+        "children": [
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".well-known",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "charts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "kube-dc",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "crds",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "db.kube-dc.com_kdcdatabases.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "k8s.kube-dc.com_kdcclusterdatastores.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "k8s.kube-dc.com_kdcclusters.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kube-dc.com_eips.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kube-dc.com_fips.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kube-dc.com_organizationgroups.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kube-dc.com_organizations.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kube-dc.com_projects.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "security.kube-dc.com_databasecredentialpolicies.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "security.kube-dc.com_kmskeys.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "security.kube-dc.com_managedcertificates.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "security.kube-dc.com_managedsecrets.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "sveltos",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "kubelet-csr-approver-clusterprofile.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "_admin-helpers.tpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "_helpers.tpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "admin-frontend-deployment.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "admin-frontend-httproute.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "admin-frontend-sa.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "admin-frontend-service.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth-users-role.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "backend-deployment.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "backend-hpa.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "backend-httproute.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "backend-sa.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "backend-service.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "backend-traffic-policy.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "billing-plans-configmap.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cdi-mirror-alerts-prometheusrule.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cdi-upload-gc-cronjob.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cert-manager-pki-tokenrequester-rbac.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "configmap.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "db-manager-clusterrole.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "db-manager-clusterrolebinding.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "db-manager-deployment.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "db-manager-leader-election-rbac.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "db-manager-serviceaccount.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "default-project-admin-role.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontend-deployment.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontend-hpa.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontend-httproute.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontend-sa.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "frontend-service.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8-manager-clusterrole.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8-manager-clusterrolebinding.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8-manager-deployment.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8-manager-leader-election-rbac.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8-manager-serviceaccount.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kubevirt-servicemonitor.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manager-deployment.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manager-rbac.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manager-secret.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manager-webhook.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "os-image-prepull-daemonset.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "os-images-configmap.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platform-endpoint-envoy-gateway.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platform-endpoint-kube-api.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vap-pod-security.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vap-protect-annotations.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vap-restrict-pod-exec.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".helmignore",
+                "type": "file"
+              },
+              {
+                "name": "Chart.yaml",
+                "type": "file"
+              },
+              {
+                "name": "values.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "cli",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cmd",
+            "type": "directory",
+            "children": [
+              {
+                "name": "kube-dc",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "audit.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_access.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_add_node_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_add_node.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_adopt_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_adopt.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_anchors.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_break_glass.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_config_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_config.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_connect_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_connect.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_context.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_doctor_anchors.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_doctor_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_doctor_topology.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_doctor.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_fetch_kubeconfig_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_fetch_kubeconfig.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_gpu_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_gpu.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_agekey.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_finalize_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_finalize.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_mode.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_reconcile_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_reconcile.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_starterref_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_starterref.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_token_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init_tui.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_init.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_install_prereqs.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_install_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_install.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_keycloak_init.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_keycloak.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_kubeconfig.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_openbao_generate_root.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_openbao_init.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_openbao_reveal.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_openbao_setup_controller_auth.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_openbao_status.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_openbao_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_openbao_unseal.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_openbao.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_remove_node_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_remove_node.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_status_deepview_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_status_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap_status.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bootstrap.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "certificates_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "certificates.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context_realm_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "database_credentials_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "database_credentials.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kms_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kms.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kubeconfig_guard_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kubeconfig_guard.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "login_admin_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "login_admin.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main_exit_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "orgs_audit_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "orgs.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "realm_preflight_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "secrets_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "secrets.go",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "internal",
+            "type": "directory",
+            "children": [
+              {
+                "name": "alerts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tui",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "items.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "keys.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "model_teatest_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "model_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "model.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "styles.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "client.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "filter.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "labels.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "portforward.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "auth",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "oauth.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "backend",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "audit.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "certificates.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "client_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "client.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "database_credentials.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "elevation.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kms.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "secrets.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "bootstrap",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "access",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "access.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "adapters",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dns",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "resolver_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "resolver.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "flux",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "client_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "git",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "client_ssh_e2e_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "k8s",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "client_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "gpu_dra_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "gpu_dra.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "nodefacts.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "netplan",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "client_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "openbao",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "client_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "script",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "contract_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "contract.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "procgroup_unix.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "procgroup_windows.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "runner_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "runner.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "sops",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "client_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ssh",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "auth_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "systemctl",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "client_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "client.go",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "adopt",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "detect_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "detect.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pin_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pin.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "anchors",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "apply_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "apply.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "doc.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "parse_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "parse.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "probe.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sshhost_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sshhost.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unit_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unit.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "breakglass",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "breakglass_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "breakglass.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "clusterinit",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "testdata",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "sibling-full.env",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "addons_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "addons.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "addresslayer_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "adoptgate_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "adoptgate.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "agekey_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "agekey.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "apply_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "apply.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "create_repo_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "create_repo.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "customifaces_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "customifaces.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dns01_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dns01.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dnsgate_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dnsgate.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "examples_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fieldvalidate.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "filelock_unix.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "filelock_windows.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_compat_ssh_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_compat_ssh.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_compat_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_compat.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_conflict_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_conflict.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_scaffold_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_scaffold.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "imageaccel_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "imageaccel.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "infraattach_validate_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "inheritance_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "inheritance.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "install_prereqs_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "install_prereqs.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mode_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mode.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "natgate_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "natgate.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nfdgate_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nfdgate.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nodecidr_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "objectstorage_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "objectstorage.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "options_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "options.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plan_c4_lint_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plan_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plan.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "platform_shape_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prefill_fixture_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prefill_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prefill.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "preset_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "preset.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "publicanchor_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "publicanchor.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "publicnetwork_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "publicnetwork.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "registry_listener_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "registry_listener.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reporter_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reporter.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scaffold_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scaffold.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ssh_kubeconfig_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ssh_kubeconfig.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "starter_fixture_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "starter_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "starter.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "trustedca_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "trustedca.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "vmstorage_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "vmstorage.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "wildcardtls_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "wildcardtls_writer_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "wildcardtls.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "env_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "env.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "connectcheck",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "connect_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "connect.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "discover",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ca.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cluster_deepview_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cluster_smoke_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cluster_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cluster.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dns_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dns.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "factory.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fleet_smoke_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fleet.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_host_ssh_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_host_ssh.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_host_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu_host.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "host_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "host.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "infraattach_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "infraattach.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nfd_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nfd.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "openbao_policy_gen_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "openbao_policy_gen.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tools_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tools.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "doctor",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "printer_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "printer.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "runner_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "runner.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "fleetconfig",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "config_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gpudra",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "status_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "status.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gputransition",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "nodefeature_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nodefeature.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "transition_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "transition.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gpuupgrade",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "gate_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gate.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "helm",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "decode_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "decode.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "keycloak",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "init_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "init.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "kubeconfig",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "template.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "log",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "log_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "log.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "redact.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "mock",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "scenarios",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "cloud.yaml",
+                            "type": "file"
+                          },
+                          {
+                            "name": "fresh.yaml",
+                            "type": "file"
+                          },
+                          {
+                            "name": "openbao-sealed.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "testdata",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "cluster-config.env.cloud.sample",
+                            "type": "file"
+                          },
+                          {
+                            "name": "cluster-config.env.stage.sample",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "dns.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flux.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "git.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "k8s.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "netplan.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "openbao.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "probe.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "probes.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scenarios_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scenarios.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "script.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "session.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sops.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ssh.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "systemctl.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "noderemove",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "remove_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "remove.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "openbao",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "policies",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "db-manager.hcl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "kube-dc-controller-manager.hcl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "snapshot.hcl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "generate_root_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "generate_root.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "init_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "init.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "policies.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "policy_generation_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "policy_generation.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reveal_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reveal.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "setup_controller_auth_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "setup_controller_auth.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "status_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "status.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unseal_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unseal.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ports",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dns.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "doc.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "drain_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "drain.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "errors.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "flux.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "git.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gpu.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "k8s.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "netplan.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "openbao.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "probe.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "script.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sops.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ssh.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "systemctl.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "rke2",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "drift_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "install_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "install-agent.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "install-server.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "install.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "join_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "join.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "registry_config_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "trustedca_script_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "trustedca_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "trustedca.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "secrets",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "buffer_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "buffer.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "topology",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "topology_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "topology.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tui",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "screens",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "initform",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "testdata",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "TestPanel_Golden_Accelerators.golden",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "TestPanel_Golden_Sections.golden",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "adoptpreview_test.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "adoptpreview.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "form_test.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "form.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "panel_teatest_test.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "panel_test.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "panel_view.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "panel.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "prefill_probe_test.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "prefill_probe.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "prefill_test.go",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "installrun",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "installrun_test.go",
+                                "type": "file"
+                              },
+                              {
+                                "name": "installrun.go",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "context_smoke_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "context_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "context.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "fleet_clusterview.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "fleet_teatest_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "fleet.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "openbao_panel_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "root_init_tab_test.go",
+                            "type": "file"
+                          },
+                          {
+                            "name": "root.go",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "app.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "keymap.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "messages.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "styles.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "session.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wire_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wire.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ambiguity_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "credentials_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "credentials.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "i18n",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "i18n_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "i18n.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jwt",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claims.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "k8sapi",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "client.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "managedsecrets.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kubeconfig",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "manager_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manager.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "realm_test.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lint",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "no_real_infra_test.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "telemetry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "telemetry_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "telemetry.go",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "pkg",
+            "type": "directory",
+            "children": [
+              {
+                "name": "credential",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cloudshell_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "exec.go",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": ".goreleaser.yaml",
+            "type": "file"
+          },
+          {
+            "name": "go.mod",
+            "type": "file"
+          },
+          {
+            "name": "go.sum",
+            "type": "file"
+          },
+          {
+            "name": "Makefile",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cloud",
+            "type": "directory",
+            "children": [
+              {
+                "name": "images",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "accont-change-password.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "arch-overview.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "billing-subsciption-plans.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "billing-subsciption-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "billing-subsciptions-addons.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "change-projects-tab.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connecting-vm.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "core-concept.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "create-new-user-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "db-backups-schedule.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "db-manager-overview.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "edit-org-group-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fip-to-vm.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "get-kubeconfig.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8s-cluster-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8s-create-cluster.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8s-datastore.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8s-network-addons.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8s-review.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8s-screen.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8s-upgrade.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "k8s-workers.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "keycloak-add-user.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "keycloak-user-join-group.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-manage-org-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-workloads-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "logo-readme.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manage-resources-k8s.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mariadb-configuration.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "network-mgmt.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "postgres-configuration.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "postgres-connections.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "postgres-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-1.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-2.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-3.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-4.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-5.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-web-console.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "projects-view-navigation.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "role-edit.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "s3-access-keys.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "s3-bucket-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "s3-manage-files.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sign-up-1.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sign-up-2.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sign-up-3.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sign-up-4.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sign-up-5.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "user-list-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vlan-1-org-tab.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vlan-2-assign.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vlan-3-project-card.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vlan-4-create-vm.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-creation-review.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-creation-step1.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-details-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-list-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "volume-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "volumes-view.png",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ai-ide-integration.md",
+                "type": "file"
+              },
+              {
+                "name": "backups-snapshots.md",
+                "type": "file"
+              },
+              {
+                "name": "billing-usage.md",
+                "type": "file"
+              },
+              {
+                "name": "block-storage.md",
+                "type": "file"
+              },
+              {
+                "name": "certificate-manager.md",
+                "type": "file"
+              },
+              {
+                "name": "cli-kubeconfig.md",
+                "type": "file"
+              },
+              {
+                "name": "cluster-management.md",
+                "type": "file"
+              },
+              {
+                "name": "community-support.md",
+                "type": "file"
+              },
+              {
+                "name": "connecting-vm.md",
+                "type": "file"
+              },
+              {
+                "name": "core-concepts.md",
+                "type": "file"
+              },
+              {
+                "name": "core-features.md",
+                "type": "file"
+              },
+              {
+                "name": "creating-vm.md",
+                "type": "file"
+              },
+              {
+                "name": "dashboard-overview.md",
+                "type": "file"
+              },
+              {
+                "name": "database-credentials.md",
+                "type": "file"
+              },
+              {
+                "name": "datacenter-vlans.md",
+                "type": "file"
+              },
+              {
+                "name": "deploy-first-app.md",
+                "type": "file"
+              },
+              {
+                "name": "deploy-wordpress-stack.md",
+                "type": "file"
+              },
+              {
+                "name": "examples.md",
+                "type": "file"
+              },
+              {
+                "name": "first-project.md",
+                "type": "file"
+              },
+              {
+                "name": "gitops.md",
+                "type": "file"
+              },
+              {
+                "name": "gpu-shared-workloads.md",
+                "type": "file"
+              },
+              {
+                "name": "gpu-vm-guests.md",
+                "type": "file"
+              },
+              {
+                "name": "index.md",
+                "type": "file"
+              },
+              {
+                "name": "kms.md",
+                "type": "file"
+              },
+              {
+                "name": "kubernetes-projects.md",
+                "type": "file"
+              },
+              {
+                "name": "managed-databases.md",
+                "type": "file"
+              },
+              {
+                "name": "networking-overview.md",
+                "type": "file"
+              },
+              {
+                "name": "object-storage.md",
+                "type": "file"
+              },
+              {
+                "name": "private-networking.md",
+                "type": "file"
+              },
+              {
+                "name": "provisioning-cluster.md",
+                "type": "file"
+              },
+              {
+                "name": "public-floating-ips.md",
+                "type": "file"
+              },
+              {
+                "name": "scaling-performance.md",
+                "type": "file"
+              },
+              {
+                "name": "secrets-manager.md",
+                "type": "file"
+              },
+              {
+                "name": "security-restrictions.md",
+                "type": "file"
+              },
+              {
+                "name": "service-exposure.md",
+                "type": "file"
+              },
+              {
+                "name": "sign-up-login.md",
+                "type": "file"
+              },
+              {
+                "name": "team-management.md",
+                "type": "file"
+              },
+              {
+                "name": "tutorials.md",
+                "type": "file"
+              },
+              {
+                "name": "vm-lifecycle.md",
+                "type": "file"
+              },
+              {
+                "name": "what-is-kube-dc.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "platform",
+            "type": "directory",
+            "children": [
+              {
+                "name": "images",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "architectural-layers.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-overview.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reference-architecture.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vlan-admin-1-segments.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vlan-admin-2-allocations.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vlan-admin-3-allocate-modal.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-details-view.png",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "architecture-multi-tenancy.md",
+                "type": "file"
+              },
+              {
+                "name": "architecture-networking.md",
+                "type": "file"
+              },
+              {
+                "name": "architecture-overview.md",
+                "type": "file"
+              },
+              {
+                "name": "architecture-virtualization.md",
+                "type": "file"
+              },
+              {
+                "name": "billing-plans-configuration.md",
+                "type": "file"
+              },
+              {
+                "name": "certificates.md",
+                "type": "file"
+              },
+              {
+                "name": "cluster-cli-admin-login.md",
+                "type": "file"
+              },
+              {
+                "name": "cluster-cli-break-glass.md",
+                "type": "file"
+              },
+              {
+                "name": "cluster-cli-context-manager.md",
+                "type": "file"
+              },
+              {
+                "name": "cluster-cli-fleet.md",
+                "type": "file"
+              },
+              {
+                "name": "cluster-cli-overview.md",
+                "type": "file"
+              },
+              {
+                "name": "cluster-cli-troubleshooting.md",
+                "type": "file"
+              },
+              {
+                "name": "controller-diagram.md",
+                "type": "file"
+              },
+              {
+                "name": "deploy-metal3-bare-metal-workers.md",
+                "type": "file"
+              },
+              {
+                "name": "deploy-metallb-ha.md",
+                "type": "file"
+              },
+              {
+                "name": "deploy-rook-ceph-object-storage.md",
+                "type": "file"
+              },
+              {
+                "name": "gpu-capacity-reservations.md",
+                "type": "file"
+              },
+              {
+                "name": "gpu-node-mode-transitions.md",
+                "type": "file"
+              },
+              {
+                "name": "gpu-node-upgrades.md",
+                "type": "file"
+              },
+              {
+                "name": "gpu-supply-chain.md",
+                "type": "file"
+              },
+              {
+                "name": "gpu-threat-model.md",
+                "type": "file"
+              },
+              {
+                "name": "index.md",
+                "type": "file"
+              },
+              {
+                "name": "installation-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "installation-overview.md",
+                "type": "file"
+              },
+              {
+                "name": "internal-platform-endpoints.md",
+                "type": "file"
+              },
+              {
+                "name": "managed-k8s-etcd-backup-restore.md",
+                "type": "file"
+              },
+              {
+                "name": "managed-k8s-etcd-encryption.md",
+                "type": "file"
+              },
+              {
+                "name": "managing-os-images.md",
+                "type": "file"
+              },
+              {
+                "name": "networking-external.md",
+                "type": "file"
+              },
+              {
+                "name": "observability.md",
+                "type": "file"
+              },
+              {
+                "name": "os-image-operations.md",
+                "type": "file"
+              },
+              {
+                "name": "private-ca-enterprise-install.md",
+                "type": "file"
+              },
+              {
+                "name": "project-resources.md",
+                "type": "file"
+              },
+              {
+                "name": "roadmap.md",
+                "type": "file"
+              },
+              {
+                "name": "security-model.md",
+                "type": "file"
+              },
+              {
+                "name": "smtp-gmail-app-password.md",
+                "type": "file"
+              },
+              {
+                "name": "sso-google-auth.md",
+                "type": "file"
+              },
+              {
+                "name": "tenant-vlan-attachment.md",
+                "type": "file"
+              },
+              {
+                "name": "upgrading-management-cluster.md",
+                "type": "file"
+              },
+              {
+                "name": "vm-storage-tiers.md",
+                "type": "file"
+              },
+              {
+                "name": "windows-vm-setup.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs-ui",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "clientModules",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "diagramComparison.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "retinaImages.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "components",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CopyPageButton",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "index.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "styles.module.css",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "HomepageFeatures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "index.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "styles.module.css",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "css",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "custom.css",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pages",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.module.css",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "theme",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "DocItem",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "Layout",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "index.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "styles.module.css",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "index.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Footer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "Copyright",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "index.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "Layout",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "index.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "LinkItem",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "index.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "Links",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "MultiColumn",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "index.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "Simple",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "index.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "index.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "Logo",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "index.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "styles.module.css",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "index.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "styles.module.css",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "static",
+            "type": "directory",
+            "children": [
+              {
+                "name": "images",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "arch-overview.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "favicon.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hetzner_vswitch_network.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hetzner_vswitch.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "image.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "keycloak-add-user.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "keycloak-user-join-group.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "logo-readme.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "logo.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-overview.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-creation-review.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-creation-step1.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-details-view.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vm-list-view.png",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "img",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "docusaurus-social-card.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "docusaurus.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "favicon.ico",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-logo.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-social-card.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "logo.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "undraw_docusaurus_mountain.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "undraw_docusaurus_react.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "undraw_docusaurus_tree.svg",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".nojekyll",
+                "type": "file"
+              },
+              {
+                "name": "CNAME",
+                "type": "file"
+              },
+              {
+                "name": "robots.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "docusaurus.config.ts",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "sidebarsCloud.ts",
+            "type": "file"
+          },
+          {
+            "name": "sidebarsPlatform.ts",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "capi-cluster",
+            "type": "directory",
+            "children": [
+              {
+                "name": "tenant-cluster",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "csi-driver.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rbac.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "storage-class.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "addons.yaml",
+                "type": "file"
+              },
+              {
+                "name": "cluster.yaml",
+                "type": "file"
+              },
+              {
+                "name": "dnat-6443.yaml",
+                "type": "file"
+              },
+              {
+                "name": "ssh-pub.yaml",
+                "type": "file"
+              },
+              {
+                "name": "svc-6443.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cloud-public-vlan.env",
+                "type": "file"
+              },
+              {
+                "name": "cloud-vlan.env",
+                "type": "file"
+              },
+              {
+                "name": "internal-only.env",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "networking",
+            "type": "directory",
+            "children": [
+              {
+                "name": "additional-external-network.yaml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "organization",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ingress-nginx-scoped",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "deploy.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "issuer.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "values.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kubectl-pod",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "kube-dc-job-ssh.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-job.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-secret.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-service-ssh.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-service.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "object-storage",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bucket-shalb-demo.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bucket.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kube-dc-storage-diagram.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "s3-public-policy.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "wordpress",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "deploy.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kdcdatabase.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "values.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "04-billing-plans-configmap.yaml",
+                "type": "file"
+              },
+              {
+                "name": "04-org-defaults.yaml",
+                "type": "file"
+              },
+              {
+                "name": "eip.yaml",
+                "type": "file"
+              },
+              {
+                "name": "fip.yaml",
+                "type": "file"
+              },
+              {
+                "name": "ofip.yaml",
+                "type": "file"
+              },
+              {
+                "name": "org_group.yaml",
+                "type": "file"
+              },
+              {
+                "name": "org.yaml",
+                "type": "file"
+              },
+              {
+                "name": "project_demo.yaml",
+                "type": "file"
+              },
+              {
+                "name": "project_dev.yaml",
+                "type": "file"
+              },
+              {
+                "name": "project_prod.yaml",
+                "type": "file"
+              },
+              {
+                "name": "role_app_mgr.yaml",
+                "type": "file"
+              },
+              {
+                "name": "service_lb_vm_ssh.yaml",
+                "type": "file"
+              },
+              {
+                "name": "service_lb.yaml",
+                "type": "file"
+              },
+              {
+                "name": "vm-interface-fip.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "project",
+            "type": "directory",
+            "children": [
+              {
+                "name": "00-issuer.yaml",
+                "type": "file"
+              },
+              {
+                "name": "01-http-service.yaml",
+                "type": "file"
+              },
+              {
+                "name": "02-https-service.yaml",
+                "type": "file"
+              },
+              {
+                "name": "03-grpc-service.yaml",
+                "type": "file"
+              },
+              {
+                "name": "04-tls-passthrough.yaml",
+                "type": "file"
+              },
+              {
+                "name": "05-https-own-cert.yaml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "virtual-machine",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cdi-image-ubuntu",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Dockerfile",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "alpine-def-net.yaml",
+                "type": "file"
+              },
+              {
+                "name": "alpine-health-check.yaml",
+                "type": "file"
+              },
+              {
+                "name": "centos-9.yaml",
+                "type": "file"
+              },
+              {
+                "name": "cirros.yaml",
+                "type": "file"
+              },
+              {
+                "name": "debian.yaml",
+                "type": "file"
+              },
+              {
+                "name": "etalon.yaml",
+                "type": "file"
+              },
+              {
+                "name": "fedora.yaml",
+                "type": "file"
+              },
+              {
+                "name": "freebsd.yaml",
+                "type": "file"
+              },
+              {
+                "name": "opensuse.yaml",
+                "type": "file"
+              },
+              {
+                "name": "ubuntu-24-04.yaml",
+                "type": "file"
+              },
+              {
+                "name": "ubuntu-mini.yaml",
+                "type": "file"
+              },
+              {
+                "name": "ubuntu.yaml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hack",
+        "type": "directory",
+        "children": [
+          {
+            "name": "auth",
+            "type": "directory",
+            "children": [
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "get_user_tokens.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "get_admin_token.sh",
+                "type": "file"
+              },
+              {
+                "name": "get_token.sh",
+                "type": "file"
+              },
+              {
+                "name": "get_user_tokens.sh",
+                "type": "file"
+              },
+              {
+                "name": "kdc_get_kubeconfig.sh",
+                "type": "file"
+              },
+              {
+                "name": "kn",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dummy-workloads",
+            "type": "directory",
+            "children": [
+              {
+                "name": "statefulset",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "nginx-statefulset.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redis-statefulset.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "simple-statefulset.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "apply-all.sh",
+                "type": "file"
+              },
+              {
+                "name": "daemonset.yaml",
+                "type": "file"
+              },
+              {
+                "name": "delete-all.sh",
+                "type": "file"
+              },
+              {
+                "name": "deployment.yaml",
+                "type": "file"
+              },
+              {
+                "name": "ingress.yaml",
+                "type": "file"
+              },
+              {
+                "name": "job.yaml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "replicaset.yaml",
+                "type": "file"
+              },
+              {
+                "name": "service.yaml",
+                "type": "file"
+              },
+              {
+                "name": "statefulset.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install_nodes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "master",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "rancher",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "rke2",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "config.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "auth-conf.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "install.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "uninstall.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "worker",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config_tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "install.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "uninstall.sh",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "keycloak-theme",
+            "type": "directory",
+            "children": [
+              {
+                "name": "kube-dc",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "account",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "resources",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "css",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "kube-dc-account.css",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "favicon.png",
+                            "type": "file"
+                          },
+                          {
+                            "name": "logo.png",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "theme.properties",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "common",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "resources",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "favicon.png",
+                            "type": "file"
+                          },
+                          {
+                            "name": "kube-dc-white-transparent.png",
+                            "type": "file"
+                          },
+                          {
+                            "name": "logo.png",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "email",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "html",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "email-test.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email-update-confirmation.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email-verification-with-code.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email-verification.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-login_error.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-remove_credential.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-remove_totp.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-update_credential.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-update_password.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-update_totp.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-user_disabled_by_permanent_lockout.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-user_disabled_by_temporary_lockout.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "executeActions.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "identity-provider-link.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "org-invite.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "password-reset.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "template.ftl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "messages",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "messages_en.properties",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "text",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "email-test.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email-update-confirmation.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email-verification-with-code.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "email-verification.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-login_error.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-remove_credential.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-remove_totp.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-update_credential.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-update_password.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-update_totp.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-user_disabled_by_permanent_lockout.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "event-user_disabled_by_temporary_lockout.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "executeActions.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "identity-provider-link.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "org-invite.ftl",
+                            "type": "file"
+                          },
+                          {
+                            "name": "password-reset.ftl",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "theme.properties",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "login",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "messages",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "messages_en.properties",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "resources",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "css",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "kube-dc.css",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "img",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "favicon.png",
+                                "type": "file"
+                              },
+                              {
+                                "name": "kube-dc-white-transparent.png",
+                                "type": "file"
+                              },
+                              {
+                                "name": "logo.png",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "login.ftl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "register.ftl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "template.ftl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "theme.properties",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "theme.properties",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "build-theme.sh",
+                "type": "file"
+              },
+              {
+                "name": "configure-smtp.sh",
+                "type": "file"
+              },
+              {
+                "name": "keycloak-values.yaml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "set-theme.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kube-pod",
+            "type": "directory",
+            "children": [
+              {
+                "name": "script",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".bashrc",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kubeconfig.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kubectl_console",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ssh_console",
+                    "type": "file"
+                  },
+                  {
+                    "name": "startup.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "build.sh",
+                "type": "file"
+              },
+              {
+                "name": "Dockerfile",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pinger",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "build.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Dockerfile",
+                    "type": "file"
+                  },
+                  {
+                    "name": "go.mod",
+                    "type": "file"
+                  },
+                  {
+                    "name": "go.sum",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pinger",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pinger.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "debug-net-clean.yaml",
+                "type": "file"
+              },
+              {
+                "name": "debug-net-tcpdump.yaml",
+                "type": "file"
+              },
+              {
+                "name": "nettools.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vm-bench",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bench.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "windows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "export-golden-image.yaml",
+                "type": "file"
+              },
+              {
+                "name": "install-openssh-windows.ps1",
+                "type": "file"
+              },
+              {
+                "name": "iso-ingress-iso-ns.yaml",
+                "type": "file"
+              },
+              {
+                "name": "iso-namespace.yaml",
+                "type": "file"
+              },
+              {
+                "name": "iso-storage-pod-iso-ns.yaml",
+                "type": "file"
+              },
+              {
+                "name": "iso-storage-pvc-iso-ns.yaml",
+                "type": "file"
+              },
+              {
+                "name": "iso-upload-pod.yaml",
+                "type": "file"
+              },
+              {
+                "name": "nginx-iso-server-iso-ns.yaml",
+                "type": "file"
+              },
+              {
+                "name": "pvc-init-windows11-disk.yaml",
+                "type": "file"
+              },
+              {
+                "name": "win11-enterprise-custom-virtio.yaml",
+                "type": "file"
+              },
+              {
+                "name": "win11-x64.yaml",
+                "type": "file"
+              },
+              {
+                "name": "windows11-enterprise-golden-datasource.yaml",
+                "type": "file"
+              },
+              {
+                "name": "windows11-from-datasource.yaml",
+                "type": "file"
+              },
+              {
+                "name": "windows11-vm.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "add-org-to-sso.sh",
+            "type": "file"
+          },
+          {
+            "name": "auto-update-mgr.sh",
+            "type": "file"
+          },
+          {
+            "name": "auto-update-ui.sh",
+            "type": "file"
+          },
+          {
+            "name": "boilerplate.go.txt",
+            "type": "file"
+          },
+          {
+            "name": "bootstrap-sso-realm.sh",
+            "type": "file"
+          },
+          {
+            "name": "bootstrap-stripe.sh",
+            "type": "file"
+          },
+          {
+            "name": "build.sh",
+            "type": "file"
+          },
+          {
+            "name": "delete_project.sh",
+            "type": "file"
+          },
+          {
+            "name": "deploy-admin.sh",
+            "type": "file"
+          },
+          {
+            "name": "deploy-backend.sh",
+            "type": "file"
+          },
+          {
+            "name": "deploy-frontend.sh",
+            "type": "file"
+          },
+          {
+            "name": "openbao-setup-controller-auth.sh",
+            "type": "file"
+          },
+          {
+            "name": "restart-apiserver-rolling.sh",
+            "type": "file"
+          },
+          {
+            "name": "versions.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "knowledge",
+        "type": "directory",
+        "children": [
+          {
+            "name": "index.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-quota",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "create-database",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "backup-restore-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "db-connection-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "mariadb-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "pg-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "create-project",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "network-types.md",
+                "type": "file"
+              },
+              {
+                "name": "project-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "create-vm",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dedicated-gpu.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "os-cloud-init.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "vm-template.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "deploy-app",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "shared-gpu.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "expose-service",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "eip-loadbalancer-examples.yaml",
+                "type": "file"
+              },
+              {
+                "name": "envoy-gateway-examples.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage-access",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "org-group-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "rbac-roles.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage-certificates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "managed-certificate-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage-cluster",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "kubeconfig-access.md",
+                "type": "file"
+              },
+              {
+                "name": "scale-workers.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "upgrade-version.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage-database-credentials",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "dbcp-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage-kms",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "envelope-encryption-go.md",
+                "type": "file"
+              },
+              {
+                "name": "envelope-encryption-py.md",
+                "type": "file"
+              },
+              {
+                "name": "kmskey-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage-networking",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "decision-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "eip-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "fip-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage-secrets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "managed-secret-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "manage-storage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "datavolume-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "obc-template.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ssh-into-vm",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "use-kube-dc-cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "openai.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "static",
+        "type": "directory",
+        "children": [
+          {
+            "name": "diagrams",
+            "type": "directory",
+            "children": [
+              {
+                "name": "generated",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "architectural-layers.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fip-to-vm.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reference-architecture.svg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "theme-fixture.svg",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "e2e",
+            "type": "directory",
+            "children": [
+              {
+                "name": "helpers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "jwt.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "keycloak.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "manual",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "01-namespace.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "02-organization.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "03-project.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "04-eip.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "05-fip.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "06-fip-reconciliation-test.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "06-nginx-deployment.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "07-service-lb.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "08-vm-examples.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "apply.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "delete.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "capture-logs.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-tests-with-logs.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "databasecredentialpolicy_test.go",
+                "type": "file"
+              },
+              {
+                "name": "e2e_suite_test.go",
+                "type": "file"
+              },
+              {
+                "name": "kmskey_test.go",
+                "type": "file"
+              },
+              {
+                "name": "managedcertificate_zones_test.go",
+                "type": "file"
+              },
+              {
+                "name": "managedsecret_tenant_specs_test.go",
+                "type": "file"
+              },
+              {
+                "name": "managedsecret_tenant_test.go",
+                "type": "file"
+              },
+              {
+                "name": "managedsecret_test.go",
+                "type": "file"
+              },
+              {
+                "name": "organization_quota_test.go",
+                "type": "file"
+              },
+              {
+                "name": "organization_test.go",
+                "type": "file"
+              },
+              {
+                "name": "project_test.go",
+                "type": "file"
+              },
+              {
+                "name": "workload_test.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "iso-images",
+            "type": "directory",
+            "children": [
+              {
+                "name": "check-test-vms.sh",
+                "type": "file"
+              },
+              {
+                "name": "generate-os-test-vms.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "e2e-test-plan.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "_agent-instructions.md",
+        "type": "file"
+      },
+      {
+        "name": ".codeiumignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".nojekyll",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

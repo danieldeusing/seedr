@@ -1,0 +1,584 @@
+{
+  "slug": "claude-xcindex",
+  "name": "Claude Xcindex",
+  "type": "plugin",
+  "description": "An MCP bridge to Xcode's SourceKit symbol index for Claude Code. Provides sub-millisecond semantic Swift/ObjC symbol lookups — find references, definitions, overrides, conformances, and blast radius without grep or reading full files.",
+  "longDescription": "Ships **4 skills**, **1 agent**, **2 commands**, **3 hooks** and **1 MCP server**.\n\n- **Skills** (4): `swift-blast-radius` (Compute the dependency blast radius of a Swift or Objective-C file — direct dependents, one hop of transitive…), `swift-find-references` (Find every semantic reference to a Swift or Objective-C symbol via Xcode's pre-built index — no false positives…), `swift-refactor-plan` (Produce a complete written refactor plan for Swift or Objective-C code — rename, signature change, type extraction, protocol…), `swift-rename-symbol` (Execute a semantic rename of a Swift or Objective-C symbol — type, method, property, protocol, enum case —…)\n- **Agents** (1): `swift-refactor-specialist` (Focused subagent for Swift/ObjC renames and signature changes using the Xcode semantic index)\n- **Commands** (2): `xcindex-setup` (Bootstrap xcindex in the current project — verifies the Swift binary, locates the Xcode project, optionally builds it…), `xcindex-status` (Check Xcode index freshness for the current project)\n- **Hooks** (3): `SessionStart`, `PostToolUse`, `PreToolUse`\n- **MCP servers** (1): `xcindex`\n\nInstalls with `claude plugin install claude-xcindex@claude-community` from `drewalth/claude-xcindex`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 4,
+    "agent": 1,
+    "hook": 3,
+    "command": 2,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Andrew Althage",
+    "url": "https://github.com/drewalth"
+  },
+  "externalUrl": "https://github.com/drewalth/claude-xcindex/tree/0680fb9a7bcb07a763b66d22cbb8f236785bfcb3",
+  "marketplace": "claude-community",
+  "version": "1.1.0",
+  "sourceRevision": "0680fb9a7bcb07a763b66d22cbb8f236785bfcb3",
+  "contentDigest": "ff831c7178719764bd6ad573563148588f5bbec8775f52a322008e14c40dda28",
+  "contentHash": "4f66bcf8012080cb",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/drewalth/claude-xcindex.git",
+    "sha": "0680fb9a7bcb07a763b66d22cbb8f236785bfcb3"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-16T19:58:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "build.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "swift-refactor-specialist.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hero.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "run",
+            "type": "file"
+          },
+          {
+            "name": "xcindex-doctor",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "xcindex-setup.md",
+            "type": "file"
+          },
+          {
+            "name": "xcindex-status.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "benchmarks.md",
+            "type": "file"
+          },
+          {
+            "name": "coverage.md",
+            "type": "file"
+          },
+          {
+            "name": "how-it-works.md",
+            "type": "file"
+          },
+          {
+            "name": "tools-reference.md",
+            "type": "file"
+          },
+          {
+            "name": "troubleshooting.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "post-edit.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-grep.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-start.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "benchmark-results.md",
+            "type": "file"
+          },
+          {
+            "name": "benchmark.py",
+            "type": "file"
+          },
+          {
+            "name": "build.sh",
+            "type": "file"
+          },
+          {
+            "name": "fetch-fixture.sh",
+            "type": "file"
+          },
+          {
+            "name": "fetch-tca.sh",
+            "type": "file"
+          },
+          {
+            "name": "render-coverage-table.py",
+            "type": "file"
+          },
+          {
+            "name": "setup-labels.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "service",
+        "type": "directory",
+        "children": [
+          {
+            "name": "Sources",
+            "type": "directory",
+            "children": [
+              {
+                "name": "xcindex",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "DerivedData.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Freshness.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "LSPClient.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MCPServer.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Models.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Queries.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RenamePlanner.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RequestProcessor.swift",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CanaryApp",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "Sources",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "CanaryApp",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "AppDelegate.swift",
+                                "type": "file"
+                              },
+                              {
+                                "name": "AuthManager.swift",
+                                "type": "file"
+                              },
+                              {
+                                "name": "CanaryTests.swift",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UserService.swift",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "Package.swift",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "xcindexTests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Helpers",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ExternalFixtureHarness.swift",
+                        "type": "file"
+                      },
+                      {
+                        "name": "FakeLSPServer.swift",
+                        "type": "file"
+                      },
+                      {
+                        "name": "FixtureBuilder.swift",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "CoverageHarnessTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "DerivedDataLocatorTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FreshnessTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IndexQuerierTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "LSPClientTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MCPServerTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "QueriesRegressionTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RenamePlannerTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RequestProcessorTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SwiftLogCoverageHarnessTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TCACoverageHarnessTests.swift",
+                    "type": "file"
+                  },
+                  {
+                    "name": "xcindexTests.swift",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "Package.resolved",
+            "type": "file"
+          },
+          {
+            "name": "Package.swift",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "swift-blast-radius",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "swift-find-references",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "swift-refactor-plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "swift-rename-symbol",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "coverage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "canary.json",
+                "type": "file"
+              },
+              {
+                "name": "CONVENTIONS.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "swift-log",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "swift-log.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tca",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tca.json",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test-post-edit.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-pre-grep.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-session-start.sh",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".releaserc.json",
+        "type": "file"
+      },
+      {
+        "name": ".swiftformat",
+        "type": "file"
+      },
+      {
+        "name": ".swiftlint.yml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "Makefile",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

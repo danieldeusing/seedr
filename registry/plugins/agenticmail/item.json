@@ -1,0 +1,113 @@
+{
+  "slug": "agenticmail",
+  "name": "Agenticmail",
+  "type": "plugin",
+  "description": "Give every Claude Code subagent its own real email address and phone number, all self hosted on the user's machine. AgenticMail runs a local mail server (Stalwart in a Colima or Docker container) so each agent has a working `<name>@localhost` inbox, an identity, an API key, and a persona. When a teammate is CC'd on an email they wake up as a Claude Code subagent under your existing Claude OAuth, read the full thread, decide if it is their turn, and either reply to all or stay silent. The thread is the workspace and the audit trail. There is no central orchestrator, no separate Anthropic key per agent, no data leaving your machine, and no polling because everything is push based over SSE. The plugin exposes three skills (`install`, `create-agent`, `coordinate`) that handle the one time bootstrap and let the host session kick off multi agent work with a single email. Behind the plugin sit five npm packages doing the real work: an Express API, an MCP server with 62 tools across email, SMS, contacts, drafts, templates, rules, search, scheduling, and agent coordination, a dispatcher daemon, a core SDK, and the CLI. Reliability rails include a per agent per thread wake budget that stops reply loops, a 60 second recent reply check in every persona so two agents who both think it is their turn back off, and an outbound content guard that holds risky outbound mail for owner approval. Tested on Node 22 and Node 25 with 429 passing tests across the workspace.",
+  "longDescription": "Ships **3 skills**, **30 hooks** and **1 MCP server**.\n\n- **Skills** (3): `coordinate` (Kick off a multi-agent coordination task), `create-agent` (Create a new AgenticMail agent with a name and a role, ready to coordinate with others over email), `install` (Install and bootstrap AgenticMail (one-time setup that gives every agent a real email address))\n- **Hooks** (30): `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PostToolBatch`, `PermissionDenied`, `Notification`, `UserPromptSubmit`, `UserPromptExpansion`, and 22 more\n- **MCP servers** (1): `agenticmail`\n\nInstalls with `claude plugin install agenticmail@claude-community` from `agenticmail/agenticmail` (`plugin`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 3,
+    "hook": 30,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Ope Olatunji",
+    "url": "https://github.com/agenticmail/agenticmail"
+  },
+  "externalUrl": "https://github.com/agenticmail/agenticmail/tree/b95f52ed97732e1bf7dbc6d82f5862a28f5f54a4/plugin",
+  "marketplace": "claude-community",
+  "version": "0.9.20",
+  "sourceRevision": "b95f52ed97732e1bf7dbc6d82f5862a28f5f54a4",
+  "contentDigest": "9d56adaf64eb01fdc725f0865fd006303eb39dcbb63d9b932041ad0a9a5173a5",
+  "contentHash": "159e5fbd74c6d460",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugin",
+    "url": "https://github.com/agenticmail/agenticmail.git",
+    "ref": "main",
+    "sha": "b95f52ed97732e1bf7dbc6d82f5862a28f5f54a4"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-06-13T00:20:47Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "coordinate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "create-agent",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

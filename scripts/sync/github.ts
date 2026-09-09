@@ -1,9 +1,10 @@
 /**
  * GitHub access for the sync and the live validator.
  *
- * One client per run holds the auth header, the rate-limit state and two caches:
- * git trees by `repo@sha` and file bytes by git blob sha (identical blobs across
- * repositories and items are fetched once).
+ * One client per run holds the auth header, the rate-limit state and three caches:
+ * git trees by `repo@sha`, the last few commit archives by `repo@sha` (the sync reads
+ * content from these — one request per repository, where the raw host costs one per
+ * file), and file bytes by git blob sha for the raw reads that remain.
  *
  * Failure policy (docs/registry-integrity.md §5): network errors, 5xx and 429 are retried
  * with exponential backoff, at most `maxRetries` times. 404 and an exhausted primary rate
@@ -23,6 +24,7 @@
 
 import { createSign } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { readTarball } from "./archive.js";
 import type { GitTreeItem, GitTreeResponse } from "./types.js";
 
 export const GITHUB_API = "https://api.github.com";
@@ -91,6 +93,7 @@ export interface GitHubClientOptions {
 }
 
 const MAX_RETRY_AFTER_MS = 60_000;
+const ARCHIVE_CACHE_SIZE = 8;
 
 function createGitHubAppJwt(appId: string, privateKey: string): string {
   const now = Math.floor(Date.now() / 1000);
@@ -114,6 +117,8 @@ export class GitHubClient {
   private readonly treeCache = new Map<string, Promise<GitTreeItem[]>>();
   private readonly blobCache = new Map<string, Promise<Buffer>>();
   private readonly defaultBranchCache = new Map<string, Promise<string>>();
+  /** The last few archives, for marketplace entries that share a commit (a plugins monorepo). */
+  private readonly archiveCache = new Map<string, Promise<ReadonlyMap<string, Buffer>>>();
 
   readonly stats = { requests: 0, retries: 0, blobCacheHits: 0 };
 
@@ -301,5 +306,17 @@ export class GitHubClient {
 
   async getRawText(repo: string, sha: string, path: string, blobSha?: string): Promise<string> {
     return (await this.getRawBytes(repo, sha, path, blobSha)).toString("utf-8");
+  }
+
+  /** Every regular file of the repository at `sha`, from one archive download (archive.ts). */
+  getArchive(repo: string, sha: string): Promise<ReadonlyMap<string, Buffer>> {
+    const key = `${repo}@${sha}`;
+    let cached = this.archiveCache.get(key);
+    if (!cached) {
+      cached = this.fetchBytes(`${GITHUB_API}/repos/${repo}/tarball/${sha}`).then((bytes) => readTarball(bytes));
+      this.archiveCache.set(key, cached);
+      if (this.archiveCache.size > ARCHIVE_CACHE_SIZE) this.archiveCache.delete(this.archiveCache.keys().next().value!);
+    }
+    return cached;
   }
 }

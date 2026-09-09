@@ -1,0 +1,484 @@
+{
+  "slug": "vibe-doc",
+  "name": "Vibe Doc",
+  "type": "plugin",
+  "description": "Vibe Doc is an AI-powered documentation gap analyzer for any codebase. It scans your project's artifacts, classifies the project type (web app, API, data pipeline, Claude Code plugin, etc.), measures coverage against a tier-appropriate documentation matrix, and either generates the missing docs from your existing artifacts or hands you a ranked list of gaps to close. Five slash commands cover the loop: /vibe-doc:scan (analyze), /vibe-doc:generate (write missing docs), /vibe-doc:check (CI deployment-readiness gate), /vibe-doc:status (snapshot), and /vibe-doc:evolve (Level-3 self-improvement — the plugin reads its own session logs and proposes SKILL improvements). Honest about coverage: no cherry-picked denominators, no false negatives the matcher has learned to flag.",
+  "longDescription": "Ships **7 skills** and **5 commands**.\n\n- **Skills** (7): `check` (This skill should be used when the user mentions \"check my docs\", \"am I ready to deploy\", \"documentation…), `evolve-doc` (This skill should be used when the user says \\\"/evolve-doc\\\" or \\\"/vibe-doc:evolve-doc\\\" or wants Vibe Doc to reflect…), `friction-logger` (Internal SKILL — not a slash command), `generate` (This skill should be used when the user mentions \"generate docs\", \"write my documentation\", \"fix my gaps\", \"create…), `guide` (This skill provides shared behavior patterns, tone guidelines, and technical workflows used internally by other Vibe Doc skills), `scan` (This skill should be used when the user mentions \"scan my project\", \"check my documentation\", \"run vibe doc\",…), `session-logger` (Internal SKILL — not a slash command)\n- **Commands** (5): `check` (Check documentation completeness for deployment), `evolve-doc` (Reflect on past Vibe Doc sessions and propose plugin improvements), `generate` (Generate missing documentation), `scan` (Scan your project for documentation gaps), `status` (Show current Vibe Doc status)\n\nInstalls with `claude plugin install vibe-doc@claude-community` from `estevanhernandez-stack-ed/Vibe-Doc` (`packages/vibe-doc`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 7,
+    "command": 5
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "626Labs LLC",
+    "url": "https://github.com/estevanhernandez-stack-ed"
+  },
+  "externalUrl": "https://github.com/estevanhernandez-stack-ed/Vibe-Doc/tree/b18f3e9f63de407ad040e3167c67768ab2bb8fc4/packages/vibe-doc",
+  "marketplace": "claude-community",
+  "version": "0.8.2",
+  "sourceRevision": "b18f3e9f63de407ad040e3167c67768ab2bb8fc4",
+  "contentDigest": "c88898264ba11f3d6cc09caa2487c6cce64f1245a308504b8505e2336e18732e",
+  "contentHash": "257518dadba64eed",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "packages/vibe-doc",
+    "url": "https://github.com/estevanhernandez-stack-ed/Vibe-Doc.git",
+    "ref": "main",
+    "sha": "b18f3e9f63de407ad040e3167c67768ab2bb8fc4"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-06-10T03:27:19Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check.md",
+            "type": "file"
+          },
+          {
+            "name": "evolve-doc.md",
+            "type": "file"
+          },
+          {
+            "name": "generate.md",
+            "type": "file"
+          },
+          {
+            "name": "scan.md",
+            "type": "file"
+          },
+          {
+            "name": "status.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "atomic-append-jsonl.js",
+            "type": "file"
+          },
+          {
+            "name": "atomic-write-json.js",
+            "type": "file"
+          },
+          {
+            "name": "copy-templates.js",
+            "type": "file"
+          },
+          {
+            "name": "postinstall.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evolve-doc",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "friction-logger",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "guide",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "breadcrumb-heuristics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "classification-taxonomy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "documentation-matrix.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction-triggers.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "schemas",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "friction.schema.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-log.schema.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "AGENT_GUIDE.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-logger",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "checker",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "staleness.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "classifier",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts.o7icVyG",
+                "type": "file"
+              },
+              {
+                "name": "index.ts.orig",
+                "type": "file"
+              },
+              {
+                "name": "index.ts.rej",
+                "type": "file"
+              },
+              {
+                "name": "llm-prompt.ts",
+                "type": "file"
+              },
+              {
+                "name": "scoring-engine.ts",
+                "type": "file"
+              },
+              {
+                "name": "signals.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gap-analyzer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "breadcrumbs.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "matrix.ts",
+                "type": "file"
+              },
+              {
+                "name": "tier-assigner.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "docx-writer.ts",
+                "type": "file"
+              },
+              {
+                "name": "extractor.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "markdown-writer.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scanner",
+            "type": "directory",
+            "children": [
+              {
+                "name": "artifact-scanner.ts",
+                "type": "file"
+              },
+              {
+                "name": "code-scanner.ts",
+                "type": "file"
+              },
+              {
+                "name": "file-scanner.ts",
+                "type": "file"
+              },
+              {
+                "name": "git-scanner.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "state",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema.ts.orig",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "embedded",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adr.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-spec.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "changelog-contributing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-model.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "deployment-procedure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "install-guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "readme.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "runbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-command-reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-plan.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "threat-model.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "registry.ts",
+                "type": "file"
+              },
+              {
+                "name": "renderer.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "language-detect.ts",
+                "type": "file"
+              },
+              {
+                "name": "logger.ts",
+                "type": "file"
+              },
+              {
+                "name": "ui.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "versioning",
+            "type": "directory",
+            "children": [
+              {
+                "name": "differ.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "proposed-changes.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      }
+    ]
+  }
+}

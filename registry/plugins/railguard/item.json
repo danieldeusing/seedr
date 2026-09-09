@@ -1,0 +1,1251 @@
+{
+  "slug": "railguard",
+  "name": "Railguard",
+  "type": "plugin",
+  "description": "Railguard is a safer, context-aware alternative to --dangerously-skip-permissions for Claude Code.\n\nInstead of choosing between approving every command manually or giving Claude unrestricted access, Railguard sits in the middle. It intercepts every tool call — Bash, Write, Edit, Read — and makes policy-based decisions: allow safe commands instantly, block dangerous ones automatically, and ask for human approval when it's not sure.\n\nOut of the box, Railguard comes with 29 default rules covering destructive operations like terraform destroy, rm -rf, DROP TABLE, and git force-push. It detects evasion attempts (base64 encoding, chr() construction, variable substitution, shell wrapping), restricts file access with path fencing (blocking ~/.ssh, ~/.aws, /etc), snapshots every file write for one-click rollback, and logs every decision to a structured audit trail.\n\nEverything is customizable through a simple railguard.yaml file in your project directory.",
+  "longDescription": "Ships **3 hooks**.\n\n- **Hooks** (3): `PreToolUse`, `PostToolUse`, `SessionStart`\n\nInstalls with `claude plugin install railguard@claude-community` from `railyard-dev/railguard`.\n\n╦═╗ ╔═╗ ╦ ╦ ╔═╗ ╦ ╦ ╔═╗ ╦═╗ ╔╦╗ ╠╦╝ ╠═╣ ║ ║ ║ ╦ ║ ║ ╠═╣ ╠╦╝ ║║ ╩╚═ ╩ ╩ ╩ ╩═╝ ╚═╝ ╚═╝ ╩ ╩ ╩╚═ ═╩╝",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "hook",
+  "sourceType": "community",
+  "author": {
+    "name": "railguard-dev"
+  },
+  "externalUrl": "https://github.com/railyard-dev/railguard/tree/41eb9272f62eafd6fe968f381807154a16b0c71c",
+  "marketplace": "claude-community",
+  "version": "0.5.1",
+  "sourceRevision": "41eb9272f62eafd6fe968f381807154a16b0c71c",
+  "contentDigest": "c27b227e10ae38ac113c3f7605a6a665543c52088b37d33b28c0786fb4e72ee2",
+  "contentHash": "e473425eb1a7d96f",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/railyard-dev/railguard.git",
+    "sha": "41eb9272f62eafd6fe968f381807154a16b0c71c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-03-23T00:35:05Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".railroad",
+        "type": "directory",
+        "children": [
+          {
+            "name": "snapshots",
+            "type": "directory",
+            "children": [
+              {
+                "name": "0662d330-2b46-48c5-8b85-915805f21f54",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "5d466c502de63fef.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "b3d837d2efa9dd08.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "7170263f-862b-4236-9a6c-77defe34f121",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "33cac6a505a91074.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "4798e744b0dbd19b.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "4fb363cf8ede8ac2.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "533d7f10c6192109.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "605ae967a6304b1a.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "69b6f9bcd0ff990a.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "6e5be2b8dafb98be.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "873403382a1a865b.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "89fb2082d984f6fe.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "9e28eabb78176b69.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "a9c3f76a1c28febb.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "c7c61c757a9d5a4d.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "d122c51f34f3a5ff.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "c58c82ec-6b6a-4d56-9972-160a8271652f",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bca1e425cfa9e531.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e8c4035f6412a3d2.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cb1fa526-ff86-4371-84c0-00d30e7181d5",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "58fe429714ccf9ee.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bb06d5783d54d583.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f0b5d70c5f048f47.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "d08dcba2-5819-464c-9e30-12fef727f66f",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "0183a1c193f04d87.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "0753d228b68362c2.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "0e5831928ab0d91c.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "142386d2138a57c0.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "1c59c288752c87c4.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "1cdcdfc9ff2677c1.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "1e65b275e5c4f642.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "21e3d5dbf744e184.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "23fbba413f8c9fe8.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2e842002edb84aa2.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "323f4e64c8c26756.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "348cee2273b5700e.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "36686bb5a9f607f6.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "38a343538b2f2b1b.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "3a0b5a5c27321380.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "3a1d45024928b5ad.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "3cc27af83e77fc0d.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "3d8810b108ca6329.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "3f44ebcbb199d781.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "3ffec99584bfd991.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "4cc0b0e452b71264.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "552c6d6ab508e4a8.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "58d205fb1a654ffc.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "5e87ce490087baef.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "5ec65da968bc8cc2.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "630bfbf6f2bebd79.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "65b6f33bbb9fac5d.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "6ad075e8bca80035.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "6b9554af7d47e761.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "6d21c0f26189c1c9.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "706844947d0b9b3c.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "73270c8fbc32efe0.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "7a2a61a39a5cafec.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "7f94f8332b54cb7e.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "85ccd1e587aad603.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "87284e6fe2103aa8.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "87775c04a263f7b0.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "8877bbed6be8001c.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "8e757ff1c6e2c779.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "8fb198813f89f5fd.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "957d65cb4b0dfde5.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "98761196f7db4ab9.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "98ce51e08ac80415.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "9be47d645948b9d3.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "9c78471011fee2c1.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "a05203f0e4e04ae2.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "a63e2708ad22c644.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "a64fc56b93ffcdd8.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "a9ae22ef4285bcd5.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ae746ed78a87853e.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "af54bd38aad48454.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "b367622e4392f272.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "b7e2f9b58983ed4f.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "b840eb4452b60c91.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ba235a69af5d7d81.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ba4492ae91be7ead.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bce961c7107655eb.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "c3a578ea4736e225.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "c79e5d40770a5bd5.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cb13bb405c250fa9.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cfcaceb19396f2b5.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "d19155faa5e132d8.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "d82954f2c1d89bd1.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "d97b02a2c8663525.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "daace2435f434c3d.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dae9c7226af38b76.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "db03741ab4a0c603.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e230334ff970743c.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e518e141b47da671.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e60d39edf309d30c.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e9bd6a73ae587531.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f171ec532313a2e6.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f460a480b849ef4f.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f6a5ed06b793e5aa.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f7d02849a5ec756e.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f894065fff9f7946.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f89da0ecd482a576.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fa0b29fe8463833d.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "da0be517-b1bf-433c-9f9c-e8ff44e0168e",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "628d4225a4550840.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "9f0aa2624b4ac2cb.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fa62a507-9f08-4f2d-b4fc-2952877e0090",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "37e6680ebb8c851c.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "575d9fc1613c0068.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "61d6ce62d6d303e4.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "633fcba362ab6de2.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "667d22d0f9d9255d.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "86d00cef70c2e32c.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "8d1cef05b61e4558.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "a2d88a02167b9c74.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "da4bc8e3ae0b0976.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dc94be13a1c72893.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e001cd8025b18370.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f7bd625a6c5d1cd0.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fdc43576-431e-48f2-930d-b8d89297c0ba",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "8d52e852d545a8a2.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "a7e29aeee463cbe3.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "c3b182c668d9b115.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e3818af6d5593908.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "state",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cc7ab950-3900-4574-ad36-d9a4518e2187.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "traces",
+            "type": "directory",
+            "children": [
+              {
+                "name": "7170263f-862b-4236-9a6c-77defe34f121.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "c58c82ec-6b6a-4d56-9972-160a8271652f.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "d08dcba2-5819-464c-9e30-12fef727f66f.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "e397ff4c-6ab7-4e25-9789-7a16be70fc46.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "fa62a507-9f08-4f2d-b4fc-2952877e0090.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "fdc43576-431e-48f2-930d-b8d89297c0ba.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "test-dash-verify.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "test-dashboard-001.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "test-live.jsonl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "last-update-check",
+            "type": "file"
+          },
+          {
+            "name": "sandbox-claude.sb",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".railyard",
+        "type": "directory",
+        "children": [
+          {
+            "name": "snapshots",
+            "type": "directory",
+            "children": [
+              {
+                "name": "0662d330-2b46-48c5-8b85-915805f21f54",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "0557b50785433971.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "06e1bd1aa3180652.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "3ab252dc1c6a156f.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "3b58815db68ac591.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "60229733f3af1081.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "7a76a2a5459e2c9e.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "9949b5720b9dded4.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "9d100217d6f6b76a.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "9f2917a0fe2b60f3.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "a4fbbb242abfc11c.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "b31cd5afa06479fb.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "b555b0f076efa1ce.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "b8aeb3cabbdb5223.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "d1217e951746c51b.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "d32f6d32db3160db.snapshot",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.jsonl",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "state",
+            "type": "directory",
+            "children": [
+              {
+                "name": "0662d330-2b46-48c5-8b85-915805f21f54.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "last-update-check",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "defaults",
+        "type": "directory",
+        "children": [
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          },
+          {
+            "name": "railguard.yaml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "RULES.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "npm",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "railroad",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "demo.js",
+            "type": "file"
+          },
+          {
+            "name": "install.js",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "block",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evasion.rs",
+                "type": "file"
+              },
+              {
+                "name": "matcher.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "coord",
+            "type": "directory",
+            "children": [
+              {
+                "name": "context.rs",
+                "type": "file"
+              },
+              {
+                "name": "lock.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dashboard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "app.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              },
+              {
+                "name": "ui.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fence",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mod.rs",
+                "type": "file"
+              },
+              {
+                "name": "path.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hook",
+            "type": "directory",
+            "children": [
+              {
+                "name": "handler.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              },
+              {
+                "name": "post_tool.rs",
+                "type": "file"
+              },
+              {
+                "name": "pre_tool.rs",
+                "type": "file"
+              },
+              {
+                "name": "session.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "memory",
+            "type": "directory",
+            "children": [
+              {
+                "name": "classifier.rs",
+                "type": "file"
+              },
+              {
+                "name": "conflict.rs",
+                "type": "file"
+              },
+              {
+                "name": "guard.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              },
+              {
+                "name": "provenance.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "policy",
+            "type": "directory",
+            "children": [
+              {
+                "name": "defaults.rs",
+                "type": "file"
+              },
+              {
+                "name": "engine.rs",
+                "type": "file"
+              },
+              {
+                "name": "loader.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "replay",
+            "type": "directory",
+            "children": [
+              {
+                "name": "app.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              },
+              {
+                "name": "ui.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sandbox",
+            "type": "directory",
+            "children": [
+              {
+                "name": "detect.rs",
+                "type": "file"
+              },
+              {
+                "name": "linux.rs",
+                "type": "file"
+              },
+              {
+                "name": "macos.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "snapshot",
+            "type": "directory",
+            "children": [
+              {
+                "name": "capture.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              },
+              {
+                "name": "rollback.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "threat",
+            "type": "directory",
+            "children": [
+              {
+                "name": "classifier.rs",
+                "type": "file"
+              },
+              {
+                "name": "killer.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              },
+              {
+                "name": "state.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "trace",
+            "type": "directory",
+            "children": [
+              {
+                "name": "logger.rs",
+                "type": "file"
+              },
+              {
+                "name": "mod.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "configure.rs",
+            "type": "file"
+          },
+          {
+            "name": "context.rs",
+            "type": "file"
+          },
+          {
+            "name": "lib.rs",
+            "type": "file"
+          },
+          {
+            "name": "main.rs",
+            "type": "file"
+          },
+          {
+            "name": "shell.rs",
+            "type": "file"
+          },
+          {
+            "name": "types.rs",
+            "type": "file"
+          },
+          {
+            "name": "update.rs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "simulation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mod.rs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "attack_simulation.rs",
+            "type": "file"
+          },
+          {
+            "name": "memory_safety.rs",
+            "type": "file"
+          },
+          {
+            "name": "PENTEST-REPORT-R3.md",
+            "type": "file"
+          },
+          {
+            "name": "PENTEST-REPORT.md",
+            "type": "file"
+          },
+          {
+            "name": "rollback_scenarios.rs",
+            "type": "file"
+          },
+          {
+            "name": "threat_detection.rs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "build.rs",
+        "type": "file"
+      },
+      {
+        "name": "Cargo.lock",
+        "type": "file"
+      },
+      {
+        "name": "Cargo.toml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "railguard-v1.html",
+        "type": "file"
+      },
+      {
+        "name": "railguard.yaml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "settings.json",
+        "type": "file"
+      }
+    ]
+  }
+}

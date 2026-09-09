@@ -1,0 +1,443 @@
+{
+  "slug": "langfuse-observability",
+  "name": "Langfuse Observability",
+  "type": "plugin",
+  "description": "Langfuse observability plugin for Claude Code — captures and exports traces, spans, and session telemetry from Claude Code to Langfuse for LLM monitoring, debugging, and evaluation",
+  "longDescription": "Ships **2 hooks**, `Stop`, `SessionEnd`.\n\nInstalls with `claude plugin install langfuse-observability@claude-plugins-official` from `langfuse/claude-observability-plugin`.\n\nThis plugin sends Claude Code sessions to Langfuse. It records the user prompts, the agent turns, the model generations with their tokens and cost, and the tool calls, with no change to your code.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "hook",
+  "sourceType": "community",
+  "author": {
+    "name": "Langfuse"
+  },
+  "externalUrl": "https://github.com/langfuse/claude-observability-plugin/tree/ece30fee77831df36503b9bbb6d11b78f64d698f",
+  "marketplace": "claude-plugins-official",
+  "version": "1.1.0",
+  "sourceRevision": "ece30fee77831df36503b9bbb6d11b78f64d698f",
+  "contentDigest": "d6fa9241fefd6895981c6038d703a5c1459057fa1074fd38869ef7d8be24800f",
+  "contentHash": "ed7ae28532d60c7f",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/langfuse/claude-observability-plugin.git",
+    "sha": "ece30fee77831df36503b9bbb6d11b78f64d698f"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-09-07T09:58:32Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "langfuse_hook.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "transcripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "async_agent_completed",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "transcript",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "subagents",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "agent-agent-complete.jsonl",
+                                "type": "file"
+                              },
+                              {
+                                "name": "agent-agent-complete.meta.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "transcript.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "async_agent_deferred",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "transcript",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "subagents",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "agent-agent-deferred.jsonl",
+                                "type": "file"
+                              },
+                              {
+                                "name": "agent-agent-deferred.meta.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "transcript.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "human_wait_question",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "transcript.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "nested_subagents",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "transcript",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "subagents",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "agent-inner-agent.jsonl",
+                                "type": "file"
+                              },
+                              {
+                                "name": "agent-inner-agent.meta.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "agent-outer-agent.jsonl",
+                                "type": "file"
+                              },
+                              {
+                                "name": "agent-outer-agent.meta.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "transcript.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "simple_turn",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "transcript.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "task_notification_task_id_fallback",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "transcript",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "subagents",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "agent-task-fallback.jsonl",
+                                "type": "file"
+                              },
+                              {
+                                "name": "agent-task-fallback.meta.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "transcript.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tool_turn",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "transcript.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "workflow_subagents",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "transcript",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "subagents",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "workflows",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "wf_test001",
+                                    "type": "directory",
+                                    "children": [
+                                      {
+                                        "name": "agent-r1.jsonl",
+                                        "type": "file"
+                                      },
+                                      {
+                                        "name": "agent-r1.meta.json",
+                                        "type": "file"
+                                      },
+                                      {
+                                        "name": "agent-r2.jsonl",
+                                        "type": "file"
+                                      },
+                                      {
+                                        "name": "agent-r2.meta.json",
+                                        "type": "file"
+                                      },
+                                      {
+                                        "name": "journal.jsonl",
+                                        "type": "file"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "transcript.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test_deterministic_trace_ids.py",
+                "type": "file"
+              },
+              {
+                "name": "test_emit_new_turns_from_transcript.py",
+                "type": "file"
+              },
+              {
+                "name": "test_emit_turn_observations.py",
+                "type": "file"
+              },
+              {
+                "name": "test_forked_session_history.py",
+                "type": "file"
+              },
+              {
+                "name": "test_generation_history.py",
+                "type": "file"
+              },
+              {
+                "name": "test_parent_trace_attachment.py",
+                "type": "file"
+              },
+              {
+                "name": "test_workflow_subagent_emission.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "unit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test_async_agent_deferral.py",
+                "type": "file"
+              },
+              {
+                "name": "test_config_precedence.py",
+                "type": "file"
+              },
+              {
+                "name": "test_config_visibility.py",
+                "type": "file"
+              },
+              {
+                "name": "test_emission_gate.py",
+                "type": "file"
+              },
+              {
+                "name": "test_hook_payload.py",
+                "type": "file"
+              },
+              {
+                "name": "test_image_capture.py",
+                "type": "file"
+              },
+              {
+                "name": "test_import_failure.py",
+                "type": "file"
+              },
+              {
+                "name": "test_langfuse_payload_builders.py",
+                "type": "file"
+              },
+              {
+                "name": "test_parent_trace_context.py",
+                "type": "file"
+              },
+              {
+                "name": "test_remote_parent.py",
+                "type": "file"
+              },
+              {
+                "name": "test_skill_tags.py",
+                "type": "file"
+              },
+              {
+                "name": "test_state_dir.py",
+                "type": "file"
+              },
+              {
+                "name": "test_subagent_discovery.py",
+                "type": "file"
+              },
+              {
+                "name": "test_subagent_observations.py",
+                "type": "file"
+              },
+              {
+                "name": "test_task_notifications.py",
+                "type": "file"
+              },
+              {
+                "name": "test_thinking_capture.py",
+                "type": "file"
+              },
+              {
+                "name": "test_timestamps.py",
+                "type": "file"
+              },
+              {
+                "name": "test_trace_id_derivation.py",
+                "type": "file"
+              },
+              {
+                "name": "test_transcript_reader.py",
+                "type": "file"
+              },
+              {
+                "name": "test_turn_assembly.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      }
+    ]
+  }
+}

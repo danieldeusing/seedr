@@ -1,0 +1,2203 @@
+{
+  "slug": "aport-guardrails",
+  "name": "Aport Guardrails",
+  "type": "plugin",
+  "description": "Security guardrails for Claude Code. Intercepts every tool call via PreToolUse hook and evaluates it against your Open Agent Passport (OAP) policy before execution. Blocks unauthorized commands, dangerous file operations, and policy violations. All evaluation runs locally by default - zero network calls, works offline. Open-source (Apache 2.0).\n\nIncludes three skills:\n- /aport-guardrails:claude-code — Set up guardrails and create a passport\n- /aport-guardrails:status — Check guardrail status and recent decisions\n- /aport-guardrails:openclaw — Set up guardrails for OpenClaw agents",
+  "longDescription": "Ships **3 skills** and **1 hook**.\n\n- **Skills** (3): `claude-code` (Set up APort guardrails for Claude Code), `openclaw` (Set up APort guardrails for OpenClaw), `status` (Check APort guardrail status — passport validity, evaluation mode, and recent audit log entries)\n- **Hooks** (1): `PreToolUse`\n\nInstalls with `claude plugin install aport-guardrails@claude-community` from `aporthq/aport-agent-guardrails`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 3,
+    "hook": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "APort Technologies Inc.",
+    "url": "https://aport.io"
+  },
+  "externalUrl": "https://github.com/aporthq/aport-agent-guardrails/tree/3a8a0b40e12b20e371ac9824190fa9d0fd6bfd4c",
+  "marketplace": "claude-community",
+  "version": "1.0.29",
+  "sourceRevision": "3a8a0b40e12b20e371ac9824190fa9d0fd6bfd4c",
+  "contentDigest": "69c4158ecc6f968126699a380620307fbd0610fbcb85e21f3db6bb9b227efb5e",
+  "contentHash": "ab0432e7aa162a7e",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/aporthq/aport-agent-guardrails.git",
+    "sha": "3a8a0b40e12b20e371ac9824190fa9d0fd6bfd4c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-10T12:24:08Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".changeset",
+        "type": "directory",
+        "children": [
+          {
+            "name": "config.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "no-cursor-pr-footer.mdc",
+                "type": "file"
+              },
+              {
+                "name": "release-process.mdc",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              },
+              {
+                "name": "policy_pack.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "e2e-crewai.yml",
+                "type": "file"
+              },
+              {
+                "name": "e2e-langchain.yml",
+                "type": "file"
+              },
+              {
+                "name": "e2e-openclaw.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "secrets-scan.yml",
+                "type": "file"
+              },
+              {
+                "name": "shellcheck.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "frameworks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "next-steps.d",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "crewai-native.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "crewai.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "deerflow.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "langchain.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "n8n.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-code.sh",
+                "type": "file"
+              },
+              {
+                "name": "cursor.sh",
+                "type": "file"
+              },
+              {
+                "name": "generic.sh",
+                "type": "file"
+              },
+              {
+                "name": "openclaw.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "agentsmd.sh",
+                "type": "file"
+              },
+              {
+                "name": "allowlist.sh",
+                "type": "file"
+              },
+              {
+                "name": "common.sh",
+                "type": "file"
+              },
+              {
+                "name": "config.sh",
+                "type": "file"
+              },
+              {
+                "name": "constants.sh",
+                "type": "file"
+              },
+              {
+                "name": "detect.sh",
+                "type": "file"
+              },
+              {
+                "name": "error.sh",
+                "type": "file"
+              },
+              {
+                "name": "framework-hook-paths.sh",
+                "type": "file"
+              },
+              {
+                "name": "framework-setup.sh",
+                "type": "file"
+              },
+              {
+                "name": "guardrail-mode.sh",
+                "type": "file"
+              },
+              {
+                "name": "hook-read-policy.sh",
+                "type": "file"
+              },
+              {
+                "name": "passport.sh",
+                "type": "file"
+              },
+              {
+                "name": "quick-hosted.sh",
+                "type": "file"
+              },
+              {
+                "name": "runtime-manifest.txt",
+                "type": "file"
+              },
+              {
+                "name": "runtime.sh",
+                "type": "file"
+              },
+              {
+                "name": "tool-mapping.sh",
+                "type": "file"
+              },
+              {
+                "name": "validation.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agent-guardrails",
+            "type": "file"
+          },
+          {
+            "name": "aport-claude-code-hook.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-create-passport.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-cursor-hook.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-guardrail-api.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-guardrail-bash.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-guardrail-v2.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-guardrail.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-reset-framework.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-resolve-paths.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-status.sh",
+            "type": "file"
+          },
+          {
+            "name": "openclaw",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "porter.svg",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "development",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ERROR_CODES.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "frameworks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-code.md",
+                "type": "file"
+              },
+              {
+                "name": "crewai.md",
+                "type": "file"
+              },
+              {
+                "name": "cursor.md",
+                "type": "file"
+              },
+              {
+                "name": "deerflow.md",
+                "type": "file"
+              },
+              {
+                "name": "langchain.md",
+                "type": "file"
+              },
+              {
+                "name": "n8n.md",
+                "type": "file"
+              },
+              {
+                "name": "openclaw.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "launch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "add-aport-awesome-pr.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ADD_APORT_AWESOME_LISTS_INSTRUCTIONS.md",
+                "type": "file"
+              },
+              {
+                "name": "ANNOUNCEMENT_GUIDE.md",
+                "type": "file"
+              },
+              {
+                "name": "AWESOME_REPOS.md",
+                "type": "file"
+              },
+              {
+                "name": "CURSOR_VSCODE_HOOKS_RESEARCH.md",
+                "type": "file"
+              },
+              {
+                "name": "DEMO_TERMINAL_OUTPUT.txt",
+                "type": "file"
+              },
+              {
+                "name": "DRY_AND_PLAN_CHECKLIST.md",
+                "type": "file"
+              },
+              {
+                "name": "EVIDENCE_README.md",
+                "type": "file"
+              },
+              {
+                "name": "EVIDENCE_TERMINAL_CAPTURE.txt",
+                "type": "file"
+              },
+              {
+                "name": "FRAMEWORK_SUPPORT_PLAN.md",
+                "type": "file"
+              },
+              {
+                "name": "LAUNCH_READINESS_CHECKLIST.md",
+                "type": "file"
+              },
+              {
+                "name": "LAUNCH_STRATEGY_SUMMARY.md",
+                "type": "file"
+              },
+              {
+                "name": "OPENCLAW_FEEDBACK_AND_FIXES.md",
+                "type": "file"
+              },
+              {
+                "name": "POST_1_VALENTINE_IMPROVED.md",
+                "type": "file"
+              },
+              {
+                "name": "POST_2_GUARDRAIL_IMPROVED.md",
+                "type": "file"
+              },
+              {
+                "name": "PRD-claude-code-guardrail.md",
+                "type": "file"
+              },
+              {
+                "name": "PRE_LAUNCH_FIXES.md",
+                "type": "file"
+              },
+              {
+                "name": "QUICK_LAUNCH_CHECKLIST.md",
+                "type": "file"
+              },
+              {
+                "name": "READINESS_SUMMARY.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "USER_STORIES.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "operations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "MONITORING.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reviews",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-02-18-staff-review.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ADDING_A_FRAMEWORK.md",
+            "type": "file"
+          },
+          {
+            "name": "AGENTS.md.example",
+            "type": "file"
+          },
+          {
+            "name": "CODE_REVIEW.md",
+            "type": "file"
+          },
+          {
+            "name": "ENTERPRISE_DEVICE_DEPLOYMENT.md",
+            "type": "file"
+          },
+          {
+            "name": "FAQ_SECURITY_SCANNERS.md",
+            "type": "file"
+          },
+          {
+            "name": "FRAMEWORK_ROADMAP.md",
+            "type": "file"
+          },
+          {
+            "name": "FRAMEWORK_TOOL_MAPPING_AUDIT.md",
+            "type": "file"
+          },
+          {
+            "name": "HOSTED_PASSPORT_SETUP.md",
+            "type": "file"
+          },
+          {
+            "name": "IMPLEMENTING_YOUR_OWN_EVALUATOR.md",
+            "type": "file"
+          },
+          {
+            "name": "OPENCLAW_COMPATIBILITY.md",
+            "type": "file"
+          },
+          {
+            "name": "OPENCLAW_LOCAL_INTEGRATION.md",
+            "type": "file"
+          },
+          {
+            "name": "OPENCLAW_TOOLS_AND_POLICIES.md",
+            "type": "file"
+          },
+          {
+            "name": "PROVIDER.md",
+            "type": "file"
+          },
+          {
+            "name": "QUICKSTART_OPENCLAW_PLUGIN.md",
+            "type": "file"
+          },
+          {
+            "name": "QUICKSTART.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "RELEASE.md",
+            "type": "file"
+          },
+          {
+            "name": "REPO_LAYOUT.md",
+            "type": "file"
+          },
+          {
+            "name": "SECURITY_MODEL.md",
+            "type": "file"
+          },
+          {
+            "name": "SKILLS_ECOSYSTEM_ANALYSIS_FEB17.md",
+            "type": "file"
+          },
+          {
+            "name": "SKILLS.md",
+            "type": "file"
+          },
+          {
+            "name": "TOOL_POLICY_MAPPING.md",
+            "type": "file"
+          },
+          {
+            "name": "UPGRADE.md",
+            "type": "file"
+          },
+          {
+            "name": "VERIFICATION_METHODS.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "enterprise-scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "aport-device-core.mjs",
+            "type": "file"
+          },
+          {
+            "name": "aport-device-deploy.ps1",
+            "type": "file"
+          },
+          {
+            "name": "aport-device-deploy.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-device-enforce.ps1",
+            "type": "file"
+          },
+          {
+            "name": "aport-device-enforce.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-device-lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "aport-device-uninstall.ps1",
+            "type": "file"
+          },
+          {
+            "name": "aport-device-uninstall.sh",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "crewai",
+            "type": "directory",
+            "children": [
+              {
+                "name": "run_with_guardrail.py",
+                "type": "file"
+              },
+              {
+                "name": "sample_crew.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "langchain",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "run_with_guardrail.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "extensions",
+        "type": "directory",
+        "children": [
+          {
+            "name": "openclaw-aport",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".npmignore",
+                "type": "file"
+              },
+              {
+                "name": "api-client.js",
+                "type": "file"
+              },
+              {
+                "name": "audit.js",
+                "type": "file"
+              },
+              {
+                "name": "CHANGELOG.md",
+                "type": "file"
+              },
+              {
+                "name": "decision.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "local-evaluator.js",
+                "type": "file"
+              },
+              {
+                "name": "MIGRATION.md",
+                "type": "file"
+              },
+              {
+                "name": "openclaw-aport.js",
+                "type": "file"
+              },
+              {
+                "name": "openclaw.plugin.json",
+                "type": "file"
+              },
+              {
+                "name": "package-lock.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tool-mapping.js",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "pre-tool-use.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "integrations",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-code",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "crewai",
+            "type": "directory",
+            "children": [
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "minimal_usage.py.example",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "decorator.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cursor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "extension",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "deerflow",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "langchain",
+            "type": "directory",
+            "children": [
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "minimal_usage.py.example",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "middleware.py",
+                "type": "file"
+              },
+              {
+                "name": "middleware.ts",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "n8n",
+            "type": "directory",
+            "children": [
+              {
+                "name": "credentials",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "nodes",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "openclaw",
+            "type": "directory",
+            "children": [
+              {
+                "name": "extensions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "local-overrides",
+        "type": "directory",
+        "children": [
+          {
+            "name": "policies",
+            "type": "directory",
+            "children": [
+              {
+                "name": "system.command.execute.v1.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "passport.local.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "packages",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-code",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "install",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claudeCodeTools.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CHANGELOG.md",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "core",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "auditLogger.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "default-passport-paths.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "defaultPassportPaths.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "evaluator.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "evaluator.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "passport.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "passport.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pathUtils.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tool-pack-mapping.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "toolPackMapping.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "frameworks",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "base.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "langchain.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "n8n.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "openclaw.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "providers",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "oap-guardrail-provider.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "oap-guardrail-provider.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "cli.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CHANGELOG.md",
+                "type": "file"
+              },
+              {
+                "name": "jest.config.js",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "crewai",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "install",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "middleware.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CHANGELOG.md",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cursor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "install",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CHANGELOG.md",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "deprecated-agent-guardrails",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin.js",
+                "type": "file"
+              },
+              {
+                "name": "index.js",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "langchain",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "install",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "middleware.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "middleware.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CHANGELOG.md",
+                "type": "file"
+              },
+              {
+                "name": "jest.config.js",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "n8n",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "install",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CHANGELOG.md",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "python",
+        "type": "directory",
+        "children": [
+          {
+            "name": "aport_guardrails",
+            "type": "directory",
+            "children": [
+              {
+                "name": "core",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agentsmd.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli_common.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "constants.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "default_passport_paths.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "default-passport-paths.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "errors.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "evaluator.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "exceptions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "passport.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "runtime_assets.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tool_pack_mapping.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tool-pack-mapping.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validation.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "frameworks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "base.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "crewai.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "langchain.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "providers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "generic.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "_allowlist_shim.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_agentsmd.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_cli_common.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_context.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_evaluator.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_frameworks_langchain.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_generic_provider.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_oap_provider_e2e.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_validation.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "setup.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "crewai_adapter",
+            "type": "directory",
+            "children": [
+              {
+                "name": "aport_guardrails_crewai",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "decorator.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hook.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_decorator.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_hook.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "decorator.py",
+                "type": "file"
+              },
+              {
+                "name": "hook.py",
+                "type": "file"
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "setup.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "langchain_adapter",
+            "type": "directory",
+            "children": [
+              {
+                "name": "aport_guardrails_langchain",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "middleware.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_callback.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_evaluator_integration.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "middleware.py",
+                "type": "file"
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "setup.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "git-hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pre-commit",
+                "type": "file"
+              },
+              {
+                "name": "pre-push",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bundle-enterprise-scripts.sh",
+            "type": "file"
+          },
+          {
+            "name": "ensure-submodules-updated.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-push-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-version.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-code",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "openclaw",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evaluator.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "extensions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "openclaw-aport.test.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "decision.json",
+                "type": "file"
+              },
+              {
+                "name": "passport-with-messaging.json",
+                "type": "file"
+              },
+              {
+                "name": "passport.oap-v1.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "frameworks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-code",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setup.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "crewai",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setup-native.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setup.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cursor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setup.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "deerflow",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setup.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "langchain",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setup.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "n8n",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setup.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "openclaw",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setup.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setup.test.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "output",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit.log",
+                "type": "file"
+              },
+              {
+                "name": "decision.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "performance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mock_api_server.py",
+                "type": "file"
+              },
+              {
+                "name": "node_api_harness_real.cjs",
+                "type": "file"
+              },
+              {
+                "name": "node_api_harness.cjs",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "run_guardrail_perf.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "unit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test-agent-guardrails-dispatcher.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-claude-code-hook.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-cursor-hook.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-detect-framework.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-enterprise-device-scripts.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-evaluator-policy-in-body.cjs",
+                "type": "file"
+              },
+              {
+                "name": "test-evaluator-policy-in-body.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-file-read-policy.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-file-write-policy.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-framework-hook-paths.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-framework-reset.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-guardrail-mode-env-export.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-lib-allowlist.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-lib-common.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-lib-config.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-lib-validation.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-openclaw-api-mode-warning.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-openclaw-installer-failure.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-openclaw-installer-skip-same-version.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-openclaw-noninteractive.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-passport-framework-defaults.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-quick-hosted.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-surgical-patterns.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-tool-pack-mapping.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "run.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_agentsmd.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_resolve_paths_agentsmd.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-api-evaluator.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-file-capabilities.sh.skip",
+            "type": "file"
+          },
+          {
+            "name": "test-four-verification-methods.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-full-flow.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-kill-switch.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-npm-package.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-oap-v1-guardrail.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-oap-v1-passport-and-status.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-openclaw-hosted-flow.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-passport-creation.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-passport-missing-and-invalid.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-plugin-guardrail-cli.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-python-package.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-remote-passport-api.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-web-capabilities.sh.skip",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".editorconfig",
+        "type": "file"
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitleaks.toml",
+        "type": "file"
+      },
+      {
+        "name": ".gitleaksignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitmodules",
+        "type": "file"
+      },
+      {
+        "name": ".npmignore",
+        "type": "file"
+      },
+      {
+        "name": ".shellcheckrc",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "lerna.json",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "Makefile",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "PUBLISHING.md",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "RELEASE.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "security.txt",
+        "type": "file"
+      },
+      {
+        "name": "test.md",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      }
+    ]
+  }
+}

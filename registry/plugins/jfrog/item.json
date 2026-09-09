@@ -1,0 +1,976 @@
+{
+  "slug": "jfrog",
+  "name": "Jfrog",
+  "type": "plugin",
+  "description": "Use the JFrog Platform from Claude Code: Artifactory repos and artifacts, security findings and exposures, Catalog package safety and downloads, workflows across the SDLC, and platform administration.",
+  "longDescription": "Ships **7 skills**, **4 hooks** and **1 MCP server**.\n\n- **Skills** (7): `jfrog` (Interact with the JFrog Platform via the JFrog CLI, JFrog MCP server and REST/GraphQL APIs), `jfrog-ai-catalog` (Discover, search, install, update, remove, and publish agent skills and plugins hosted in the JFrog AI Catalog (Artifactory)…), `jfrog-init` (Set up and verify the JFrog plugin), `jfrog-mcp-management` (Use to install, list, or remove MCP servers, and to discover which MCPs the user can install —…), `jfrog-package-curation` (Check/download a package (npm, Maven, PyPI, Go...) via JFrog — safe, allowed, curated), `jfrog-reference-architecture` (Guides JFrog Platform topology, sizing (RPM, t-shirt templates), deployment, multi-site use cases, SaaS vs self-managed, HA, air-gapped, and…), `jfrog-setup-package-managers` (Use this skill when the user asks to set up, configure, bind, or connect a package manager (npm,…)\n- **Hooks** (4): `SessionStart`, `FileChanged`, `PreToolUse`, `UserPromptExpansion`\n- **MCP servers** (1): `jfrog`\n\nInstalls with `claude plugin install jfrog@claude-plugins-official` from `jfrog/claude-plugin`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 7,
+    "hook": 4,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "JFrog Ltd.",
+    "url": "https://jfrog.com"
+  },
+  "externalUrl": "https://github.com/jfrog/claude-plugin/tree/d5b04a75c479452cdc3797259e5ae539a5c0391f",
+  "marketplace": "claude-plugins-official",
+  "version": "0.3.5",
+  "sourceRevision": "d5b04a75c479452cdc3797259e5ae539a5c0391f",
+  "contentDigest": "615d0d1176437db28f50895d9df2ace46aecc07fd70dc58702424ff743ada59e",
+  "contentHash": "7df2d9db37a493fb",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/jfrog/claude-plugin.git",
+    "sha": "d5b04a75c479452cdc3797259e5ae539a5c0391f"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-09-06T10:28:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sync-modules-vendor.json",
+                "type": "file"
+              },
+              {
+                "name": "sync-modules.mjs",
+                "type": "file"
+              },
+              {
+                "name": "sync-skills-vendor.json",
+                "type": "file"
+              },
+              {
+                "name": "sync-skills.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cla.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "validate.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "logo.svg",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "package-resolution-admin-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "package-resolution-user-guide.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "modules",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents-conf-fingerprints.json",
+                "type": "file"
+              },
+              {
+                "name": "agents-default-conf.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-guard-check.mjs",
+                "type": "file"
+              },
+              {
+                "name": "agents-config.mjs",
+                "type": "file"
+              },
+              {
+                "name": "entry.mjs",
+                "type": "file"
+              },
+              {
+                "name": "io.mjs",
+                "type": "file"
+              },
+              {
+                "name": "jf-identity.mjs",
+                "type": "file"
+              },
+              {
+                "name": "jf-user-agent.mjs",
+                "type": "file"
+              },
+              {
+                "name": "logger.mjs",
+                "type": "file"
+              },
+              {
+                "name": "rewrite-mcp-json.mjs",
+                "type": "file"
+              },
+              {
+                "name": "run-capability.mjs",
+                "type": "file"
+              },
+              {
+                "name": "scaffold-fingerprint.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "package-resolution",
+            "type": "directory",
+            "children": [
+              {
+                "name": "onboarding",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "package-resolution-onboarding-procedure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-start-nudge.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "apr-heartbeat.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "configure.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eager-setup-receipt.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eager-setup.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "feature-flag.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onboarding-decline-cache.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onboarding.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package-manager-family.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "print-policy.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "render-instruction.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "repo-types.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "resolver.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setup-conflict.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verify-repo.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workspace-config.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "package-resolution-unconfigured.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package-resolution.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "claude-session-start.mjs",
+            "type": "file"
+          },
+          {
+            "name": "copilot-session-start.mjs",
+            "type": "file"
+          },
+          {
+            "name": "cursor-session-start.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-guard-check.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "bridge-client-fallback.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "claude-align-mcp-json.mjs",
+            "type": "file"
+          },
+          {
+            "name": "claude-align-mcp-json.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "claude-mcp-json-discover.mjs",
+            "type": "file"
+          },
+          {
+            "name": "claude-mcp-json-discover.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "claude-register-align-watch-paths.mjs",
+            "type": "file"
+          },
+          {
+            "name": "rewrite-mcp-json.test.mjs",
+            "type": "file"
+          },
+          {
+            "name": "validate-claude-plugin.mjs",
+            "type": "file"
+          },
+          {
+            "name": "validate-enforce-hook.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "jfrog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "apptrust-entities.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "artifactory-api-gaps.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "artifactory-aql-syntax.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "artifactory-entities.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "artifactory-operations.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "catalog-entities.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli-command-discovery.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli-gotchas.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "general-bulk-operations-and-agent-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "general-parallel-execution.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "general-use-case-hints.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "INDEX.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jf-api.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-brand-html-report.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-cli-install-upgrade.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-entity-index.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-login-flow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-url-references.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onemodel-common-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onemodel-graphql.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onemodel-query-examples.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platform-access-entities.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platform-admin-api-gaps.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "platform-admin-operations.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "preserving-command-output.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "projects-api.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "release-lifecycle-entities.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stored-packages-entities.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "xray-entities.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "jf-api-http-status.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "check-environment.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli-newer-version-offer.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-check-server-collision.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-login-register-session.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-login-save-credentials.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "jfrog-ai-catalog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "discovering-plugins.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discovering-skills.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "installing-plugins.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "installing-skills.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "managing-installed-plugins.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "managing-installed-skills.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "publishing-plugins.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "publishing-skills.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "jfrog-init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "batch-walk.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "catalog-runtime-branches.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flow-diagram.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "how-to-ask-user.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jf-cli-install-internals.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jf-cli-install-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jf-cli-update-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jf-config-auth-picker.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "marketplace-setup.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-plugin-config.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "node-install-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-matching.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-picker.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-resolution-branches.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-state-reuse.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "script-invocation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-picker.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "claude-config.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "claude.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "command.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "jf-api.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "jf.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "netrc.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "project-cache.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "projects.mjs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "jfrog-add-claude-marketplace.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-detect-all.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-detect-catalog-runtime.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-detect-jf-cli.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-detect-jf-config.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-detect-jfrog-mcp.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-detect-project.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-detect-server-ping.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-install-jf-cli.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-login-register-session.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-login-save-credentials.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-reinstall-jfrog-plugin.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-resolve-jf-server.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-resolve-mcp-config.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-state-file.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-substitute-mcp-placeholders.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "jfrog-mcp-management",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-guard-common.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness-claude.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness-codex.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness-common.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness-cursor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness-devin.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness-kiro.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness-opencode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness-vscode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "key-rules-and-troubleshooting.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "persisting-env-vars.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "runtime-permissions.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "jfrog-agent-guard-check.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jfrog-agent-guard-env-probe.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "jfrog-package-curation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "rca-procedure.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "jfrog-reference-architecture",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "doc-access.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "jfrog-setup-package-managers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "global-cache-file.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jf-setup-command.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workspace-binding.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "merge-workspace-binding.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "VENDOR.md",
+        "type": "file"
+      }
+    ]
+  }
+}

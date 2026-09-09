@@ -1,0 +1,2872 @@
+{
+  "slug": "teamcity-cli",
+  "name": "Teamcity Cli",
+  "type": "plugin",
+  "description": "Agent skill for interacting with TeamCity CI/CD using the teamcity CLI. Enables Claude to explore builds, view logs, start jobs, manage queues, agents, and more.",
+  "longDescription": "Ships **2 skills**, `migrate-to-teamcity` (Migrating CI/CD pipelines to TeamCity), `teamcity-cli` (Use when working with TeamCity CI/CD or when a user provides a TeamCity build URL — drives the…).\n\nInstalls with `claude plugin install teamcity-cli@claude-plugins-official` from `JetBrains/teamcity-cli`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "JetBrains"
+  },
+  "externalUrl": "https://github.com/JetBrains/teamcity-cli/tree/0af59a58b17b5cec3750467ac588dd642c8f5e4c",
+  "marketplace": "claude-plugins-official",
+  "version": "1.3.0",
+  "sourceRevision": "0af59a58b17b5cec3750467ac588dd642c8f5e4c",
+  "contentDigest": "f6888025495e2ef0ff99a50b24bf220b9cb7cc36fce6b2a053faf795168c57e4",
+  "contentHash": "41e8fbe452827766",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/JetBrains/teamcity-cli.git",
+    "sha": "0af59a58b17b5cec3750467ac588dd642c8f5e4c"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-20T19:03:16Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "eval_task.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              },
+              {
+                "name": "migrate_issue.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          },
+          {
+            "name": "SECURITY.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".teamcity",
+        "type": "directory",
+        "children": [
+          {
+            "name": "init-teamcity.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "acceptance",
+        "type": "directory",
+        "children": [
+          {
+            "name": "testdata",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-authenticated.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-list.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "alias",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "alias-lifecycle.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "alias-list-empty.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "alias-set.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "analytics",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "optout.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "api",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "api-endpoints.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-errors.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-headers.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-input-stdin.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-methods.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-paginate.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-post-field.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-server.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-signal-cancel.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "auth",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auth-authenticated.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth-guest.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth-login-invalid-token.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth-login-token.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth-status-invalid-token.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth-status-multiserver.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth-status-not-logged-in.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "color.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config-lifecycle.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extra-headers.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "readonly.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "help",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "help.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "job",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "job-alias-buildtype.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job-authenticated.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job-create.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job-list.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job-settings.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job-step.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job-tree.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job-view.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "link",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "link-help.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "link-paths.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "link-resolves-into-commands.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "link-write.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pipeline",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "pipeline-list.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pool",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "pool-authenticated.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pool-link-unlink.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pool-list.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "project",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "project-authenticated.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-connection.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-create.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-list.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-settings-status.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-token-lifecycle.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-tree.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-vcs.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-view.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "queue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "queue-actions.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "queue-authenticated.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "queue-list.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "run",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "run-alias-build.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-artifacts.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-changes.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-download-options.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-list-favorites.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-list-filters.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-list-formats.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-list-user-filter.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-log.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-metadata-extended.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-metadata.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-restart.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-start.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-tests.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-tree.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-validation.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-view.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-watch.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "server",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "server-plugin-help.txtar",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skill",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skill-help.txtar",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-lifecycle.txtar",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "acceptance_test.go",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "api",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents_test.go",
+            "type": "file"
+          },
+          {
+            "name": "agents.go",
+            "type": "file"
+          },
+          {
+            "name": "api_test.go",
+            "type": "file"
+          },
+          {
+            "name": "auth_source.go",
+            "type": "file"
+          },
+          {
+            "name": "builds_artifacts_test.go",
+            "type": "file"
+          },
+          {
+            "name": "builds_artifacts.go",
+            "type": "file"
+          },
+          {
+            "name": "builds_metadata_test.go",
+            "type": "file"
+          },
+          {
+            "name": "builds_metadata.go",
+            "type": "file"
+          },
+          {
+            "name": "builds_queue_test.go",
+            "type": "file"
+          },
+          {
+            "name": "builds_queue.go",
+            "type": "file"
+          },
+          {
+            "name": "builds_test.go",
+            "type": "file"
+          },
+          {
+            "name": "builds.go",
+            "type": "file"
+          },
+          {
+            "name": "client_test.go",
+            "type": "file"
+          },
+          {
+            "name": "client.go",
+            "type": "file"
+          },
+          {
+            "name": "cloud_test.go",
+            "type": "file"
+          },
+          {
+            "name": "cloud.go",
+            "type": "file"
+          },
+          {
+            "name": "connections_test.go",
+            "type": "file"
+          },
+          {
+            "name": "connections.go",
+            "type": "file"
+          },
+          {
+            "name": "dateutil_test.go",
+            "type": "file"
+          },
+          {
+            "name": "dateutil.go",
+            "type": "file"
+          },
+          {
+            "name": "drift_test.go",
+            "type": "file"
+          },
+          {
+            "name": "errors_parse_test.go",
+            "type": "file"
+          },
+          {
+            "name": "errors_parse.go",
+            "type": "file"
+          },
+          {
+            "name": "errors_test.go",
+            "type": "file"
+          },
+          {
+            "name": "errors.go",
+            "type": "file"
+          },
+          {
+            "name": "fields_test.go",
+            "type": "file"
+          },
+          {
+            "name": "fields.go",
+            "type": "file"
+          },
+          {
+            "name": "headers_test.go",
+            "type": "file"
+          },
+          {
+            "name": "headers.go",
+            "type": "file"
+          },
+          {
+            "name": "interface.go",
+            "type": "file"
+          },
+          {
+            "name": "jobs_test.go",
+            "type": "file"
+          },
+          {
+            "name": "jobs.go",
+            "type": "file"
+          },
+          {
+            "name": "locator_test.go",
+            "type": "file"
+          },
+          {
+            "name": "locator.go",
+            "type": "file"
+          },
+          {
+            "name": "messages_test.go",
+            "type": "file"
+          },
+          {
+            "name": "messages.go",
+            "type": "file"
+          },
+          {
+            "name": "paginate_test.go",
+            "type": "file"
+          },
+          {
+            "name": "paginate.go",
+            "type": "file"
+          },
+          {
+            "name": "params_test.go",
+            "type": "file"
+          },
+          {
+            "name": "params.go",
+            "type": "file"
+          },
+          {
+            "name": "permissions.go",
+            "type": "file"
+          },
+          {
+            "name": "pipelines_test.go",
+            "type": "file"
+          },
+          {
+            "name": "pipelines.go",
+            "type": "file"
+          },
+          {
+            "name": "pkce_test.go",
+            "type": "file"
+          },
+          {
+            "name": "pkce.go",
+            "type": "file"
+          },
+          {
+            "name": "pools_test.go",
+            "type": "file"
+          },
+          {
+            "name": "pools.go",
+            "type": "file"
+          },
+          {
+            "name": "probe_test.go",
+            "type": "file"
+          },
+          {
+            "name": "probe.go",
+            "type": "file"
+          },
+          {
+            "name": "projects_test.go",
+            "type": "file"
+          },
+          {
+            "name": "projects.go",
+            "type": "file"
+          },
+          {
+            "name": "retry_test.go",
+            "type": "file"
+          },
+          {
+            "name": "retry.go",
+            "type": "file"
+          },
+          {
+            "name": "sandbox_test.go",
+            "type": "file"
+          },
+          {
+            "name": "settings_test.go",
+            "type": "file"
+          },
+          {
+            "name": "settings.go",
+            "type": "file"
+          },
+          {
+            "name": "ssh_keys_test.go",
+            "type": "file"
+          },
+          {
+            "name": "ssh_keys.go",
+            "type": "file"
+          },
+          {
+            "name": "terminal_pty_test.go",
+            "type": "file"
+          },
+          {
+            "name": "terminal_test.go",
+            "type": "file"
+          },
+          {
+            "name": "testenv_test.go",
+            "type": "file"
+          },
+          {
+            "name": "tests_test.go",
+            "type": "file"
+          },
+          {
+            "name": "tests.go",
+            "type": "file"
+          },
+          {
+            "name": "tls.go",
+            "type": "file"
+          },
+          {
+            "name": "types.go",
+            "type": "file"
+          },
+          {
+            "name": "users_test.go",
+            "type": "file"
+          },
+          {
+            "name": "users.go",
+            "type": "file"
+          },
+          {
+            "name": "vcs_roots_test.go",
+            "type": "file"
+          },
+          {
+            "name": "vcs_roots.go",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cfg",
+            "type": "directory",
+            "children": [
+              {
+                "name": "buildprofiles.xml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "images",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-exec_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-exec.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-jobs_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-jobs.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-list_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-list.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-term_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-term.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-view_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "agent-view.gif",
+                "type": "file"
+              },
+              {
+                "name": "alias-workflow_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "alias-workflow.gif",
+                "type": "file"
+              },
+              {
+                "name": "auth-login_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "auth-login.gif",
+                "type": "file"
+              },
+              {
+                "name": "cloud-instance-list_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "cloud-instance-list.gif",
+                "type": "file"
+              },
+              {
+                "name": "cloud-profile-list_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "cloud-profile-list.gif",
+                "type": "file"
+              },
+              {
+                "name": "job-list_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "job-list.gif",
+                "type": "file"
+              },
+              {
+                "name": "job-tree_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "job-tree.gif",
+                "type": "file"
+              },
+              {
+                "name": "json-output_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "json-output.gif",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-list_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-list.gif",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-schema_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-schema.gif",
+                "type": "file"
+              },
+              {
+                "name": "pool-list_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "pool-list.gif",
+                "type": "file"
+              },
+              {
+                "name": "pool-view_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "pool-view.gif",
+                "type": "file"
+              },
+              {
+                "name": "project-list_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "project-list.gif",
+                "type": "file"
+              },
+              {
+                "name": "project-tree_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "project-tree.gif",
+                "type": "file"
+              },
+              {
+                "name": "project-vcs_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "project-vcs.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-diff_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-diff.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-list_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-list.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-log_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-log.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-start-watch_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-start-watch.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-tests_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-tests.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-tree_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-tree-pipeline_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-tree-pipeline.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-tree.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-watch-logs_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "run-watch-logs.gif",
+                "type": "file"
+              },
+              {
+                "name": "showcase_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "showcase.gif",
+                "type": "file"
+              },
+              {
+                "name": "skill-install_dark.gif",
+                "type": "file"
+              },
+              {
+                "name": "skill-install.gif",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tapes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-exec.tape",
+                "type": "file"
+              },
+              {
+                "name": "agent-jobs.tape",
+                "type": "file"
+              },
+              {
+                "name": "agent-list.tape",
+                "type": "file"
+              },
+              {
+                "name": "agent-term.tape",
+                "type": "file"
+              },
+              {
+                "name": "agent-view.tape",
+                "type": "file"
+              },
+              {
+                "name": "alias-workflow.tape",
+                "type": "file"
+              },
+              {
+                "name": "auth-login.tape",
+                "type": "file"
+              },
+              {
+                "name": "cloud-instance-list.tape",
+                "type": "file"
+              },
+              {
+                "name": "cloud-profile-list.tape",
+                "type": "file"
+              },
+              {
+                "name": "job-list.tape",
+                "type": "file"
+              },
+              {
+                "name": "job-tree.tape",
+                "type": "file"
+              },
+              {
+                "name": "json-output.tape",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-list.tape",
+                "type": "file"
+              },
+              {
+                "name": "pipeline-schema.tape",
+                "type": "file"
+              },
+              {
+                "name": "pool-list.tape",
+                "type": "file"
+              },
+              {
+                "name": "pool-view.tape",
+                "type": "file"
+              },
+              {
+                "name": "project-list.tape",
+                "type": "file"
+              },
+              {
+                "name": "project-tree.tape",
+                "type": "file"
+              },
+              {
+                "name": "project-vcs.tape",
+                "type": "file"
+              },
+              {
+                "name": "run-diff.tape",
+                "type": "file"
+              },
+              {
+                "name": "run-list.tape",
+                "type": "file"
+              },
+              {
+                "name": "run-log.tape",
+                "type": "file"
+              },
+              {
+                "name": "run-start-watch.tape",
+                "type": "file"
+              },
+              {
+                "name": "run-tests.tape",
+                "type": "file"
+              },
+              {
+                "name": "run-tree-pipeline.tape",
+                "type": "file"
+              },
+              {
+                "name": "run-tree.tape",
+                "type": "file"
+              },
+              {
+                "name": "run-watch-logs.tape",
+                "type": "file"
+              },
+              {
+                "name": "showcase.tape",
+                "type": "file"
+              },
+              {
+                "name": "skill-install.tape",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "topics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "teamcity-cli-ai-agent-integration.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-aliases.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-analytics.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-authentication.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-commands.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-configuration.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-get-started.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-glossary.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-linking.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-managing-agent-pools.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-managing-agents.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-managing-build-queue.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-managing-cloud-agents.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-managing-jobs.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-managing-pipelines.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-managing-projects.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-managing-runs.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-rest-api-access.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli-scripting.md",
+                "type": "file"
+              },
+              {
+                "name": "teamcity-cli.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "c.list",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "teamcity-cli.tree",
+            "type": "file"
+          },
+          {
+            "name": "v.list",
+            "type": "file"
+          },
+          {
+            "name": "writerside.cfg",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "evals",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scaffold",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude.py",
+                "type": "file"
+              },
+              {
+                "name": "events.py",
+                "type": "file"
+              },
+              {
+                "name": "graders.py",
+                "type": "file"
+              },
+              {
+                "name": "langfuse_log.py",
+                "type": "file"
+              },
+              {
+                "name": "runner.py",
+                "type": "file"
+              },
+              {
+                "name": "sentry_log.py",
+                "type": "file"
+              },
+              {
+                "name": "tasks.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "compare.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_checks.py",
+                "type": "file"
+              },
+              {
+                "name": "test_tasks.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".env",
+            "type": "file"
+          },
+          {
+            "name": "checks.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "Dockerfile",
+            "type": "file"
+          },
+          {
+            "name": "pyproject.toml",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "tasks.json",
+            "type": "file"
+          },
+          {
+            "name": "uv.lock",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "internal",
+        "type": "directory",
+        "children": [
+          {
+            "name": "analytics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "api_resource_test.go",
+                "type": "file"
+              },
+              {
+                "name": "api_resource.go",
+                "type": "file"
+              },
+              {
+                "name": "cdn_cache.go",
+                "type": "file"
+              },
+              {
+                "name": "client_test.go",
+                "type": "file"
+              },
+              {
+                "name": "client.go",
+                "type": "file"
+              },
+              {
+                "name": "detect_test.go",
+                "type": "file"
+              },
+              {
+                "name": "detect.go",
+                "type": "file"
+              },
+              {
+                "name": "enums.go",
+                "type": "file"
+              },
+              {
+                "name": "events.go",
+                "type": "file"
+              },
+              {
+                "name": "integration_test.go",
+                "type": "file"
+              },
+              {
+                "name": "main_test.go",
+                "type": "file"
+              },
+              {
+                "name": "notice.go",
+                "type": "file"
+              },
+              {
+                "name": "optout_test.go",
+                "type": "file"
+              },
+              {
+                "name": "optout.go",
+                "type": "file"
+              },
+              {
+                "name": "scheme_test.go",
+                "type": "file"
+              },
+              {
+                "name": "scheme.go",
+                "type": "file"
+              },
+              {
+                "name": "server_info_test.go",
+                "type": "file"
+              },
+              {
+                "name": "server_info.go",
+                "type": "file"
+              },
+              {
+                "name": "session_test.go",
+                "type": "file"
+              },
+              {
+                "name": "session.go",
+                "type": "file"
+              },
+              {
+                "name": "staging_send_test.go",
+                "type": "file"
+              },
+              {
+                "name": "validate_test.go",
+                "type": "file"
+              },
+              {
+                "name": "validate.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "atomicfile",
+            "type": "directory",
+            "children": [
+              {
+                "name": "atomicfile.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "browserflow",
+            "type": "directory",
+            "children": [
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "callback.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "flow_test.go",
+                "type": "file"
+              },
+              {
+                "name": "flow.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cmd",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent_jobs.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent_reboot.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent_state.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "terminal.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "alias",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "alias_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "alias.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expand_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expand.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "api",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "api_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "auth",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auth_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "errors.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "login.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "logout.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pkce_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pkce.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "status.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "job",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "create_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "create.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "step_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "step.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tree_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tree.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "link",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "discover_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discover.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "interactive.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "link_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "link.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "migrate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "migrate.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "telemetry_test.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "param",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "param_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "param.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pipeline",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "create.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "delete.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pipeline_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pipeline.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pull.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "push.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "view.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "plugin_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plugin.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pool",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "link.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pool_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pool.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "project",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "manifest_start.html",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "cloud_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cloud.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection_authorize_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection_authorize.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection_create_github_app_manifest_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection_create_github_app_manifest.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection_create.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection_delete.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection_view.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "create_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "create.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "helpers_internal_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "settings_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "settings.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ssh_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ssh.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vcs_internal_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vcs_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vcs.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "queue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "queue_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "queue.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "remove.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "run",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tui",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "tui_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tui.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "analysis.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "artifacts_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "artifacts.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cancel.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cmd_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compatibility_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "compatibility.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "diff_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "diff.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "download.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "list.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local_changes_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local_changes.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "metadata.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "restart.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "start.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tree_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tree.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watch_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watch.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "server",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "server.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "setting",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setting_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setting.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skill",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skill_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "update",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "update_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "update.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "analytics_internal_test.go",
+                "type": "file"
+              },
+              {
+                "name": "analytics.go",
+                "type": "file"
+              },
+              {
+                "name": "cmd_enum_test.go",
+                "type": "file"
+              },
+              {
+                "name": "cmd_test.go",
+                "type": "file"
+              },
+              {
+                "name": "completion_integration_test.go",
+                "type": "file"
+              },
+              {
+                "name": "root.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cmdtest",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mock_handlers.go",
+                "type": "file"
+              },
+              {
+                "name": "testutil.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cmdutil",
+            "type": "directory",
+            "children": [
+              {
+                "name": "alias_help.go",
+                "type": "file"
+              },
+              {
+                "name": "client_test.go",
+                "type": "file"
+              },
+              {
+                "name": "client.go",
+                "type": "file"
+              },
+              {
+                "name": "cmdutil.go",
+                "type": "file"
+              },
+              {
+                "name": "deprecate.go",
+                "type": "file"
+              },
+              {
+                "name": "exit.go",
+                "type": "file"
+              },
+              {
+                "name": "experimental_test.go",
+                "type": "file"
+              },
+              {
+                "name": "experimental.go",
+                "type": "file"
+              },
+              {
+                "name": "factory.go",
+                "type": "file"
+              },
+              {
+                "name": "failure_summary_test.go",
+                "type": "file"
+              },
+              {
+                "name": "failure.go",
+                "type": "file"
+              },
+              {
+                "name": "helpers_test.go",
+                "type": "file"
+              },
+              {
+                "name": "helpers.go",
+                "type": "file"
+              },
+              {
+                "name": "json_fields_test.go",
+                "type": "file"
+              },
+              {
+                "name": "json_fields.go",
+                "type": "file"
+              },
+              {
+                "name": "link_test.go",
+                "type": "file"
+              },
+              {
+                "name": "link.go",
+                "type": "file"
+              },
+              {
+                "name": "list.go",
+                "type": "file"
+              },
+              {
+                "name": "prompt.go",
+                "type": "file"
+              },
+              {
+                "name": "resource.go",
+                "type": "file"
+              },
+              {
+                "name": "schema_cache.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "completion",
+            "type": "directory",
+            "children": [
+              {
+                "name": "completion_test.go",
+                "type": "file"
+              },
+              {
+                "name": "completion.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "aliases_test.go",
+                "type": "file"
+              },
+              {
+                "name": "aliases.go",
+                "type": "file"
+              },
+              {
+                "name": "buildauth_test.go",
+                "type": "file"
+              },
+              {
+                "name": "buildauth.go",
+                "type": "file"
+              },
+              {
+                "name": "config_test.go",
+                "type": "file"
+              },
+              {
+                "name": "config.go",
+                "type": "file"
+              },
+              {
+                "name": "fields.go",
+                "type": "file"
+              },
+              {
+                "name": "keyring.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gallery",
+            "type": "directory",
+            "children": [
+              {
+                "name": "doc.go",
+                "type": "file"
+              },
+              {
+                "name": "gallery_test.go",
+                "type": "file"
+              },
+              {
+                "name": "mocks_test.go",
+                "type": "file"
+              },
+              {
+                "name": "screens_test.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "git",
+            "type": "directory",
+            "children": [
+              {
+                "name": "git_test.go",
+                "type": "file"
+              },
+              {
+                "name": "git.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "link",
+            "type": "directory",
+            "children": [
+              {
+                "name": "link_test.go",
+                "type": "file"
+              },
+              {
+                "name": "link.go",
+                "type": "file"
+              },
+              {
+                "name": "schema_test.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "migrate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "testdata",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bamboo",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "bamboo.yml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "github",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ci.yml",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "bamboo_test.go",
+                "type": "file"
+              },
+              {
+                "name": "bamboo.go",
+                "type": "file"
+              },
+              {
+                "name": "convert_test.go",
+                "type": "file"
+              },
+              {
+                "name": "convert.go",
+                "type": "file"
+              },
+              {
+                "name": "detect_test.go",
+                "type": "file"
+              },
+              {
+                "name": "detect.go",
+                "type": "file"
+              },
+              {
+                "name": "github_actions.go",
+                "type": "file"
+              },
+              {
+                "name": "github.go",
+                "type": "file"
+              },
+              {
+                "name": "internal_test.go",
+                "type": "file"
+              },
+              {
+                "name": "pipeline_test.go",
+                "type": "file"
+              },
+              {
+                "name": "pipeline.go",
+                "type": "file"
+              },
+              {
+                "name": "results.go",
+                "type": "file"
+              },
+              {
+                "name": "vars.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "output",
+            "type": "directory",
+            "children": [
+              {
+                "name": "color_test.go",
+                "type": "file"
+              },
+              {
+                "name": "color.go",
+                "type": "file"
+              },
+              {
+                "name": "diff.go",
+                "type": "file"
+              },
+              {
+                "name": "json_error_test.go",
+                "type": "file"
+              },
+              {
+                "name": "json_error.go",
+                "type": "file"
+              },
+              {
+                "name": "logo_test.go",
+                "type": "file"
+              },
+              {
+                "name": "logo.go",
+                "type": "file"
+              },
+              {
+                "name": "printer_test.go",
+                "type": "file"
+              },
+              {
+                "name": "printer.go",
+                "type": "file"
+              },
+              {
+                "name": "render_error_test.go",
+                "type": "file"
+              },
+              {
+                "name": "render_error.go",
+                "type": "file"
+              },
+              {
+                "name": "spinner_test.go",
+                "type": "file"
+              },
+              {
+                "name": "spinner.go",
+                "type": "file"
+              },
+              {
+                "name": "status_test.go",
+                "type": "file"
+              },
+              {
+                "name": "status.go",
+                "type": "file"
+              },
+              {
+                "name": "symbols_test.go",
+                "type": "file"
+              },
+              {
+                "name": "symbols.go",
+                "type": "file"
+              },
+              {
+                "name": "table_test.go",
+                "type": "file"
+              },
+              {
+                "name": "table.go",
+                "type": "file"
+              },
+              {
+                "name": "terminal_test.go",
+                "type": "file"
+              },
+              {
+                "name": "terminal.go",
+                "type": "file"
+              },
+              {
+                "name": "tests_test.go",
+                "type": "file"
+              },
+              {
+                "name": "tests.go",
+                "type": "file"
+              },
+              {
+                "name": "time_test.go",
+                "type": "file"
+              },
+              {
+                "name": "time.go",
+                "type": "file"
+              },
+              {
+                "name": "tips.go",
+                "type": "file"
+              },
+              {
+                "name": "tree_test.go",
+                "type": "file"
+              },
+              {
+                "name": "tree.go",
+                "type": "file"
+              },
+              {
+                "name": "utf8_other.go",
+                "type": "file"
+              },
+              {
+                "name": "utf8_windows.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pipelineschema",
+            "type": "directory",
+            "children": [
+              {
+                "name": "schema_test.go",
+                "type": "file"
+              },
+              {
+                "name": "schema.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "terminal",
+            "type": "directory",
+            "children": [
+              {
+                "name": "terminal_test.go",
+                "type": "file"
+              },
+              {
+                "name": "terminal_unit_test.go",
+                "type": "file"
+              },
+              {
+                "name": "terminal_unix.go",
+                "type": "file"
+              },
+              {
+                "name": "terminal_windows.go",
+                "type": "file"
+              },
+              {
+                "name": "terminal.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "update",
+            "type": "directory",
+            "children": [
+              {
+                "name": "check_test.go",
+                "type": "file"
+              },
+              {
+                "name": "check.go",
+                "type": "file"
+              },
+              {
+                "name": "install_test.go",
+                "type": "file"
+              },
+              {
+                "name": "install.go",
+                "type": "file"
+              },
+              {
+                "name": "update_test.go",
+                "type": "file"
+              },
+              {
+                "name": "update.go",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "version",
+            "type": "directory",
+            "children": [
+              {
+                "name": "version.go",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "schemas",
+        "type": "directory",
+        "children": [
+          {
+            "name": "embed.go",
+            "type": "file"
+          },
+          {
+            "name": "pipeline.json",
+            "type": "file"
+          },
+          {
+            "name": "teamcity.toml.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "generate-cli-schema.go",
+            "type": "file"
+          },
+          {
+            "name": "generate-docs.go",
+            "type": "file"
+          },
+          {
+            "name": "generate-fus-schema.go",
+            "type": "file"
+          },
+          {
+            "name": "record-gifs.go",
+            "type": "file"
+          },
+          {
+            "name": "sync-docs.go",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "migrate-to-teamcity",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "gotchas.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mappings.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "teamcity-cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "babysit-build.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commands.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "output.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workflows.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tc",
+        "type": "directory",
+        "children": [
+          {
+            "name": "main.go",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".golangci.yml",
+        "type": "file"
+      },
+      {
+        "name": ".goreleaser.yaml",
+        "type": "file"
+      },
+      {
+        "name": ".teamcity.yml",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "go.mod",
+        "type": "file"
+      },
+      {
+        "name": "go.sum",
+        "type": "file"
+      },
+      {
+        "name": "install.cmd",
+        "type": "file"
+      },
+      {
+        "name": "install.ps1",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "justfile",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "skills.go",
+        "type": "file"
+      },
+      {
+        "name": "teamcity.toml",
+        "type": "file"
+      }
+    ]
+  }
+}

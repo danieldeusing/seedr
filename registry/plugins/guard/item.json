@@ -1,0 +1,839 @@
+{
+  "slug": "guard",
+  "name": "Guard",
+  "type": "plugin",
+  "description": "PreToolUse hooks for Claude Code that deny dangerous shell, git, and credential commands before they run: `rm -rf /` shapes, `git push --force`, `python -c` / `node -e` eval, pipe-to-shell, live credentials (`gh auth token`, `aws sts get-session-token`, `op read`), `git -c core.hooksPath=…` injection, silent commit reuse (`git commit -C HEAD~1`, `--reuse-message`). Each deny names the rule and prints a one-line override (`guard allowlist allow-command …`); decisions stream to a JSONL log the optional CLI reads (`pipx install tracine-guard`, then `guard noisy --since 24h` or `guard trace <session>`). Apache-2.0, no third-party deps. Defense in depth alongside Claude Code's own permissions — especially valuable for autonomous agent windows where no human is present to answer an ASK, so denies act as a hard floor. Not a sandbox or exfiltration boundary; see SECURITY.md.",
+  "longDescription": "Ships **6 commands** and **2 hooks**.\n\n- **Commands** (6): `diff` (Show the effective merged config (built-in defaults; user/project layers land later)), `noisy` (Top N rules by hit count, grouped by (hook_id, decision)), `silent` (Rules that haven't fired in --since but have fired at some point), `status` (Show guard installation status, log location, line count, and last record), `test` (In-process invocation of each hook's decide() on a given bash command), `trace` (Print every record matching a session-id, in chronological order)\n- **Hooks** (2): `PreToolUse`, `PermissionRequest`\n\nInstalls with `claude plugin install guard@claude-community` from `TracineHQ/guard`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "hook": 2,
+    "command": 6
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "TracineHQ contributors",
+    "url": "https://github.com/TracineHQ"
+  },
+  "externalUrl": "https://github.com/TracineHQ/guard/tree/aa18d9bf1d5f98b65ca30f85c96f78dff6c7480c",
+  "marketplace": "claude-community",
+  "version": "1.5.0",
+  "sourceRevision": "aa18d9bf1d5f98b65ca30f85c96f78dff6c7480c",
+  "contentDigest": "ae3f61e804783f71897c42c6737c7497a39219eec5c180e5b56fd0b9f6a849c4",
+  "contentHash": "20f4c8d87a8faf66",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/TracineHQ/guard.git",
+    "sha": "aa18d9bf1d5f98b65ca30f85c96f78dff6c7480c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-06-03T18:13:54Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug.yml",
+                "type": "file"
+              },
+              {
+                "name": "bypass.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "false-positive.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "codeql.yml",
+                "type": "file"
+              },
+              {
+                "name": "cut-release.yml",
+                "type": "file"
+              },
+              {
+                "name": "plugin-install.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "scorecard.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".semgrep",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "no-bare-noqa.yml",
+                "type": "file"
+              },
+              {
+                "name": "no-prefix-predicate-in-readonly.yml",
+                "type": "file"
+              },
+              {
+                "name": "no-startswith-in-predicate-field.yml",
+                "type": "file"
+              },
+              {
+                "name": "test-hygiene.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "run-hook",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "diff.md",
+            "type": "file"
+          },
+          {
+            "name": "noisy.md",
+            "type": "file"
+          },
+          {
+            "name": "silent.md",
+            "type": "file"
+          },
+          {
+            "name": "status.md",
+            "type": "file"
+          },
+          {
+            "name": "test.md",
+            "type": "file"
+          },
+          {
+            "name": "trace.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "anti-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "dangerous-commands.md",
+            "type": "file"
+          },
+          {
+            "name": "hooks-reference.md",
+            "type": "file"
+          },
+          {
+            "name": "JSONL_FORMAT.md",
+            "type": "file"
+          },
+          {
+            "name": "local-development.md",
+            "type": "file"
+          },
+          {
+            "name": "output-format.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "guard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "_admin_specs.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "_registry.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent_output_guard.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bash_command_validator.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "commit_message_validator.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "credential_check.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git_c_validator.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "permission_request_logger.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "protected_files.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "subagent_scope.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "_corpus.py",
+                "type": "file"
+              },
+              {
+                "name": "_safe_io.py",
+                "type": "file"
+              },
+              {
+                "name": "_status.py",
+                "type": "file"
+              },
+              {
+                "name": "_utils.py",
+                "type": "file"
+              },
+              {
+                "name": "allowlist.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "migrate_log.py",
+                "type": "file"
+              },
+              {
+                "name": "registry.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_cli_allowlist.py",
+                "type": "file"
+              },
+              {
+                "name": "test_cli.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "corpus",
+            "type": "directory",
+            "children": [
+              {
+                "name": "allow.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "conditional_safe.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "convo.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "crossexam.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "deny.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "escalation.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "fs_attr.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "harness.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "host_control.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "registry.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "secret_egress.jsonl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_adversarial_review.py",
+                "type": "file"
+              },
+              {
+                "name": "test_agent_output_guard.py",
+                "type": "file"
+              },
+              {
+                "name": "test_bash_command_validator.py",
+                "type": "file"
+              },
+              {
+                "name": "test_commit_message_validator.py",
+                "type": "file"
+              },
+              {
+                "name": "test_credential_check_path_signal.py",
+                "type": "file"
+              },
+              {
+                "name": "test_credential_check.py",
+                "type": "file"
+              },
+              {
+                "name": "test_git_c_validator.py",
+                "type": "file"
+              },
+              {
+                "name": "test_harness_steering.py",
+                "type": "file"
+              },
+              {
+                "name": "test_permission_request_logger.py",
+                "type": "file"
+              },
+              {
+                "name": "test_protected_files_extension.py",
+                "type": "file"
+              },
+              {
+                "name": "test_protected_files_extractor_coverage.py",
+                "type": "file"
+              },
+              {
+                "name": "test_protected_files.py",
+                "type": "file"
+              },
+              {
+                "name": "test_subagent_scope.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "aws_catalog_smoke_corpus.txt",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_cli_coverage.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_default_deny.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_env_overrides.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_forbidden_flags.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_forbidden_subcommands.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_red_team_shapes.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_specs_invariants.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_unknown_flags.py",
+                "type": "file"
+              },
+              {
+                "name": "test_allowlist_integration.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ask_tier_coverage.py",
+                "type": "file"
+              },
+              {
+                "name": "test_autonomous_mode.py",
+                "type": "file"
+              },
+              {
+                "name": "test_aws_bypass_smoke.py",
+                "type": "file"
+              },
+              {
+                "name": "test_bypass_regressions.py",
+                "type": "file"
+              },
+              {
+                "name": "test_canonicalize_properties.py",
+                "type": "file"
+              },
+              {
+                "name": "test_corpus_add.py",
+                "type": "file"
+              },
+              {
+                "name": "test_corpus_fp_rate.py",
+                "type": "file"
+              },
+              {
+                "name": "test_corpus_harness.py",
+                "type": "file"
+              },
+              {
+                "name": "test_exec_wrapper_floor_coverage.py",
+                "type": "file"
+              },
+              {
+                "name": "test_force_push_symmetry.py",
+                "type": "file"
+              },
+              {
+                "name": "test_fp2_substitution.py",
+                "type": "file"
+              },
+              {
+                "name": "test_fp3_course_correction.py",
+                "type": "file"
+              },
+              {
+                "name": "test_git_c_parity.py",
+                "type": "file"
+              },
+              {
+                "name": "test_git_write_coverage.py",
+                "type": "file"
+              },
+              {
+                "name": "test_hardening.py",
+                "type": "file"
+              },
+              {
+                "name": "test_heredoc_bypass.py",
+                "type": "file"
+              },
+              {
+                "name": "test_hook_subprocess_invocation.py",
+                "type": "file"
+              },
+              {
+                "name": "test_jsonl_contract.py",
+                "type": "file"
+              },
+              {
+                "name": "test_operator_classification.py",
+                "type": "file"
+              },
+              {
+                "name": "test_orchestration_destruction.py",
+                "type": "file"
+              },
+              {
+                "name": "test_plugin_e2e.py",
+                "type": "file"
+              },
+              {
+                "name": "test_plugin_manifests.py",
+                "type": "file"
+              },
+              {
+                "name": "test_registry_wiring.py",
+                "type": "file"
+              },
+              {
+                "name": "test_secret_value.py",
+                "type": "file"
+              },
+              {
+                "name": "test_shadow_mode.py",
+                "type": "file"
+              },
+              {
+                "name": "test_stdin_device_bypass.py",
+                "type": "file"
+              },
+              {
+                "name": "test_strict_floor_adversarial.py",
+                "type": "file"
+              },
+              {
+                "name": "test_strict_mode.py",
+                "type": "file"
+              },
+              {
+                "name": "test_synth_matchers_coverage.py",
+                "type": "file"
+              },
+              {
+                "name": "test_validators_integration.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "static",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "legitimate_startswith.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prefix_predicate_violation.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_semgrep_rules.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "unit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test_admin_deny_body.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_forbidden_flag.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_internals_coverage.py",
+                "type": "file"
+              },
+              {
+                "name": "test_admin_sensitive_env.py",
+                "type": "file"
+              },
+              {
+                "name": "test_format_deny_reason.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ops_primitives.py",
+                "type": "file"
+              },
+              {
+                "name": "test_unknown_flags.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "_helpers.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_allowlist.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hook_registry.py",
+            "type": "file"
+          },
+          {
+            "name": "test_jsonl_schema.py",
+            "type": "file"
+          },
+          {
+            "name": "test_migrate_log.py",
+            "type": "file"
+          },
+          {
+            "name": "test_no_dead_exports.py",
+            "type": "file"
+          },
+          {
+            "name": "test_registry.py",
+            "type": "file"
+          },
+          {
+            "name": "test_run_hook_isolation.py",
+            "type": "file"
+          },
+          {
+            "name": "test_safe_io.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smoke.py",
+            "type": "file"
+          },
+          {
+            "name": "test_status_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "test_utils.py",
+            "type": "file"
+          },
+          {
+            "name": "test_version_consistency.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "_typos.toml",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".pre-commit-config.yaml",
+        "type": "file"
+      },
+      {
+        "name": ".secrets.baseline",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "justfile",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "NOTICE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "RELEASING.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "SKILL.md",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      },
+      {
+        "name": "vulture_whitelist.py",
+        "type": "file"
+      }
+    ]
+  }
+}

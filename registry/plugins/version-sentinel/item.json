@@ -1,0 +1,725 @@
+{
+  "slug": "version-sentinel",
+  "name": "Version Sentinel",
+  "type": "plugin",
+  "description": "Hard-blocks dependency additions, bumps, and downgrades until a fresh, source-cited version check is recorded via WebSearch. Supports npm, pip, Cargo, and NuGet ecosystems. Uses PreToolUse hooks to intercept manifest edits and install commands, blocking them until the developer verifies the latest version upstream.",
+  "longDescription": "Ships **1 skill**, **1 agent**, **2 commands** and **3 hooks**.\n\n- **Skills** (1): `version-sentinel` (Use when adding, bumping, or changing a dependency in package.json, requirements*.txt, constraints*.txt, pyproject.toml, Cargo.toml, *.csproj, *.fsproj, or *.vbproj)\n- **Agents** (1): `version-reviewer.agent` (Use before tagging a release, merging a release PR, or whenever the user asks to audit dependency freshness)\n- **Commands** (2): `check-versions` (Audit dependencies against upstream registries (npm, pypi, nuget, crates.io)), `vs-record` (Record a fresh version check in the version-sentinel sidecar)\n- **Hooks** (3): `SessionStart`, `PreToolUse`, `PostToolUse`\n\nInstalls with `claude plugin install version-sentinel@claude-community` from `KSEGIT/Version-Sentinel`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "agent": 1,
+    "hook": 3,
+    "command": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Daniel Kiska",
+    "url": "https://github.com/KSEGIT"
+  },
+  "externalUrl": "https://github.com/KSEGIT/Version-Sentinel/tree/df2dde790963b161fea28ea1f2307bbb8fec7b47",
+  "marketplace": "claude-community",
+  "version": "0.4.2",
+  "sourceRevision": "df2dde790963b161fea28ea1f2307bbb8fec7b47",
+  "contentDigest": "ad1878fa85a53659557389ef985f391cd4ecefa15ccea35e47b546baabb6ba45",
+  "contentHash": "0e47e807eb585a91",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/KSEGIT/Version-Sentinel.git",
+    "sha": "df2dde790963b161fea28ea1f2307bbb8fec7b47"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-08T23:07:48Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "version-sentinel",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "version-reviewer.agent.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "version-sentinel.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prompts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "check-versions.prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "vs-record.prompt.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "changelog-check.yml",
+                "type": "file"
+              },
+              {
+                "name": "release-please.yml",
+                "type": "file"
+              },
+              {
+                "name": "tests.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copilot-instructions.md",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "version-reviewer.agent.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hero.png",
+            "type": "file"
+          },
+          {
+            "name": "logo.svg",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "vs-record",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-versions.md",
+            "type": "file"
+          },
+          {
+            "name": "check-versions.toml",
+            "type": "file"
+          },
+          {
+            "name": "vs-record.md",
+            "type": "file"
+          },
+          {
+            "name": "vs-record.toml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "directory-submission.md",
+            "type": "file"
+          },
+          {
+            "name": "e2e-checklist.md",
+            "type": "file"
+          },
+          {
+            "name": "marketplaces.md",
+            "type": "file"
+          },
+          {
+            "name": "openai-submission.md",
+            "type": "file"
+          },
+          {
+            "name": "versioning.md",
+            "type": "file"
+          },
+          {
+            "name": "zed.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "gemini-hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "platforms",
+        "type": "directory",
+        "children": [
+          {
+            "name": "gemini",
+            "type": "directory",
+            "children": [
+              {
+                "name": "setup.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kimi",
+            "type": "directory",
+            "children": [
+              {
+                "name": "commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "check-versions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vs-record.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "circuit-breaker.sh",
+                "type": "file"
+              },
+              {
+                "name": "coalesce.sh",
+                "type": "file"
+              },
+              {
+                "name": "etag-cache.sh",
+                "type": "file"
+              },
+              {
+                "name": "lockfile.sh",
+                "type": "file"
+              },
+              {
+                "name": "options.sh",
+                "type": "file"
+              },
+              {
+                "name": "parse-install-cmd.sh",
+                "type": "file"
+              },
+              {
+                "name": "parse-manifest.sh",
+                "type": "file"
+              },
+              {
+                "name": "platform.sh",
+                "type": "file"
+              },
+              {
+                "name": "registries.sh",
+                "type": "file"
+              },
+              {
+                "name": "retry.sh",
+                "type": "file"
+              },
+              {
+                "name": "sidecar.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auto-record.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-sidecar.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-versions.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-install-cmd.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-manifest-edit.sh",
+            "type": "file"
+          },
+          {
+            "name": "prereq-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "vs-record.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "version-sentinel",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "payloads",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "codex-apply-patch-patch-only.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex-apply-patch.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini-run-shell-install.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini-write-file.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kimi-bash-install.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vscode-editFiles.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".keep",
+                "type": "file"
+              },
+              {
+                "name": "bash_npm_install.json",
+                "type": "file"
+              },
+              {
+                "name": "bash_pip_install.json",
+                "type": "file"
+              },
+              {
+                "name": "Cargo.toml",
+                "type": "file"
+              },
+              {
+                "name": "Demo.csproj",
+                "type": "file"
+              },
+              {
+                "name": "edit_input_add_lodash.json",
+                "type": "file"
+              },
+              {
+                "name": "edit_input_kimi_path.json",
+                "type": "file"
+              },
+              {
+                "name": "multiedit_input_bump.json",
+                "type": "file"
+              },
+              {
+                "name": "package_no_deps.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "registry_crates_serde.json",
+                "type": "file"
+              },
+              {
+                "name": "registry_npm_lodash.json",
+                "type": "file"
+              },
+              {
+                "name": "registry_nuget_newtonsoft.json",
+                "type": "file"
+              },
+              {
+                "name": "registry_pypi_requests.json",
+                "type": "file"
+              },
+              {
+                "name": "requirements_tricky.txt",
+                "type": "file"
+              },
+              {
+                "name": "requirements.txt",
+                "type": "file"
+              },
+              {
+                "name": "sidecar_empty.json",
+                "type": "file"
+              },
+              {
+                "name": "sidecar_one_entry.json",
+                "type": "file"
+              },
+              {
+                "name": "write_input_new_package.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "smoke.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "assert.sh",
+            "type": "file"
+          },
+          {
+            "name": "run.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_auto_record.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_check_sidecar.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_circuit_breaker.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_coalesce.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_detect_install_cmd.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_detect_manifest_edit.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_etag_cache.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_harness.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_lockfile.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_manifest_parity.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_options_lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_parse_cargo.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_parse_csproj.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_parse_dispatch.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_parse_install_cmd.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_parse_npm.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_parse_pip.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_parse_pyproject.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_platform_normalize.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_platform_payloads.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_prereq_check.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_registries_offline.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_retry.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_sidecar.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_vs_record_validation.sh",
+            "type": "file"
+          },
+          {
+            "name": "test_vs_record.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".release-please-manifest.json",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "kimi-marketplace.json",
+        "type": "file"
+      },
+      {
+        "name": "kimi.plugin.json",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "plugin.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "release-please-config.json",
+        "type": "file"
+      },
+      {
+        "name": "version-sentinel.sln",
+        "type": "file"
+      },
+      {
+        "name": "version.txt",
+        "type": "file"
+      }
+    ]
+  }
+}

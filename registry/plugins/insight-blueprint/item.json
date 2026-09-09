@@ -1,0 +1,2092 @@
+{
+  "slug": "insight-blueprint",
+  "name": "Insight Blueprint",
+  "type": "plugin",
+  "description": "Hypothesis-driven data analysis workflow and catalog MCP server",
+  "longDescription": "Ships **10 skills** and **2 MCP servers**.\n\n- **Skills** (10): `analysis-design` (Guides Claude through creating analysis design documents for hypothesis-driven EDA), `analysis-framing` (Explores existing data and analyses to help frame a hypothesis), `analysis-journal` (Records reasoning steps during hypothesis-driven analysis as an Insight Journal), `analysis-reflection` (Guides structured reflection on an analysis design using its Insight Journal), `analysis-revision` (Guides structured revision of an analysis design based on review comments), `batch-analysis` (Overnight batch execution of queued analysis designs), `catalog-register` (Guides Claude through discovering data source schemas and registering them in the insight-blueprint data catalog), `data-lineage` (Track data transformation pipeline lineage in analysis notebooks/scripts), and 2 more\n- **MCP servers** (2): `insight-blueprint`, `spec-workflow`\n\nInstalls with `claude plugin install insight-blueprint@claude-community` from `etoyama/insight-blueprint`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 10,
+    "mcp": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Eto Yama"
+  },
+  "externalUrl": "https://github.com/etoyama/insight-blueprint/tree/b6a2f306296ef17e2e724d0f7e7ac9804d98cbc4",
+  "marketplace": "claude-community",
+  "version": "0.6.0",
+  "sourceRevision": "b6a2f306296ef17e2e724d0f7e7ac9804d98cbc4",
+  "contentDigest": "3414f2ea5a8ca09a33c257b337059306744a489bd029f45639f8d00581a49c09",
+  "contentHash": "7728ce204daf3d73",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/etoyama/insight-blueprint.git",
+    "sha": "b6a2f306296ef17e2e724d0f7e7ac9804d98cbc4"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-03T00:46:20Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "dependabot-auto-merge.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".insight",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "methodology_vocab.yaml",
+                "type": "file"
+              },
+              {
+                "name": "package_allowlist.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config.example.yaml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".spec-workflow",
+        "type": "directory",
+        "children": [
+          {
+            "name": "specs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analysis-revision",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "batch-analysis",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "investigation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "batch-harness-engineering",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "design-status-refactor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "inline-review-comments",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "knowledge-suggestion",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "plugin-distribution",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pypi-publish-readiness",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skill-connectivity-analysis-framing",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skills-distribution",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SPEC-1",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SPEC-1a",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SPEC-2",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SPEC-3",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SPEC-4a",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SPEC-4b",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "team-server-separation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ui-navigation-restructuring",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "verification-design",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "yaml-edit-resilience",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "steering",
+            "type": "directory",
+            "children": [
+              {
+                "name": "product.md",
+                "type": "file"
+              },
+              {
+                "name": "structure.md",
+                "type": "file"
+              },
+              {
+                "name": "tech.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "design-template.md",
+                "type": "file"
+              },
+              {
+                "name": "product-template.md",
+                "type": "file"
+              },
+              {
+                "name": "requirements-template.md",
+                "type": "file"
+              },
+              {
+                "name": "structure-template.md",
+                "type": "file"
+              },
+              {
+                "name": "tasks-template.md",
+                "type": "file"
+              },
+              {
+                "name": "tech-template.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "user-templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "RELEASE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "frontend",
+        "type": "directory",
+        "children": [
+          {
+            "name": "e2e",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "api-routes.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mock-data.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "catalog.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "cross-tab.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "design-detail.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "smoke.spec.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "api",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "client.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "components",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ui",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "alert.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "badge.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "button.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "card.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dialog.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "select.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "table.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tabs.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "textarea.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "DataTable.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmptyState.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ErrorBanner.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "JsonTree.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "StatusBadge.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "constants.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "utils.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pages",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "catalog",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "CatalogPage.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CautionSearchSection.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "KnowledgeSection.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SchemaSection.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SearchSection.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SourceListSection.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "design-detail",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "components",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DraftCommentForm.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "InlineCommentAnchor.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ReviewBatchComposer.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ReviewHistoryPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SectionRenderer.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "sections.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useReviewDrafts.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "DesignDetail.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OverviewPanel.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "DesignsPage.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "types",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "api.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "App.tsx",
+                "type": "file"
+              },
+              {
+                "name": "index.css",
+                "type": "file"
+              },
+              {
+                "name": "main.tsx",
+                "type": "file"
+              },
+              {
+                "name": "vite-env.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "components.json",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "playwright.config.ts",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          },
+          {
+            "name": "vite.config.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "check_tag_version.py",
+            "type": "file"
+          },
+          {
+            "name": "verify_wheel.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "_atomic.py",
+                "type": "file"
+              },
+              {
+                "name": "config_loader.py",
+                "type": "file"
+              },
+              {
+                "name": "crash_recovery.py",
+                "type": "file"
+              },
+              {
+                "name": "manifest_writer.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "token_manager.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analysis-design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analysis-framing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analysis-journal",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analysis-reflection",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analysis-revision",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "batch-analysis",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "batch-prompt.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "launcher.sh",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "catalog-register",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "data-lineage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "premortem",
+            "type": "directory",
+            "children": [
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "allowlist_loader.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "history_query.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "risk_evaluator.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rq-problematization",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "evals.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "alvesson-framework.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "davis-interestingness.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "output-template.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "insight_blueprint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CLAUDE.md.template",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "core",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "catalog.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "designs.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reviews.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rules.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validation.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lineage",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "exporter.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tracker.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "models",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "catalog.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "common.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "design.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "review.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "storage",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sqlite_store.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "yaml_store.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "_registry.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "py.typed",
+                "type": "file"
+              },
+              {
+                "name": "server.py",
+                "type": "file"
+              },
+              {
+                "name": "web.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "batch_harness",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_allowlist_loader.py",
+                "type": "file"
+              },
+              {
+                "name": "test_atomic.py",
+                "type": "file"
+              },
+              {
+                "name": "test_crash_recovery.py",
+                "type": "file"
+              },
+              {
+                "name": "test_history_query.py",
+                "type": "file"
+              },
+              {
+                "name": "test_manifest_writer.py",
+                "type": "file"
+              },
+              {
+                "name": "test_premortem_config.py",
+                "type": "file"
+              },
+              {
+                "name": "test_risk_evaluator.py",
+                "type": "file"
+              },
+              {
+                "name": "test_token_manager.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "batch-analysis",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "lib_dir",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "data_utils.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "viz_utils.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "bad_notebook.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "confirmatory_design.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error_design.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expected_catalog.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "exploratory_design.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "no_priority_design.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "terminal_design.yaml",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "e2e",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assertions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "e2e_01_assert.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e2e_02_assert.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e2e_03_assert.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "auto.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "manual.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "review_phase_a.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "review_phase_b.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "designs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "des_a.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "des_b.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "des_c.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "expected",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "e2e_01",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-A",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "DES-B",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "DES-C",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "run.yaml",
+                            "type": "file"
+                          },
+                          {
+                            "name": "summary.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "e2e_02",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-A",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "DES-B",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "run.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "e2e_03",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "run_phase_a.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "runs_history",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "20260401_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-A",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "20260402_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-B",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "20260403_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-X",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "20260405_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-A",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "20260406_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-B",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "20260407_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-Y",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "20260410_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-A",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "20260411_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-B",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "20260412_230000",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "DES-Z",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "manifest.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "mcp_responses.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "harness",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "assert_helpers.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude_wrapper.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setup.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "teardown.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "runners",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "e2e_01.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e2e_02.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e2e_03.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "stub_claude.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "conftest.py",
+                "type": "file"
+              },
+              {
+                "name": "test_batch_launcher.py",
+                "type": "file"
+              },
+              {
+                "name": "test_crash_recovery.py",
+                "type": "file"
+              },
+              {
+                "name": "test_manifest_atomic.py",
+                "type": "file"
+              },
+              {
+                "name": "test_methodology_tag_retry.py",
+                "type": "file"
+              },
+              {
+                "name": "test_mode_risk_matrix.py",
+                "type": "file"
+              },
+              {
+                "name": "test_premortem_cli.py",
+                "type": "file"
+              },
+              {
+                "name": "test_premortem_io_contract.py",
+                "type": "file"
+              },
+              {
+                "name": "test_premortem_modes.py",
+                "type": "file"
+              },
+              {
+                "name": "test_premortem_performance.py",
+                "type": "file"
+              },
+              {
+                "name": "test_session_id_extraction.py",
+                "type": "file"
+              },
+              {
+                "name": "test_token_security.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lineage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_exporter.py",
+                "type": "file"
+              },
+              {
+                "name": "test_tracker.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_skill_structure.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_catalog_models.py",
+            "type": "file"
+          },
+          {
+            "name": "test_catalog.py",
+            "type": "file"
+          },
+          {
+            "name": "test_check_tag_version.py",
+            "type": "file"
+          },
+          {
+            "name": "test_claude_md_and_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "test_design_backward_compat.py",
+            "type": "file"
+          },
+          {
+            "name": "test_design_models.py",
+            "type": "file"
+          },
+          {
+            "name": "test_designs.py",
+            "type": "file"
+          },
+          {
+            "name": "test_integration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_packaging.py",
+            "type": "file"
+          },
+          {
+            "name": "test_placeholder.py",
+            "type": "file"
+          },
+          {
+            "name": "test_plugin_structure.py",
+            "type": "file"
+          },
+          {
+            "name": "test_registry.py",
+            "type": "file"
+          },
+          {
+            "name": "test_review_models.py",
+            "type": "file"
+          },
+          {
+            "name": "test_reviews.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "test_server.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sqlite_store.py",
+            "type": "file"
+          },
+          {
+            "name": "test_storage.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tutorial_data.py",
+            "type": "file"
+          },
+          {
+            "name": "test_verify_wheel.py",
+            "type": "file"
+          },
+          {
+            "name": "test_version.py",
+            "type": "file"
+          },
+          {
+            "name": "test_web_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "test_web_integration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_web.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tutorial",
+        "type": "directory",
+        "children": [
+          {
+            "name": "notebooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "01_explore.py",
+                "type": "file"
+              },
+              {
+                "name": "02_verify.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sample_data",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sales.csv",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "generate_data.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".pre-commit-config.yaml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      }
+    ]
+  }
+}

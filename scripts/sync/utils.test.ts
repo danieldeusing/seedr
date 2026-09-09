@@ -134,6 +134,8 @@ describe("GitHub URL parsing", () => {
     ["https://github.com/obra/superpowers/tree/main/x", "obra/superpowers"],
     ["http://www.github.com/obra/superpowers", "obra/superpowers"],
     ["git@github.com:obra/superpowers.git", "obra/superpowers"],
+    ["obra/superpowers", "obra/superpowers"],
+    ["42Crunch-AI/claude-plugins.git", "42Crunch-AI/claude-plugins"],
   ])("parses %s", (url, repo) => {
     expect(parseGitHubRepoUrl(url)).toEqual({ repo, cloneUrl: `https://github.com/${repo}.git` });
   });
@@ -141,6 +143,8 @@ describe("GitHub URL parsing", () => {
   it("rejects non-GitHub URLs", () => {
     expect(parseGitHubRepoUrl("https://gitlab.com/a/b")).toBeNull();
     expect(parseGitHubRepoUrl("https://github.com/only-owner")).toBeNull();
+    expect(parseGitHubRepoUrl("owner/repo/extra")).toBeNull();
+    expect(parseGitHubRepoUrl("plugins/api-security-testing/")).toBeNull();
   });
 
   it("splits tree URLs into repo, ref and path", () => {

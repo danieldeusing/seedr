@@ -1,0 +1,900 @@
+{
+  "slug": "superfast",
+  "name": "Superfast",
+  "type": "plugin",
+  "description": "You know that moment when you've finally convinced your coding agent to build exactly what you want, only for it to instantly get hopelessly lost hallucinating dependencies in a 5,000-line codebase?\n\nSuperfast fixes that. It starts by establishing your Context Memory. Before any brainstorming or planning occurs, it instantly triggers the FastMemory Build-Up Skill, recursively mapping your enterprise repository into a deterministic CBFDAE graph. Once your agent's cognitive map is established, it steps back and asks you what you're really trying to do.\n\nOnce it's teased a spec out of the conversation, it shows it to you in chunks short enough to actually read and digest. After you've signed off on the design, your agent puts together an implementation plan that's clear enough for an enthusiastic junior engineer with poor taste, no judgement, no project context, and an aversion to testing to follow. It emphasizes true red/green TDD, YAGNI (You Aren't Gonna Need It), and DRY.\n\nNext up, once you say \"go\", it launches a subagent-driven-development process, having agents work through each engineering task, inspecting and reviewing their work, and continuing forward. It's not uncommon for Claude to be able to work autonomously for a couple hours at a time without deviating from the plan you put together.",
+  "longDescription": "Ships **16 skills**, **1 agent**, **3 commands** and **1 hook**.\n\n- **Skills** (16): `brainstorming` (You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior), `bun-execution` (Use when running scripts, testing, or building codebases that utilize the Bun JavaScript runtime explicitly, evidenced by bun.lockb…), `dispatching-parallel-agents` (Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies), `executing-plans` (Use when you have a written implementation plan to execute in a separate session with review checkpoints), `fastmemory` (Use when needing to maintain long-term cognitive memory of project architecture, components, and logic using the CBFDAE ontology), `finishing-a-development-branch` (Use when implementation is complete, all tests pass, and you need to decide how to integrate the work…), `receiving-code-review` (Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable -…), `requesting-code-review` (Use when completing tasks, implementing major features, or before merging to verify work meets requirements), and 8 more\n- **Agents** (1): `code-reviewer` (Use this agent when a major project step has been completed and needs to be reviewed against the…)\n- **Commands** (3): `brainstorm` (Deprecated - use the superfast:brainstorming skill instead), `execute-plan` (Deprecated - use the superfast:executing-plans skill instead), `write-plan` (Deprecated - use the superfast:writing-plans skill instead)\n- **Hooks** (1): `SessionStart`\n\nInstalls with `claude plugin install superfast@claude-community` from `FastBuilderAI/superfast`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 16,
+    "agent": 1,
+    "hook": 1,
+    "command": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Jesse Vincent"
+  },
+  "externalUrl": "https://github.com/FastBuilderAI/superfast/tree/e713a95a7eff91796edaafdf55be58b8bc3eeebe",
+  "marketplace": "claude-community",
+  "version": "5.0.6",
+  "sourceRevision": "e713a95a7eff91796edaafdf55be58b8bc3eeebe",
+  "contentDigest": "8cb3f0d1fa568a0802abfe54e72536509b2578b54951dc75ebbf57b6050c3d33",
+  "contentHash": "c30a99d3c1e87d0d",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/FastBuilderAI/superfast.git",
+    "sha": "e713a95a7eff91796edaafdf55be58b8bc3eeebe"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-03-29T17:07:35Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex",
+        "type": "directory",
+        "children": [
+          {
+            "name": "INSTALL.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              },
+              {
+                "name": "platform_support.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".opencode",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "superfast.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "INSTALL.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "code-reviewer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "brainstorm.md",
+            "type": "file"
+          },
+          {
+            "name": "execute-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "write-plan.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2025-11-22-opencode-support-design.md",
+                "type": "file"
+              },
+              {
+                "name": "2025-11-22-opencode-support-implementation.md",
+                "type": "file"
+              },
+              {
+                "name": "2025-11-28-skills-improvements-from-user-feedback.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-01-17-visual-brainstorming.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "superfast",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-01-22-document-review-system.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-02-19-visual-brainstorming-refactor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-11-zero-dep-brainstorm-server.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-23-codex-app-compatibility.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-01-22-document-review-system-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-02-19-visual-brainstorming-refactor-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-11-zero-dep-brainstorm-server-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-23-codex-app-compatibility-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "windows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "polyglot-hooks.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.codex.md",
+            "type": "file"
+          },
+          {
+            "name": "README.opencode.md",
+            "type": "file"
+          },
+          {
+            "name": "testing.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks-cursor.json",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "run-hook.cmd",
+            "type": "file"
+          },
+          {
+            "name": "session-start",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "brainstorming",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "frame-template.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "helper.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "start-server.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stop-server.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "spec-document-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "visual-companion.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bun-execution",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-parallel-agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "executing-plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fastmemory",
+            "type": "directory",
+            "children": [
+              {
+                "name": "extract_cbfdae.py",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "test_design.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "finishing-a-development-branch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "receiving-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "requesting-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "code-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "subagent-driven-development",
+            "type": "directory",
+            "children": [
+              {
+                "name": "code-quality-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "implementer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "spec-reviewer-prompt.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "systematic-debugging",
+            "type": "directory",
+            "children": [
+              {
+                "name": "condition-based-waiting-example.ts",
+                "type": "file"
+              },
+              {
+                "name": "condition-based-waiting.md",
+                "type": "file"
+              },
+              {
+                "name": "CREATION-LOG.md",
+                "type": "file"
+              },
+              {
+                "name": "defense-in-depth.md",
+                "type": "file"
+              },
+              {
+                "name": "find-polluter.sh",
+                "type": "file"
+              },
+              {
+                "name": "root-cause-tracing.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "test-academic.md",
+                "type": "file"
+              },
+              {
+                "name": "test-pressure-1.md",
+                "type": "file"
+              },
+              {
+                "name": "test-pressure-2.md",
+                "type": "file"
+              },
+              {
+                "name": "test-pressure-3.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test-driven-development",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "testing-anti-patterns.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-git-worktrees",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-superfast",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "codex-tools.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini-tools.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verification-before-completion",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "writing-plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plan-document-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "writing-skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CLAUDE_MD_TESTING.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "anthropic-best-practices.md",
+                "type": "file"
+              },
+              {
+                "name": "graphviz-conventions.dot",
+                "type": "file"
+              },
+              {
+                "name": "persuasion-principles.md",
+                "type": "file"
+              },
+              {
+                "name": "render-graphs.js",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "testing-skills-with-subagents.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "brainstorm-server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "package-lock.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "server.test.js",
+                "type": "file"
+              },
+              {
+                "name": "windows-lifecycle.test.sh",
+                "type": "file"
+              },
+              {
+                "name": "ws-protocol.test.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude-code",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyze-token-usage.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "run-skill-tests.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-document-review-system.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-helpers.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-subagent-driven-development-integration.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-subagent-driven-development.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "explicit-skill-requests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "prompts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "action-oriented.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "after-planning-flow.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-suggested-it.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "i-know-what-sdd-means.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mid-conversation-execute-plan.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "please-use-brainstorming.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skip-formalities.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "subagent-driven-development-please.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "use-systematic-debugging.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "run-all.sh",
+                "type": "file"
+              },
+              {
+                "name": "run-claude-describes-sdd.sh",
+                "type": "file"
+              },
+              {
+                "name": "run-extended-multiturn-test.sh",
+                "type": "file"
+              },
+              {
+                "name": "run-haiku-test.sh",
+                "type": "file"
+              },
+              {
+                "name": "run-multiturn-test.sh",
+                "type": "file"
+              },
+              {
+                "name": "run-test.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "opencode",
+            "type": "directory",
+            "children": [
+              {
+                "name": "run-tests.sh",
+                "type": "file"
+              },
+              {
+                "name": "setup.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-plugin-loading.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-priority.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-tools.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skill-triggering",
+            "type": "directory",
+            "children": [
+              {
+                "name": "prompts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dispatching-parallel-agents.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "executing-plans.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requesting-code-review.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "systematic-debugging.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-driven-development.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "writing-plans.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "run-all.sh",
+                "type": "file"
+              },
+              {
+                "name": "run-test.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "subagent-driven-dev",
+            "type": "directory",
+            "children": [
+              {
+                "name": "go-fractals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scaffold.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "svelte-todo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scaffold.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "run-test.sh",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "banner.png",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "RELEASE-NOTES.md",
+        "type": "file"
+      }
+    ]
+  }
+}

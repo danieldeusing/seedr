@@ -1,0 +1,592 @@
+{
+  "slug": "immich-photo-manager",
+  "name": "Immich Photo Manager",
+  "type": "plugin",
+  "description": "MCP server for intelligent photo management with Immich — interactive HTML galleries, geographic album curation, library cleanup, duplicate detection, and 21 MCP tools. Gives Claude direct access to self-hosted Immich photo libraries through 11 specialized skills including AI-powered CLIP search, cross-source duplicate detection with perceptual hashing, timeline gap analysis, metadata repair, and a Cowork Actions Panel for batch photo operations. Works with both Claude Code CLI and Cowork. Never deletes automatically — all destructive operations require explicit user confirmation.\n\n**Category** (pick whichever matches best from their options — likely something like): `External integrations` or `Photography` or `Media`\n\n**Works with** (if they ask): Both `Claude Code` and `Cowork`",
+  "longDescription": "Ships **12 skills**, **5 commands** and **1 MCP server**.\n\n- **Skills** (12): `album-manager` (Create, curate, and publish Immich albums organized by geography, theme, or custom criteria), `auto-album-curator` (Monitor your Immich library for new photos that match existing albums and suggest additions), `duplicate-report` (Run a comprehensive duplicate analysis on an Immich photo library using perceptual hashing), `library-health-report` (Run a comprehensive health check on an Immich photo library — asset counts, storage usage, metadata completeness, orphaned…), `metadata-fixer` (Scan for and fix broken or missing photo metadata — dates, GPS coordinates, timezone offsets, and camera info), `people-report` (Generate a report on people in your Immich photo library — unique faces detected, photos per person, unnamed…), `photo-cleanup` (Detect and remove screenshots, duplicates, and low-quality photos from an Immich library), `photo-search` (Search and explore an Immich photo library using natural language, GPS locations, dates, people, cameras, and AI-powered visual…), and 4 more\n- **Commands** (5): `cleanup` (Scan library for screenshots, duplicates, junk), `create-album` (Create a geographic album from a location), `immich-status` (Check Immich connection and library stats), `my-travels` (Discover all travel destinations in your photo library), `setup-immich-photo-manager` (First-time setup or credential update — configure your Immich MCP server connection and verify everything works)\n- **MCP servers** (1): `immich`\n\nInstalls with `claude plugin install immich-photo-manager@claude-community` from `drolosoft/immich-photo-manager`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 12,
+    "command": 5,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Drolosoft",
+    "url": "https://drolosoft.com"
+  },
+  "externalUrl": "https://github.com/drolosoft/immich-photo-manager/tree/0f5819c9490f0041558c629dd998e7c21ef6ed4f",
+  "marketplace": "claude-community",
+  "version": "1.4.0",
+  "sourceRevision": "0f5819c9490f0041558c629dd998e7c21ef6ed4f",
+  "contentDigest": "bd274eff185b0fe392c9bd34dd912fd1013d4deffd26f7fc39cf80638214bc3d",
+  "contentHash": "ef38cf888cfa9763",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/drolosoft/immich-photo-manager.git",
+    "sha": "0f5819c9490f0041558c629dd998e7c21ef6ed4f"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-27T09:00:18Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".gitkeep",
+            "type": "file"
+          },
+          {
+            "name": "demo-latest.gif",
+            "type": "file"
+          },
+          {
+            "name": "demo-script.md",
+            "type": "file"
+          },
+          {
+            "name": "demo.gif",
+            "type": "file"
+          },
+          {
+            "name": "demo.html",
+            "type": "file"
+          },
+          {
+            "name": "demo.mp4",
+            "type": "file"
+          },
+          {
+            "name": "icon.png",
+            "type": "file"
+          },
+          {
+            "name": "index-template.html",
+            "type": "file"
+          },
+          {
+            "name": "screenshot-01-setup.png",
+            "type": "file"
+          },
+          {
+            "name": "screenshot-02-gallery.png",
+            "type": "file"
+          },
+          {
+            "name": "screenshot-03-gallery-selection.png",
+            "type": "file"
+          },
+          {
+            "name": "screenshot-04-cowork-action.png",
+            "type": "file"
+          },
+          {
+            "name": "screenshot-05-album-view.png",
+            "type": "file"
+          },
+          {
+            "name": "screenshot-06-geographic-albums.png",
+            "type": "file"
+          },
+          {
+            "name": "serve.sh",
+            "type": "file"
+          },
+          {
+            "name": "viewer-template.html",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cleanup.md",
+            "type": "file"
+          },
+          {
+            "name": "create-album.md",
+            "type": "file"
+          },
+          {
+            "name": "immich-status.md",
+            "type": "file"
+          },
+          {
+            "name": "my-travels.md",
+            "type": "file"
+          },
+          {
+            "name": "setup-immich-photo-manager.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "deploy",
+        "type": "directory",
+        "children": [
+          {
+            "name": "com.immich-mcp.plist.example",
+            "type": "file"
+          },
+          {
+            "name": "nginx-immich-mcp.conf.example",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "doc",
+        "type": "directory",
+        "children": [
+          {
+            "name": "demos",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cc",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-code-conversation.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-code-example-demo.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lm-studio-gemma4-demo.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "01-gps-neighbor-inference.md",
+                "type": "file"
+              },
+              {
+                "name": "02-geographic-album-creation.md",
+                "type": "file"
+              },
+              {
+                "name": "03-find-duplicates-across-sources.md",
+                "type": "file"
+              },
+              {
+                "name": "04-library-health-report.md",
+                "type": "file"
+              },
+              {
+                "name": "05-natural-language-search.md",
+                "type": "file"
+              },
+              {
+                "name": "06-screenshot-cleanup.md",
+                "type": "file"
+              },
+              {
+                "name": "07-fix-midnight-timestamps.md",
+                "type": "file"
+              },
+              {
+                "name": "08-interactive-gallery.md",
+                "type": "file"
+              },
+              {
+                "name": "09-auto-album-curator.md",
+                "type": "file"
+              },
+              {
+                "name": "10-people-report.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "CORS-SETUP.md",
+            "type": "file"
+          },
+          {
+            "name": "DEMO-SYSTEM.md",
+            "type": "file"
+          },
+          {
+            "name": "GETTING-STARTED.md",
+            "type": "file"
+          },
+          {
+            "name": "MCP-TOOLS.md",
+            "type": "file"
+          },
+          {
+            "name": "PLUGIN-INSTALL-GUIDE.md",
+            "type": "file"
+          },
+          {
+            "name": "PROMPT-DROLOSOFT-DEMO.md",
+            "type": "file"
+          },
+          {
+            "name": "SKILLS.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "capture-screenshots.js",
+            "type": "file"
+          },
+          {
+            "name": "create_geographic_albums.py",
+            "type": "file"
+          },
+          {
+            "name": "create_shared_links.py",
+            "type": "file"
+          },
+          {
+            "name": "discover_locations.py",
+            "type": "file"
+          },
+          {
+            "name": "make-gif.py",
+            "type": "file"
+          },
+          {
+            "name": "record-demo.js",
+            "type": "file"
+          },
+          {
+            "name": "setup-mcp.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "album-manager",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "geographic-search-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "viewer-template-spec.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auto-album-curator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "duplicate-report",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "library-health-report",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "metadata-fixer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "people-report",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "photo-cleanup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "photo-search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rotate-photos",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "storage-optimizer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "timeline-gaps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "travel-map",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "immich_mcp_server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "immich_client.py",
+                "type": "file"
+              },
+              {
+                "name": "server.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "requirements.txt",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_credentials.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lifespan.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rotate_assets.py",
+            "type": "file"
+          },
+          {
+            "name": "test_setup_script.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.http.json.example",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json.example",
+        "type": "file"
+      },
+      {
+        "name": ".plugin-scanner.toml",
+        "type": "file"
+      },
+      {
+        "name": "build-plugin.sh",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "glama.json",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "test-lmstudio-mcp.py",
+        "type": "file"
+      },
+      {
+        "name": "test-mcp.py",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -8,6 +8,13 @@ draft the TL;DR by the rules below, write it into the item.json, recompile. This
 synced items too — the sync preserves `longDescription` across runs, and the nightly sync job
 fails on the gate until every item has one. Never park it as a to-do or skip the item.
 
+A plugin the sync imports from one of Anthropic's marketplaces arrives with a **drafted**
+`longDescription` (`scripts/sync/tldr.ts`): the components it ships with their own frontmatter
+descriptions, the install command, and the README's opening paragraph when that is short. It is
+a default, not a curation — when you touch such an item, rewrite the TL;DR by the rules below;
+the sync never overwrites it. The gate still fails for the rare item whose files say too little
+to draft from, and that one is yours to write by hand, as above.
+
 ## `description` — "What does this do?"
 
 A single sentence that tells the user what the item does.

@@ -1,0 +1,1817 @@
+{
+  "slug": "carta-investors",
+  "name": "Carta Investors",
+  "type": "plugin",
+  "description": "Carta Investors plugin — skills for querying investor data, performance benchmarks, regulatory reporting, AGM deck generation, brand extraction, and more via the Carta MCP Server.",
+  "longDescription": "Ships **16 skills** and **4 hooks**.\n\n- **Skills** (16): `carta-agm-deck-builder` (End-to-end AGM deck generator), `carta-brand-extraction` (Generates a brand board from a firm's website URL and optional user-provided assets), `carta-co-investors` (Interactive co-investor report from Carta SPA data with clickable portfolio drill-downs), `carta-compliance-routing` (Routes to Form ADV for regulatory filing data), `carta-consolidating-balance-sheet` (Generate a consolidating Balance Sheet for all entities under a firm for a given month and write it…), `carta-consolidating-pnl` (Consolidating P&L (Income Statement) across the entities of a firm, for any period the user picks — a…), `carta-download-tearsheet` (Download tear sheets for your portfolio companies and funds on Carta), `carta-explore-data` (PRIMARY and DEFAULT skill for ALL Carta investors data queries — use before any other skill for Carta…), and 8 more\n- **Hooks** (4): `SessionStart`, `PreToolUse`, `UserPromptSubmit`, `PostToolUse`\n\nInstalls with `claude plugin install carta-investors@claude-plugins-official` from `carta/plugins` (`plugins/carta-investors`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 16,
+    "hook": 4
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Carta Engineering"
+  },
+  "externalUrl": "https://github.com/carta/plugins/tree/3aac6aebe11080a469e92935a544e02ed7aa0702/plugins/carta-investors",
+  "marketplace": "claude-plugins-official",
+  "version": "5.6.5",
+  "sourceRevision": "3aac6aebe11080a469e92935a544e02ed7aa0702",
+  "contentDigest": "d4283d16f8d515e569fa6a9c8f3a4abfa7320ec7542b4871fd4049eea13b9da5",
+  "contentHash": "9b49eb18bf733476",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/carta-investors",
+    "url": "https://github.com/carta/plugins.git",
+    "ref": "main",
+    "sha": "3aac6aebe11080a469e92935a544e02ed7aa0702"
+  },
+  "marketplaceRef": {
+    "name": "claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official.git",
+    "sha": "3ea32df27be71d78775e627df2382fc26203577f"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-09-04T15:47:33Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "skill-versions.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "powered_by_carta.svg",
+            "type": "file"
+          },
+          {
+            "name": "sample-tearsheet.pdf",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks-darwin-amd64",
+                "type": "file"
+              },
+              {
+                "name": "hooks-darwin-arm64",
+                "type": "file"
+              },
+              {
+                "name": "hooks-linux-amd64",
+                "type": "file"
+              },
+              {
+                "name": "hooks-linux-arm64",
+                "type": "file"
+              },
+              {
+                "name": "hooks-windows-amd64.exe",
+                "type": "file"
+              },
+              {
+                "name": "SHA256SUMS",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "handlers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "carta-cap-table",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cache_commands_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "cache_commands.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "shared.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "track_corporation_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "track_corporation.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "capture_model_switch_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "capture_model_switch.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "capture_model_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "capture_model.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "capture_skills_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "capture_skills.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inject_context_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inject_context.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inject_instrumentation_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inject_instrumentation.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prune_session_data_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prune_session_data.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "internal",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "hookio",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "hookio.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "plugin",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "plugin_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plugin.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "session",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "session_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "session.go",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tokenusage",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "tokenusage_test.go",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tokenusage.go",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "registry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "registry_test.go",
+                    "type": "file"
+                  },
+                  {
+                    "name": "registry.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitattributes",
+                "type": "file"
+              },
+              {
+                "name": ".go-version",
+                "type": "file"
+              },
+              {
+                "name": "build.sh",
+                "type": "file"
+              },
+              {
+                "name": "detect-native.sh",
+                "type": "file"
+              },
+              {
+                "name": "dispatch_shim_test.go",
+                "type": "file"
+              },
+              {
+                "name": "dispatch.sh",
+                "type": "file"
+              },
+              {
+                "name": "go.mod",
+                "type": "file"
+              },
+              {
+                "name": "main_test.go",
+                "type": "file"
+              },
+              {
+                "name": "main.go",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "test.sh",
+                "type": "file"
+              },
+              {
+                "name": "verify-checksums.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatch.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "references",
+        "type": "directory",
+        "children": [
+          {
+            "name": "gate-carta-connector-name.md",
+            "type": "file"
+          },
+          {
+            "name": "gate-has-artifact-tool.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "warn-empty-query.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generate_agm_deck_pptx.py",
+            "type": "file"
+          },
+          {
+            "name": "generate_agm_deck.py",
+            "type": "file"
+          },
+          {
+            "name": "read_workbook.py",
+            "type": "file"
+          },
+          {
+            "name": "render_artifact.py",
+            "type": "file"
+          },
+          {
+            "name": "write_workbook.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "carta-agm-deck-builder",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "assets",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "logo-dark.svg",
+                        "type": "file"
+                      },
+                      {
+                        "name": "logo-light.svg",
+                        "type": "file"
+                      },
+                      {
+                        "name": "logo-placeholder.svg",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "brands",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "example.css",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "design-system",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "carta-mark.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "charts.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "system.css",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tokens.css",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "slide-templates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "deck-nav.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "deck-shell.html",
+                        "type": "file"
+                      },
+                      {
+                        "name": "deck-stage.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "agent-a-playbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-b-playbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-spec.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "template.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "compile_deck.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract_agm_blob.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-brand-extraction",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analyze_website.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "snippets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "brand_board_html.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "brand_board_pdf.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "brand_board_pptx.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "brand_board_react.jsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-co-investors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "vendor",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "mcp-ui-tracker.global.js",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "artifact-template.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "generate_artifact.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "preview_server.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "process.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "canonical-investors.json",
+                "type": "file"
+              },
+              {
+                "name": "canonical-investors.yaml",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-compliance-routing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "form-adv",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "filing-guide.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "queries.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "form-adv.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-consolidating-balance-sheet",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "powered_by_carta.b64.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "powered_by_carta.png",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "branding-and-header.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "formatting.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local-file-output.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-consolidating-pnl",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "powered_by_carta.b64.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "powered_by_carta.png",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "branding-and-header.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "budget-fetch.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fill-budget-columns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "formatting.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "local-file-output.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "section-map.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "summary-tab.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tag-view.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-download-tearsheet",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-explore-data",
+            "type": "directory",
+            "children": [
+              {
+                "name": "semantic-layer",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "balance-sheet.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cap-table.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cash-flows.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "company-financials.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fund-performance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "investments.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "nav.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "partner-data.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "valuations.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-fund-admin-requests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-fund-forecasting",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ff-cache.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-fund-modeling",
+            "type": "directory",
+            "children": [
+              {
+                "name": "app",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "public",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fonts",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "SangBleuVersailles-Regular-WebS.woff2",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "favicon.ico",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "assets",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "carta-logo.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "model",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "activity.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "benchmarks.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "concentration.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "dealIrr.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "funds.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "glidepath.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "liqpref.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "liquidity.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ownership.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "pacing.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "report.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "reprice.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "reserves.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "returnthefund.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "runway.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "scenarios.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "sensitivity.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "slices.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "waterfall.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "xirr.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "outer",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "bridge.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "main-outer.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "OuterShell.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "theme-sync.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "pinpoint",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "capture.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "findAndMark.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "fmContext.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "inspect.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "state",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "FirmData.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "usePortfolio.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useRefresh.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useShare.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ui",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "ChatPanel.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "components.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ConfirmDialog.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "format.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "markdown.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PerformanceSidebarV2.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "RepriceControl.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ScenarioDialog.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ScenarioSharing.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "table.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "theme.js",
+                            "type": "file"
+                          },
+                          {
+                            "name": "tokens.css",
+                            "type": "file"
+                          },
+                          {
+                            "name": "UpdateDataButton.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "warn.jsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "views",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "returns",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "Glidepath.jsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "GpEconomics.jsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "LpReturns.jsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "PowerLaw.jsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "PowerLawChart.jsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "useScenarioModel.js",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "CohortStanding.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Companies.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Overview.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Report.jsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Reserves.jsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "analytics.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "App.jsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "AuthError.jsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "bridge-client.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dash-token.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "FundChooser.jsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "main.jsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mount.jsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Root.jsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "route.js",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "build.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package-lock.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vite.config.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "queries.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scenario-sharing.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "build_datadir.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chat_session.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "emit_stem_sql.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fetch_logos.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fm_paths.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "refresh.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "save_batch_result.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "save_query_result.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "serve.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "share.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stem_queries.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "webapp",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fonts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SangBleuVersailles-Regular-WebS.woff2",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "vendor",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "mcp-ui-tracker.global.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "react.esm.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sucrase.esm.js",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "app.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "favicon.ico",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jsx-runtime-shim.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sw.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-home-build",
+            "type": "directory",
+            "children": [
+              {
+                "name": "resources",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "app",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "capital-activity.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "live-content.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "version-check.js",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "carta-home.app.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-home.chart.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-home.config.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-home.css",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-home.template.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-home.tracker.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "build_artifact.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-manco",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "powered_by_carta.b64.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "powered_by_carta.png",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "queries",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "actuals-by-account-month.sql",
+                    "type": "file"
+                  },
+                  {
+                    "name": "actuals-by-account-subaccount-period.sql",
+                    "type": "file"
+                  },
+                  {
+                    "name": "actuals-by-account-tag-period.sql",
+                    "type": "file"
+                  },
+                  {
+                    "name": "actuals-by-account-vendor-period.sql",
+                    "type": "file"
+                  },
+                  {
+                    "name": "actuals-by-vendor-period.sql",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chart-of-accounts.sql",
+                    "type": "file"
+                  },
+                  {
+                    "name": "no-vendor-descriptions.sql",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prior-year-monthly-activity.sql",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "add-actuals-columns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-actuals-tab.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "add-period.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "branding-and-header.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "budget-analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "budget-by-subaccount.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "budget-scenarios.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cash-balance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cost-rebalance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "create-budget.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "drill-down-line.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "entity-picker.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expansion-hire.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fetch-actuals.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fetch-budget-data.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fetch-budget.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fill-budget-columns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "from-prior-actuals.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "from-recommendation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "from-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "get-actuals.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "headcount-reduction.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inflation-buffer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inline-vendor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "new-fund-raise.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pacing-overview.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "refresh-existing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reorganize-categories.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "revenue-shock.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slice-by-tag.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sub-account-view.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tag-view.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vendor-actuals.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vendor-only-view.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vendor-view.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-portfolio-analytics-routing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "loan-dashboard",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "artifact_template.html",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "soi",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "scripts",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "render-artifact.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "artifact.html",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "benchmarks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "loan-dashboard.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "soi.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-spa-audit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "artifact.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "styles.css",
+                    "type": "file"
+                  },
+                  {
+                    "name": "template.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "process.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "carta-workhub-build",
+            "type": "directory",
+            "children": [
+              {
+                "name": "resources",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "app",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "capital-call-review.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "fund-admin-requests.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "version-check.js",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "vendor",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "pdf.min.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pdf.worker.min.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pdfjs-LICENSE",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "carta-workhub.app.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-workhub.config.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-workhub.css",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-workhub.template.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "carta-workhub.tracker.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "build_artifact.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "vendor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "chart.umd.min.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

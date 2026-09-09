@@ -1,0 +1,887 @@
+{
+  "slug": "cc10x-router-owned-harness",
+  "name": "Cc10x Router Owned Harness",
+  "type": "plugin",
+  "description": "Supercharge Claude Code\nwith Orchestrated Skills, Subagents, Persistent Memory",
+  "longDescription": "Ships **21 skills**, **11 agents** and **10 hooks**.\n\n- **Skills** (21): `agent-common` (Shared preamble loaded by all cc10x agents — memory protocol, contract format, output rules), `architecture` (Greenfield architecture design: map functionality flows, draw components, design APIs, classify dependencies, plan observability), `building` (Implementation skill for writing production code with TDD), `cc10x-guide` (Answers questions about cc10x itself — what it is, how to install and configure it, how the router,…), `cc10x-router` (THE ONLY ENTRY POINT FOR CC10X), `code-review` (Two-mode skill: (1) adversarial review — spec compliance + code quality + security, confidence-scored findings with file:line evidence;…), `codebase-design` (Canonical deep-module vocabulary (module, interface, depth, seam, adapter, leverage, locality) for designing a module's shape — a lot…), `codebase-hygiene` (Two-mode skill: (1) find semantic duplicates — functions doing the same thing under different names, invisible to copy-paste…), and 13 more\n- **Agents** (11): `architecture-scanner` (Scan the codebase for deepening opportunities — shallow modules, pass-throughs, semantic duplicates), `bug-investigator` (Investigate bugs, failing tests, and broken behavior when root cause must be proven before code is changed), `code-reviewer` (Adversarial multi-dimensional code review — security, performance, correctness, spec compliance, maintainability), `component-builder` (Execute the current approved build phase with TDD when implementation work is ready to be carried out), `doc-syncer` (Sync documentation to reflect the current diff — updates business, technical, and audit doc layers, then reports what…), `failure-hunter` (Find silent failures in code — empty catches, log-only error handlers, discarded errors, generic error messages, swallowed exceptions), `integration-verifier` (Verify built or fixed work end-to-end before any pass, completion, or workflow-advance claim, and classify proof work for…), `plan-gap-reviewer` (Fresh read-only review of a saved plan when the router needs an anti-anchoring codebase check before plan finalization), and 3 more\n- **Hooks** (10): `PreToolUse`, `SessionStart`, `PostToolUse`, `TaskCompleted`, `PostCompact`, `SubagentStop`, `PreCompact`, `Stop`, and 2 more\n\nInstalls with `claude plugin install cc10x-router-owned-harness@claude-community` from `romiluz13/cc10x` (`plugins/cc10x`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 21,
+    "agent": 11,
+    "hook": 10
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Rom Iluz",
+    "url": "https://github.com/romiluz13"
+  },
+  "externalUrl": "https://github.com/romiluz13/cc10x/tree/65a1b4261bb7ff6379ce76930f47bf9236048d97/plugins/cc10x",
+  "marketplace": "claude-community",
+  "version": "12.8.0",
+  "sourceRevision": "65a1b4261bb7ff6379ce76930f47bf9236048d97",
+  "contentDigest": "7a64f416359a6b560d96dbb626b07f98d8bf0b0a731e17c27621a5ce68f2b412",
+  "contentHash": "356bb4611108f6e0",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/cc10x",
+    "url": "https://github.com/romiluz13/cc10x.git",
+    "ref": "main",
+    "sha": "65a1b4261bb7ff6379ce76930f47bf9236048d97"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-08-03T17:42:43Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "architecture-scanner.md",
+            "type": "file"
+          },
+          {
+            "name": "bug-investigator.md",
+            "type": "file"
+          },
+          {
+            "name": "code-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "component-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "doc-syncer.md",
+            "type": "file"
+          },
+          {
+            "name": "failure-hunter.md",
+            "type": "file"
+          },
+          {
+            "name": "integration-verifier.md",
+            "type": "file"
+          },
+          {
+            "name": "plan-gap-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "planner.md",
+            "type": "file"
+          },
+          {
+            "name": "researcher.md",
+            "type": "file"
+          },
+          {
+            "name": "triage-agent.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "config",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hook-mode.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "pre-commit",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cc10x_event_logger.py",
+            "type": "file"
+          },
+          {
+            "name": "cc10x_git_guard.py",
+            "type": "file"
+          },
+          {
+            "name": "cc10x_hooklib.py",
+            "type": "file"
+          },
+          {
+            "name": "cc10x_posttooluse_artifact_guard.py",
+            "type": "file"
+          },
+          {
+            "name": "cc10x_pretooluse_guard.py",
+            "type": "file"
+          },
+          {
+            "name": "cc10x_sessionstart_context.py",
+            "type": "file"
+          },
+          {
+            "name": "cc10x_state_persist.py",
+            "type": "file"
+          },
+          {
+            "name": "cc10x_task_completed_guard.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cc10x_guards.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cc10x_review_package.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-common",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "silent-failure-red-flags.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "architecture",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "building",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "integration-and-live-proof.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-data-and-mocks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "testing-patterns.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cc10x-guide",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cc10x-router",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "eval-01-error-beats-build.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval-02-review-stays-advisory.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval-03-skip-router-multifile.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "build-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codebase-health-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "debug-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "remediation-and-research.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "review-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "triage-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workflow-artifact-and-hook-policy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workflow-artifact.skeleton.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "code-review-heuristics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "review-order-and-checkpoints.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "security-review-checklist.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codebase-design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "DEEPENING.md",
+                "type": "file"
+              },
+              {
+                "name": "DESIGN-IT-TWICE.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codebase-hygiene",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "debugging",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "pressure-test-1-outage.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pressure-test-2-sunk-cost.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pressure-test-3-authority.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "investigation-hygiene.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "root-cause-playbooks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diff-driven-docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "eval-01-small-diff-skip-temptation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval-02-new-exported-function.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "doc-target-heuristics.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "domain-modeling",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ADR-FORMAT.md",
+                "type": "file"
+              },
+              {
+                "name": "CONTEXT-FORMAT.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "exploration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "frontend",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "accessibility-and-forms.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "design-md-authoring.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "design-md-inspiration-index.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "performance-and-layout.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui-state-and-feedback.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mcp-cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "memory-and-handoff",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "context-budget-and-checkpointing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-file-contracts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-model-and-ownership.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-operations.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan-review-gate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "planning",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "live-verification-strategy.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "research",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "resolving-merge-conflicts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "update",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verification",
+            "type": "directory",
+            "children": [
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "eval-01-should-pass-without-running.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval-02-trust-agent-success-report.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval-03-partial-evidence-extrapolation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "live-production-testing.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "coverage-thresholds.json",
+            "type": "file"
+          },
+          {
+            "name": "doc-target-overlay.md",
+            "type": "file"
+          },
+          {
+            "name": "live-harness.template.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "build-checkpoint-decision.json",
+                "type": "file"
+              },
+              {
+                "name": "build-doc-sync-happy-path.json",
+                "type": "file"
+              },
+              {
+                "name": "build-doc-sync-skipped.json",
+                "type": "file"
+              },
+              {
+                "name": "build-happy-path.json",
+                "type": "file"
+              },
+              {
+                "name": "build-phase-blocked.json",
+                "type": "file"
+              },
+              {
+                "name": "build-remediation-loop.json",
+                "type": "file"
+              },
+              {
+                "name": "build-scope-gate.json",
+                "type": "file"
+              },
+              {
+                "name": "codebase-health-happy-path.json",
+                "type": "file"
+              },
+              {
+                "name": "debug-fixed-no-variant.json",
+                "type": "file"
+              },
+              {
+                "name": "debug-fixed.json",
+                "type": "file"
+              },
+              {
+                "name": "debug-research.json",
+                "type": "file"
+              },
+              {
+                "name": "latency-telemetry.json",
+                "type": "file"
+              },
+              {
+                "name": "memory-sync-blocking.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-clarification.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-code-contradiction.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-decision-rfc.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-design-handoff.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-direct.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-fresh-review-exhausted.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-fresh-review-findings.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-fresh-review-pass.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-full.json",
+                "type": "file"
+              },
+              {
+                "name": "plan-repo-alignment.json",
+                "type": "file"
+              },
+              {
+                "name": "review-advisory.json",
+                "type": "file"
+              },
+              {
+                "name": "skill-precedence.json",
+                "type": "file"
+              },
+              {
+                "name": "triage-happy-path.json",
+                "type": "file"
+              },
+              {
+                "name": "verify-fail-closed.json",
+                "type": "file"
+              },
+              {
+                "name": "workflow-identity-v10.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "live",
+            "type": "directory",
+            "children": [
+              {
+                "name": "manifests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cc10x-bootstrap.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "seam-discipline-evals.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "seam_eval.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tools",
+        "type": "directory",
+        "children": [
+          {
+            "name": "doc_consistency_check.py",
+            "type": "file"
+          },
+          {
+            "name": "fixture_registry.py",
+            "type": "file"
+          },
+          {
+            "name": "harness_audit.py",
+            "type": "file"
+          },
+          {
+            "name": "latency_audit.py",
+            "type": "file"
+          },
+          {
+            "name": "live_harness_runner.py",
+            "type": "file"
+          },
+          {
+            "name": "phase_brief.py",
+            "type": "file"
+          },
+          {
+            "name": "prompt_clause_assertions.py",
+            "type": "file"
+          },
+          {
+            "name": "review_package.py",
+            "type": "file"
+          },
+          {
+            "name": "workflow_replay_check.py",
+            "type": "file"
+          },
+          {
+            "name": "worldclass_benchmark.py",
+            "type": "file"
+          }
+        ]
+      }
+    ]
+  }
+}

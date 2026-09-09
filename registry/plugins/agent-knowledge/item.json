@@ -1,0 +1,792 @@
+{
+  "slug": "agent-knowledge",
+  "name": "Agent Knowledge",
+  "type": "plugin",
+  "description": "Cross-session memory for AI coding agents. A git-synced Markdown knowledge base with hybrid semantic + TF-IDF search, typed knowledge graph (11 edge types with directed BFS traversal), confidence/decay scoring, and automatic session distillation with secrets scrubbing. Reads session history from Claude Code, Cursor, and OpenCode.",
+  "longDescription": "Ships **1 skill**, `knowledge-ingest` (Ingest or update a codebase in the agent-knowledge base) and **1 MCP server**, `agent-knowledge`.\n\nInstalls with `claude plugin install agent-knowledge@claude-community` from `keshrath/agent-knowledge`.\n\nCross-session memory and recall for AI coding assistants -- works with Claude Code, Cursor, OpenCode, Cline, Continue.dev, and Aider out of the box. Git-synced knowledge base, hybrid semantic+TF-IDF search, auto-distillation with secrets scrubbing.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "keshrath"
+  },
+  "externalUrl": "https://github.com/keshrath/agent-knowledge/tree/f92dfaea3df6a8c5c34b14bc0b032b02f1acfb9b",
+  "marketplace": "claude-community",
+  "version": "1.9.3",
+  "sourceRevision": "f92dfaea3df6a8c5c34b14bc0b032b02f1acfb9b",
+  "contentDigest": "4366e0fa8628b3b20cf185bb10b249be5f7036a3a451ba37c4bc312053935521",
+  "contentHash": "a72364c43955e8cc",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/keshrath/agent-knowledge.git",
+    "sha": "f92dfaea3df6a8c5c34b14bc0b032b02f1acfb9b"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-21T08:07:52Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".husky",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-commit",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bench",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures.example.jsonl",
+            "type": "file"
+          },
+          {
+            "name": "longmemeval-matrix.ts",
+            "type": "file"
+          },
+          {
+            "name": "longmemeval.ts",
+            "type": "file"
+          },
+          {
+            "name": "paper_bm25_eval.py",
+            "type": "file"
+          },
+          {
+            "name": "promote-bench.ts",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "run.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "knowledge-light.png",
+                "type": "file"
+              },
+              {
+                "name": "knowledge-maturity.png",
+                "type": "file"
+              },
+              {
+                "name": "search-light.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "DASHBOARD.md",
+            "type": "file"
+          },
+          {
+            "name": "HOOKS.md",
+            "type": "file"
+          },
+          {
+            "name": "INGEST.md",
+            "type": "file"
+          },
+          {
+            "name": "SETUP.md",
+            "type": "file"
+          },
+          {
+            "name": "USER-MANUAL.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "first-prompt-inject.mjs",
+                "type": "file"
+              },
+              {
+                "name": "precompact-distill.mjs",
+                "type": "file"
+              },
+              {
+                "name": "precompact-flush.mjs",
+                "type": "file"
+              },
+              {
+                "name": "session-start-ingest.mjs",
+                "type": "file"
+              },
+              {
+                "name": "session-start.js",
+                "type": "file"
+              },
+              {
+                "name": "sessionend-distill.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "opencode",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-knowledge.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "copy-ui.js",
+            "type": "file"
+          },
+          {
+            "name": "prune-now.mjs",
+            "type": "file"
+          },
+          {
+            "name": "setup.js",
+            "type": "file"
+          },
+          {
+            "name": "tree-sitter-extract.mjs",
+            "type": "file"
+          },
+          {
+            "name": "tree-sitter-lang.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "knowledge-ingest",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "validate.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "embeddings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "anthropic.ts",
+                "type": "file"
+              },
+              {
+                "name": "factory.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "local.ts",
+                "type": "file"
+              },
+              {
+                "name": "openai.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "knowledge",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyze.ts",
+                "type": "file"
+              },
+              {
+                "name": "consolidate.ts",
+                "type": "file"
+              },
+              {
+                "name": "distill.ts",
+                "type": "file"
+              },
+              {
+                "name": "freshness.ts",
+                "type": "file"
+              },
+              {
+                "name": "git.ts",
+                "type": "file"
+              },
+              {
+                "name": "graph.ts",
+                "type": "file"
+              },
+              {
+                "name": "promote.ts",
+                "type": "file"
+              },
+              {
+                "name": "query-log.ts",
+                "type": "file"
+              },
+              {
+                "name": "reflect.ts",
+                "type": "file"
+              },
+              {
+                "name": "scoring.ts",
+                "type": "file"
+              },
+              {
+                "name": "search.ts",
+                "type": "file"
+              },
+              {
+                "name": "store.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bm25.ts",
+                "type": "file"
+              },
+              {
+                "name": "boosts.ts",
+                "type": "file"
+              },
+              {
+                "name": "excerpt.ts",
+                "type": "file"
+              },
+              {
+                "name": "fuzzy.ts",
+                "type": "file"
+              },
+              {
+                "name": "mmr.ts",
+                "type": "file"
+              },
+              {
+                "name": "tfidf.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sessions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapters",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "opencode.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "indexer.ts",
+                "type": "file"
+              },
+              {
+                "name": "parser.ts",
+                "type": "file"
+              },
+              {
+                "name": "scopes.ts",
+                "type": "file"
+              },
+              {
+                "name": "search.ts",
+                "type": "file"
+              },
+              {
+                "name": "summary.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "app.js",
+                "type": "file"
+              },
+              {
+                "name": "index.html",
+                "type": "file"
+              },
+              {
+                "name": "render-graph.js",
+                "type": "file"
+              },
+              {
+                "name": "render-knowledge.js",
+                "type": "file"
+              },
+              {
+                "name": "render-panel.js",
+                "type": "file"
+              },
+              {
+                "name": "render-search.js",
+                "type": "file"
+              },
+              {
+                "name": "render-sessions.js",
+                "type": "file"
+              },
+              {
+                "name": "styles.css",
+                "type": "file"
+              },
+              {
+                "name": "template.js",
+                "type": "file"
+              },
+              {
+                "name": "ui-utils.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vectorstore",
+            "type": "directory",
+            "children": [
+              {
+                "name": "chunker.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "store.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dashboard.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          },
+          {
+            "name": "lib.ts",
+            "type": "file"
+          },
+          {
+            "name": "package-meta.ts",
+            "type": "file"
+          },
+          {
+            "name": "server.ts",
+            "type": "file"
+          },
+          {
+            "name": "tool-handlers.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.ts",
+            "type": "file"
+          },
+          {
+            "name": "validate.ts",
+            "type": "file"
+          },
+          {
+            "name": "version.ts",
+            "type": "file"
+          },
+          {
+            "name": "wakeup.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "e2e",
+            "type": "directory",
+            "children": [
+              {
+                "name": "v14-features.e2e.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "v15-features.e2e.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "e2e-ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dashboard.pw.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-start-ingest.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "opencode.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analyze.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "bm25.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "boosts.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "chunker.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "consolidate.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "context-bundle.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "dashboard.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "distill.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "embeddings.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "excerpt.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "freshness.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "fuzzy.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "git.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "graph.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "mmr.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "parser.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "promote.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "query-log.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "reflect.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "scopes.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "scoring.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "search.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "sessions-search.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "skill-validate.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "store.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "summary-extraction.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "summary.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "tfidf.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "tree-sitter-extract.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "validate.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "vectorstore.test.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".npmrc",
+        "type": "file"
+      },
+      {
+        "name": ".prettierignore",
+        "type": "file"
+      },
+      {
+        "name": "agent-desk-plugin.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "eslint.config.js",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "playwright.config.ts",
+        "type": "file"
+      },
+      {
+        "name": "prettier.config.js",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1514 @@
+{
+  "slug": "simple-workflow",
+  "name": "Simple Workflow",
+  "type": "plugin",
+  "description": "Complete development lifecycle plugin with built-in ticket management, Generator-Evaluator quality pipeline, and context conservation for long-running sessions.",
+  "longDescription": "Ships **13 skills**, **13 agents** and **6 hooks**.\n\n- **Skills** (13): `audit` (Comprehensive multi-agent code audit that delegates to the code-reviewer and security-scanner sub-agents), `autopilot` (Consume a pre-built ticket list (split-plan.md under .simple-workflow/backlog/product_backlog/{parent-slug}/) and drive the per-ticket /scout -> /impl -> /ship pipeline…), `brief` (Conducts a structured Socratic interview that gathers requirements, then writes a brief and an autopilot policy file for…), `catchup` (Recovers branch state and recommends the next development action after a context reset), `create-ticket` (Do not auto-invoke), `impl` (Do not auto-invoke), `investigate` (Investigates codebase topics by spawning the researcher subagent and writing structured findings to disk), `plan2doc` (Creates an implementation plan by spawning the planner subagent with a size-routed model (sonnet for Size S, opus…), and 5 more\n- **Agents** (13): `ac-evaluator-hi` (AC compliance evaluator), `ac-evaluator` (AC compliance evaluator), `code-reviewer` (Code quality, security, performance, and convention compliance review), `decomposer` (Decompose investigation findings into an ordered list of independently-deployable ticket skeletons with a dependency graph), `doc-verifier` (EC-SELFDOC / doc-truthfulness verifier), `implementer` (Implement code changes following a plan), `planner` (Create detailed implementation plans for features and refactoring), `researcher` (Codebase exploration, dependency tracking, and architecture investigation), and 5 more\n- **Hooks** (6): `SessionStart`, `PreToolUse`, `PreCompact`, `PostToolUse`, `Stop`, `SubagentStop`\n\nInstalls with `claude plugin install simple-workflow@claude-community` from `aimsise/simple-workflow`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 13,
+    "agent": 13,
+    "hook": 6
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "aimsise",
+    "url": "https://github.com/aimsise"
+  },
+  "externalUrl": "https://github.com/aimsise/simple-workflow/tree/2908297a4866331cda5edfee04656344562e170c",
+  "marketplace": "claude-community",
+  "version": "10.0.0",
+  "sourceRevision": "2908297a4866331cda5edfee04656344562e170c",
+  "contentDigest": "12e0a5a23ef81b9a521bba755f65f93a67d7b0acc3af854f579f9b745ff5c5c8",
+  "contentHash": "8552ad46e18b5dbb",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/aimsise/simple-workflow.git",
+    "sha": "2908297a4866331cda5edfee04656344562e170c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-06-28T14:49:22Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ac-evaluator-hi.md",
+            "type": "file"
+          },
+          {
+            "name": "ac-evaluator.md",
+            "type": "file"
+          },
+          {
+            "name": "code-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "decomposer.md",
+            "type": "file"
+          },
+          {
+            "name": "doc-verifier.md",
+            "type": "file"
+          },
+          {
+            "name": "implementer.md",
+            "type": "file"
+          },
+          {
+            "name": "planner.md",
+            "type": "file"
+          },
+          {
+            "name": "researcher.md",
+            "type": "file"
+          },
+          {
+            "name": "security-scanner.md",
+            "type": "file"
+          },
+          {
+            "name": "test-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "ticket-evaluator.md",
+            "type": "file"
+          },
+          {
+            "name": "ticket-executor.md",
+            "type": "file"
+          },
+          {
+            "name": "tune-analyzer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "design-oracles",
+        "type": "directory",
+        "children": [
+          {
+            "name": "aasc-accept-set",
+            "type": "directory",
+            "children": [
+              {
+                "name": "probe.js",
+                "type": "file"
+              },
+              {
+                "name": "probe.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aasc-keyfaith",
+            "type": "directory",
+            "children": [
+              {
+                "name": "probe.js",
+                "type": "file"
+              },
+              {
+                "name": "probe.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "brief-chain-flow-dark.png",
+            "type": "file"
+          },
+          {
+            "name": "brief-chain-flow.png",
+            "type": "file"
+          },
+          {
+            "name": "brief-chain-overview-dark.png",
+            "type": "file"
+          },
+          {
+            "name": "brief-chain-overview.png",
+            "type": "file"
+          },
+          {
+            "name": "gen-brief-chain-flow.py",
+            "type": "file"
+          },
+          {
+            "name": "gen-brief-chain-overview.py",
+            "type": "file"
+          },
+          {
+            "name": "state-schema.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit-block-pattern.sh",
+                "type": "file"
+              },
+              {
+                "name": "audit-coverage.sh",
+                "type": "file"
+              },
+              {
+                "name": "detect-policy-gate-stop.sh",
+                "type": "file"
+              },
+              {
+                "name": "forbidden-rationale-patterns.sh",
+                "type": "file"
+              },
+              {
+                "name": "inject-keys.sh",
+                "type": "file"
+              },
+              {
+                "name": "jsonl-tail-audit.sh",
+                "type": "file"
+              },
+              {
+                "name": "parse-state-file.sh",
+                "type": "file"
+              },
+              {
+                "name": "runtime-metrics.sh",
+                "type": "file"
+              },
+              {
+                "name": "state-authority.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "accept-set-verify.sh",
+            "type": "file"
+          },
+          {
+            "name": "autopilot-continue.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "impl-checkpoint-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "post-phase-checkpoint.sh",
+            "type": "file"
+          },
+          {
+            "name": "post-ship-state-auto-compact.sh",
+            "type": "file"
+          },
+          {
+            "name": "post-skill-cleanup.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-askuserquestion-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-bash-contract-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-bash-safety.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-compact-save.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-edit-safety.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-level1-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-next-scout-auto-compact.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-skill-contract-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-state-transition.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-write-safety.sh",
+            "type": "file"
+          },
+          {
+            "name": "scout-checkpoint-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-start.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-stop-log.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "audit-coverage.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "categories.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skeptical-pass.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "autopilot",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "autopilot-context-self-doc.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "autopilot-log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gate-decisions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manual-bash-fallback.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "split-plan-parsing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state-file.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stop-reason-taxonomy.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "brief",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "brief-body-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "interview-templates.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kb-policy-integration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase2-dynamic-shrinkage.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "policy-template.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "catchup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "compact-state-schema.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-detection-rules.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-state-discovery.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "create-ticket",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ac-quality-criteria.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-spawn-prompts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "autopilot-foldin.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "autopilot-policy-reference.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mode-dispatch-flows.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-state-migration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-state-schema.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec-decomposer-input.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sw-checkpoint-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ticket-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workflow-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "write-path-templates.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "impl",
+            "type": "directory",
+            "children": [
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "detect-tautological-assertions.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ac-evaluator-orchestration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ac-gate-decision.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "accept-set-conformance-harness.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "evidence-channels.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "independent-oracle-harness.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-state-impl-management.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "round-cap-parser.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state-file-resolution.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tautological-assertion-rules.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-authoring-guidance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verification-depth.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "workflows",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "eval-panel.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan2doc",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "refactor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scout",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tune",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ac-count-plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "plan-22ac.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan-32ac.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan-5ac-5negac.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan-5ac.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ask-guard",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "aggressive",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "autopilot-policy.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "conservative",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "autopilot-policy.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "moderate",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "autopilot-policy.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "audit-rounds",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "multi-round-ticket",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "audit-round-1.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "audit-round-10.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "audit-round-2.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "audit-round-missing-status.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "backtick-title.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "count-mismatch.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fail-critical.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fenced-status.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "html-comment-status.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pass-clean.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pass-with-concerns.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "autopilot-state-samples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "empty.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mock_state_10pct.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mock_state_40pct.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mock_state_80pct.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "multi-ticket.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "single-ticket.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "briefs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "flat-layout",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "test-slug",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "auto-kick.yaml",
+                            "type": "file"
+                          },
+                          {
+                            "name": "autopilot-policy.yaml",
+                            "type": "file"
+                          },
+                          {
+                            "name": "autopilot-state.yaml",
+                            "type": "file"
+                          },
+                          {
+                            "name": "brief.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "nested-layout",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "parent-slug",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "child-slug",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "auto-kick.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "impl-checkpoint-guard",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "impl-plan-compliance",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "plan-critical-files.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan-missing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan-no-section.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plan-ok.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jsonl-tail-audit",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fixture-1-empty.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixture-2-3-skill-uses.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixture-3-overflow.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fixture-4-mixed-tools.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "manual-bash-fallbacks-samples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "clean-anomaly-reasons.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "with-context-budget-reason.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "payloads",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "empty.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stop-hook-end-turn.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "per-phase-metrics-samples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "autopilot-state-base.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-state-pending.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "post-ship-integrity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "briefs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "active",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "shelftrack",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "autopilot-state.yaml",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "clean-ticket-005",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "phase-state.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "drift-ticket-001",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "phase-state.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "quality-rounds",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "blob-mismatch",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "run.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "deleted-file-handling",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "run.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "extra-file-in-commit",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "run.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "legacy-no-block",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "run.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "match-clean",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "run.sh",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "state-schema",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "v7-shelftrack",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "autopilot-state.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "v8-shelftrack",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "autopilot-state.yaml",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "tautological-assertions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "a-r1-violation.test.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "b-r2-violation.test.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "c-r3-violation.test.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "d-hint-exempt.test.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e-non-constant-bound.test.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "f-clean.test.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "transcripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "malformed.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "policy_gate_stop_earlier_turn_only.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "policy_gate_stop_last_turn.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "policy_gate_stop_tool_use_only.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "read_only_turns.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "realistic_full_turn.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state_advancing.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "text_only_5_consecutive.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tool_use_present.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "autopilot-log-canonical.md",
+                "type": "file"
+              },
+              {
+                "name": "autopilot-log-invalid-reason.md",
+                "type": "file"
+              },
+              {
+                "name": "findings-1ticket.md",
+                "type": "file"
+              },
+              {
+                "name": "findings-3tickets.md",
+                "type": "file"
+              },
+              {
+                "name": "mock-ac-evaluator-always-in-progress.sh",
+                "type": "file"
+              },
+              {
+                "name": "mock-ac-evaluator-second-call-terminal.sh",
+                "type": "file"
+              },
+              {
+                "name": "tmux-stub.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "helpers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ac-ssot-scan.sh",
+                "type": "file"
+              },
+              {
+                "name": "audit-summary.sh",
+                "type": "file"
+              },
+              {
+                "name": "check-ticket-move-drift.sh",
+                "type": "file"
+              },
+              {
+                "name": "count-tokens.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "replay",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit-emit-only.jsonl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "run-all.sh",
+            "type": "file"
+          },
+          {
+            "name": "spike-claude-p.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-ac-evaluator-static-rules.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-accept-set-verify.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-ask-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-autopilot-continue.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-autopilot-runtime-metrics.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-brief-lightening.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-checkpoint-template.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-detect-policy-gate-stop.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-eval-panel-merge.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test-helper.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-hooks-lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-impl-checkpoint-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-impl-plan-compliance.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-inject-keys.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-integration.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-migration.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-path-consistency.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-per-phase-metrics.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-phase-state-contracts.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-post-ship-state-auto-compact.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-post-skill-cleanup.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pre-bash-contract-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pre-bash-safety.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pre-compact-save.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pre-edit-safety.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pre-next-scout-auto-compact.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pre-skill-contract-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-pre-write-safety.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-precompact-end-to-end.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-runtime-metrics-write-window.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-scout-checkpoint-guard.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-session-start-hook.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-session-start-next-compact.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-session-start.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-session-stop-log.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-ship-precompute.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-skill-contracts.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-state-parsers.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-state-transition-guard.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tools",
+        "type": "directory",
+        "children": [
+          {
+            "name": "migrate-state-schema.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "ARCHITECTURE.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "NOTICE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

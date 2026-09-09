@@ -1,0 +1,1658 @@
+{
+  "slug": "orchestra",
+  "name": "Orchestra",
+  "type": "plugin",
+  "description": "Disciplined AI engineering toolkit for Claude Code. Ships typed design-doc templates (Feature LLD, Bug Report, ADR, Postmortem, Runbook, Design Doc) with a 4-gate spec review (Completeness / Evidence / Clarity / Consistency), mandatory mermaid diagrams, an octal-safe auto-numbering script, AGENTS.md and llms.txt sync, a bug-iteration loop that prevents orphan fix-commits, and an enforced doc-before-code workflow with five named gates (Discovery / Design / Spec Review / Commit / Implementation Sync). Includes a Python lint CLI for Refs:-line + metadata + status validation, an auto DECISIONS.md generator with bidirectional ADR supersession consistency. Patterns adopted from Michael Nygard, Google SRE, Pragmatic Engineer, agents.md, and llmstxt.org. First skill of the Orchestra umbrella; future skills cover workflow, registry, tasks, gates, and plans.",
+  "longDescription": "Ships **4 skills** and **1 command**.\n\n- **Skills** (4): `commit` (Commit-discipline skill — invoke before any code commit, any doc commit on canon-frozen-eligible file, status-flip operations, supersession decisions), `design-docs` (Use when a feature, bug fix, architectural decision, incident postmortem, operational runbook, or component-level architecture update needs a…), `init` (Use when setting up design docs scaffolding in a new repo, or when migrating from orchestra v1.0 to…), `spec-review` (Use when reviewing any orchestra design doc (Feature LLD, Bug Report, ADR, Postmortem, Runbook, Design Doc, Plan) via…)\n- **Commands** (1): `spec-review` (Run orchestra:spec-review v2 (6-parallel-sub-judge ensemble) on a doc — produces schema-v2.0 attestation)\n\nInstalls with `claude plugin install orchestra@claude-community` from `hassan-mohiddin/orchestra`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 4,
+    "command": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Hassan Mohiddin"
+  },
+  "externalUrl": "https://github.com/hassan-mohiddin/orchestra/tree/0280824b566615dc1213bbc0e9943de77a49aab8",
+  "marketplace": "claude-community",
+  "version": "2.0.0",
+  "sourceRevision": "0280824b566615dc1213bbc0e9943de77a49aab8",
+  "contentDigest": "d6fab327967a38c86d167bdaa4c6ad5e0657cdcb4cbc1fa0216be024e4e1c101",
+  "contentHash": "3fcd0dbb7a7682f1",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/hassan-mohiddin/orchestra.git",
+    "sha": "0280824b566615dc1213bbc0e9943de77a49aab8"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-11T17:30:03Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflow.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "lint.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "cli",
+        "type": "directory",
+        "children": [
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AGENTS.md.template",
+                "type": "file"
+              },
+              {
+                "name": "docs-index.md",
+                "type": "file"
+              },
+              {
+                "name": "llms.txt.template",
+                "type": "file"
+              },
+              {
+                "name": "mkdocs_hooks.py",
+                "type": "file"
+              },
+              {
+                "name": "mkdocs.yml",
+                "type": "file"
+              },
+              {
+                "name": "orchestra-lint.yml",
+                "type": "file"
+              },
+              {
+                "name": "precommit-yaml-patch.txt",
+                "type": "file"
+              },
+              {
+                "name": "requirements-docs.txt",
+                "type": "file"
+              },
+              {
+                "name": "standards-default-7.md",
+                "type": "file"
+              },
+              {
+                "name": "tags.md",
+                "type": "file"
+              },
+              {
+                "name": "vocabulary-default-1.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "_shared.py",
+            "type": "file"
+          },
+          {
+            "name": "aggregator.py",
+            "type": "file"
+          },
+          {
+            "name": "config.py",
+            "type": "file"
+          },
+          {
+            "name": "decisions_index.py",
+            "type": "file"
+          },
+          {
+            "name": "delta_review.py",
+            "type": "file"
+          },
+          {
+            "name": "failure_attestation.py",
+            "type": "file"
+          },
+          {
+            "name": "init.py",
+            "type": "file"
+          },
+          {
+            "name": "install_hooks.py",
+            "type": "file"
+          },
+          {
+            "name": "lifecycle.py",
+            "type": "file"
+          },
+          {
+            "name": "lint.py",
+            "type": "file"
+          },
+          {
+            "name": "migrate.py",
+            "type": "file"
+          },
+          {
+            "name": "pdsa.py",
+            "type": "file"
+          },
+          {
+            "name": "rubric_freeze.py",
+            "type": "file"
+          },
+          {
+            "name": "spec_review.py",
+            "type": "file"
+          },
+          {
+            "name": "viewer.py",
+            "type": "file"
+          },
+          {
+            "name": "vocabulary.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "spec-review.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ADR-001-orchestra-config-storage.md",
+                "type": "file"
+              },
+              {
+                "name": "DECISIONS.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "archive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "design",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "orchestra-philosophy.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "features",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "005-v1.5-enforcement-core-r2.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "005-v1.5-enforcement-core.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "006-archive-and-supersession-conventions-r2.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "006-archive-and-supersession-conventions-r3.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "006-archive-and-supersession-conventions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "007-spec-review-architecture.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "008-commit-skill.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "bugs",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "BUG-001-init-flow-not-interactive.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-002-gitignore-affects-tracked-files.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-003-mkdocs-tags-page-missing.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-004-templates-not-project-aware.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-005-mkdocs-nav-no-auto-detect.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-006-install-hooks-precommit-framework.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-007-mkdocs-yaml-python-tag-strict-validators.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-008-spec-review-gate3-no-enforcement.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-009-lint-commit-l2-retroactive.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-010-orchestra-self-install-precommit-hook.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-011-supersession-tier-refinement.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-012-v17-1-minor-followups.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-013-slash-command-naming-inconsistency.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-014-l4-bare-name-design-supersession.md",
+                "type": "file"
+              },
+              {
+                "name": "BUG-016-scattered-vocabulary-no-canon.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "controlled-vocabulary.md",
+                "type": "file"
+              },
+              {
+                "name": "orchestra-philosophy-r2.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "features",
+            "type": "directory",
+            "children": [
+              {
+                "name": "001-design-docs-init.md",
+                "type": "file"
+              },
+              {
+                "name": "002-v1.2-migration-viewer-commit-msg.md",
+                "type": "file"
+              },
+              {
+                "name": "003-v1.3-doc-browser-mkdocs.md",
+                "type": "file"
+              },
+              {
+                "name": "006-archive-and-supersession-conventions-r4.md",
+                "type": "file"
+              },
+              {
+                "name": "007-spec-review-architecture-r5.md",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r8.md",
+                "type": "file"
+              },
+              {
+                "name": "009-commit-msg-l2-finalize.md",
+                "type": "file"
+              },
+              {
+                "name": "010-framework-detection-determinism.md",
+                "type": "file"
+              },
+              {
+                "name": "011-spec-review-v2.md",
+                "type": "file"
+              },
+              {
+                "name": "012-rule-durability-and-learning-layer.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-05-07-workflow-spec-review-brainstorm.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-workflow-skill-refresh.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-05-06-orchestra-roadmap.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-06-orchestra-v1.1-implementation.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-06-orchestra-v1.2-implementation.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-06-orchestra-v1.3-implementation.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-06-state-of-orchestra-handoff.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-08-state-of-orchestra-lld-006-handoff.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-10-lld-007-implementation.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-10-v17-followups-checklist.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-spec-review-v2-implementation.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-test-quality-audit.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-v17-implementation.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-vocab-canon-migration.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "postmortems",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "POSTMORTEM-2026-05-07-v1.4-cargo-cult-rollback.md",
+                "type": "file"
+              },
+              {
+                "name": "POSTMORTEM-2026-05-10-canon-inplace-violation.md",
+                "type": "file"
+              },
+              {
+                "name": "POSTMORTEM-2026-05-10-session-process-drift.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reviews",
+            "type": "directory",
+            "children": [
+              {
+                "name": "005-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "005-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "006-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "006-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "006-r3.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "006-r4.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "007-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "007-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "007-r3.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "007-spec-review-architecture-r4.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "007-spec-review-architecture-r5.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r1.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r2.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r3.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r3.sonnet.review.md",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r4.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r4.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "008-commit-skill-r8.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "009-commit-msg-l2-finalize-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "009-commit-msg-l2-finalize-r1.sonnet.review.md",
+                "type": "file"
+              },
+              {
+                "name": "009-commit-msg-l2-finalize-r2.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "009-commit-msg-l2-finalize-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "010-framework-detection-determinism-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "010-framework-detection-determinism-r1.sonnet.review.md",
+                "type": "file"
+              },
+              {
+                "name": "010-framework-detection-determinism-r2.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "010-framework-detection-determinism-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "011-spec-review-v2-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "011-spec-review-v2-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "012-rule-durability-and-learning-layer-r1.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "012-rule-durability-and-learning-layer-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "012-rule-durability-and-learning-layer-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-10-lld-007-implementation-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-10-lld-007-implementation-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-10-lld-007-implementation-r3.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-lld-012-v18-implementation-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-v17-implementation-r1.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-v17-implementation-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-v17-implementation-r2.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-v17-implementation-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-v17-implementation-r3.codex.review.md",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-v17-implementation-r3.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-vocab-canon-migration-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-vocab-canon-migration-r3.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-vocab-canon-migration-r4.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "2026-05-11-vocab-canon-migration-r5.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "BUG-009-lint-commit-l2-retroactive-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "BUG-010-orchestra-self-install-precommit-hook-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "BUG-011-supersession-tier-refinement-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "BUG-012-v17-1-minor-followups-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "BUG-013-slash-command-naming-inconsistency-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "BUG-014-l4-bare-name-design-supersession-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "controlled-vocabulary-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "controlled-vocabulary-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "controlled-vocabulary-r3.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "controlled-vocabulary-r5.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "controlled-vocabulary-r6.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "controlled-vocabulary-r7.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "orchestra-philosophy-r2.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "POSTMORTEM-2026-05-07-v1.4-cargo-cult-rollback-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "POSTMORTEM-2026-05-10-canon-inplace-violation-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "POSTMORTEM-2026-05-10-session-process-drift-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "RUNBOOK-canon-inplace-violation-recovery-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "RUNBOOK-iteration-plateau-detection-r1.orchestra.review.yaml",
+                "type": "file"
+              },
+              {
+                "name": "RUNBOOK-spec-review-bootstrap-mismatch-r1.orchestra.review.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "runbooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "RUNBOOK-canon-inplace-violation-recovery.md",
+                "type": "file"
+              },
+              {
+                "name": "RUNBOOK-iteration-plateau-detection.md",
+                "type": "file"
+              },
+              {
+                "name": "RUNBOOK-spec-review-bootstrap-mismatch.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "HANDOFF-BUG-016.md",
+            "type": "file"
+          },
+          {
+            "name": "HANDOFF.md",
+            "type": "file"
+          },
+          {
+            "name": "STANDARDS.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "eval",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scenarios",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "archive-refs-blocked.json",
+                "type": "file"
+              },
+              {
+                "name": "commit-msg-hook.json",
+                "type": "file"
+              },
+              {
+                "name": "mermaid-export.json",
+                "type": "file"
+              },
+              {
+                "name": "migrate-solo-to-team.json",
+                "type": "file"
+              },
+              {
+                "name": "mkdocs-build.json",
+                "type": "file"
+              },
+              {
+                "name": "mkdocs-install.json",
+                "type": "file"
+              },
+              {
+                "name": "orchestra-custom-rename-rejected.json",
+                "type": "file"
+              },
+              {
+                "name": "orchestra-fresh-init.json",
+                "type": "file"
+              },
+              {
+                "name": "orchestra-mermaid-lint.json",
+                "type": "file"
+              },
+              {
+                "name": "orchestra-rerun-idempotent.json",
+                "type": "file"
+              },
+              {
+                "name": "orchestra-v10-migration.json",
+                "type": "file"
+              },
+              {
+                "name": "spec-review-yaml-schema-roundtrip.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "run.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ADR-001-postgres-to-timescale.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bugs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "BUG-001-checkout-double-charge.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "postmortems",
+            "type": "directory",
+            "children": [
+              {
+                "name": "POSTMORTEM-2026-04-22-auth-token-expiry-boundary.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "orchestra-config-example.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "schema",
+        "type": "directory",
+        "children": [
+          {
+            "name": "orchestra.config.v1.1.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "generate_vocab_template.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "commit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "canon-frozen-guard.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "commit-strategy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "doc-vs-code-commit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "refs-line-rules.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "supersession-decision.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "commit-msg.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pre-commit.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "precommit-framework-snippet.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "init",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "prompts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "mermaid",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "activity-diagrams.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "architecture-diagrams.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "deployment-diagrams.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sequence-diagrams.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unicode-symbols.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "agents-md-llms-txt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "design-doc-sync-protocol.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "doc-standards.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "resilient-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec-review-gates.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "troubleshooting.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "extract_mermaid.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mermaid_to_image.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "next_doc_number.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "resilient_diagram.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adr-short.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "adr.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agents-md.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "api-design-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bug-report.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "database-design-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "feature-lld.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "llms-txt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "postmortem.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "runbook.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "STANDARDS.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spec-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "judges",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adversarial",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "prompt.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rubric-v1.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "architectural-fit",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "prompt.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rubric-v1.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gate-compliance",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "prompt.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rubric-v1.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "repo-context",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "prompt.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rubric-v1.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "semantic",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "prompt.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rubric-v1.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "structure",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "prompt.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "rubric-v1.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "4-gate-rubric.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "attestation-template.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "attestation-schema-v1.0.json",
+                "type": "file"
+              },
+              {
+                "name": "attestation-schema-v2.0.json",
+                "type": "file"
+              },
+              {
+                "name": "prompt-template.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scale-pre-migration",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".claude",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "rules",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "canon-frozen-guard.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "commit-strategy.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "documentation-gate.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "skills-registry.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "test-canon-frozen.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_aggregate_and_write.py",
+            "type": "file"
+          },
+          {
+            "name": "test_aggregator.py",
+            "type": "file"
+          },
+          {
+            "name": "test_attestation_integrity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_class_vs_instance.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli_init_bootstrap.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli_init_bucket1.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli_init_bucket2.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli_install_hooks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli_lint_mermaid.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli_migrate.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli_viewer.py",
+            "type": "file"
+          },
+          {
+            "name": "test_commit_skill_structure.py",
+            "type": "file"
+          },
+          {
+            "name": "test_config.py",
+            "type": "file"
+          },
+          {
+            "name": "test_delta_review.py",
+            "type": "file"
+          },
+          {
+            "name": "test_failure_attestation.py",
+            "type": "file"
+          },
+          {
+            "name": "test_install_hooks_framework.py",
+            "type": "file"
+          },
+          {
+            "name": "test_install_hooks_on_conflict.py",
+            "type": "file"
+          },
+          {
+            "name": "test_install_hooks_security.py",
+            "type": "file"
+          },
+          {
+            "name": "test_install_hooks_skill_dir.py",
+            "type": "file"
+          },
+          {
+            "name": "test_iter_cap.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_archive_refs.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_attestation_path.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_auto_generated_exempt.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_canon_drift.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_commit_l2.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_doc_id_burn.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_finding_ref_re.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_is_narrow_change_tiered.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_l2_canon.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_l2_detect_finalize.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_l4_canon_filenames.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_l5.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_verify_changelog.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lint_verify_finding.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lld010_integration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_migration_v10_to_v11.py",
+            "type": "file"
+          },
+          {
+            "name": "test_partial_failure.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pdsa.py",
+            "type": "file"
+          },
+          {
+            "name": "test_provenance.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pytest_baseline.py",
+            "type": "file"
+          },
+          {
+            "name": "test_review_filenames.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rubric_freeze.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sanity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_scale_migration_transactional.py",
+            "type": "file"
+          },
+          {
+            "name": "test_scale_migration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_schema_v1_read_only.py",
+            "type": "file"
+          },
+          {
+            "name": "test_schema_v2_validation.py",
+            "type": "file"
+          },
+          {
+            "name": "test_shared.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_atomicity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_bias.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_canon_drift.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_dispatch.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_invoke.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_iter.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_path.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_prompt.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_schema.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_security.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_snapshot.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_stale.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_v2.py",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_review_verdict.py",
+            "type": "file"
+          },
+          {
+            "name": "test_standards_generator.py",
+            "type": "file"
+          },
+          {
+            "name": "test_template_drift.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vocabulary.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tools",
+        "type": "directory",
+        "children": [
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "migrate_scale_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "scale_migration_core.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

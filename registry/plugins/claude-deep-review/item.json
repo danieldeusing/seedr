@@ -1,0 +1,2997 @@
+{
+  "slug": "claude-deep-review",
+  "name": "Claude Deep Review",
+  "type": "plugin",
+  "description": "A research-backed code review plugin for Claude Code that orchestrates parallel concern-specialized agents, cross-validates findings with deterministic verification, and produces unified review reports.",
+  "longDescription": "Ships **2 skills** and **15 agents**.\n\n- **Skills** (2): `build-review-md` (Use this skill when the user wants to create or set up a REVIEW.md configuration file for their…), `code-gauntlet` (Prefer this skill for code review requests — it runs a multi-agent pipeline with blind challenge verification for…)\n- **Agents** (15): `AGENTS`, `artifact-writer` (Persists code-gauntlet artifacts (findings JSON, report markdown, checkpoint JSON) to the output directory), `bug-detector` (Detects correctness bugs, logic errors, edge cases, API misuse, and error handling issues in code changes), `challenger` (Blindly challenges a single review finding — attempts to disprove the claim using only the finding title, description,…), `change-summarizer` (Produces a concise semantic summary of PR/MR changes for shared context across all review agents), `CLAUDE`, `code-simplifier` (Simplifies complex code for clarity and maintainability while preserving functionality), `conventions-and-intent` (Verifies code changes comply with project conventions, match documented intent, and maintain comment accuracy), and 7 more\n\nInstalls with `claude plugin install claude-deep-review@claude-community` from `liatrio-labs/claude-deep-review`.",
+  "compatibility": [
+    "claude",
+    "copilot"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 2,
+    "agent": 15
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Lee Hopper"
+  },
+  "externalUrl": "https://github.com/liatrio-labs/claude-deep-review/tree/7c130b85c0b30c1ea13245807f5c2eb0323aed17",
+  "marketplace": "claude-community",
+  "version": "3.7.0",
+  "sourceRevision": "7c130b85c0b30c1ea13245807f5c2eb0323aed17",
+  "contentDigest": "dba520068760b5173fa14b4d4daa0eec428f86ab3eaaf4b46ab5a699bfdd0602",
+  "contentHash": "5991a94ab4bc0c0c",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/liatrio-labs/claude-deep-review.git",
+    "sha": "7c130b85c0b30c1ea13245807f5c2eb0323aed17"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-11T03:31:02Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "environment.json",
+            "type": "file"
+          },
+          {
+            "name": "install.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "chainguard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "main-semantic-release.sts.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              },
+              {
+                "name": "question.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bench-smoke.yml",
+                "type": "file"
+              },
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "labels-verify.yml",
+                "type": "file"
+              },
+              {
+                "name": "pr-title-lint.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish-marketplace.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "scorecard.yml",
+                "type": "file"
+              },
+              {
+                "name": "validate.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "labels_diff.py",
+            "type": "file"
+          },
+          {
+            "name": "labels.json",
+            "type": "file"
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          },
+          {
+            "name": "zizmor.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "AGENTS.md",
+            "type": "file"
+          },
+          {
+            "name": "artifact-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "bug-detector.md",
+            "type": "file"
+          },
+          {
+            "name": "challenger.md",
+            "type": "file"
+          },
+          {
+            "name": "change-summarizer.md",
+            "type": "file"
+          },
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          },
+          {
+            "name": "code-simplifier.md",
+            "type": "file"
+          },
+          {
+            "name": "conventions-and-intent.md",
+            "type": "file"
+          },
+          {
+            "name": "cross-file-impact.md",
+            "type": "file"
+          },
+          {
+            "name": "executor.md",
+            "type": "file"
+          },
+          {
+            "name": "report-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "security-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "test-analyzer.md",
+            "type": "file"
+          },
+          {
+            "name": "type-design-analyzer.md",
+            "type": "file"
+          },
+          {
+            "name": "validator.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bench",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adapter",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "adapt.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "adjudicator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "adjudicate.py",
+                "type": "file"
+              },
+              {
+                "name": "prompt.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "golden",
+            "type": "directory",
+            "children": [
+              {
+                "name": "anchors",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "candidates.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "golden_comments",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cal_dot_com.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discourse.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "grafana.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "keycloak.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sentry.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "benchmark_data.min.json",
+                "type": "file"
+              },
+              {
+                "name": "fetch_shas.py",
+                "type": "file"
+              },
+              {
+                "name": "pr_labels.json",
+                "type": "file"
+              },
+              {
+                "name": "review_md_fixture.md",
+                "type": "file"
+              },
+              {
+                "name": "shas.json",
+                "type": "file"
+              },
+              {
+                "name": "subsets.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "runner",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "anchors.py",
+                "type": "file"
+              },
+              {
+                "name": "check.py",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint.py",
+                "type": "file"
+              },
+              {
+                "name": "costs.py",
+                "type": "file"
+              },
+              {
+                "name": "invoke.py",
+                "type": "file"
+              },
+              {
+                "name": "ledger.py",
+                "type": "file"
+              },
+              {
+                "name": "mirrors.py",
+                "type": "file"
+              },
+              {
+                "name": "score.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fakes",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fake_claude.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adapter",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "github_3_comments_1_skipped.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "github_empty.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gitlab_shape.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "local-e2e",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "make_fixture.sh",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "test_adapter.py",
+                "type": "file"
+              },
+              {
+                "name": "test_adjudicator.py",
+                "type": "file"
+              },
+              {
+                "name": "test_anchors.py",
+                "type": "file"
+              },
+              {
+                "name": "test_check.py",
+                "type": "file"
+              },
+              {
+                "name": "test_checkpoint.py",
+                "type": "file"
+              },
+              {
+                "name": "test_golden.py",
+                "type": "file"
+              },
+              {
+                "name": "test_headless_echo_contract.py",
+                "type": "file"
+              },
+              {
+                "name": "test_invoke.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ledger.py",
+                "type": "file"
+              },
+              {
+                "name": "test_mirrors.py",
+                "type": "file"
+              },
+              {
+                "name": "test_profile_run.py",
+                "type": "file"
+              },
+              {
+                "name": "test_report.py",
+                "type": "file"
+              },
+              {
+                "name": "test_run_cli.py",
+                "type": "file"
+              },
+              {
+                "name": "test_score.py",
+                "type": "file"
+              },
+              {
+                "name": "test_shas.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vendor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "code-review-benchmark",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "code_review_benchmark",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__init__.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "step2_5_dedup_candidates.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "step3_judge_comments.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "conftest.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_step3.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "LICENSE",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pyproject.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "uv.lock",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "VENDORED.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".env.example",
+            "type": "file"
+          },
+          {
+            "name": "baselines.json",
+            "type": "file"
+          },
+          {
+            "name": "experiments.jsonl",
+            "type": "file"
+          },
+          {
+            "name": "MEASUREMENT.md",
+            "type": "file"
+          },
+          {
+            "name": "profile_run.py",
+            "type": "file"
+          },
+          {
+            "name": "PROFILING.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "report.html",
+            "type": "file"
+          },
+          {
+            "name": "report.py",
+            "type": "file"
+          },
+          {
+            "name": "run.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "research",
+            "type": "directory",
+            "children": [
+              {
+                "name": "artifacts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "01-ai-code-review-state-of-the-art.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "02-false-positive-reduction-techniques.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "03-optimal-agent-count.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "04-context-window-engineering.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "05-prompt-injection-vulnerabilities.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "06-lsp-integration-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "07-evaluation-benchmarks-and-metrics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "08-handling-pre-existing-technical-debt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "09-hierarchical-config-file-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "10-agent-skill-architecture-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "11-incremental-review-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "12-model-routing-for-code-review.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "13-cost-and-token-economics.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "14-inter-agent-debate-and-challenge-rounds.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "15-developer-experience-of-review-output.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "16-reliable-api-payload-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "17-enforcing-mandatory-pipeline-steps.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "18-skill-architecture-limits-and-progressive-disclosure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "19-review-md-configuration-practices.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "20-named-subagent-definitions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "21-robust-pr-diff-strategies.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "22-actionability-filtering.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "23-agent-output-truncation-and-recovery.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "24-structured-output-compliance-under-cognitive-load.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "25-sandbox-bash-ast-auto-allow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "26-hook-sandbox-permission-pipeline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "27-plugin-hook-subagent-propagation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "28-agent-dispatch-concurrency.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "29-workflow-platform-smoke-tests.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "33-harness-headless-probes.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "duplication-register.md",
+            "type": "file"
+          },
+          {
+            "name": "engineering-audit-2026-07.md",
+            "type": "file"
+          },
+          {
+            "name": "machine-parsed-strings.md",
+            "type": "file"
+          },
+          {
+            "name": "maintainer-issues.md",
+            "type": "file"
+          },
+          {
+            "name": "v3-residue-audit-2026-07.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "AGENTS.md",
+            "type": "file"
+          },
+          {
+            "name": "apply_challenges.py",
+            "type": "file"
+          },
+          {
+            "name": "apply_validations.py",
+            "type": "file"
+          },
+          {
+            "name": "assemble_artifacts.py",
+            "type": "file"
+          },
+          {
+            "name": "await_workflow.py",
+            "type": "file"
+          },
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          },
+          {
+            "name": "collect_project_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "detect_prior_review.py",
+            "type": "file"
+          },
+          {
+            "name": "diff_lines.py",
+            "type": "file"
+          },
+          {
+            "name": "ensure_output_dir.py",
+            "type": "file"
+          },
+          {
+            "name": "filter_findings.py",
+            "type": "file"
+          },
+          {
+            "name": "finding_dedup.py",
+            "type": "file"
+          },
+          {
+            "name": "materialize_artifacts.py",
+            "type": "file"
+          },
+          {
+            "name": "merge_findings.py",
+            "type": "file"
+          },
+          {
+            "name": "post_review.py",
+            "type": "file"
+          },
+          {
+            "name": "review_marker.py",
+            "type": "file"
+          },
+          {
+            "name": "script_io.py",
+            "type": "file"
+          },
+          {
+            "name": "sync_agent_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "validate_ndjson.py",
+            "type": "file"
+          },
+          {
+            "name": "verify_findings.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "build-review-md",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "review-md-practices.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "code-gauntlet",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "complete-read-contract.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "crash-recovery.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "delivery-guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "false-positive-exclusions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fix-task-metadata.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "headless-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "investigation-methodology.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ndjson-emission-contract.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase1-preflight.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase2-triage.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase3-dispatch.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase8-delivery.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "report-format.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "review-md-spec.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validation-pipeline.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "glab_diff",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "added.diff",
+                    "type": "file"
+                  },
+                  {
+                    "name": "deleted.diff",
+                    "type": "file"
+                  },
+                  {
+                    "name": "modified.diff",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rename.diff",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "parity",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "apply_challenges",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "challenge_missing_id_or_score_skipped",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "dedup_rerun_post_challenge_creates_new_pair",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "deep_copy_no_mutation_of_input",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "issue47_extra_fields_pass_through",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "rank_by_severity_then_confidence_then_risk_level",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "rank_risk_level_absent_falls_back_to_description_length",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_24_boundary_removed",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_25_49_already_low_removed_not_downgraded",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_25_boundary_downgrades",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_49_boundary_downgrades",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_50_74_surfaced_rerouted_to_suggestion",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_50_boundary_contests",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_74_boundary_contests",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_75_boundary_survives",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_below_25_non_security_removed",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_below_25_security_already_low_removed",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "score_below_25_security_downgraded_not_removed",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "unchallenged_passthrough",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "apply_validations",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "confidence_boolean_true_accepted",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "confidence_clamped_above_100",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "confidence_clamped_below_zero",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "confidence_decimal_string_rejected",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "confidence_float_truncated_toward_zero",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "confidence_updated_basic",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "issue47_extra_fields_pass_through",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "justification_copied_and_absent",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "original_confidence_preserved_on_first_only",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "pass_through_no_original_confidence_field",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "unmatched_validation_id_reported_not_fatal",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "filter_findings",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dedup_cross_agent",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "confidence_tiebreak",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "core_wins",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "description_length_tiebreak",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "no_id_finding_immune",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "same_agent_siblings_preserved",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "dimension_routing",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "always_main",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "always_suggestion",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "conditional_not_promoted",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "conditional_promoted_by_keyword",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "type_design_not_promoted",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "type_design_promoted_by_keyword",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "disagreement",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "consensus_boost_cap_100",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "contradiction_flag",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "non_integer_line_start",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "round_half_to_even_boundary",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "security_escalation",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "singleton_penalty_floor_0",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "suppression_generated",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "suppression_intentional",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "exclusions",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "apply_match_and_pass_through",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "bullet_list_fallback",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "bullet_list_fallback_crlf",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "fenced_block_match",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "injection",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "bypass_instructional",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "duplicate_signature_order_dependent",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "shell",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "short_high_confidence",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "url_encoded",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "vuln_intro_placeholder",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "normalize",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "canonical_wins_when_both_present",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "noop_when_neither_legacy_present",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "rename_applied",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "review_md",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "bare_key_fallback_with_warning",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "fenced_yaml",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "html_comment_block",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "ignore_list_mixed_indentation",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "missing_defaults",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "tag_findings",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "issue47_extra_fields_pass_through",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "promotion_and_fallback_routing",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "threshold",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "confidence_eliminated",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "confidence_exactly_at_threshold_passes",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "contestation_bypasses_both",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "contestation_drop_exactly_25_does_not_contest",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "passes_above_both",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "security_uses_min",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "severity_eliminated",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "expected.json",
+                                "type": "file"
+                              },
+                              {
+                                "name": "input.json",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "finding_dedup",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "empty_inputs",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "equal_priority_keeps_first_seen",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "finding_without_id_dropped",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "issue47_extra_fields_pass_through",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "multiple_agents_same_id",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ndjson_wins_over_text",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "no_collision",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "merge_findings",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "dropped_no_id_both_channels",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "escaped_braces_in_string",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "invalid_ndjson_line_warns_not_fatal",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "issue47_extra_fields_pass_through",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "missing_required_field_rejected",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "multi_agent_combine",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ndjson_and_text_dedup",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ndjson_only_single_agent",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "truncation_m4_no_false_positive",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "truncation_m5_no_false_positive",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "truncation_true_positive",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "unknown_dimension_kept_with_warning",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "unterminated_brace",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "slice_input_proof",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "empty_findings",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "lone_surrogate",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "non_ascii_and_astral",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "numeric_edges",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "slice_shaped",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "verify_deltas",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "confidence_rescored_missing_symbol",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "eliminated_with_verified_sibling",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "extras_and_suggestion_survive_agent_stripped",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "non_ascii_astral_checksum",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "numeric_string_coercion",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "plain_verified",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "surfaced_severity_downgrade",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "whitespace_padded_ids",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "input.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "verify_slice_recovery",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "discourse-graphite-6.slice0.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "grafana-80329.slice0.json",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "test_agent_contracts.py",
+            "type": "file"
+          },
+          {
+            "name": "test_agent_instruction_layout.py",
+            "type": "file"
+          },
+          {
+            "name": "test_apply_challenges.py",
+            "type": "file"
+          },
+          {
+            "name": "test_apply_validations.py",
+            "type": "file"
+          },
+          {
+            "name": "test_assemble_artifacts.py",
+            "type": "file"
+          },
+          {
+            "name": "test_await_workflow.py",
+            "type": "file"
+          },
+          {
+            "name": "test_boundary_parity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_bundle_fresh.py",
+            "type": "file"
+          },
+          {
+            "name": "test_collect_project_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "test_contribution_surface.py",
+            "type": "file"
+          },
+          {
+            "name": "test_detect_prior_review.py",
+            "type": "file"
+          },
+          {
+            "name": "test_diff_lines.py",
+            "type": "file"
+          },
+          {
+            "name": "test_dimensions_registry.py",
+            "type": "file"
+          },
+          {
+            "name": "test_docs_registry.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ensure_output_dir.py",
+            "type": "file"
+          },
+          {
+            "name": "test_filter_findings.py",
+            "type": "file"
+          },
+          {
+            "name": "test_finding_dedup.py",
+            "type": "file"
+          },
+          {
+            "name": "test_machine_parsed_strings.py",
+            "type": "file"
+          },
+          {
+            "name": "test_materialize_artifacts.py",
+            "type": "file"
+          },
+          {
+            "name": "test_merge_findings.py",
+            "type": "file"
+          },
+          {
+            "name": "test_parity_fixtures.py",
+            "type": "file"
+          },
+          {
+            "name": "test_post_review.py",
+            "type": "file"
+          },
+          {
+            "name": "test_references_reachability.py",
+            "type": "file"
+          },
+          {
+            "name": "test_review_marker.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validate_ndjson.py",
+            "type": "file"
+          },
+          {
+            "name": "test_verify_findings.py",
+            "type": "file"
+          },
+          {
+            "name": "test_workflows_dead_exports.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "workflows",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "applyChallenges.js",
+                "type": "file"
+              },
+              {
+                "name": "applyValidations.js",
+                "type": "file"
+              },
+              {
+                "name": "args.js",
+                "type": "file"
+              },
+              {
+                "name": "filterFindings.js",
+                "type": "file"
+              },
+              {
+                "name": "findingDedup.js",
+                "type": "file"
+              },
+              {
+                "name": "mergeFindings.js",
+                "type": "file"
+              },
+              {
+                "name": "pipeline_entry.js",
+                "type": "file"
+              },
+              {
+                "name": "registry.js",
+                "type": "file"
+              },
+              {
+                "name": "stages.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "helpers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "pipelineMock.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "verifyDelta.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tools",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "check_coverage_presence.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "coverage_scope.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "emit_persisted_findings.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "emit_task_output.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parse_gate.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "record_parity.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "apply_challenges.test.js",
+                "type": "file"
+              },
+              {
+                "name": "args.test.js",
+                "type": "file"
+              },
+              {
+                "name": "build.test.js",
+                "type": "file"
+              },
+              {
+                "name": "coverage_presence.test.js",
+                "type": "file"
+              },
+              {
+                "name": "entry_guard.test.js",
+                "type": "file"
+              },
+              {
+                "name": "filter_unit.test.js",
+                "type": "file"
+              },
+              {
+                "name": "finding_schema.test.js",
+                "type": "file"
+              },
+              {
+                "name": "parity.test.js",
+                "type": "file"
+              },
+              {
+                "name": "pipeline_run.test.js",
+                "type": "file"
+              },
+              {
+                "name": "registry.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_context_read.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_delivery.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_discover.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_latency.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_path_fence.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_persist.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_verify_delta.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_verify.test.js",
+                "type": "file"
+              },
+              {
+                "name": "stages_vfc.test.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "AGENTS.md",
+            "type": "file"
+          },
+          {
+            "name": "biome.json",
+            "type": "file"
+          },
+          {
+            "name": "build.js",
+            "type": "file"
+          },
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          },
+          {
+            "name": "pipeline.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".git-blame-ignore-revs",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".markdownlint.yaml",
+        "type": "file"
+      },
+      {
+        "name": ".pre-commit-config.yaml",
+        "type": "file"
+      },
+      {
+        "name": ".releaserc.toml",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "cspell.config.yaml",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "REVIEW.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

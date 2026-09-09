@@ -1,0 +1,416 @@
+{
+  "slug": "ai-coding-ok",
+  "name": "Ai Coding Ok",
+  "type": "plugin",
+  "description": "PDCA memory loop for Claude Code — prevents \"AI fixed bug X and broke feature Y\" across iterations.\n\nInstalls a three-tier memory system in your project (project-memory, decisions-log, task-history) and enforces a closed PDCA loop on every task: Plan (read memory before coding), Do, Check, Act (write memory back after). The Act step is what most tools skip — without it, your context file rots after 10 iterations. With it, iteration 50 has the same context quality as iteration 1.\n\nComplements superpowers: superpowers brings per-session discipline, ai-coding-ok brings cross-session memory. Also works with Copilot, Cursor, and OpenCode via the same templates.",
+  "longDescription": "Ships **1 skill**, `ai-coding-ok` (在任何编码任务（feat、fix、bug、refactor、plan、design、brainstorm、code review、implement、add feature、write tests、新功能、修复、重构）时首先使用此 skill——当项目包含 `.github/agent/memory/` 或 `AGENTS.md` 时。在编写代码前加载三层项目记忆（project-memory、decisions-log、task-history）和 AGENTS.md，完成任务后更新 task-history（始终）、decisions-log（架构变更时）和 project-memory（事实变更时）——这是 PDCA 护栏，防止\"AI 修了 bug X 却搞坏了功能…).\n\nInstalls with `claude plugin install ai-coding-ok@claude-community` from `Mark7766/ai-coding-ok`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Mark7766"
+  },
+  "externalUrl": "https://github.com/Mark7766/ai-coding-ok/tree/c96068cd4c604110dbcf6093abdd4b9f68b9a873",
+  "marketplace": "claude-community",
+  "version": "4.1.0",
+  "sourceRevision": "c96068cd4c604110dbcf6093abdd4b9f68b9a873",
+  "contentDigest": "c9448f41f9ec7aedd7231fcb749c7e9fa25ba2b77ba9843a97d578ea22dc0fe6",
+  "contentHash": "e1953bc791c12b9e",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/Mark7766/ai-coding-ok.git",
+    "sha": "c96068cd4c604110dbcf6093abdd4b9f68b9a873"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-25T15:53:36Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ai-coding-ok.mdc",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent",
+            "type": "directory",
+            "children": [
+              {
+                "name": "memory",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "decisions-log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-memory.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-history.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "coding-standards.md",
+                "type": "file"
+              },
+              {
+                "name": "prompt-templates.md",
+                "type": "file"
+              },
+              {
+                "name": "system-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "workflows.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "memory-check.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copilot-instructions.md",
+            "type": "file"
+          },
+          {
+            "name": "project-metadata.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai-coding-ok-improvement-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "chinese-first-migration-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "claude-code-quickstart.md",
+            "type": "file"
+          },
+          {
+            "name": "copilot-quickstart.md",
+            "type": "file"
+          },
+          {
+            "name": "faq.md",
+            "type": "file"
+          },
+          {
+            "name": "hook-trigger-remediation-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "superpowers-combo.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "customize-prompt.md",
+            "type": "file"
+          },
+          {
+            "name": "upgrade-prompt.md",
+            "type": "file"
+          },
+          {
+            "name": "verify.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai-coding-ok",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "zh",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".codex",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ai-coding-ok",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "SKILL.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "verification.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ".cursor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "rules",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ai-coding-ok.mdc",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ".github",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "memory",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "decisions-log.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "project-memory.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "task-history.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "coding-standards.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prompt-templates.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "system-prompt.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "workflows.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ISSUE_TEMPLATE",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "bug_report.yml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config.yml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "feature_request.yml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "workflows",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ci.yml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "memory-check.yml",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "copilot-instructions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project-metadata.yml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PULL_REQUEST_TEMPLATE.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "AGENTS.md",
+                "type": "file"
+              },
+              {
+                "name": "CLAUDE.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "install.py",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SKILL.md",
+        "type": "file"
+      }
+    ]
+  }
+}

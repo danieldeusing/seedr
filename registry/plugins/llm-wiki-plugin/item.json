@@ -1,0 +1,982 @@
+{
+  "slug": "llm-wiki-plugin",
+  "name": "Llm Wiki Plugin",
+  "type": "plugin",
+  "description": "Build and maintain an LLM-curated personal knowledge base in your project. Implements Andrej Karpathy's LLM Wiki pattern with sharded indexes, atomic pages, BM25 search, and a structural lint script - designed to scale to thousands of pages without becoming a context bottleneck.",
+  "longDescription": "Ships **1 skill**, `llm-wiki` (Build and maintain an LLM-curated personal knowledge base — the \"LLM Wiki\" pattern from Andrej Karpathy's April 2026…) and **1 command**, `wiki`.\n\nInstalls with `claude plugin install llm-wiki-plugin@claude-community` from `praneybehl/llm-wiki-plugin`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "command": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Praney Behl"
+  },
+  "externalUrl": "https://github.com/praneybehl/llm-wiki-plugin/tree/1d9ee4b1a1b5aaa8dc4951985fcc91a4ee1358d7",
+  "marketplace": "claude-community",
+  "version": "3.0.0",
+  "sourceRevision": "1d9ee4b1a1b5aaa8dc4951985fcc91a4ee1358d7",
+  "contentDigest": "736c0482019763364186c52402064ebad89667dec9cee706156ae54f8c8f4338",
+  "contentHash": "95fc851931ada4c7",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/praneybehl/llm-wiki-plugin.git",
+    "sha": "1d9ee4b1a1b5aaa8dc4951985fcc91a4ee1358d7"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-20T15:48:44Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "deploy-docs.yml",
+                "type": "file"
+              },
+              {
+                "name": "paperclip-plugin.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "wiki",
+            "type": "directory",
+            "children": [
+              {
+                "name": "graph.md",
+                "type": "file"
+              },
+              {
+                "name": "ingest.md",
+                "type": "file"
+              },
+              {
+                "name": "init.md",
+                "type": "file"
+              },
+              {
+                "name": "lint.md",
+                "type": "file"
+              },
+              {
+                "name": "query.md",
+                "type": "file"
+              },
+              {
+                "name": "stats.md",
+                "type": "file"
+              },
+              {
+                "name": "upgrade.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".vitepress",
+            "type": "directory",
+            "children": [
+              {
+                "name": "theme",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "custom.css",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "config.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "public",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "llm-wiki-explained.png",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "favicon.svg",
+                "type": "file"
+              },
+              {
+                "name": "google8ab14a74328d7cc1.html",
+                "type": "file"
+              },
+              {
+                "name": "llms.txt",
+                "type": "file"
+              },
+              {
+                "name": "robots.txt",
+                "type": "file"
+              },
+              {
+                "name": "social-card.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agents.md",
+            "type": "file"
+          },
+          {
+            "name": "commands.md",
+            "type": "file"
+          },
+          {
+            "name": "getting-started.md",
+            "type": "file"
+          },
+          {
+            "name": "graph.md",
+            "type": "file"
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          },
+          {
+            "name": "integrations.md",
+            "type": "file"
+          },
+          {
+            "name": "search.md",
+            "type": "file"
+          },
+          {
+            "name": "upgrade.md",
+            "type": "file"
+          },
+          {
+            "name": "workflows.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "eval",
+        "type": "directory",
+        "children": [
+          {
+            "name": "retrieval",
+            "type": "directory",
+            "children": [
+              {
+                "name": "corpus",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "wiki",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "concepts",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "attention-mechanism.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "distributed-training.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "gradient-descent.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "kv-cache.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mixture-of-experts.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "quantization.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "tokenization.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "entities",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "cuda.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "gpt-4.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ilya-sutskever.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "openai.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "pytorch.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "sources",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "adam-paper.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "attention-paper.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "chinchilla-paper.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "lora-paper.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "scaling-laws-paper.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "synthesis",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "precision-tradeoffs.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "training-vs-inference-cost.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "why-transformers-won.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "SCHEMA.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "queries.json",
+                "type": "file"
+              },
+              {
+                "name": "run_eval.py",
+                "type": "file"
+              },
+              {
+                "name": "test_embedding_mode.py",
+                "type": "file"
+              },
+              {
+                "name": "test_search_contracts.py",
+                "type": "file"
+              },
+              {
+                "name": "test_setup.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "integrations",
+        "type": "directory",
+        "children": [
+          {
+            "name": "paperclip",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "scripts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "check-setup-snippets.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prepublish-checks.mjs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "lib",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "bm25.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "frontmatter.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "lint.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "stats.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ui",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "launcher",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "Launcher.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "page",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "BacklinksPanel.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "FolderTree.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "OutlinePanel.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "PropertiesPanel.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "QuickSwitcher.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "Reader.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "Topbar.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "setup",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "SetupView.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "snippets.ts",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "ErrorBoundary.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "HostLink.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "href.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "index.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "styles.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiContextTab.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiHealthIndicator.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiMarkdown.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiPage.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiPageView.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiSidebar.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "manifest.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "worker.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fixtures",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "wiki",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "concepts",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "attention-mechanism.md",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "rag-pipeline.md",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "scaling-laws.md",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "entities",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "gpt-3.md",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "transformer.md",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "raw",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "example.md",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "sources",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "attention-paper.md",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "scaling-laws-paper.md",
+                                    "type": "file"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "synthesis",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "transformer-vs-rnn.md",
+                                    "type": "file"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "name": "_gen_bm25_expectations.py",
+                            "type": "file"
+                          },
+                          {
+                            "name": "bm25-expectations.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "lib",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "bm25.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "frontmatter.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "lint.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "stats.spec.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "security",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "symlinks.spec.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ui",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "BacklinksPanel.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ErrorBoundary.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "FolderTree.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "HostLink.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "href.spec.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Launcher.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "OutlinePanel.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PropertiesPanel.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "QuickSwitcher.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Reader.landing.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Reader.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SetupView.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "slots.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Topbar.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useWikiLocation.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiContextTab.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiHealthSetupBanner.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiMarkdown.spec.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WikiPageView.spec.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "_setup.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "_smoke.spec.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "manifest.spec.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "worker.spec.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "esbuild.config.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pnpm-lock.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vitest.config.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "FEASIBILITY.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "SPEC.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "research",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cerebras-how-we-built-our-knowledge-base.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "llm-wiki",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "graph_gitignore.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graph_README.md.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.md.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "log.md.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ontology.yaml.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "page.md.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SCHEMA.md.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wiki-cache_gitignore.template",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-memory-integration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "architecture.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graph-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ingest-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lint-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "page-conventions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "query-workflow.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "retrieval-setup.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scaling-playbook.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "init_wiki.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setup_wiki.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wiki_graph_extract.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wiki_graph_lint.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wiki_graph_query.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wiki_lint.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wiki_search.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wiki_stats.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "pnpm-lock.yaml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

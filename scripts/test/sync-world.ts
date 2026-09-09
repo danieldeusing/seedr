@@ -14,6 +14,10 @@ export const SHA_E = "e".repeat(40);
 export const SHA_F = "f".repeat(40);
 export const SHA_1 = "1".repeat(40);
 export const SHA_2 = "2".repeat(40);
+/** Heads of the knowledge-work marketplace, the community mirror, and a plugin the mirror lists. */
+export const SHA_3 = "3".repeat(40);
+export const SHA_4 = "4".repeat(40);
+export const SHA_5 = "5".repeat(40);
 
 export const MIT = "MIT License\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\n";
 export const APACHE = "Apache License\nVersion 2.0, January 2004\n";
@@ -47,6 +51,37 @@ export function officialMarketplace(overrides: { plugins?: unknown[]; renames?: 
         source: { source: "git-subdir", url: "https://github.com/stripe/ai.git", path: "providers/claude/plugin", ref: "main", sha: SHA_D },
       },
       { name: "not-ours", description: "Third-party plugin we do not carry", source: { source: "url", url: "https://github.com/other/plugin.git", sha: SHA_E } },
+    ],
+  });
+}
+
+/** Anthropic's knowledge-work marketplace: one plugin hosted in the repo, one third-party entry the official marketplace also lists. */
+export function knowledgeWorkMarketplace(overrides: { plugins?: unknown[] } = {}): string {
+  return JSON.stringify({
+    name: "knowledge-work-plugins",
+    owner: { name: "Anthropic" },
+    plugins: overrides.plugins ?? [
+      { name: "sales", displayName: "Sales", description: "Pipeline reviews and account plans for sales teams.", source: "./sales", category: "productivity" },
+      { name: "not-ours", description: "Third-party plugin, listed here too", source: { source: "url", url: "https://github.com/other/plugin.git", sha: SHA_E } },
+    ],
+  });
+}
+
+/** Anthropic's community mirror: a hosted plugin, a third-party one, and two entries earlier marketplaces claim. */
+export function communityMarketplace(overrides: { plugins?: unknown[] } = {}): string {
+  return JSON.stringify({
+    name: "claude-community",
+    owner: { name: "Anthropic" },
+    plugins: overrides.plugins ?? [
+      { name: "eli5", description: "Explain any topic like I'm 5.", source: "./eli5" },
+      {
+        name: "mirrored",
+        description: "Reviews pull requests against a team's own conventions and posts the findings back to the thread.",
+        source: { source: "url", url: "https://github.com/third/mirrored.git", sha: SHA_5 },
+        homepage: "https://github.com/third/mirrored",
+      },
+      { name: "not-ours", description: "Third-party plugin, listed a third time", source: { source: "url", url: "https://github.com/other/plugin.git", sha: SHA_E } },
+      { name: "slack", description: "Slack, listed by the official marketplace first", source: { source: "url", url: "https://github.com/slackapi/slack-mcp-plugin.git", sha: SHA_C } },
     ],
   });
 }
@@ -123,7 +158,14 @@ export function makeRepos(): Record<string, FakeRepo> {
     },
     "other/plugin": {
       branches: { main: SHA_E },
-      commits: { [SHA_E]: { files: { ".claude-plugin/plugin.json": pluginJson("not-ours") } } },
+      commits: {
+        [SHA_E]: {
+          files: {
+            ".claude-plugin/plugin.json": pluginJson("not-ours"),
+            "README.md": "# not-ours\n\nA third-party plugin two Anthropic marketplaces list: the official one leaves it out, the knowledge-work one mirrors it.\n",
+          },
+        },
+      },
     },
     "obra/superpowers": {
       branches: { main: SHA_F },
@@ -169,6 +211,52 @@ export function makeRepos(): Record<string, FakeRepo> {
             "plugin/skills/s/SKILL.md": "---\nname: s\n---\n",
             "README.md": "repo readme\n",
             LICENSE: MIT,
+          },
+        },
+      },
+    },
+    "anthropics/knowledge-work-plugins": {
+      branches: { main: SHA_3 },
+      commits: {
+        [SHA_3]: {
+          date: "2026-03-09T00:00:00Z",
+          files: {
+            ".claude-plugin/marketplace.json": knowledgeWorkMarketplace(),
+            LICENSE: APACHE,
+            "sales/.claude-plugin/plugin.json": pluginJson("sales", { author: { name: "Anthropic" } }),
+            "sales/README.md": "# Sales\n\nTurns a CRM export into pipeline reviews, account plans and follow-up drafts for a sales team.\n",
+            "sales/skills/pipeline-review/SKILL.md": "---\nname: pipeline-review\ndescription: Review a sales pipeline export for stalled deals and next steps.\n---\n",
+          },
+        },
+      },
+    },
+    "anthropics/claude-plugins-community": {
+      branches: { main: SHA_4 },
+      commits: {
+        [SHA_4]: {
+          date: "2026-03-10T00:00:00Z",
+          files: {
+            ".claude-plugin/marketplace.json": communityMarketplace(),
+            LICENSE: APACHE,
+            "eli5/.claude-plugin/plugin.json": pluginJson("eli5", { author: { name: "Thariq Shihipar" } }),
+            "eli5/README.md": "# eli5\n\nA dead-simple HTML picture explainer with big visuals and few words, one page per topic, opened in the browser when it is done.\n",
+            "eli5/skills/eli5/SKILL.md": "---\nname: eli5\ndescription: Explain any topic like I'm 5 with a one-page picture explainer.\n---\n",
+          },
+        },
+      },
+    },
+    "third/mirrored": {
+      branches: { main: SHA_5 },
+      commits: {
+        [SHA_5]: {
+          date: "2026-03-11T00:00:00Z",
+          files: {
+            ".claude-plugin/plugin.json": pluginJson("mirrored", { author: { name: "Third Party", url: "https://third.example" } }),
+            LICENSE: MIT,
+            "README.md": "# mirrored\n\nReads the team's CONVENTIONS.md, checks every changed file against it and comments inline.\n",
+            "skills/review/SKILL.md": "---\nname: review\ndescription: Review a pull request against the team's conventions.\n---\n",
+            "agents/reviewer.md": "---\ndescription: Posts review findings back to the pull request thread\n---\n",
+            "commands/review.md": "---\ndescription: Start a review of the open pull request\n---\n",
           },
         },
       },

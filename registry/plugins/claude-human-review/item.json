@@ -1,0 +1,127 @@
+{
+  "slug": "claude-human-review",
+  "name": "Claude Human Review",
+  "type": "plugin",
+  "description": "claude-human-review adds a human approval gate at the end of every Claude Code turn that edits files. When Claude tries to stop, the plugin\npauses it and has Claude do two things before the turn ends. First, drop a one-line doc comment on any class, function, or non-obvious config\nblock it created or materially changed, using the right style per language (JSDoc for TS/JS, docstrings for Python, // for Go, and so on).\nSecond, write a short plain-English review of what changed and why, flagging risks the diff alone won't show.\\n\n\nYou reply with 1 (Approve) to keep the changes or 2 (Undo) to roll them back. Undo is deterministic: filesystem snapshots are taken before\neach edit, so it works in git repos, non-repos, and folders full of untracked files. State lives on disk, so it survives Claude's context\ncompaction on long sessions.\\n\n\nThe review is tuned to stay around 60 to 120 words per turn and skips sections when they would be filler, so the extra output-token cost is\nsmall. Inline comments are capped to one line per symbol and skipped entirely for trivial helpers, tests, and already-documented code. The\ngoal is a short lesson on your own codebase every time Claude edits it, not a wall of text.",
+  "longDescription": "Ships **1 skill** and **3 hooks**.\n\n- **Skills** (1): `human-review` (Produce a plain-English review of the files you just edited and gate the changes behind an explicit Approve/Undo…)\n- **Hooks** (3): `PreToolUse`, `PostToolUse`, `Stop`\n\nInstalls with `claude plugin install claude-human-review@claude-community` from `IrtezaAsadRizvi/claude-human-review`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "hook": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Irteza",
+    "url": "https://github.com/IrtezaAsadRizvi"
+  },
+  "externalUrl": "https://github.com/IrtezaAsadRizvi/claude-human-review/tree/ef74813509aab3368c404bd3b3ae6e882754968e",
+  "marketplace": "claude-community",
+  "version": "0.1.0",
+  "sourceRevision": "ef74813509aab3368c404bd3b3ae6e882754968e",
+  "contentDigest": "b8f4ab08198e311ee1b878dc5f69e9b1430132b2c0afa648e34a6870dfed0c80",
+  "contentHash": "bcacd4a1d7f70458",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/IrtezaAsadRizvi/claude-human-review.git",
+    "sha": "ef74813509aab3368c404bd3b3ae6e882754968e"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-04-27T09:29:16Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_common.py",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "review_gate.py",
+            "type": "file"
+          },
+          {
+            "name": "snapshot.py",
+            "type": "file"
+          },
+          {
+            "name": "track_edits.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "approve.sh",
+            "type": "file"
+          },
+          {
+            "name": "undo.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "human-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "TODO.md",
+        "type": "file"
+      }
+    ]
+  }
+}

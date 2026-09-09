@@ -1,0 +1,498 @@
+{
+  "slug": "self-improving-agent-pipeline",
+  "name": "Self Improving Agent Pipeline",
+  "type": "plugin",
+  "description": "A pipeline of skills that implements two feedback loops for Claude Code. The inner loop (plan-interview, intent-framed-agent, context-surfing, verify-gate, simplify-and-harden) catches failures during a session — verifying against tests, detecting scope and context drift, and reviewing code before signaling done. The outer loop (learning-aggregator, harness-updater, eval-creator, pre-flight-check) captures learnings, promotes recurring patterns into CLAUDE.md as permanent rules, and turns failures into regression tests. The harness gets stronger with every cycle.",
+  "longDescription": "Ships **16 skills**, **6 agents** and **6 hooks**.\n\n- **Skills** (16): `agent-teams-simplify-and-harden` (Implementation + audit loop using parallel agent teams with structured simplify, harden, and document passes), `context-surfing` (Monitors context window health throughout a session and rides peak context quality for maximum output fidelity), `control-session-orchestrator` (Control-plane workflow for coordinating multi-agent, multi-session project work from a single Codex, GitHub Copilot, or agent-app control session), `eval-creator` ([Beta] Creates permanent eval cases from promoted learnings and runs regression checks against them), `eval-creator-ci` ([Beta] CI-only eval regression runner using gh-aw (GitHub Agentic Workflows)), `intent-framed-agent` (Frames coding-agent work sessions with explicit intent capture and drift monitoring), `learning-aggregator` ([Beta] Cross-session analysis of accumulated .learnings/ files), `learning-aggregator-ci` ([Beta] CI-only learning aggregation workflow using gh-aw (GitHub Agentic Workflows)), and 8 more\n- **Agents** (6): `context-monitor` (Monitors context window health by re-reading wave anchor artifacts and detecting drift signals), `harden-auditor` (Read-only security auditor that finds security and resilience gaps in modified files), `harness-updater` (Applies promotion candidates from learning-aggregator to harness files (CLAUDE.md, AGENTS.md, .github/copilot-instructions.md)), `self-improvement-logger` (Captures learnings, errors, and corrections to .learnings/ files), `simplify-auditor` (Read-only auditor that finds unnecessary complexity in modified files), `spec-auditor` (Read-only spec auditor that finds gaps between implementation and spec/plan)\n- **Hooks** (6): `UserPromptSubmit`, `PostToolUse`, `PreToolUse`, `SessionStart`, `SessionEnd`, `Stop`\n\nInstalls with `claude plugin install self-improving-agent-pipeline@claude-community` from `pskoett/pskoett-ai-skills` (`plugin`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 16,
+    "agent": 6,
+    "hook": 6
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Peter Skøtt Pedersen",
+    "url": "https://github.com/pskoett"
+  },
+  "externalUrl": "https://github.com/pskoett/pskoett-ai-skills/tree/20e64cec1529d9c371fdcc20c751b7ef10b68af7/plugin",
+  "marketplace": "claude-community",
+  "version": "2.3.0",
+  "sourceRevision": "20e64cec1529d9c371fdcc20c751b7ef10b68af7",
+  "contentDigest": "a6ea85a7ce5098ab2b9a91d5d80f231012715493f8843cb4b5e6e4a5fee1efad",
+  "contentHash": "ba6df287238fc496",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugin",
+    "url": "https://github.com/pskoett/pskoett-ai-skills.git",
+    "ref": "main",
+    "sha": "20e64cec1529d9c371fdcc20c751b7ef10b68af7"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "plugin/LICENSE"
+  },
+  "updatedAt": "2026-06-12T11:05:57Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".copilot-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "context-monitor.md",
+            "type": "file"
+          },
+          {
+            "name": "harden-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "harness-updater.md",
+            "type": "file"
+          },
+          {
+            "name": "self-improvement-logger.md",
+            "type": "file"
+          },
+          {
+            "name": "simplify-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "spec-auditor.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "entire-wrapper.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-teams-simplify-and-harden",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auditor-prompts.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context-surfing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "handoff-checker.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "control-session-orchestrator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eval-creator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eval-creator-ci",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "workflow-example.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "intent-framed-agent",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "learning-aggregator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "learning-aggregator-ci",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "workflow-example.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan-interview",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "iterative-plan-refinement-prompts.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pre-flight-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "pre-flight.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "self-healing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "examples.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "interop-with-self-improvement.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pipeline-integration.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "detect-failure.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "find-similar-heals.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "new-heal.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "self-healing-ci",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "workflow-example.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "self-improvement",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ERRORS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FEATURE_REQUESTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "LEARNINGS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL-TEMPLATE.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "examples.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks-setup.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openclaw-integration.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "activator.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error-detector.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "extract-skill.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "simplify-and-harden",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-context-snippets.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skill-pipeline",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "classification-rules.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "handoff-matrix.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pipeline-variants.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verify-gate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      }
+    ]
+  }
+}

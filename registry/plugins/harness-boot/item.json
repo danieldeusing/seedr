@@ -1,0 +1,3486 @@
+{
+  "slug": "harness-boot",
+  "name": "Harness Boot",
+  "type": "plugin",
+  "description": "Multi-agent development harness for Claude Code. Your AI has speed; we give it direction — through living specs and focused specialist agents.",
+  "longDescription": "Ships **2 skills**, **17 agents**, **5 commands** and **3 hooks**.\n\n- **Skills** (2): `feature-author` (Convert a feature idea into a complete `features[]` entry for `.harness/spec.yaml` — auto-detects shape (UI / sensitive /…), `spec-conversion` (기획 문서(plan.md 등) 또는 아키텍처 문서(architecture.md 등)를 harness-boot 의 `.harness/spec.yaml` (v2.3.8 스키마)로 변환할 때 사용)\n- **Agents** (17): `a11y-auditor` (Accessibility auditor — cross-checks ux-architect, visual-designer, audio-designer, and frontend-engineer outputs against WCAG 2.2 and writes `.harness/_workspace/a11y/report.md`), `audio-designer` (Auditory experience designer — produces a sound-cue catalog · volume/mix · silence policy · audio branding to `.harness/_workspace/design/audio.yaml`), `backend-engineer` (Server / service / DB specialist — owns APIs, persistence, domain logic, and event pipelines), `frontend-engineer` (UI implementation specialist — reads visual-designer's tokens.yaml + components.yaml and ux-architect's flows.md, then builds framework-neutral web/mobile/desktop components), `integrator` (System assembler — wires together the pieces individual engineers built so the system runs end-to-end), `orchestrator` (Coordinates multi-step harness work and delegates to specialist sub-agents), `performance-engineer` (Performance specialist — profiling, bottleneck analysis, performance-budget management, latency/throughput/resource budgets), `product-planner` (Product planner — takes researcher's brief.md and **decides** the feature set, roadmap, acceptance criteria, and trade-offs, writing the…), and 9 more\n- **Commands** (5): `_work-ceremonies`, `_work-orchestration`, `drive` (Bounded autonomous loop driver — natural-language goal → researcher → planner → feature-author → execute loop, with explicit…), `init` (Install the harness-boot plugin into the current project — scaffold .harness/ + wire CLAUDE.md), `work` (Per-feature TDD lifecycle manager — activate · record gate result · gather evidence · transition to done (F-004))\n- **Hooks** (3): `SessionStart`, `UserPromptSubmit`, `Stop`\n\nInstalls with `claude plugin install harness-boot@claude-community` from `qwerfunch/harness-boot`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 2,
+    "agent": 17,
+    "hook": 3,
+    "command": 5
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "qwerfunch"
+  },
+  "externalUrl": "https://github.com/qwerfunch/harness-boot/tree/4eb1511d4a5728421ec719a1fd3fd5be415222f8",
+  "marketplace": "claude-community",
+  "version": "0.15.11",
+  "sourceRevision": "4eb1511d4a5728421ec719a1fd3fd5be415222f8",
+  "contentDigest": "882ecbd9900fe3e7fe89c30c9a68ee4e2c4fe0c15c170a6935c6996cef54ee97",
+  "contentHash": "67cc6741222339a9",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/qwerfunch/harness-boot.git",
+    "sha": "4eb1511d4a5728421ec719a1fd3fd5be415222f8"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-13T05:08:46Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "self-check.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".harness",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_workspace",
+            "type": "directory",
+            "children": [
+              {
+                "name": "issues-log.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "spec.archive.yaml",
+            "type": "file"
+          },
+          {
+            "name": "spec.yaml",
+            "type": "file"
+          },
+          {
+            "name": "state.yaml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "a11y-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "audio-designer.md",
+            "type": "file"
+          },
+          {
+            "name": "backend-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "frontend-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "integrator.md",
+            "type": "file"
+          },
+          {
+            "name": "orchestrator.md",
+            "type": "file"
+          },
+          {
+            "name": "performance-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "product-planner.md",
+            "type": "file"
+          },
+          {
+            "name": "qa-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "researcher.md",
+            "type": "file"
+          },
+          {
+            "name": "reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "security-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "software-engineer.md",
+            "type": "file"
+          },
+          {
+            "name": "tech-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "ux-architect.md",
+            "type": "file"
+          },
+          {
+            "name": "visual-designer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "harness",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_work-ceremonies.md",
+            "type": "file"
+          },
+          {
+            "name": "_work-orchestration.md",
+            "type": "file"
+          },
+          {
+            "name": "drive.md",
+            "type": "file"
+          },
+          {
+            "name": "init.md",
+            "type": "file"
+          },
+          {
+            "name": "work.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ceremonies",
+            "type": "directory",
+            "children": [
+              {
+                "name": "designReview.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "designReview.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "designReview.js",
+                "type": "file"
+              },
+              {
+                "name": "designReview.js.map",
+                "type": "file"
+              },
+              {
+                "name": "inbox.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "inbox.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "inbox.js",
+                "type": "file"
+              },
+              {
+                "name": "inbox.js.map",
+                "type": "file"
+              },
+              {
+                "name": "kickoff.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "kickoff.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "kickoff.js",
+                "type": "file"
+              },
+              {
+                "name": "kickoff.js.map",
+                "type": "file"
+              },
+              {
+                "name": "retro.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "retro.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "retro.js",
+                "type": "file"
+              },
+              {
+                "name": "retro.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "harness.bundle.mjs",
+                "type": "file"
+              },
+              {
+                "name": "harness.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "harness.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "harness.js",
+                "type": "file"
+              },
+              {
+                "name": "harness.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "canonicalHash.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "canonicalHash.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "canonicalHash.js",
+                "type": "file"
+              },
+              {
+                "name": "canonicalHash.js.map",
+                "type": "file"
+              },
+              {
+                "name": "eventLog.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "eventLog.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "eventLog.js",
+                "type": "file"
+              },
+              {
+                "name": "eventLog.js.map",
+                "type": "file"
+              },
+              {
+                "name": "gates.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "gates.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "gates.js",
+                "type": "file"
+              },
+              {
+                "name": "gates.js.map",
+                "type": "file"
+              },
+              {
+                "name": "pluginRoot.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "pluginRoot.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "pluginRoot.js",
+                "type": "file"
+              },
+              {
+                "name": "pluginRoot.js.map",
+                "type": "file"
+              },
+              {
+                "name": "projectMode.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "projectMode.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "projectMode.js",
+                "type": "file"
+              },
+              {
+                "name": "projectMode.js.map",
+                "type": "file"
+              },
+              {
+                "name": "routing.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "routing.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "routing.js",
+                "type": "file"
+              },
+              {
+                "name": "routing.js.map",
+                "type": "file"
+              },
+              {
+                "name": "state.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "state.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "state.js",
+                "type": "file"
+              },
+              {
+                "name": "state.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "drive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "checkpoint.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint.js",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint.js.map",
+                "type": "file"
+              },
+              {
+                "name": "executor.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "executor.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "executor.js",
+                "type": "file"
+              },
+              {
+                "name": "executor.js.map",
+                "type": "file"
+              },
+              {
+                "name": "goalRetro.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "goalRetro.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "goalRetro.js",
+                "type": "file"
+              },
+              {
+                "name": "goalRetro.js.map",
+                "type": "file"
+              },
+              {
+                "name": "goalStore.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "goalStore.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "goalStore.js",
+                "type": "file"
+              },
+              {
+                "name": "goalStore.js.map",
+                "type": "file"
+              },
+              {
+                "name": "halt.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "halt.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "halt.js",
+                "type": "file"
+              },
+              {
+                "name": "halt.js.map",
+                "type": "file"
+              },
+              {
+                "name": "loop.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "loop.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "loop.js",
+                "type": "file"
+              },
+              {
+                "name": "loop.js.map",
+                "type": "file"
+              },
+              {
+                "name": "planPhase.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "planPhase.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "planPhase.js",
+                "type": "file"
+              },
+              {
+                "name": "planPhase.js.map",
+                "type": "file"
+              },
+              {
+                "name": "progressRenderer.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "progressRenderer.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "progressRenderer.js",
+                "type": "file"
+              },
+              {
+                "name": "progressRenderer.js.map",
+                "type": "file"
+              },
+              {
+                "name": "realTest.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "realTest.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "realTest.js",
+                "type": "file"
+              },
+              {
+                "name": "realTest.js.map",
+                "type": "file"
+              },
+              {
+                "name": "replan.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "replan.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "replan.js",
+                "type": "file"
+              },
+              {
+                "name": "replan.js.map",
+                "type": "file"
+              },
+              {
+                "name": "statusCommand.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "statusCommand.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "statusCommand.js",
+                "type": "file"
+              },
+              {
+                "name": "statusCommand.js.map",
+                "type": "file"
+              },
+              {
+                "name": "types.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "types.js",
+                "type": "file"
+              },
+              {
+                "name": "types.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "runner.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "runner.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "runner.js",
+                "type": "file"
+              },
+              {
+                "name": "runner.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "codebase",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "conflictResolver.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conflictResolver.d.ts.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conflictResolver.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conflictResolver.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsFill.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsFill.d.ts.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsFill.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsFill.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsWriter.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsWriter.d.ts.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsWriter.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsWriter.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mdDetect.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mdDetect.d.ts.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mdDetect.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mdDetect.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redact.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redact.d.ts.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redact.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redact.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "signals.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "signals.d.ts.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "signals.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "signals.js.map",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "autoDetect.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "autoDetect.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "autoDetect.js",
+                "type": "file"
+              },
+              {
+                "name": "autoDetect.js.map",
+                "type": "file"
+              },
+              {
+                "name": "claudeMd.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "claudeMd.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "claudeMd.js",
+                "type": "file"
+              },
+              {
+                "name": "claudeMd.js.map",
+                "type": "file"
+              },
+              {
+                "name": "draftLabel.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "draftLabel.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "draftLabel.js",
+                "type": "file"
+              },
+              {
+                "name": "draftLabel.js.map",
+                "type": "file"
+              },
+              {
+                "name": "scenarioIdea.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "scenarioIdea.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "scenarioIdea.js",
+                "type": "file"
+              },
+              {
+                "name": "scenarioIdea.js.map",
+                "type": "file"
+              },
+              {
+                "name": "scenarioPlanDoc.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "scenarioPlanDoc.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "scenarioPlanDoc.js",
+                "type": "file"
+              },
+              {
+                "name": "scenarioPlanDoc.js.map",
+                "type": "file"
+              },
+              {
+                "name": "skeleton.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "skeleton.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "skeleton.js",
+                "type": "file"
+              },
+              {
+                "name": "skeleton.js.map",
+                "type": "file"
+              },
+              {
+                "name": "tokenLog.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "tokenLog.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "tokenLog.js",
+                "type": "file"
+              },
+              {
+                "name": "tokenLog.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "render",
+            "type": "directory",
+            "children": [
+              {
+                "name": "architecture.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "architecture.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "architecture.js",
+                "type": "file"
+              },
+              {
+                "name": "architecture.js.map",
+                "type": "file"
+              },
+              {
+                "name": "domain.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "domain.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "domain.js",
+                "type": "file"
+              },
+              {
+                "name": "domain.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "areaResolver.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "areaResolver.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "areaResolver.js",
+                "type": "file"
+              },
+              {
+                "name": "areaResolver.js.map",
+                "type": "file"
+              },
+              {
+                "name": "manifest.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "manifest.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "manifest.js",
+                "type": "file"
+              },
+              {
+                "name": "manifest.js.map",
+                "type": "file"
+              },
+              {
+                "name": "structure.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "structure.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "structure.js",
+                "type": "file"
+              },
+              {
+                "name": "structure.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spec",
+            "type": "directory",
+            "children": [
+              {
+                "name": "archive.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "archive.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "archive.js",
+                "type": "file"
+              },
+              {
+                "name": "archive.js.map",
+                "type": "file"
+              },
+              {
+                "name": "exportSpec.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "exportSpec.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "exportSpec.js",
+                "type": "file"
+              },
+              {
+                "name": "exportSpec.js.map",
+                "type": "file"
+              },
+              {
+                "name": "includeExpander.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "includeExpander.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "includeExpander.js",
+                "type": "file"
+              },
+              {
+                "name": "includeExpander.js.map",
+                "type": "file"
+              },
+              {
+                "name": "modeClassifier.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "modeClassifier.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "modeClassifier.js",
+                "type": "file"
+              },
+              {
+                "name": "modeClassifier.js.map",
+                "type": "file"
+              },
+              {
+                "name": "validate.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "validate.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "validate.js",
+                "type": "file"
+              },
+              {
+                "name": "validate.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dashboard.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.js",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.js.map",
+                "type": "file"
+              },
+              {
+                "name": "dashboardConfig.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "dashboardConfig.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "dashboardConfig.js",
+                "type": "file"
+              },
+              {
+                "name": "dashboardConfig.js.map",
+                "type": "file"
+              },
+              {
+                "name": "featureResolver.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "featureResolver.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "featureResolver.js",
+                "type": "file"
+              },
+              {
+                "name": "featureResolver.js.map",
+                "type": "file"
+              },
+              {
+                "name": "intentPlanner.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "intentPlanner.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "intentPlanner.js",
+                "type": "file"
+              },
+              {
+                "name": "intentPlanner.js.map",
+                "type": "file"
+              },
+              {
+                "name": "lang.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "lang.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "lang.js",
+                "type": "file"
+              },
+              {
+                "name": "lang.js.map",
+                "type": "file"
+              },
+              {
+                "name": "messages.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "messages.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "messages.js",
+                "type": "file"
+              },
+              {
+                "name": "messages.js.map",
+                "type": "file"
+              },
+              {
+                "name": "render.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "render.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "render.js",
+                "type": "file"
+              },
+              {
+                "name": "render.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "check.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "check.js",
+            "type": "file"
+          },
+          {
+            "name": "check.js.map",
+            "type": "file"
+          },
+          {
+            "name": "events.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "events.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "events.js",
+            "type": "file"
+          },
+          {
+            "name": "events.js.map",
+            "type": "file"
+          },
+          {
+            "name": "metrics.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "metrics.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "metrics.js",
+            "type": "file"
+          },
+          {
+            "name": "metrics.js.map",
+            "type": "file"
+          },
+          {
+            "name": "status.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "status.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "status.js",
+            "type": "file"
+          },
+          {
+            "name": "status.js.map",
+            "type": "file"
+          },
+          {
+            "name": "sync.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "sync.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "sync.js",
+            "type": "file"
+          },
+          {
+            "name": "sync.js.map",
+            "type": "file"
+          },
+          {
+            "name": "work.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "work.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "work.js",
+            "type": "file"
+          },
+          {
+            "name": "work.js.map",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "archive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "i18n-ko-frozen-f041",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agents",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "a11y-auditor.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "audio-designer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "backend-engineer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "frontend-engineer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "integrator.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "orchestrator.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "performance-engineer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "product-planner.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "qa-engineer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "researcher.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "reviewer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "security-engineer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "software-engineer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tech-writer.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ux-architect.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "visual-designer.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "commands",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "init.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "work.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "first-run-checklist-v0.1.0.md",
+                "type": "file"
+              },
+              {
+                "name": "local-install-v0.1.0.md",
+                "type": "file"
+              },
+              {
+                "name": "release-v0.1.0-playbook.md",
+                "type": "file"
+              },
+              {
+                "name": "release-v0.4-plan-shipped.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cosmic-suika.png",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "benchmark",
+            "type": "directory",
+            "children": [
+              {
+                "name": "swe-bench-verified",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "threats-to-validity.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "results",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "vanilla",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "psf__requests-2317.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scripts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "aggregate.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "run-harness.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "run-vanilla.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "setup.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "REPORT.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tasks.json",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "glossary",
+            "type": "directory",
+            "children": [
+              {
+                "name": "BRAND_TERMS.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "i18n",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "protocols",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "sync-to-work-handoff.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "samples",
+            "type": "directory",
+            "children": [
+              {
+                "name": "harness-boot-self",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec.archive.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec.yaml",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "schemas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "spec.schema.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "coverage-gate.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "doc-sync-check.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "format.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "security-gate.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-runner.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "starter",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitignore.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CLAUDE.md.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conftest.py.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "harness.yaml.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec.yaml.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.yaml.template",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.json.template",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "communication-rules.md",
+            "type": "file"
+          },
+          {
+            "name": "dogfood-replay-v0.12.0.md",
+            "type": "file"
+          },
+          {
+            "name": "preamble-spec.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "capture-tokens.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "pre-commit-phase2.sh",
+            "type": "file"
+          },
+          {
+            "name": "prompt-log.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-bootstrap.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "feature-author",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapters",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "performance-budget.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pure-domain.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sensitive.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui-surface.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "feature-entry.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spec-conversion",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapters",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "brownfield.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "game.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "library.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "meta.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "saas.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worker.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "backlink-matrix.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conversion-notes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec-skeleton-v2.3.8.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unrepresentable.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ceremonies",
+            "type": "directory",
+            "children": [
+              {
+                "name": "designReview.ts",
+                "type": "file"
+              },
+              {
+                "name": "inbox.ts",
+                "type": "file"
+              },
+              {
+                "name": "kickoff.ts",
+                "type": "file"
+              },
+              {
+                "name": "retro.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "harness.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "canonicalHash.ts",
+                "type": "file"
+              },
+              {
+                "name": "eventLog.ts",
+                "type": "file"
+              },
+              {
+                "name": "gates.ts",
+                "type": "file"
+              },
+              {
+                "name": "pluginRoot.ts",
+                "type": "file"
+              },
+              {
+                "name": "projectMode.ts",
+                "type": "file"
+              },
+              {
+                "name": "routing.ts",
+                "type": "file"
+              },
+              {
+                "name": "state.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "drive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "checkpoint.ts",
+                "type": "file"
+              },
+              {
+                "name": "executor.ts",
+                "type": "file"
+              },
+              {
+                "name": "goalRetro.ts",
+                "type": "file"
+              },
+              {
+                "name": "goalStore.ts",
+                "type": "file"
+              },
+              {
+                "name": "halt.ts",
+                "type": "file"
+              },
+              {
+                "name": "loop.ts",
+                "type": "file"
+              },
+              {
+                "name": "planPhase.ts",
+                "type": "file"
+              },
+              {
+                "name": "progressRenderer.ts",
+                "type": "file"
+              },
+              {
+                "name": "realTest.ts",
+                "type": "file"
+              },
+              {
+                "name": "replan.ts",
+                "type": "file"
+              },
+              {
+                "name": "statusCommand.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "runner.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "codebase",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "conflictResolver.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsFill.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventionsWriter.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mdDetect.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redact.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "signals.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "autoDetect.ts",
+                "type": "file"
+              },
+              {
+                "name": "claudeMd.ts",
+                "type": "file"
+              },
+              {
+                "name": "draftLabel.ts",
+                "type": "file"
+              },
+              {
+                "name": "scenarioIdea.ts",
+                "type": "file"
+              },
+              {
+                "name": "scenarioPlanDoc.ts",
+                "type": "file"
+              },
+              {
+                "name": "skeleton.ts",
+                "type": "file"
+              },
+              {
+                "name": "tokenLog.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "render",
+            "type": "directory",
+            "children": [
+              {
+                "name": "architecture.ts",
+                "type": "file"
+              },
+              {
+                "name": "domain.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "areaResolver.ts",
+                "type": "file"
+              },
+              {
+                "name": "manifest.ts",
+                "type": "file"
+              },
+              {
+                "name": "structure.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spec",
+            "type": "directory",
+            "children": [
+              {
+                "name": "archive.ts",
+                "type": "file"
+              },
+              {
+                "name": "exportSpec.ts",
+                "type": "file"
+              },
+              {
+                "name": "includeExpander.ts",
+                "type": "file"
+              },
+              {
+                "name": "modeClassifier.ts",
+                "type": "file"
+              },
+              {
+                "name": "validate.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dashboard.ts",
+                "type": "file"
+              },
+              {
+                "name": "dashboardConfig.ts",
+                "type": "file"
+              },
+              {
+                "name": "featureResolver.ts",
+                "type": "file"
+              },
+              {
+                "name": "intentPlanner.ts",
+                "type": "file"
+              },
+              {
+                "name": "lang.ts",
+                "type": "file"
+              },
+              {
+                "name": "messages.ts",
+                "type": "file"
+              },
+              {
+                "name": "render.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check.ts",
+            "type": "file"
+          },
+          {
+            "name": "events.ts",
+            "type": "file"
+          },
+          {
+            "name": "metrics.ts",
+            "type": "file"
+          },
+          {
+            "name": "status.ts",
+            "type": "file"
+          },
+          {
+            "name": "sync.ts",
+            "type": "file"
+          },
+          {
+            "name": "work.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "a11y-auditor",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "audio-designer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "backend-engineer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "integrator",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "orchestrator",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "performance-engineer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "product-planner",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "qa-engineer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "researcher",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "reviewer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "security-engineer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "software-engineer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tech-writer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ux-architect",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "visual-designer",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "expected-structure.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "brownfield-repos",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "empty-repo",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "node-react",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "Task.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "package.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tsconfig.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "python-fastapi",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "app",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "models.py",
+                                "type": "file"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "pyproject.toml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "rust-cli",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "main.rs",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "Cargo.toml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "parity",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "canonical_hash",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "array_order_matters.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "array_order_matters.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "empty_dict.bundle.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "empty_dict.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "empty_dict.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "empty_list.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "empty_list.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "generate_fixtures.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mixed_full_spec.bundle.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mixed_full_spec.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "mixed_full_spec.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nested.bundle.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nested.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "nested.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "null.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "null.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_bool.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_bool.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_feature.bundle.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_feature.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_feature.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_float.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_float.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_int.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_int.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_string.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "simple_string.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sorted_keys.bundle.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sorted_keys.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sorted_keys.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unicode_emoji.bundle.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unicode_emoji.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unicode_emoji.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unicode_korean.bundle.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unicode_korean.expected.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unicode_korean.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "event_log",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "empty_dir",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected_moved.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "expected_post_state.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "initial.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now_yyyymm.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "read_expected.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "empty_log_only",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected_moved.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "expected_post_state.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "initial.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now_yyyymm.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "read_expected.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "large_bucket",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected_moved.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "expected_post_state.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "initial.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now_yyyymm.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "read_expected.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "multi_month_split",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected_moved.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "expected_post_state.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "initial.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now_yyyymm.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "read_expected.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "pre_existing_bucket",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected_moved.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "expected_post_state.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "initial.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now_yyyymm.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "read_expected.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "single_current_month",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected_moved.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "expected_post_state.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "initial.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now_yyyymm.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "read_expected.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "unicode_summary",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected_moved.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "expected_post_state.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "initial.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now_yyyymm.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "read_expected.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "unparseable_ts_kept",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "expected_moved.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "expected_post_state.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "initial.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now_yyyymm.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "read_expected.json",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "generate_fixtures.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "state",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "empty",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "data.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "iron_law.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "state.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "full_iron_law",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "data.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "iron_law.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "state.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "multi_feature",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "data.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "iron_law.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "state.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "single_feature",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "data.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "iron_law.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "state.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "skipped_agents",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "data.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "iron_law.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "state.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "unicode_summary",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "data.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "iron_law.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "now.txt",
+                            "type": "file"
+                          },
+                          {
+                            "name": "state.yaml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "generate_fixtures.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "archive.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "canonicalHash.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "captureTokensHook.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "ceremonies.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "check.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "cli.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "communicationRules.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "conventionsConflict.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "conventionsFill.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "conventionsWriter.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "coreConstants.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "draftLabel.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "draftPromotion.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveCheckpoint.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveExecutor.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveGoalStore.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveHaltAndRetro.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveLoopAndPlan.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveRealTest.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveReplan.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveSchemaCompat.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveStatus.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "driveTransientRetry.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "eventLog.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "events.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "exportSpec.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "gateRunner.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "initAutoDetect.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "initScenarioIdea.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "initSkeleton.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "intentPlanner.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "mdDetect.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "metrics.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "pluginRoot.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "redact.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "render.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "scan.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "scenarioPlanDoc.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "signals.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "skill-feature-author.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "specRuntime.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "state.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "status.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sync.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tokenLog.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "uiHelpers.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "validate.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "work.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "perf",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "empty",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "npm",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "index.js",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "package.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "plan-md",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PLAN.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "python",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "src",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "main.py",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "pyproject.toml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "init-baseline.json",
+                "type": "file"
+              },
+              {
+                "name": "initBench.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "regression",
+            "type": "directory",
+            "children": [
+              {
+                "name": "conversion-goldens",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "harness-boot-self",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "source.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unrepresentable.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "price-crawler",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "source.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unrepresentable.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "retro-jumper",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "source.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unrepresentable.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tzcalc",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "source.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unrepresentable.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "url-shortener",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "source.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unrepresentable.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "vapt-apk-sast",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "source.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unrepresentable.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "vite-bundle-budget",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "source.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unrepresentable.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "vscode-commit-craft",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "source.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "spec.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "unrepresentable.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "MANIFEST.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "smoke",
+            "type": "directory",
+            "children": [
+              {
+                "name": "feature-author",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "walkthroughs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "performance-budget.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pure-domain.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sensitive.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ui-surface.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "prompts.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "seed-spec.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SOAK.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".prettierrc.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "eslint.config.js",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.ko.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "self_check.sh",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.build.json",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

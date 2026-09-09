@@ -7,8 +7,8 @@
 import type { GitHubClient } from "./github.js";
 import { computeContentDigest } from "./digest.js";
 import { describeLicense, locateLicense } from "./license.js";
-import type { FileTreeNode, LicenseInfo, ManifestItem, PluginType } from "./types.js";
-import { buildFileTree, computeLegacyContentHash, isSkillDirectory, listTreeFiles, mapConcurrent, parsePluginContents, skillNamesIn, treeHasDirectory, type PluginJson, type TreeFile } from "./utils.js";
+import type { FileTreeNode, LicenseInfo, ManifestItem, ParsedPluginContents, PluginType } from "./types.js";
+import { buildFileTree, computeLegacyContentHash, isSkillDirectory, listTreeFiles, mapConcurrent, parseFrontmatter, parsePluginContents, skillNamesIn, treeHasDirectory, type PluginJson, type TreeFile } from "./utils.js";
 import type { GitTreeItem } from "./types.js";
 
 /** Refuse to hash repositories beyond this size; the CLI would have to download all of it per install. */
@@ -35,6 +35,26 @@ export interface ContentLocation {
   path: string;
 }
 
+type ReadFile = (fullPath: string, blobSha: string) => Promise<Buffer>;
+
+/**
+ * One archive download serves every file of a repository that fits the size cap; a
+ * repository beyond it (a monorepo the plugin is a corner of) is read file by file from
+ * the raw host, which costs one request per file. A file the tree lists but the archive
+ * lacks (`export-ignore` in .gitattributes) is read from the raw host as well: the CLI
+ * installs it, so the digest covers it.
+ */
+async function fileReader(client: GitHubClient, location: Pick<ContentLocation, "repo" | "sha">, repoFiles: readonly TreeFile[]): Promise<ReadFile> {
+  const { repo, sha } = location;
+  const repoBytes = repoFiles.reduce((sum, file) => sum + file.size, 0);
+  if (repoBytes > MAX_CONTENT_BYTES) return (fullPath, blobSha) => client.getRawBytes(repo, sha, fullPath, blobSha);
+  const archive = await client.getArchive(repo, sha);
+  return (fullPath, blobSha) => {
+    const bytes = archive.get(fullPath);
+    return bytes ? Promise.resolve(bytes) : client.getRawBytes(repo, sha, fullPath, blobSha);
+  };
+}
+
 /** Look up one file's bytes among collected entries. */
 export function findEntry(content: CollectedContent, path: string): Buffer | null {
   return content.entries.find((entry) => entry.path === path)?.bytes ?? null;
@@ -52,13 +72,14 @@ export async function collectContent(client: GitHubClient, location: ContentLoca
   }
 
   const fullPath = (file: TreeFile): string => (path ? `${path}/${file.path}` : file.path);
+  const rootFiles = path === "" ? files : listTreeFiles(tree, "").files;
+  const read = await fileReader(client, { repo, sha }, rootFiles);
   const entries = await mapConcurrent(files, FILE_CONCURRENCY, async (file) => ({
     path: file.path,
-    bytes: await client.getRawBytes(repo, sha, fullPath(file), file.blobSha),
+    bytes: await read(fullPath(file), file.blobSha),
     blobSha: file.blobSha,
   }));
 
-  const rootFiles = path === "" ? files : listTreeFiles(tree, "").files;
   const licenseLocation = locateLicense(
     files.map((file) => file.path),
     rootFiles.map((file) => file.path),
@@ -71,7 +92,7 @@ export async function collectContent(client: GitHubClient, location: ContentLoca
     // Root-level license outside the item tree: it travels with the install, so it is part of the digest (§2 step 2).
     const rootFile = rootFiles.find((file) => file.path === licenseLocation.file);
     if (!rootFile) throw new Error(`license file ${licenseLocation.file} vanished from the tree of ${repo} at ${sha}`);
-    const bytes = await client.getRawBytes(repo, sha, licenseLocation.file, rootFile.blobSha);
+    const bytes = await read(licenseLocation.file, rootFile.blobSha);
     licenseText = bytes.toString("utf-8");
     if (!bytesByPath.has(licenseLocation.installAs)) {
       digestEntries.push({ path: licenseLocation.installAs, bytes });
@@ -162,21 +183,17 @@ export interface PluginClassification {
   package?: Record<string, number>;
 }
 
-/**
- * Classify a plugin from its file tree plus the declarations that are not visible in the
- * tree: hooks.json trigger names, .mcp.json / plugin.json server names, inline marketplace
- * `lspServers` (integration) and `skills` (strict:false entries without a skills/ folder).
- */
-export function classifyPlugin(
-  content: CollectedContent,
-  options: { pluginJson: PluginJson | null; lspServers?: Record<string, unknown>; inlineSkills?: string[]; existing: ManifestItem | null },
-): PluginClassification {
-  const { existing } = options;
-  if (options.lspServers || existing?.pluginType === "integration") {
-    return { pluginType: "integration", integration: existing?.integration ?? "lsp" };
-  }
+/** The components a plugin ships, by name, as the classifier counts them. */
+export type PluginComponents = Pick<ParsedPluginContents, "skills" | "agents" | "commands" | "hooks" | "mcpServers">;
 
-  const parsed = parsePluginContents(content.files);
+/**
+ * Component names from the file tree plus the declarations that are not visible in it:
+ * hooks.json trigger names, .mcp.json / plugin.json server names, inline marketplace
+ * `skills` (strict:false entries without a skills/ folder) and plugin.json skill paths.
+ */
+export function resolvePluginComponents(content: CollectedContent, options: { pluginJson: PluginJson | null; inlineSkills?: string[] }): PluginComponents {
+  const { skills, agents, commands, hooks, mcpServers } = parsePluginContents(content.files);
+  const parsed: PluginComponents = { skills, agents, commands, hooks, mcpServers };
   if (parsed.hooks) {
     for (const hooksPath of ["hooks/hooks.json", ".claude/hooks/hooks.json"]) {
       const hooks = parseJsonEntry<{ hooks?: Record<string, unknown> }>(content, hooksPath);
@@ -198,11 +215,32 @@ export function classifyPlugin(
   }
   const declaredSkills = declaredSkillNames(options.pluginJson?.skills, content.files);
   if (declaredSkills.length > 0) parsed.skills = [...new Set([...(parsed.skills ?? []), ...declaredSkills])];
+  // The repository is the skill: one SKILL.md at the root, named by its frontmatter.
+  if (!parsed.skills) {
+    const rootSkill = findEntry(content, "SKILL.md");
+    if (rootSkill) parsed.skills = [parseFrontmatter(rootSkill.toString("utf-8"))?.name ?? options.pluginJson?.name ?? "skill"];
+  }
+  return parsed;
+}
 
-  const contentKeyToType: Record<string, string> = { skills: "skill", agents: "agent", hooks: "hook", commands: "command", mcpServers: "mcp" };
+/**
+ * Classify a plugin from its components. A language server — declared inline in the
+ * marketplace entry, in plugin.json, or in a root `.lsp.json` — makes it an integration.
+ */
+export function classifyPlugin(
+  content: CollectedContent,
+  options: { pluginJson: PluginJson | null; lspServers?: Record<string, unknown>; inlineSkills?: string[]; existing: ManifestItem | null },
+): PluginClassification {
+  const { existing } = options;
+  if (options.lspServers || options.pluginJson?.lspServers || findEntry(content, ".lsp.json") || existing?.pluginType === "integration") {
+    return { pluginType: "integration", integration: existing?.integration ?? "lsp" };
+  }
+
+  const components = resolvePluginComponents(content, options);
+  const contentKeyToType: Record<keyof PluginComponents, string> = { skills: "skill", agents: "agent", hooks: "hook", commands: "command", mcpServers: "mcp" };
   const counts: Record<string, number> = {};
   for (const [key, typeName] of Object.entries(contentKeyToType)) {
-    const list = parsed[key as keyof typeof parsed];
+    const list = components[key as keyof PluginComponents];
     if (Array.isArray(list) && list.length > 0) counts[typeName] = list.length;
   }
   const kinds = Object.keys(counts);

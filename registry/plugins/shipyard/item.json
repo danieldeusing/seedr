@@ -1,0 +1,1229 @@
+{
+  "slug": "shipyard",
+  "name": "Shipyard",
+  "type": "plugin",
+  "description": "Turn your idea into working code — Shipyard runs Claude Code through a spec-driven agile sprint lifecycle: discuss features, plan sprints, build with strict TDD, review with adversarial multi-agent code review, and ship. State lives in a per-project plugin-data directory that is worktree-aware and cross-platform (macOS, Linux, Windows). Includes 12 commands, 6 specialized review agents, an investigator, and shipyard-logcap (a tee-and-rotate primitive that captures live verification commands so the orchestrator can re-analyze output without re-running).",
+  "longDescription": "Ships **32 skills**, **7 agents** and **4 hooks**.\n\n- **Skills** (32): `acquiring-skill-lock` (Acquire a per-project lock for the current skill), `anti-stub-scan` (Scan a diff for stub patterns and TODO markers), `authoring-acceptance-probe` (Author a runnable acceptance probe from criteria), `discovering-edge-cases` (Discover edge cases and adversarial inputs), `dispatching-code-review` (Dispatch a fresh-context code review subagent), `dispatching-gap-analysis` (Dispatch a review gap-analysis subagent), `dispatching-operational-task` (Dispatch a Shipyard operational task subagent), `dispatching-research-task` (Dispatch a Shipyard research task subagent), and 24 more\n- **Agents** (7): `shipyard-code-reviewer` (Read-only code-quality reviewer for a Shipyard task/wave/feature/sprint diff), `shipyard-disciplined-builder` (TDD-disciplined implementer for one Shipyard feature task in an isolated worktree), `shipyard-gap-analyst` (Read-only gap analyst for Shipyard review), `shipyard-operational-task` (Runs a Shipyard operational task's verify command to a green exit code, fixing in-scope findings and filing out-of-scope…), `shipyard-researcher` (Investigates a Shipyard research task and produces one markdown findings doc with a concrete, evidence-backed recommendation), `shipyard-spec-reviewer` (Read-only spec-compliance reviewer for a Shipyard task/wave/feature/sprint scope), `shipyard-track-coordinator` (Coordinates nested per-task builders for one Shipyard feature track within a single wave — dispatches `shipyard-disciplined-builder` sequentially per…)\n- **Hooks** (4): `SessionStart`, `SessionEnd`, `PreToolUse`, `WorktreeCreate`\n\nInstalls with `claude plugin install shipyard@claude-community` from `Acendas/shipyard` (`plugins/shipyard`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 32,
+    "agent": 7,
+    "hook": 4
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Acendas",
+    "url": "https://github.com/Acendas"
+  },
+  "externalUrl": "https://github.com/Acendas/shipyard/tree/53e5518ca5db90fd3b060d669d38a6d3bab98e64/plugins/shipyard",
+  "marketplace": "claude-community",
+  "version": "3.25.0",
+  "sourceRevision": "53e5518ca5db90fd3b060d669d38a6d3bab98e64",
+  "contentDigest": "dfffcfd456e8e6d34ee3ce9cad68a705a1575c1d6cda5220674a9420a62c05a3",
+  "contentHash": "906be90f425b669c",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/shipyard",
+    "url": "https://github.com/Acendas/shipyard.git",
+    "ref": "main",
+    "sha": "53e5518ca5db90fd3b060d669d38a6d3bab98e64"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE",
+    "installAs": "LICENSE"
+  },
+  "updatedAt": "2026-08-07T22:13:43Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "shipyard-code-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-disciplined-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-gap-analyst.md",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-operational-task.md",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-researcher.md",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-spec-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-track-coordinator.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auto-approve-data.mjs",
+                "type": "file"
+              },
+              {
+                "name": "lock-reap.mjs",
+                "type": "file"
+              },
+              {
+                "name": "plugin-data-breadcrumb.mjs",
+                "type": "file"
+              },
+              {
+                "name": "worktree-branch.mjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "_hook_lib.mjs",
+            "type": "file"
+          },
+          {
+            "name": "config-read.mjs",
+            "type": "file"
+          },
+          {
+            "name": "cursor-cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "hook-runner.mjs",
+            "type": "file"
+          },
+          {
+            "name": "idea-backlog.mjs",
+            "type": "file"
+          },
+          {
+            "name": "init-data.mjs",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-stages.mjs",
+            "type": "file"
+          },
+          {
+            "name": "progress-render.mjs",
+            "type": "file"
+          },
+          {
+            "name": "readiness-check.mjs",
+            "type": "file"
+          },
+          {
+            "name": "review-plan.mjs",
+            "type": "file"
+          },
+          {
+            "name": "scan-stubs.mjs",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-context",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-context.cmd",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-context.mjs",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-data",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-data.cmd",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-data.mjs",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-logcap",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-logcap.cmd",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-logcap.mjs",
+            "type": "file"
+          },
+          {
+            "name": "shipyard-resolver.mjs",
+            "type": "file"
+          },
+          {
+            "name": "skill-lock.mjs",
+            "type": "file"
+          },
+          {
+            "name": "spec-lifecycle.mjs",
+            "type": "file"
+          },
+          {
+            "name": "spec-state-cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "terminal-gate.mjs",
+            "type": "file"
+          },
+          {
+            "name": "verify-ledger.mjs",
+            "type": "file"
+          },
+          {
+            "name": "worker-queue.mjs",
+            "type": "file"
+          },
+          {
+            "name": "worktree-warm.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "project-files",
+        "type": "directory",
+        "children": [
+          {
+            "name": "references",
+            "type": "directory",
+            "children": [
+              {
+                "name": "code-quality-standards.md",
+                "type": "file"
+              },
+              {
+                "name": "data-implementation-guide.md",
+                "type": "file"
+              },
+              {
+                "name": "data-modeling-guide.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "shipyard-ask-user.md",
+                "type": "file"
+              },
+              {
+                "name": "shipyard-data-model.md",
+                "type": "file"
+              },
+              {
+                "name": "shipyard-next-up.md",
+                "type": "file"
+              },
+              {
+                "name": "shipyard-spec.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "BACKLOG.md",
+                "type": "file"
+              },
+              {
+                "name": "bug.md",
+                "type": "file"
+              },
+              {
+                "name": "config.md",
+                "type": "file"
+              },
+              {
+                "name": "epic.md",
+                "type": "file"
+              },
+              {
+                "name": "feature.md",
+                "type": "file"
+              },
+              {
+                "name": "idea.md",
+                "type": "file"
+              },
+              {
+                "name": "PROGRESS.md",
+                "type": "file"
+              },
+              {
+                "name": "SPRINT.md",
+                "type": "file"
+              },
+              {
+                "name": "task.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "acquiring-skill-lock",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "anti-stub-scan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "authoring-acceptance-probe",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "discovering-edge-cases",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "e2e-taxonomy.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-gap-analysis",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-operational-task",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "event-types.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "monitor-filters.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schedule-wakeup-discipline.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-research-task",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-spec-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-task-loop",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-track-coordinator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "escalating-to-thinker",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evaluating-sprint-complete",
+            "type": "directory",
+            "children": [
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "return-complete.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "return-incomplete-multi.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "return-incomplete-pre-review.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "invariants.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "extracting-acceptance-criteria",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "running-acceptance-probe",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-backlog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-bug",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-debug",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-discuss",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "backlog-reeval.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "communication-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discovery-techniques.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "epic-integration-ac.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "epic-mode.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "external-issue-fetch.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "impact-analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-1-5b-challenge.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-1-research.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-3-write-spec.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-e2e-validation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-finalize.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phase-quality-and-critique.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "question-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "simplification-scan.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-execute",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "context-management.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git-strategy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "goal-mode-preflight.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "live-streaming.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lsp-strategy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pipeline-cursor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "resume-from-event-log.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "track-mode.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-help",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-quick",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "verification-capture.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "code-review-orchestration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "critic-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pipeline-cursor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "quality-gate-enforcement.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "retro-and-release.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scanner-dispatch.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-spec",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-sprint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "carry-over-scan.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "implementation-decisions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "planning-checklists.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "quality-manifest.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spec-validation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sprint-analyst-report.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-decomposition-patterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-kinds.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-tech-notes-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wave-decomposition.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship-status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "splitting-stories",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "patterns.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tdd-cycle",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-worktrees",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "validating-e2e-coverage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verifying-completion",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verifying-wave-completion",
+            "type": "directory",
+            "children": [
+              {
+                "name": "examples",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "return-complete-after-recovery.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "return-complete.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "return-escalated-budget.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "return-escalated.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "invariants.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assertions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "acquiring-skill-lock.json",
+                "type": "file"
+              },
+              {
+                "name": "anti-stub-scan.json",
+                "type": "file"
+              },
+              {
+                "name": "authoring-acceptance-probe.json",
+                "type": "file"
+              },
+              {
+                "name": "discovering-edge-cases.json",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-code-review.json",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-gap-analysis.json",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-operational-task.json",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-research-task.json",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-spec-review.json",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-task-loop.json",
+                "type": "file"
+              },
+              {
+                "name": "dispatching-track-coordinator.json",
+                "type": "file"
+              },
+              {
+                "name": "escalating-to-thinker.json",
+                "type": "file"
+              },
+              {
+                "name": "evaluating-sprint-complete.json",
+                "type": "file"
+              },
+              {
+                "name": "extracting-acceptance-criteria.json",
+                "type": "file"
+              },
+              {
+                "name": "running-acceptance-probe.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-backlog.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-bug.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-debug.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-discuss.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-execute.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-help.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-quick.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-review.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-spec.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-sprint.json",
+                "type": "file"
+              },
+              {
+                "name": "ship-status.json",
+                "type": "file"
+              },
+              {
+                "name": "splitting-stories.json",
+                "type": "file"
+              },
+              {
+                "name": "tdd-cycle.json",
+                "type": "file"
+              },
+              {
+                "name": "using-worktrees.json",
+                "type": "file"
+              },
+              {
+                "name": "validating-e2e-coverage.json",
+                "type": "file"
+              },
+              {
+                "name": "verifying-completion.json",
+                "type": "file"
+              },
+              {
+                "name": "verifying-wave-completion.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eval-run.py",
+            "type": "file"
+          },
+          {
+            "name": "test_auto_approve_data.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_code_quality_standards_integration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_config_read_speed_knobs.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_cursor_cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_data_dir_flag.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_data_guide_integration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_diagram_and_external_contracts.py",
+            "type": "file"
+          },
+          {
+            "name": "test_e2e_ac_contracts.py",
+            "type": "file"
+          },
+          {
+            "name": "test_e2e_taxonomy.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hook_lib.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_hook_runner.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_idea_backlog.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_init_sprint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_init_templates_sync.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_monitor_verify_pattern.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pipeline_cursor.py",
+            "type": "file"
+          },
+          {
+            "name": "test_plugin_data_breadcrumb.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_progress_render.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_resolver_install_scoping.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_review_plan_cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_scan_stubs_cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_shipyard_context_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "test_shipyard_data_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "test_shipyard_logcap.py",
+            "type": "file"
+          },
+          {
+            "name": "test_shipyard_resolver.py",
+            "type": "file"
+          },
+          {
+            "name": "test_skill_lock_cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_spec_state_cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_task_state_cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_terminal_gate.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_url_reserved_paths.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_user_flow_probe.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_verify_ledger.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_worker_queue_cli.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test_worktree_integration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_worktree_warm.mjs",
+            "type": "file"
+          }
+        ]
+      }
+    ]
+  }
+}

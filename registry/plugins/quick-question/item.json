@@ -1,0 +1,1689 @@
+{
+  "slug": "quick-question",
+  "name": "Quick Question",
+  "type": "plugin",
+  "description": "Unity Agent Harness for Claude Code. Auto-compiles C# on every edit, runs EditMode/PlayMode test pipelines with error checking, and performs deep code review using Claude subagents — with each finding independently verified against source before fixing. Includes tykit, an HTTP server inside Unity Editor for AI agent control (run tests, play/stop, read console, inspect GameObjects). 20 slash commands covering the full dev loop from edit to ship. Optional cross-model review via Codex CLI for teams that want multi-model verification. macOS, Unity 2021.3+.",
+  "longDescription": "Ships **26 skills** and **4 hooks**.\n\n- **Skills** (26): `add-tests` (Author Unity EditMode, PlayMode, or regression tests for the current change without conflating that with test execution), `best-practice` (Quick Unity best-practice check — run after editing C# files to catch anti-patterns, performance issues, and runtime safety…), `bootstrap` (Decompose a high-level game vision (pillars + rules + references) into executable epics, then orchestrate the full qq…), `brief` (Compare the current branch against develop and generate two review documents: architecture change diagram + PR review checklist), `changes` (Summarize all changes Claude Code made during this conversation), `claude-code-review` (Deep code review via Claude subagent — reviews uncommitted changes by default, loops until no critical issues remain), `claude-plan-review` (Send a design document to a Claude subagent for review, then revise the document based on findings), `codex-code-review` (Cross-model code review via Codex CLI — reviews uncommitted changes by default, loops until no critical issues remain), and 18 more\n- **Hooks** (4): `PreToolUse`, `PostToolUse`, `Stop`, `SessionStart`\n\nInstalls with `claude plugin install quick-question@claude-community` from `tykisgod/quick-question`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 26,
+    "hook": 4
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Yukang Tian",
+    "url": "https://github.com/tykisgod"
+  },
+  "externalUrl": "https://github.com/tykisgod/quick-question/tree/12fb596579fe699bb4d4a61c302264304135ebb3",
+  "marketplace": "claude-community",
+  "version": "1.17.0",
+  "sourceRevision": "12fb596579fe699bb4d4a61c302264304135ebb3",
+  "contentDigest": "b01703ee869ba4e40a4168e9caff521821f2750f9578594d8ba85747aef4a7e7",
+  "contentHash": "101bf3431a656928",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/tykisgod/quick-question.git",
+    "sha": "12fb596579fe699bb4d4a61c302264304135ebb3"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-11T15:12:09Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".devcontainer",
+        "type": "directory",
+        "children": [
+          {
+            "name": "devcontainer.json",
+            "type": "file"
+          },
+          {
+            "name": "Dockerfile",
+            "type": "file"
+          },
+          {
+            "name": "postCreate.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".githooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-push",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "sync-tykit.yml",
+                "type": "file"
+              },
+              {
+                "name": "validate.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-plan-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "claude-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "code-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "plan-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-compile.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-execute-checkpoint.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-policy-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-preflight.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-project-state.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-run-record.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-worktree.py",
+            "type": "file"
+          },
+          {
+            "name": "unity-compile-smart.sh",
+            "type": "file"
+          },
+          {
+            "name": "unity-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "unity-unit-test.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "dev",
+            "type": "directory",
+            "children": [
+              {
+                "name": "architecture",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "adapter-contract.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "overview.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sbox-adapter-spec.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "proposals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-07-1906-worktree-local-runtime-fix.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "agent-integration.md",
+                "type": "file"
+              },
+              {
+                "name": "consumer-rollout.md",
+                "type": "file"
+              },
+              {
+                "name": "containerization.md",
+                "type": "file"
+              },
+              {
+                "name": "core-roadmap.md",
+                "type": "file"
+              },
+              {
+                "name": "developer-workflow.md",
+                "type": "file"
+              },
+              {
+                "name": "qq-benchmarks.md",
+                "type": "file"
+              },
+              {
+                "name": "qq-project-state.md",
+                "type": "file"
+              },
+              {
+                "name": "qq-run-record.md",
+                "type": "file"
+              },
+              {
+                "name": "todo.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "en",
+            "type": "directory",
+            "children": [
+              {
+                "name": "configuration.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-model-review.md",
+                "type": "file"
+              },
+              {
+                "name": "getting-started.md",
+                "type": "file"
+              },
+              {
+                "name": "hooks.md",
+                "type": "file"
+              },
+              {
+                "name": "tykit-api.md",
+                "type": "file"
+              },
+              {
+                "name": "tykit-mcp.md",
+                "type": "file"
+              },
+              {
+                "name": "worktrees.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evals",
+            "type": "directory",
+            "children": [
+              {
+                "name": "collaboration-multi-actor.json",
+                "type": "file"
+              },
+              {
+                "name": "collaboration-multi-actor.md",
+                "type": "file"
+              },
+              {
+                "name": "foundation-smoke.json",
+                "type": "file"
+              },
+              {
+                "name": "qq-bench-core-solver-v0.json",
+                "type": "file"
+              },
+              {
+                "name": "qq-bench-core-v0.json",
+                "type": "file"
+              },
+              {
+                "name": "qq-bench-core-v1.json",
+                "type": "file"
+              },
+              {
+                "name": "qq-bench-foundation.json",
+                "type": "file"
+              },
+              {
+                "name": "unity-local.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "images",
+            "type": "directory",
+            "children": [
+              {
+                "name": "godot-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "godot-light.svg",
+                "type": "file"
+              },
+              {
+                "name": "sbox.svg",
+                "type": "file"
+              },
+              {
+                "name": "unity-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "unity-light.svg",
+                "type": "file"
+              },
+              {
+                "name": "unreal-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "unreal-light.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ja",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ko",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "main",
+            "type": "directory",
+            "children": [
+              {
+                "name": "codex-code-review_2026-04-04-1554.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "qq",
+            "type": "directory",
+            "children": [
+              {
+                "name": "main",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "token-efficiency-spec.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-03-remove-context-capsule.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-05-maliang-implementation.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-04-03-remove-context-capsule-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-04-04-maliang-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "zh-CN",
+            "type": "directory",
+            "children": [
+              {
+                "name": "configuration.md",
+                "type": "file"
+              },
+              {
+                "name": "cross-model-review.md",
+                "type": "file"
+              },
+              {
+                "name": "getting-started.md",
+                "type": "file"
+              },
+              {
+                "name": "hooks.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tykit-api.md",
+                "type": "file"
+              },
+              {
+                "name": "tykit-mcp.md",
+                "type": "file"
+              },
+              {
+                "name": "worktrees.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "engines",
+        "type": "directory",
+        "children": [
+          {
+            "name": "godot",
+            "type": "directory",
+            "children": [
+              {
+                "name": "addons",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "qq_editor_bridge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "plugin.cfg",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plugin.gd",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "sbox",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Editor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "QQ",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "QQSboxEditorBridge.cs",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "unreal",
+            "type": "directory",
+            "children": [
+              {
+                "name": "python",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "qq_unreal_bridge.py",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "packages",
+        "type": "directory",
+        "children": [
+          {
+            "name": "com.tyk.tykit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Editor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Commands",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "AnimationCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "AnimationCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "AssetCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "AssetCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ComponentCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ComponentCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "EditorCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "EditorCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GameObjectCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GameObjectCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HierarchyCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HierarchyCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "InputCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "InputCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PhysicsCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PhysicsCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PrefabCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PrefabCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ScreenshotCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ScreenshotCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TestCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TestCommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "UICommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "UICommands.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "VisualCommands.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "VisualCommands.cs.meta",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "CommandRegistry.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CommandRegistry.cs.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Commands.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CompileWatcher.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CompileWatcher.cs.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Tykit.Editor.asmdef",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Tykit.Editor.asmdef.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TykitBootstrap.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TykitBootstrap.cs.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TykitServer.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TykitServer.cs.meta",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Runtime",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SimulatedInput.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SimulatedInput.cs.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Tykit.Runtime.asmdef",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Tykit.Runtime.asmdef.meta",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Scripts~",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "e2e-test.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "e2e-test.sh.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unity-check.sh.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unity-compile-smart.sh.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unity-compile.sh.meta",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unity-eval.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unity-eval.sh.meta",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Editor",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "AssetCommandsTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "AssetCommandsTests.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CommandBackedTestsBase.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CommandBackedTestsBase.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CommandRegistryTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CommandRegistryTests.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ComponentCommandsTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ComponentCommandsTests.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "EditorCommandsTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "EditorCommandsTests.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GameObjectCommandsTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GameObjectCommandsTests.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SimulatedInputTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SimulatedInputTests.cs.meta",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Tykit.Tests.Editor.asmdef",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Tykit.Tests.Editor.asmdef.meta",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Editor.meta",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CHANGELOG.md",
+                "type": "file"
+              },
+              {
+                "name": "CHANGELOG.md.meta",
+                "type": "file"
+              },
+              {
+                "name": "CODE_OF_CONDUCT.md",
+                "type": "file"
+              },
+              {
+                "name": "CODE_OF_CONDUCT.md.meta",
+                "type": "file"
+              },
+              {
+                "name": "CONTRIBUTING.md",
+                "type": "file"
+              },
+              {
+                "name": "CONTRIBUTING.md.meta",
+                "type": "file"
+              },
+              {
+                "name": "Editor.meta",
+                "type": "file"
+              },
+              {
+                "name": "LICENSE",
+                "type": "file"
+              },
+              {
+                "name": "LICENSE.meta",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json.meta",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md.meta",
+                "type": "file"
+              },
+              {
+                "name": "Runtime.meta",
+                "type": "file"
+              },
+              {
+                "name": "SECURITY.md",
+                "type": "file"
+              },
+              {
+                "name": "SECURITY.md.meta",
+                "type": "file"
+              },
+              {
+                "name": "Tests.meta",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "eval",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference_solver.py",
+                "type": "file"
+              },
+              {
+                "name": "run-benchmarks.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "githooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pre-push",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auto-compile.sh",
+                "type": "file"
+              },
+              {
+                "name": "auto-pipeline-resume-hint.sh",
+                "type": "file"
+              },
+              {
+                "name": "auto-pipeline-stop.sh",
+                "type": "file"
+              },
+              {
+                "name": "auto-sync.sh",
+                "type": "file"
+              },
+              {
+                "name": "compile-gate-check.sh",
+                "type": "file"
+              },
+              {
+                "name": "execute-resume-hint.sh",
+                "type": "file"
+              },
+              {
+                "name": "hook-dispatch.cmd",
+                "type": "file"
+              },
+              {
+                "name": "hook-dispatch.sh",
+                "type": "file"
+              },
+              {
+                "name": "pre-push-test.sh",
+                "type": "file"
+              },
+              {
+                "name": "review-gate-check.sh",
+                "type": "file"
+              },
+              {
+                "name": "review-gate-count.sh",
+                "type": "file"
+              },
+              {
+                "name": "review-gate-set.sh",
+                "type": "file"
+              },
+              {
+                "name": "review-gate-stop.sh",
+                "type": "file"
+              },
+              {
+                "name": "review-gate.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-cleanup.sh",
+                "type": "file"
+              },
+              {
+                "name": "skill-modified-track.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "platform",
+            "type": "directory",
+            "children": [
+              {
+                "name": "detect.sh",
+                "type": "file"
+              },
+              {
+                "name": "macos.sh",
+                "type": "file"
+              },
+              {
+                "name": "windows.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check-skill-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "claude-plan-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "claude-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "code-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "docker-dev.sh",
+            "type": "file"
+          },
+          {
+            "name": "godot_bridge.py",
+            "type": "file"
+          },
+          {
+            "name": "godot_capabilities.json",
+            "type": "file"
+          },
+          {
+            "name": "godot-common.sh",
+            "type": "file"
+          },
+          {
+            "name": "godot-compile-check.gd",
+            "type": "file"
+          },
+          {
+            "name": "godot-compile.sh",
+            "type": "file"
+          },
+          {
+            "name": "godot-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "plan-review.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq_bridge_common.py",
+            "type": "file"
+          },
+          {
+            "name": "qq_engine.py",
+            "type": "file"
+          },
+          {
+            "name": "qq_internal_changes.py",
+            "type": "file"
+          },
+          {
+            "name": "qq_internal_config.py",
+            "type": "file"
+          },
+          {
+            "name": "qq_internal_git.py",
+            "type": "file"
+          },
+          {
+            "name": "qq_internal_install.py",
+            "type": "file"
+          },
+          {
+            "name": "qq_mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-auto-sync.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-bootstrap-state.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-capabilities.json",
+            "type": "file"
+          },
+          {
+            "name": "qq-capability.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-codex-exec.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-codex-mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-compile.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-config.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-decisions.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-doctor.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-doctor.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-execute-checkpoint.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-onboard.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-policy-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-preflight.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-project-state.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-release.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-run-record.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-runtime.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-sync-readme-zh.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "qq-tykit-coverage.py",
+            "type": "file"
+          },
+          {
+            "name": "qq-worktree.py",
+            "type": "file"
+          },
+          {
+            "name": "sbox_bridge.py",
+            "type": "file"
+          },
+          {
+            "name": "sbox_capabilities.json",
+            "type": "file"
+          },
+          {
+            "name": "sbox-common.sh",
+            "type": "file"
+          },
+          {
+            "name": "sbox-compile.sh",
+            "type": "file"
+          },
+          {
+            "name": "sbox-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "tykit_bridge.py",
+            "type": "file"
+          },
+          {
+            "name": "tykit_capabilities.json",
+            "type": "file"
+          },
+          {
+            "name": "tykit_mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "unity-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "unity-common.sh",
+            "type": "file"
+          },
+          {
+            "name": "unity-compile-smart.sh",
+            "type": "file"
+          },
+          {
+            "name": "unity-compile.sh",
+            "type": "file"
+          },
+          {
+            "name": "unity-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "unity-unit-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "unreal_bridge.py",
+            "type": "file"
+          },
+          {
+            "name": "unreal_capabilities.json",
+            "type": "file"
+          },
+          {
+            "name": "unreal_editor_command.py",
+            "type": "file"
+          },
+          {
+            "name": "unreal-common.sh",
+            "type": "file"
+          },
+          {
+            "name": "unreal-compile-check.py",
+            "type": "file"
+          },
+          {
+            "name": "unreal-compile.sh",
+            "type": "file"
+          },
+          {
+            "name": "unreal-test.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "shared",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tykit-first.md",
+            "type": "file"
+          },
+          {
+            "name": "tykit-reference.md",
+            "type": "file"
+          },
+          {
+            "name": "verification-prompt.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "best-practice",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bootstrap",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "brief",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "changes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude-plan-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-plan-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "commit-push",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "deps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-research",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "doc-drift",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "doc-tidy",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "execute",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "explain",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "full-brief",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "go",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "grandma",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "post-design-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "design-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "self-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tech-research",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "timeline",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "AGENTS.md.example",
+            "type": "file"
+          },
+          {
+            "name": "CLAUDE.md.example",
+            "type": "file"
+          },
+          {
+            "name": "qq.yaml.example",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "logo.png",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "test.sh",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1052 @@
+{
+  "slug": "kindex",
+  "name": "Kindex",
+  "type": "plugin",
+  "description": "Kindex is a persistent knowledge graph for Claude Code. It turns Claude from a session-scoped tool into a project-scoped collaborator — capturing decisions, constraints, and context that survive across sessions, projects, and context resets.\nMemory plugins remember what happened. Kindex captures what it means and how it connects. Session 10 is as informed as session 1.\nKey features: session lifecycle management (tag_start, tag_resume, tag_end), constraint and watch enforcement across sessions, decision archaeology with reasoning preserved, and graph-structured context that surfaces insights by proximity rather than keyword search.\nGit blame tells you what changed. Kindex tells you why.",
+  "longDescription": "Ships **3 skills**, **4 hooks** and **1 MCP server**.\n\n- **Skills** (3): `kindex-capture` (Capture a specific piece of knowledge, constraint, or decision to the Kindex knowledge graph), `kindex-learn` (Extract knowledge from the current conversation and add it to the Kindex graph), `kindex-prime` (Load relevant context from the Kindex knowledge graph at session start)\n- **Hooks** (4): `SessionStart`, `PreCompact`, `UserPromptSubmit`, `Stop`\n- **MCP servers** (1): `kindex`\n\nInstalls with `claude plugin install kindex@claude-community` from `jmcentire/kindex`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 3,
+    "hook": 4,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Jeremy McEntire",
+    "url": "https://github.com/jmcentire"
+  },
+  "externalUrl": "https://github.com/jmcentire/kindex/tree/6be0352b5cc50841d5b48889b1e6998286582bc7",
+  "marketplace": "claude-community",
+  "version": "0.15.0",
+  "sourceRevision": "6be0352b5cc50841d5b48889b1e6998286582bc7",
+  "contentDigest": "4e6b9ba23865bf5915c064e7a7cc93d0f8843e8dc15401934b7dc1c7c8167277",
+  "contentHash": "17ef96f70934f319",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/jmcentire/kindex.git",
+    "sha": "6be0352b5cc50841d5b48889b1e6998286582bc7"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-16T05:18:43Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pages.yml",
+                "type": "file"
+              },
+              {
+                "name": "workflow.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".kin",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "code-map.json",
+            "type": "file"
+          },
+          {
+            "name": "config",
+            "type": "file"
+          },
+          {
+            "name": "index.json",
+            "type": "file"
+          },
+          {
+            "name": "inter-agent-coordination-notes.md",
+            "type": "file"
+          },
+          {
+            "name": "release-mcp-registry-notes.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".pact",
+        "type": "directory",
+        "children": [
+          {
+            "name": "decomposition",
+            "type": "directory",
+            "children": [
+              {
+                "name": "interview.json",
+                "type": "file"
+              },
+              {
+                "name": "tree.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test-gen",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analysis.json",
+                "type": "file"
+              },
+              {
+                "name": "security_audit.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "audit.jsonl",
+            "type": "file"
+          },
+          {
+            "name": "state.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "decomposition",
+        "type": "directory",
+        "children": [
+          {
+            "name": "interview.json",
+            "type": "file"
+          },
+          {
+            "name": "tree.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".well-known",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mcp",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "server-card.json",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "human-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "llms-full.txt",
+            "type": "file"
+          },
+          {
+            "name": "llms.txt",
+            "type": "file"
+          },
+          {
+            "name": "mcp-agent-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "privacy.html",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adapter-template",
+            "type": "directory",
+            "children": [
+              {
+                "name": "kindex_adapter_csv.py",
+                "type": "file"
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kin-voices",
+            "type": "directory",
+            "children": [
+              {
+                "name": "anthropic.kin",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "startup.kin",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sync-version.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "kindex-capture",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kindex-learn",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kindex-prime",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "kindex",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapters",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "base.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude_web.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "code.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex_sessions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "files.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git_hooks.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "github.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "linear.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pipeline.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "projects.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "registry.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sessions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "understand_anything.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "actions.py",
+                "type": "file"
+              },
+              {
+                "name": "agent_adapters.py",
+                "type": "file"
+              },
+              {
+                "name": "agent_settings.py",
+                "type": "file"
+              },
+              {
+                "name": "analytics.py",
+                "type": "file"
+              },
+              {
+                "name": "archive.py",
+                "type": "file"
+              },
+              {
+                "name": "attention.py",
+                "type": "file"
+              },
+              {
+                "name": "budget.py",
+                "type": "file"
+              },
+              {
+                "name": "cli.py",
+                "type": "file"
+              },
+              {
+                "name": "code_map.py",
+                "type": "file"
+              },
+              {
+                "name": "config.py",
+                "type": "file"
+              },
+              {
+                "name": "coordination.py",
+                "type": "file"
+              },
+              {
+                "name": "daemon.py",
+                "type": "file"
+              },
+              {
+                "name": "dream_deep.py",
+                "type": "file"
+              },
+              {
+                "name": "dream.py",
+                "type": "file"
+              },
+              {
+                "name": "extract.py",
+                "type": "file"
+              },
+              {
+                "name": "graph.py",
+                "type": "file"
+              },
+              {
+                "name": "hooks.py",
+                "type": "file"
+              },
+              {
+                "name": "ingest.py",
+                "type": "file"
+              },
+              {
+                "name": "kin_merge.py",
+                "type": "file"
+              },
+              {
+                "name": "llm.py",
+                "type": "file"
+              },
+              {
+                "name": "locks.py",
+                "type": "file"
+              },
+              {
+                "name": "mcp_server.py",
+                "type": "file"
+              },
+              {
+                "name": "mode_primer.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "modes.py",
+                "type": "file"
+              },
+              {
+                "name": "notify.py",
+                "type": "file"
+              },
+              {
+                "name": "reinforce.py",
+                "type": "file"
+              },
+              {
+                "name": "reminders.py",
+                "type": "file"
+              },
+              {
+                "name": "retrieve.py",
+                "type": "file"
+              },
+              {
+                "name": "routing.py",
+                "type": "file"
+              },
+              {
+                "name": "scheduling.py",
+                "type": "file"
+              },
+              {
+                "name": "schema.py",
+                "type": "file"
+              },
+              {
+                "name": "scoping.py",
+                "type": "file"
+              },
+              {
+                "name": "sessions.py",
+                "type": "file"
+              },
+              {
+                "name": "setup.py",
+                "type": "file"
+              },
+              {
+                "name": "sim.py",
+                "type": "file"
+              },
+              {
+                "name": "store.py",
+                "type": "file"
+              },
+              {
+                "name": "tasks.py",
+                "type": "file"
+              },
+              {
+                "name": "vault.py",
+                "type": "file"
+              },
+              {
+                "name": "vectors.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sample-vault",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "python.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "topics",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "alpha.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "beta.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "delta.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "gamma.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "smoke",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test_kindex_actions.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_base.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_claude_web.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_files.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_git_hooks.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_github.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_linear.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_pipeline.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_projects.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_registry.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_adapters_sessions.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_analytics.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_archive.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_budget.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_cli.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_config.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_daemon.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_extract.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_graph.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_hooks.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_ingest.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_llm.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_mcp_server.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_models.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_notify.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_reminders.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_retrieve.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_scheduling.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_sessions.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_setup.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_store.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_tasks.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_vault.py",
+                "type": "file"
+              },
+              {
+                "name": "test_kindex_vectors.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_activity_log.py",
+            "type": "file"
+          },
+          {
+            "name": "test_adapters.py",
+            "type": "file"
+          },
+          {
+            "name": "test_agent_settings.py",
+            "type": "file"
+          },
+          {
+            "name": "test_alias.py",
+            "type": "file"
+          },
+          {
+            "name": "test_archive.py",
+            "type": "file"
+          },
+          {
+            "name": "test_atomic_rmw.py",
+            "type": "file"
+          },
+          {
+            "name": "test_attention.py",
+            "type": "file"
+          },
+          {
+            "name": "test_audience.py",
+            "type": "file"
+          },
+          {
+            "name": "test_budget.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cache.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "test_code_adapter_fallback.py",
+            "type": "file"
+          },
+          {
+            "name": "test_code_adapter_limit.py",
+            "type": "file"
+          },
+          {
+            "name": "test_code_adapter_rust.py",
+            "type": "file"
+          },
+          {
+            "name": "test_code_adapter_unity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_code_map.py",
+            "type": "file"
+          },
+          {
+            "name": "test_compact_hook.py",
+            "type": "file"
+          },
+          {
+            "name": "test_context_tiers.py",
+            "type": "file"
+          },
+          {
+            "name": "test_coordination.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cron_reliability.py",
+            "type": "file"
+          },
+          {
+            "name": "test_daemon.py",
+            "type": "file"
+          },
+          {
+            "name": "test_doctor.py",
+            "type": "file"
+          },
+          {
+            "name": "test_dream.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edit_store.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edit_surfaces.py",
+            "type": "file"
+          },
+          {
+            "name": "test_embed_queue.py",
+            "type": "file"
+          },
+          {
+            "name": "test_expiry.py",
+            "type": "file"
+          },
+          {
+            "name": "test_extract_improved.py",
+            "type": "file"
+          },
+          {
+            "name": "test_extract.py",
+            "type": "file"
+          },
+          {
+            "name": "test_graph_store.py",
+            "type": "file"
+          },
+          {
+            "name": "test_graph.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hooks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_import_export.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ingest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_kin_inheritance.py",
+            "type": "file"
+          },
+          {
+            "name": "test_kin_merge.py",
+            "type": "file"
+          },
+          {
+            "name": "test_locks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "test_models.py",
+            "type": "file"
+          },
+          {
+            "name": "test_new_features.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notify.py",
+            "type": "file"
+          },
+          {
+            "name": "test_operational.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pheromone.py",
+            "type": "file"
+          },
+          {
+            "name": "test_profiles.py",
+            "type": "file"
+          },
+          {
+            "name": "test_project_config.py",
+            "type": "file"
+          },
+          {
+            "name": "test_reinforce.py",
+            "type": "file"
+          },
+          {
+            "name": "test_reminders.py",
+            "type": "file"
+          },
+          {
+            "name": "test_retrieve.py",
+            "type": "file"
+          },
+          {
+            "name": "test_scheduling.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_routing.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sessions.py",
+            "type": "file"
+          },
+          {
+            "name": "test_setup.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sim.py",
+            "type": "file"
+          },
+          {
+            "name": "test_store.py",
+            "type": "file"
+          },
+          {
+            "name": "test_suggestions.py",
+            "type": "file"
+          },
+          {
+            "name": "test_supersede_lifecycle.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tasks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_temporal.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vault.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vectors.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "constraints.yaml",
+        "type": "file"
+      },
+      {
+        "name": "design.md",
+        "type": "file"
+      },
+      {
+        "name": "kin.sample.yaml",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "Makefile",
+        "type": "file"
+      },
+      {
+        "name": "pact.yaml",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "REVIEW.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      },
+      {
+        "name": "settings.json",
+        "type": "file"
+      },
+      {
+        "name": "sops.md",
+        "type": "file"
+      },
+      {
+        "name": "task.md",
+        "type": "file"
+      }
+    ]
+  }
+}

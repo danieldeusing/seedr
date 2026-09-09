@@ -149,22 +149,29 @@ For plugins, read the classification off `contents.files` and `plugin.json`:
 - `mcp-servers/` or `mcp-configs/` → one per entry
 - Root-level `.mcp.json` → fetch it and extract top-level keys as MCP server names. Handles flat (`{ "name": {...} }`) and wrapped (`{ "mcpServers": { "name": {...} } }`) formats
 
-### 5. Check Anthropic's official marketplace
+### 5. Check Anthropic's marketplaces
 
-If `anthropics/claude-plugins-official`'s `.claude-plugin/marketplace.json` has an entry whose
-`source.url` is this repository, the official sync owns the item from its next run on — and it
-matches an existing item to an entry **by slug**:
+The daily sync mirrors all three of Anthropic's marketplaces whole — `claude-plugins-official`
+(`anthropics/claude-plugins-official`), `knowledge-work-plugins`
+(`anthropics/knowledge-work-plugins`) and `claude-community`
+(`anthropics/claude-plugins-community`, ~2,300 entries) — and matches an existing item to an
+entry **by slug**. Check whether any of them lists this repository:
 
 ```bash
-gh api repos/anthropics/claude-plugins-official/contents/.claude-plugin/marketplace.json --jq '.content' | base64 -d | jq '.plugins[] | select((.source.url? // "") | test("{owner}/{repo}"))'
+for repo in anthropics/claude-plugins-official anthropics/knowledge-work-plugins anthropics/claude-plugins-community; do
+  curl -sSL "https://raw.githubusercontent.com/$repo/main/.claude-plugin/marketplace.json" | jq -c --arg m "$repo" '.plugins[] | select((.source.url? // "") | test("{owner}/{repo}")) | {marketplace: $m, name, source}'
+done
 ```
 
-When it is listed: use the entry's `name` as the slug (not the repository name), set
-`"marketplace": "claude-plugins-official"` and a `marketplaceRef` of
-`{ "name": "claude-plugins-official", "url": "https://github.com/anthropics/claude-plugins-official.git", "sha": "<marketplace head sha>" }`,
-and run step 4 against `https://github.com/{owner}/{repo}/tree/<the entry's source.sha>` so the
-item describes exactly what `claude plugins install <name>` delivers. The sync then follows the
-marketplace's pin, which lags the repository's head by design — as it does for `superpowers`.
+When one lists it, **stop: the item is already in the registry, or arrives with the next sync**,
+under the entry's `name` as its slug and at the marketplace's pinned sha (which lags the
+repository's head by design — as it does for `superpowers`). Adding it by hand under another
+slug would give the registry the same plugin twice. What is worth doing instead is curating the
+synced item: its `name`, `longDescription` (the sync drafts a first one from the plugin's own
+files) and `compatibility` survive every re-sync.
+
+The three marketplaces are only ever the whole, or nothing: a pinned URL from step 4 that
+none of them lists is a plain community item, and steps 6–8 apply.
 
 ### 6. Ask clarifying questions
 

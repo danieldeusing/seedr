@@ -8,7 +8,7 @@ import { GitHubClient } from "./sync/github.js";
 import type { ManifestItem } from "./sync/types.js";
 import { runSync, readEnvOptions, type SyncOutcome } from "./sync.js";
 import { SHA_A, SHA_B, SHA_C, SHA_D } from "./test/fake-github.js";
-import { APACHE, MIT, SHA_1, SHA_2, SHA_F, makeWorld, officialMarketplace, type World } from "./test/sync-world.js";
+import { APACHE, MIT, SHA_1, SHA_2, SHA_3, SHA_4, SHA_5, SHA_F, communityMarketplace, makeWorld, officialMarketplace, type World } from "./test/sync-world.js";
 
 const encode = (text: string): Buffer => Buffer.from(text, "utf-8");
 
@@ -34,7 +34,7 @@ describe("runSync", () => {
   let logLines: string[];
 
   /** One run with a fresh client, as in production (caches live for a single run). */
-  const sync = (options: { maxDeletions?: number; allowEmpty?: boolean } = {}): Promise<SyncOutcome> => {
+  const sync = (options: { maxDeletions?: number; allowEmpty?: boolean; rebuild?: boolean } = {}): Promise<SyncOutcome> => {
     const client = new GitHubClient({ env: {}, sleep: async () => {}, log: (line) => logLines.push(line) });
     return runSync({ registryDir: world.registryDir, client, log: (line) => logLines.push(line), ...options });
   };
@@ -61,10 +61,10 @@ describe("runSync", () => {
       const outcome = await sync();
       expect(outcome.ok).toBe(true);
       expect(outcome.failedSources).toEqual([]);
-      expect(outcome.added.sort()).toEqual(["plugin/new-one"]);
+      // new-one and not-ours are new to the official marketplace; sales, eli5 and mirrored come from the other two
+      expect(outcome.added.sort()).toEqual(["plugin/eli5", "plugin/mirrored", "plugin/new-one", "plugin/not-ours", "plugin/sales"]);
       expect(outcome.deleted).toEqual(["skill/stale-skill"]);
       expect(outcome.carriedOver).toEqual([]);
-      expect(existsSync(join(world.registryDir, "plugins", "not-ours"))).toBe(false);
       expect(existsSync(join(world.registryDir, "plugins", "example-plugin"))).toBe(false);
       expect(existsSync(join(world.registryDir, "skills", "stale-skill"))).toBe(false);
 
@@ -251,12 +251,12 @@ describe("runSync", () => {
       const hooksManifest = JSON.parse(readFileSync(join(world.registryDir, "hooks", "manifest.json"), "utf-8")) as { items: ManifestItem[] };
       expect(hooksManifest.items[0]!.contentDigest).toBe(computeContentDigest([{ path: "agentwatch.sh", bytes: encode("#!/bin/sh\necho hi\n") }]));
       const index = JSON.parse(readFileSync(join(world.registryDir, "manifest.json"), "utf-8")) as { types: Record<string, { count: number }> };
-      expect(index.types.plugin!.count).toBe(9);
+      expect(index.types.plugin!.count).toBe(13);
       expect(index.types.skill!.count).toBe(3);
 
       // decision log
       expect(logLines.join("\n")).toMatch(/deleted \(1\): skill\/stale-skill/);
-      expect(logLines.join("\n")).toMatch(/added \(1\): plugin\/new-one/);
+      expect(logLines.join("\n")).toMatch(/added \(5\): plugin\/new-one, plugin\/not-ours, plugin\/sales, plugin\/eli5, plugin\/mirrored/);
     });
 
     it("is idempotent: a second run changes nothing", async () => {
@@ -268,7 +268,7 @@ describe("runSync", () => {
       expect(outcome.added).toEqual([]);
       expect(outcome.changed).toEqual([]);
       expect(outcome.deleted).toEqual([]);
-      expect(outcome.unchanged).toHaveLength(12);
+      expect(outcome.unchanged).toHaveLength(16);
       expect(snapshotRegistry(world.registryDir)).toEqual(before);
     });
   });
@@ -296,13 +296,13 @@ describe("runSync", () => {
       const slack = readItem(world.registryDir, "plugins", "slack");
       const official = world.fake.repos["anthropics/claude-plugins-official"]!.commits[SHA_B]!;
       official.files[".claude-plugin/marketplace.json"] = officialMarketplace({ plugins: [] }); // would delete everything if it were read
-      world.fake.fail({ match: `claude-plugins-official/${SHA_B}/.claude-plugin/marketplace.json`, status: 503, times: Infinity });
+      world.fake.fail({ match: `repos/anthropics/claude-plugins-official/tarball/${SHA_B}`, status: 503, times: Infinity });
       world.fake.repos["obra/superpowers"]!.commits[SHA_F]!.date = "2026-04-01T00:00:00Z";
 
       const outcome = await sync();
       expect(outcome.ok).toBe(true);
-      expect(outcome.failedSources.map((s) => s.name)).toEqual(["official-marketplace"]);
-      expect(outcome.carriedOver.map((c) => c.key).sort()).toEqual(["plugin/asana", "plugin/clangd-lsp", "plugin/code-review", "plugin/new-one", "plugin/slack", "plugin/stripe"]);
+      expect(outcome.failedSources.map((s) => s.name)).toEqual(["marketplace:claude-plugins-official"]);
+      expect(outcome.carriedOver.map((c) => c.key).sort()).toEqual(["plugin/asana", "plugin/clangd-lsp", "plugin/code-review", "plugin/new-one", "plugin/not-ours", "plugin/slack", "plugin/stripe"]);
       expect(outcome.deleted).toEqual([]);
       expect(readItem(world.registryDir, "plugins", "slack")).toEqual(slack);
       expect(outcome.changed).toEqual(["plugin/superpowers"]);
@@ -312,8 +312,8 @@ describe("runSync", () => {
     it("carries a single item over when only its own metadata request fails, and never deletes it", async () => {
       await migrate();
       const codeReview = readItem(world.registryDir, "plugins", "code-review");
-      world.fake.fail({ match: `claude-plugins-official/${SHA_B}/plugins/code-review/.claude-plugin/plugin.json`, status: 500, times: Infinity });
-      const outcome = await sync();
+      world.fake.fail({ match: `commits?sha=${SHA_B}&path=plugins%2Fcode-review`, status: 500, times: Infinity });
+      const outcome = await sync({ rebuild: true }); // the pin has not moved, so only a rebuild asks for the date
       expect(outcome.ok).toBe(true);
       expect(outcome.failedSources).toEqual([]);
       expect(outcome.carriedOver).toEqual([{ key: "plugin/code-review", reason: expect.stringMatching(/Gave up on/) }]);
@@ -326,7 +326,7 @@ describe("runSync", () => {
       await migrate();
       const repo = world.fake.repos["anthropics/claude-plugins-official"]!.commits[SHA_B]!;
       delete repo.files["plugins/code-review/.claude-plugin/plugin.json"];
-      const outcome = await sync();
+      const outcome = await sync({ rebuild: true }); // the fixture changes the tree under the same sha
       expect(outcome.ok).toBe(true);
       expect(outcome.carriedOver).toEqual([]);
       const item = readItem(world.registryDir, "plugins", "code-review");
@@ -440,12 +440,119 @@ describe("runSync", () => {
 
       const outcome = await sync();
       expect(outcome.ok).toBe(true);
-      expect(outcome.added.sort()).toEqual(["plugin/code-review-v2", "plugin/new-one"]);
+      expect(outcome.added.sort()).toEqual(["plugin/code-review-v2", "plugin/eli5", "plugin/mirrored", "plugin/new-one", "plugin/not-ours", "plugin/sales"]);
       expect(outcome.deleted.sort()).toEqual(["plugin/code-review", "skill/stale-skill"]);
       const renamed = readItem(world.registryDir, "plugins", "code-review-v2");
       expect(renamed.longDescription).toBe(world.existing["code-review"]!.longDescription);
       expect(renamed.name).toBe("Code Review");
       expect(logLines.join("\n")).toMatch(/plugin\/code-review \(renamed upstream to plugin\/code-review-v2\)/);
+    });
+  });
+
+  describe("marketplace mirrors", () => {
+    it("imports every entry, leaves slugs earlier marketplaces claimed to them, and drafts a longDescription from the files", async () => {
+      await migrate();
+
+      // hosted in Anthropic's knowledge-work repo → official; its displayName is the name
+      const sales = readItem(world.registryDir, "plugins", "sales");
+      expect(sales).toMatchObject({
+        name: "Sales",
+        sourceType: "official",
+        author: { name: "Anthropic" },
+        marketplace: "knowledge-work-plugins",
+        marketplaceRef: { name: "knowledge-work-plugins", url: "https://github.com/anthropics/knowledge-work-plugins.git", sha: SHA_3 },
+        externalUrl: `https://github.com/anthropics/knowledge-work-plugins/tree/${SHA_3}/sales`,
+        pluginType: "wrapper",
+        wrapper: "skill",
+      });
+      expect(sales.longDescription).toBe(
+        [
+          "Ships **1 skill**, `pipeline-review` (Review a sales pipeline export for stalled deals and next steps).",
+          "Installs with `claude plugin install sales@knowledge-work-plugins` from `anthropics/knowledge-work-plugins` (`sales`).",
+          "Turns a CRM export into pipeline reviews, account plans and follow-up drafts for a sales team.",
+        ].join("\n\n"),
+      );
+
+      // hosted in the community mirror → community, even though Anthropic hosts it
+      expect(readItem(world.registryDir, "plugins", "eli5")).toMatchObject({ sourceType: "community", author: { name: "Thariq Shihipar" }, marketplace: "claude-community" });
+
+      // a third-party entry: the mirror's pin, the repository's own author, components with their own descriptions
+      const mirrored = readItem(world.registryDir, "plugins", "mirrored");
+      expect(mirrored).toMatchObject({
+        sourceType: "community",
+        author: { name: "Third Party", url: "https://third.example" },
+        marketplace: "claude-community",
+        sourceRevision: SHA_5,
+        pluginSource: { kind: "url", url: "https://github.com/third/mirrored.git", sha: SHA_5 },
+        marketplaceRef: { name: "claude-community", sha: SHA_4 },
+        package: { skill: 1, agent: 1, command: 1 },
+      });
+      expect(mirrored.longDescription).toBe(
+        [
+          "Ships **1 skill**, **1 agent** and **1 command**.",
+          "- **Skills** (1): `review` (Review a pull request against the team's conventions)\n- **Agents** (1): `reviewer` (Posts review findings back to the pull request thread)\n- **Commands** (1): `review` (Start a review of the open pull request)",
+          "Installs with `claude plugin install mirrored@claude-community` from `third/mirrored`.",
+        ].join("\n\n"),
+      );
+
+      // not-ours: three marketplaces list it; the official one comes first, and a third-party repository stays community
+      expect(readItem(world.registryDir, "plugins", "not-ours")).toMatchObject({ sourceType: "community", marketplace: "claude-plugins-official" });
+      // slack: carried by the official marketplace, so the community listing changes nothing
+      expect(readItem(world.registryDir, "plugins", "slack").marketplace).toBe("claude-plugins-official");
+    });
+
+    it("keeps an item whose pin has not moved without fetching it again, and rebuilds it on SYNC_REBUILD", async () => {
+      await migrate();
+      const before = readItem(world.registryDir, "plugins", "mirrored");
+      world.fake.requests.length = 0;
+
+      const outcome = await sync();
+      expect(outcome.ok).toBe(true);
+      expect(outcome.unchanged).toContain("plugin/mirrored");
+      expect(world.fake.requests.filter((request) => request.includes("third/mirrored"))).toEqual([]);
+      expect(logLines).toContainEqual(expect.stringMatching(/kept 1 item\(s\) whose pin has not moved/));
+      expect(readItem(world.registryDir, "plugins", "mirrored")).toEqual(before);
+
+      const client = new GitHubClient({ env: {}, sleep: async () => {}, log: (line) => logLines.push(line) });
+      const rebuilt = await runSync({ registryDir: world.registryDir, client, log: (line) => logLines.push(line), rebuild: true });
+      expect(rebuilt.ok).toBe(true);
+      expect(world.fake.requests.filter((request) => request.includes("third/mirrored")).length).toBeGreaterThan(0);
+      expect(readItem(world.registryDir, "plugins", "mirrored")).toEqual(before);
+    });
+
+    it("rebuilds an entry whose pin moved and keeps the longDescription drafted the first time", async () => {
+      await migrate();
+      const first = readItem(world.registryDir, "plugins", "mirrored");
+      const moved = "6".repeat(40);
+      const repo = world.fake.repos["third/mirrored"]!;
+      repo.branches.main = moved;
+      repo.commits[moved] = {
+        date: "2026-03-12T00:00:00Z",
+        files: { ...repo.commits[SHA_5]!.files, "skills/triage/SKILL.md": "---\nname: triage\ndescription: Sort incoming issues.\n---\n" },
+      };
+      const mirror = world.fake.repos["anthropics/claude-plugins-community"]!.commits[SHA_4]!;
+      mirror.files[".claude-plugin/marketplace.json"] = communityMarketplace().replace(SHA_5, moved);
+
+      const outcome = await sync();
+      expect(outcome.ok).toBe(true);
+      expect(outcome.changed).toContain("plugin/mirrored");
+      const second = readItem(world.registryDir, "plugins", "mirrored");
+      expect(second.sourceRevision).toBe(moved);
+      expect(second.package).toEqual({ skill: 2, agent: 1, command: 1 });
+      expect(second.longDescription).toBe(first.longDescription);
+    });
+
+    it("skips a mirror entry it cannot build instead of failing the marketplace", async () => {
+      const mirror = world.fake.repos["anthropics/claude-plugins-community"]!.commits[SHA_4]!;
+      mirror.files[".claude-plugin/marketplace.json"] = communityMarketplace({
+        plugins: [{ name: "vanished", description: "Its repository is gone.", source: { source: "url", url: "https://github.com/gone/plugin.git", sha: SHA_5 } }],
+      });
+
+      const outcome = await sync();
+      expect(outcome.ok).toBe(true);
+      expect(outcome.failedSources).toEqual([]);
+      expect(existsSync(join(world.registryDir, "plugins", "vanished"))).toBe(false);
+      expect(logLines).toContainEqual(expect.stringMatching(/new item plugin\/vanished skipped: .*gone\/plugin/));
     });
   });
 
@@ -474,8 +581,13 @@ describe("runSync", () => {
   });
 
   it("reads thresholds from the environment and --dry-run from the arguments", () => {
-    expect(readEnvOptions({})).toEqual({ maxDeletions: 5, allowEmpty: false, dryRun: false });
-    expect(readEnvOptions({ SYNC_MAX_DELETIONS: "12", SYNC_ALLOW_EMPTY: "1", SYNC_DRY_RUN: "1" })).toEqual({ maxDeletions: 12, allowEmpty: true, dryRun: true });
+    expect(readEnvOptions({})).toEqual({ maxDeletions: 5, allowEmpty: false, dryRun: false, rebuild: false });
+    expect(readEnvOptions({ SYNC_MAX_DELETIONS: "12", SYNC_ALLOW_EMPTY: "1", SYNC_DRY_RUN: "1", SYNC_REBUILD: "1" })).toEqual({
+      maxDeletions: 12,
+      allowEmpty: true,
+      dryRun: true,
+      rebuild: true,
+    });
     expect(readEnvOptions({}, ["--dry-run"]).dryRun).toBe(true);
     expect(() => readEnvOptions({ SYNC_MAX_DELETIONS: "lots" })).toThrow(/SYNC_MAX_DELETIONS/);
     expect(() => readEnvOptions({ SYNC_MAX_DELETIONS: "-1" })).toThrow(/SYNC_MAX_DELETIONS/);
@@ -486,7 +598,7 @@ describe("runSync", () => {
     const before = snapshotRegistry(world.registryDir);
     const outcome = await runSync({ registryDir: world.registryDir, client: new GitHubClient({ env: {}, sleep: async () => {}, log: () => {} }), log: (line) => logLines.push(line), dryRun: true });
     expect(outcome.ok).toBe(true);
-    expect(outcome.added).toEqual(["plugin/new-one"]);
+    expect(outcome.added.sort()).toEqual(["plugin/eli5", "plugin/mirrored", "plugin/new-one", "plugin/not-ours", "plugin/sales"]);
     expect(outcome.deleted).toEqual(["skill/stale-skill"]);
     expect(outcome.changed.length).toBeGreaterThan(5);
     expect(snapshotRegistry(world.registryDir)).toEqual(before);

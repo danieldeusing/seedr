@@ -1,0 +1,274 @@
+{
+  "slug": "watch-video",
+  "name": "Watch Video",
+  "type": "plugin",
+  "description": "watch-video gives Claude eyes and ears for any video — local files, public URLs (YouTube, Loom, Vimeo, TikTok, ~1,500 sites via yt-dlp), or Jira attachments fetched directly via API token. One command produces a complete evidence bundle: timestamped JPEG frames, a Whisper transcript (local faster-whisper or hosted Groq / OpenAI), optional OCR for on-screen text, and three report formats — report.md, self-contained report.html with base64-embedded frames, and corporate-friendly report.docx.\n\nKey features:\n- LLM-driven highlights: pass a prompt (\"summarize the rate decision and inflation outlook\", \"identify the bug and when it occurs\") and Claude picks the N most relevant moments with frame + reason + verbatim quote.\n- Smart dedup with perceptual hash + transcript-aware protection: typically drops 40-60% of redundant frames on screen recordings without losing narrated moments.\n- OCR for screen-recording UIs: Tesseract with 2x upscale + auto-invert + PSM 6, output to grep-able ocr.txt.\n- Per-step content-hash cache: re-runs are nearly free.\n- Opt-in Jira posting with a confirmation gate BEFORE any attachment upload — declining leaves the ticket untouched, no orphan state.\n- Batch mode for sprint retros: process a JQL query's worth of bug tickets in one command.",
+  "longDescription": "Ships **1 skill**, `watch-video`.\n\nInstalls with `claude plugin install watch-video@claude-community` from `MarcinSufa/claude-watch-video`.\n\nTurn *\"watch CON-1234 and tell me what broke\"* into a single command. The skill downloads the video, extracts keyframes with ffmpeg, transcribes audio with local or hosted Whisper, deduplicates near-identical frames while preserving narrated moments, optionally OCRs on-screen text, and writes a paste-ready `report.md`. Costs $0 to a few cents per video. See what it costs for the breakdown.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Marcin Sufa"
+  },
+  "externalUrl": "https://github.com/MarcinSufa/claude-watch-video/tree/f6b4a2e62f51a045fc789245bb364c9ac8d970c7",
+  "marketplace": "claude-community",
+  "version": "1.0.0",
+  "sourceRevision": "f6b4a2e62f51a045fc789245bb364c9ac8d970c7",
+  "contentDigest": "610bd4f83cf30139a643ae2d8c19ff9e662508a3522c66d2eeb94ba483a3b4f9",
+  "contentHash": "446f747d90e1eabc",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/MarcinSufa/claude-watch-video.git",
+    "sha": "f6b4a2e62f51a045fc789245bb364c9ac8d970c7"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-19T15:14:30Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "smoketest.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "examples",
+            "type": "directory",
+            "children": [
+              {
+                "name": "atlassian-architecture-report.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "images",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-features",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "00-08-eight-flags.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "00-28-fast-mode.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "00-46-clock-jumps.jpg",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "fomc",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "00-22-rate-decision.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "02-21-inflation-snapshot.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "03-23-fed-funds-target.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "04-28-dot-plot.jpg",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "configuration.md",
+            "type": "file"
+          },
+          {
+            "name": "cost-study-atlassian-video.md",
+            "type": "file"
+          },
+          {
+            "name": "marketplace-submission.md",
+            "type": "file"
+          },
+          {
+            "name": "walkthrough-claude-code-release.md",
+            "type": "file"
+          },
+          {
+            "name": "walkthrough-fomc.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "mcp-server",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_mcp_protocol.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pyproject.toml",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "server.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_cache.py",
+            "type": "file"
+          },
+          {
+            "name": "_common.py",
+            "type": "file"
+          },
+          {
+            "name": "dedup.py",
+            "type": "file"
+          },
+          {
+            "name": "fetch.py",
+            "type": "file"
+          },
+          {
+            "name": "frames.py",
+            "type": "file"
+          },
+          {
+            "name": "highlights.py",
+            "type": "file"
+          },
+          {
+            "name": "ocr.py",
+            "type": "file"
+          },
+          {
+            "name": "post_to_jira.py",
+            "type": "file"
+          },
+          {
+            "name": "probe.py",
+            "type": "file"
+          },
+          {
+            "name": "relabel_speakers.py",
+            "type": "file"
+          },
+          {
+            "name": "report.py",
+            "type": "file"
+          },
+          {
+            "name": "smoketest.py",
+            "type": "file"
+          },
+          {
+            "name": "transcribe.py",
+            "type": "file"
+          },
+          {
+            "name": "watch_batch.py",
+            "type": "file"
+          },
+          {
+            "name": "watch_video.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "ROADMAP.md",
+        "type": "file"
+      },
+      {
+        "name": "SKILL.md",
+        "type": "file"
+      }
+    ]
+  }
+}

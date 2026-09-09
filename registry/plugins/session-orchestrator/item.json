@@ -1,0 +1,711 @@
+{
+  "slug": "session-orchestrator",
+  "name": "Session Orchestrator",
+  "type": "plugin",
+  "description": "Session-level orchestration for Claude Code - structures development work into 5 typed waves (Discovery → Core → Polish → Quality → Finalization) with parallel subagent execution, inter-wave quality gates, and verified close-out. Auto-detects GitLab or GitHub from your git remote for full VCS lifecycle support. Three commands replace manual session management: /session starts with project analysis, /go executes the wave plan, /close verifies and commits.",
+  "longDescription": "Ships **10 skills**, **6 agents**, **6 commands** and **3 hooks**.\n\n- **Skills** (10): `discovery` (Systematic quality discovery and issue detection), `ecosystem-health` (Monitor health across configured service endpoints, CI pipelines, and critical issues), `evolve` (Extract session patterns into reusable learnings), `gitlab-ops` (VCS operations reference for GitLab and GitHub: CLI commands (glab/gh), label taxonomy, issue templates, dynamic project resolution), `plan` (Structured project planning and PRD generation with three modes: new (project kickoff with repo scaffolding), feature (compact feature…), `quality-gates` (Canonical quality check commands for typecheck, test, and lint), `session-end` (Full session close-out: verifies all planned work against the agreed plan, creates issues for gaps, runs quality gates,…), `session-plan` (Creates a structured wave execution plan with role-based assignment after user alignment), and 2 more\n- **Agents** (6): `code-implementer` (Use this agent for feature implementation, API development, refactoring, and general code changes), `db-specialist` (Use this agent for database work — schema design, migrations, queries, indexes, and database functions), `security-reviewer` (Use this agent for security analysis — OWASP checks, authentication flows, input validation, authorization, and vulnerability assessment), `session-reviewer` (Use this agent between waves or at session end to verify work quality against the session plan), `test-writer` (Use this agent for writing unit tests, integration tests, and improving test coverage), `ui-developer` (Use this agent for frontend implementation — UI components, pages, styling, accessibility, and responsive design)\n- **Commands** (6): `close` (End session with verification, commits, and documentation), `discovery` (Systematic quality discovery and issue detection), `evolve` (Extract session patterns into reusable learnings), `go` (Approve session plan and begin wave execution), `plan` (Plan a new project, feature, or retrospective with structured requirement gathering), `session` (Start a development session (housekeeping, feature, deep))\n- **Hooks** (3): `SessionStart`, `PreToolUse`, `PostToolUse`\n\nInstalls with `claude plugin install session-orchestrator@claude-community` from `Kanevry/session-orchestrator`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 10,
+    "agent": 6,
+    "hook": 3,
+    "command": 6
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Bernhard Goetzendorfer",
+    "url": "https://gotzendorfer.at"
+  },
+  "externalUrl": "https://github.com/Kanevry/session-orchestrator/tree/fdb27d9261f6f9f24fd221db29cb86e573ec2d4d",
+  "marketplace": "claude-community",
+  "version": "2.0.0-alpha.14",
+  "sourceRevision": "fdb27d9261f6f9f24fd221db29cb86e573ec2d4d",
+  "contentDigest": "997badac27db30afa6b150c691ea999b16c9f5f71e44353673044fd14c663ec3",
+  "contentHash": "aa48a1ed9e1a2108",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/Kanevry/session-orchestrator.git",
+    "sha": "fdb27d9261f6f9f24fd221db29cb86e573ec2d4d"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-07T15:04:37Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "explorer.toml",
+                "type": "file"
+              },
+              {
+                "name": "session-reviewer.toml",
+                "type": "file"
+              },
+              {
+                "name": "wave-worker.toml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config.toml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "000-session-orchestrator.mdc",
+                "type": "file"
+              },
+              {
+                "name": "010-session-workflow.mdc",
+                "type": "file"
+              },
+              {
+                "name": "020-quality-gates.mdc",
+                "type": "file"
+              },
+              {
+                "name": "030-wave-execution.mdc",
+                "type": "file"
+              },
+              {
+                "name": "040-discovery.mdc",
+                "type": "file"
+              },
+              {
+                "name": "050-plan.mdc",
+                "type": "file"
+              },
+              {
+                "name": "060-evolve.mdc",
+                "type": "file"
+              },
+              {
+                "name": "070-gitlab-ops.mdc",
+                "type": "file"
+              },
+              {
+                "name": "080-ecosystem-health.mdc",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".orchestrator",
+        "type": "directory",
+        "children": [
+          {
+            "name": "metrics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "learnings.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "sessions.jsonl",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "code-implementer.md",
+            "type": "file"
+          },
+          {
+            "name": "db-specialist.md",
+            "type": "file"
+          },
+          {
+            "name": "security-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "session-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "test-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "ui-developer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "close.md",
+            "type": "file"
+          },
+          {
+            "name": "discovery.md",
+            "type": "file"
+          },
+          {
+            "name": "evolve.md",
+            "type": "file"
+          },
+          {
+            "name": "go.md",
+            "type": "file"
+          },
+          {
+            "name": "plan.md",
+            "type": "file"
+          },
+          {
+            "name": "session.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "examples",
+            "type": "directory",
+            "children": [
+              {
+                "name": "express-api-config.md",
+                "type": "file"
+              },
+              {
+                "name": "integration-test-config.md",
+                "type": "file"
+              },
+              {
+                "name": "nextjs-config.md",
+                "type": "file"
+              },
+              {
+                "name": "swift-ios-config.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "specs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-04-04-plan-skill-design.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AGENTS-session-config.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-setup.md",
+            "type": "file"
+          },
+          {
+            "name": "cursor-setup.md",
+            "type": "file"
+          },
+          {
+            "name": "session-config-reference.md",
+            "type": "file"
+          },
+          {
+            "name": "USER-GUIDE.md",
+            "type": "file"
+          },
+          {
+            "name": "validation-checklist.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "enforce-commands.sh",
+            "type": "file"
+          },
+          {
+            "name": "enforce-scope.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks-codex.json",
+            "type": "file"
+          },
+          {
+            "name": "hooks-cursor.json",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "post-edit-validate.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "common.sh",
+                "type": "file"
+              },
+              {
+                "name": "platform.sh",
+                "type": "file"
+              },
+              {
+                "name": "worktree.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-md-bad-types.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-md-echo-commands.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-md-full.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-md-minimal.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-md-overrides.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-md-partial.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-md-plain-format.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wave-scope-discovery.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wave-scope-invalid.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wave-scope-valid.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "run-all.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-integration.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-parse-config-agents-md.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-parse-config.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-platform.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-post-edit-validate.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-quality-gate.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-wave-scope.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-worktree.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cursor-install.sh",
+            "type": "file"
+          },
+          {
+            "name": "parse-config.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-quality-gate.sh",
+            "type": "file"
+          },
+          {
+            "name": "token-audit.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-wave-scope.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "config-reading.md",
+                "type": "file"
+              },
+              {
+                "name": "model-selection.md",
+                "type": "file"
+              },
+              {
+                "name": "platform-tools.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "discovery",
+            "type": "directory",
+            "children": [
+              {
+                "name": "issue-templates.md",
+                "type": "file"
+              },
+              {
+                "name": "probes-arch.md",
+                "type": "file"
+              },
+              {
+                "name": "probes-code.md",
+                "type": "file"
+              },
+              {
+                "name": "probes-infra.md",
+                "type": "file"
+              },
+              {
+                "name": "probes-intro.md",
+                "type": "file"
+              },
+              {
+                "name": "probes-session.md",
+                "type": "file"
+              },
+              {
+                "name": "probes-ui.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "slop-patterns.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ecosystem-health",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evolve",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gitlab-ops",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mode-feature.md",
+                "type": "file"
+              },
+              {
+                "name": "mode-new.md",
+                "type": "file"
+              },
+              {
+                "name": "mode-retro.md",
+                "type": "file"
+              },
+              {
+                "name": "prd-feature-template.md",
+                "type": "file"
+              },
+              {
+                "name": "prd-full-template.md",
+                "type": "file"
+              },
+              {
+                "name": "prd-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "retro-template.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "soul.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "quality-gates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-end",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "verification-checklist.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "wave-template.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-start",
+            "type": "directory",
+            "children": [
+              {
+                "name": "presentation-format.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "soul.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wave-executor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "circuit-breaker.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claudeignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

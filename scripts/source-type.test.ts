@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readAllItems } from "./compile-manifest.js";
-import { PLUGINS_REPO, SKILLS_REPO } from "./sync/anthropic.js";
+import { MARKETPLACES, SKILLS_REPO } from "./sync/anthropic.js";
+
+/** Content hosted in these repositories is Anthropic's own; Anthropic's community mirror hosts other people's. */
+const ANTHROPIC_REPOS = [SKILLS_REPO, ...MARKETPLACES.filter((marketplace) => marketplace.hostedSourceType === "official").map((marketplace) => marketplace.repo)];
 
 /**
  * Who published an item, checked against the registry that actually ships.
@@ -24,7 +27,7 @@ describe("what a source type claims about an item", () => {
     // Anthropic's marketplace they sat in, and that folder was not the one it
     // knew about.
     const mislabelled = items
-      .filter((item) => [PLUGINS_REPO, SKILLS_REPO].includes(repoOf(item.externalUrl)) && item.sourceType === "community")
+      .filter((item) => ANTHROPIC_REPOS.includes(repoOf(item.externalUrl)) && item.sourceType === "community")
       .map((item) => `${item.type}/${item.slug}`);
 
     expect(mislabelled).toEqual([]);
@@ -35,7 +38,7 @@ describe("what a source type claims about an item", () => {
     // official marketplace is not the same as being published by Anthropic, and
     // an entry may point its source at a third-party repository.
     const overclaimed = items
-      .filter((item) => item.sourceType === "official" && item.externalUrl && ![PLUGINS_REPO, SKILLS_REPO].includes(repoOf(item.externalUrl)))
+      .filter((item) => item.sourceType === "official" && item.externalUrl && !ANTHROPIC_REPOS.includes(repoOf(item.externalUrl)))
       .map((item) => `${item.type}/${item.slug} → ${repoOf(item.externalUrl)}`);
 
     expect(overclaimed).toEqual([]);

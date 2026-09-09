@@ -1,0 +1,993 @@
+{
+  "slug": "pr-comments-resolver",
+  "name": "Pr Comments Resolver",
+  "type": "plugin",
+  "description": "A Claude Code skill plugin that resolves unresolved PR/MR review comments across GitHub and GitLab.\n\nFeatures\n\nMulti-platform: Supports GitHub (Pull Requests) and GitLab (Merge Requests)\nAuto-detection: Identifies the hosting platform from the git remote URL\nCLI verification: Checks that the required CLI tool (gh or glab) is installed and authenticated\nMemory: Saves platform settings so subsequent runs skip detection\nConfigurable verification: Runs project-defined lint, test, and analysis commands from CLAUDE.md\nLanguage-agnostic: Works with any programming language or framework",
+  "longDescription": "Ships **1 skill**, `resolve-comments` (Use when resolving unresolved PR or MR review comments, working through reviewer feedback, or addressing code review threads…).\n\nInstalls with `claude plugin install pr-comments-resolver@claude-community` from `Dropelikeit/pr-comments-resolver`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Marcel Strahl @ Dropelikeit",
+    "url": "https://github.com/Dropelikeit"
+  },
+  "externalUrl": "https://github.com/Dropelikeit/pr-comments-resolver/tree/4c8dae2f276e4202070b7858348c3694f108db88",
+  "marketplace": "claude-community",
+  "version": "1.2.0",
+  "sourceRevision": "4c8dae2f276e4202070b7858348c3694f108db88",
+  "contentDigest": "389e4c44d7572bdee50f50828247776f3d56776013da46384560067101d82613",
+  "contentHash": "de4f31fe1b0f7110",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/Dropelikeit/pr-comments-resolver.git",
+    "sha": "4c8dae2f276e4202070b7858348c3694f108db88"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-27T18:52:29Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".augment-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auto-assign-pr-creator.yml",
+                "type": "file"
+              },
+              {
+                "name": "dependabot-auto-merge.yml",
+                "type": "file"
+              },
+              {
+                "name": "pr-labeler.yaml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "verify-build.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "labeler.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "adapters",
+        "type": "directory",
+        "children": [
+          {
+            "name": "augment",
+            "type": "directory",
+            "children": [
+              {
+                "name": "snippets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ask-user.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "classify-confirm.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context-file-name.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graphify-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-config-writer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "persistence-step.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "track-tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "frontmatter.yaml",
+                "type": "file"
+              },
+              {
+                "name": "prelude.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude",
+            "type": "directory",
+            "children": [
+              {
+                "name": "snippets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ask-user.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "classify-confirm.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context-file-name.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graphify-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-config-writer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "persistence-step.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "track-tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "frontmatter.yaml",
+                "type": "file"
+              },
+              {
+                "name": "prelude.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex",
+            "type": "directory",
+            "children": [
+              {
+                "name": "snippets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ask-user.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "classify-confirm.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context-file-name.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graphify-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-config-writer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "persistence-step.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "track-tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "frontmatter.yaml",
+                "type": "file"
+              },
+              {
+                "name": "prelude.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "junie",
+            "type": "directory",
+            "children": [
+              {
+                "name": "snippets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ask-user.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "classify-confirm.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context-file-name.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graphify-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-config-writer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "persistence-step.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "track-tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "frontmatter.yaml",
+                "type": "file"
+              },
+              {
+                "name": "prelude.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "roo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "snippets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ask-user.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "classify-confirm.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context-file-name.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graphify-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-config-writer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "persistence-step.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-availability.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "track-tasks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "frontmatter.yaml",
+                "type": "file"
+              },
+              {
+                "name": "prelude.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "core",
+        "type": "directory",
+        "children": [
+          {
+            "name": "platforms",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "azure.md",
+                "type": "file"
+              },
+              {
+                "name": "bitbucket.md",
+                "type": "file"
+              },
+              {
+                "name": "github.md",
+                "type": "file"
+              },
+              {
+                "name": "gitlab.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kernel.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "augment",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "resolve-comments",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "platforms",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "azure.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "bitbucket.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "github.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "gitlab.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "codex",
+            "type": "directory",
+            "children": [
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "resolve-comments",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "platforms",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "azure.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "bitbucket.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "github.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "gitlab.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "junie",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".junie",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "resolve-comments",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "platforms",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "azure.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "bitbucket.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "github.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "gitlab.md",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "SKILL.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "roo",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".roo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "resolve-comments",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "platforms",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "azure.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "bitbucket.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "github.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "gitlab.md",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "SKILL.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plugins",
+        "type": "directory",
+        "children": [
+          {
+            "name": "augment",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pr-comments-resolver",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".augment-plugin",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "plugin.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "resolve-comments",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "platforms",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "azure.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "bitbucket.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "github.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "gitlab.md",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "SKILL.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "icon.png",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "claude",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pr-comments-resolver",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".claude-plugin",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "plugin.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "resolve-comments",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "platforms",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "azure.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "bitbucket.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "github.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "gitlab.md",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "SKILL.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "icon.png",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "codex",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pr-comments-resolver",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".codex-plugin",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "plugin.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "resolve-comments",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "platforms",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "azure.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "bitbucket.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "github.md",
+                                "type": "file"
+                              },
+                              {
+                                "name": "gitlab.md",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "SKILL.md",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "icon.png",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "build.sh",
+            "type": "file"
+          },
+          {
+            "name": "install.sh",
+            "type": "file"
+          },
+          {
+            "name": "substitute.py",
+            "type": "file"
+          },
+          {
+            "name": "validate.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "resolve-comments",
+            "type": "directory",
+            "children": [
+              {
+                "name": "platforms",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "azure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "bitbucket.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "github.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gitlab.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "specs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bitbucket-azure-platforms",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plan.md",
+                "type": "file"
+              },
+              {
+                "name": "spec.md",
+                "type": "file"
+              },
+              {
+                "name": "tasks.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "memory",
+            "type": "directory",
+            "children": [
+              {
+                "name": "constitution.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "build_test.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "COMMITS_PENDING.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "icon.png",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

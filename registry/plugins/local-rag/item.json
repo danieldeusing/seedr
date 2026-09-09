@@ -1,0 +1,1190 @@
+{
+  "slug": "local-rag",
+  "name": "Local Rag",
+  "type": "plugin",
+  "description": "Local-first semantic search for your codebase and conversation history. Hybrid vector + BM25 search with cross-encoder reranking, AST-aware chunking for 6 languages, smart chunking for 30+ file types, conversation memory across sessions, code annotations, dependency graphs, and documentation gap analysis. No API keys, no cloud — runs entirely on your machine.",
+  "longDescription": "Ships **2 skills**, **3 hooks** and **1 MCP server**.\n\n- **Skills** (2): `mimirs` (TRIGGER when: starting a new session, exploring unfamiliar code, searching for functions/types/files, planning refactors, assessing blast radius, reviewing…), `wiki` (Generate or update a structured markdown wiki from the current codebase using mimirs semantic search)\n- **Hooks** (3): `PostToolUse`, `SessionStart`, `SessionEnd`\n- **MCP servers** (1): `mimirs`\n\nInstalls with `claude plugin install local-rag@claude-community` from `TheWinci/local-rag`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 2,
+    "hook": 3,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "TheWinci",
+    "url": "https://github.com/TheWinci"
+  },
+  "externalUrl": "https://github.com/TheWinci/local-rag/tree/ab8ecd0bb5da7a9115bf46662fe426c88c9d0b81",
+  "marketplace": "claude-community",
+  "version": "1.1.8",
+  "sourceRevision": "ab8ecd0bb5da7a9115bf46662fe426c88c9d0b81",
+  "contentDigest": "e12a8832a9163ba9359ccdb64fbd8382e157e060c36207346f27743bbab97409",
+  "contentHash": "be98853e5e5ada08",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/TheWinci/local-rag.git",
+    "sha": "ab8ecd0bb5da7a9115bf46662fe426c88c9d0b81"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-21T05:07:44Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mimirs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "wiki",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "benchmark",
+        "type": "directory",
+        "children": [
+          {
+            "name": "queries.json",
+            "type": "file"
+          },
+          {
+            "name": "tasks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "benchmarks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ast-truncation-analysis.ts",
+            "type": "file"
+          },
+          {
+            "name": "collect-files-bench.ts",
+            "type": "file"
+          },
+          {
+            "name": "count-grouping-sim.ts",
+            "type": "file"
+          },
+          {
+            "name": "django-queries.json",
+            "type": "file"
+          },
+          {
+            "name": "excalidraw-parent-bench.ts",
+            "type": "file"
+          },
+          {
+            "name": "excalidraw-queries.json",
+            "type": "file"
+          },
+          {
+            "name": "express-queries.json",
+            "type": "file"
+          },
+          {
+            "name": "indexing-bench-v2.ts",
+            "type": "file"
+          },
+          {
+            "name": "indexing-bench.ts",
+            "type": "file"
+          },
+          {
+            "name": "kubernetes-queries.json",
+            "type": "file"
+          },
+          {
+            "name": "large-json.bench.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "mimirs-queries.json",
+            "type": "file"
+          },
+          {
+            "name": "parent-promotion-bench.ts",
+            "type": "file"
+          },
+          {
+            "name": "quality-bench-worker.ts",
+            "type": "file"
+          },
+          {
+            "name": "quality-bench.ts",
+            "type": "file"
+          },
+          {
+            "name": "subchunk-impact.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "configuration.md",
+            "type": "file"
+          },
+          {
+            "name": "examples.md",
+            "type": "file"
+          },
+          {
+            "name": "tools.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reindex-file.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-end.sh",
+                "type": "file"
+              },
+              {
+                "name": "session-start.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bump-version.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "mimirs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wiki",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analytics.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "annotations.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "benchmark-models.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "benchmark.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "checkpoint.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cleanup.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conversation.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "demo.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "doctor.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "history.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index-cmd.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "init.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "map.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "remove.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search-cmd.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "serve.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-context.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "status.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "progress.ts",
+                "type": "file"
+              },
+              {
+                "name": "setup.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "conversation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "indexer.ts",
+                "type": "file"
+              },
+              {
+                "name": "parser.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "db",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analytics.ts",
+                "type": "file"
+              },
+              {
+                "name": "annotations.ts",
+                "type": "file"
+              },
+              {
+                "name": "checkpoints.ts",
+                "type": "file"
+              },
+              {
+                "name": "conversation.ts",
+                "type": "file"
+              },
+              {
+                "name": "files.ts",
+                "type": "file"
+              },
+              {
+                "name": "git-history.ts",
+                "type": "file"
+              },
+              {
+                "name": "graph.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "search.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "embeddings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "embed.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "git",
+            "type": "directory",
+            "children": [
+              {
+                "name": "indexer.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "graph",
+            "type": "directory",
+            "children": [
+              {
+                "name": "resolver.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "indexing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "chunker.ts",
+                "type": "file"
+              },
+              {
+                "name": "indexer.ts",
+                "type": "file"
+              },
+              {
+                "name": "parse.ts",
+                "type": "file"
+              },
+              {
+                "name": "watcher.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "benchmark.ts",
+                "type": "file"
+              },
+              {
+                "name": "eval.ts",
+                "type": "file"
+              },
+              {
+                "name": "hybrid.ts",
+                "type": "file"
+              },
+              {
+                "name": "usages.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analytics-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "annotation-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "conversation-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "git-history-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "git-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "graph-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "index-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "search.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-info-tools.ts",
+                "type": "file"
+              },
+              {
+                "name": "wiki-tools.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dir-guard.ts",
+                "type": "file"
+              },
+              {
+                "name": "log.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wiki",
+            "type": "directory",
+            "children": [
+              {
+                "name": "exemplars",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "architecture.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "conventions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-flows.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "getting-started.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "testing.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sections",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "configuration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cross-cutting-inventory.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dependency-graph.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dependency-table.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "entry-points.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "how-it-works-sequence.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hub-analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "internals.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "key-exports-table.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "known-issues.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "module-inventory.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "overview.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "per-file-breakdown.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "public-api.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "see-also.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-structure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "usage-examples.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "categorization.ts",
+                "type": "file"
+              },
+              {
+                "name": "community-detection.ts",
+                "type": "file"
+              },
+              {
+                "name": "content-prefetch.ts",
+                "type": "file"
+              },
+              {
+                "name": "discovery.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "page-payload.ts",
+                "type": "file"
+              },
+              {
+                "name": "page-tree.ts",
+                "type": "file"
+              },
+              {
+                "name": "section-selector.ts",
+                "type": "file"
+              },
+              {
+                "name": "staleness.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              },
+              {
+                "name": "update-log.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "main.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "config.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "conversation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "conversation-index.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "conversation.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "db",
+            "type": "directory",
+            "children": [
+              {
+                "name": "db.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "embeddings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "embed.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "features",
+            "type": "directory",
+            "children": [
+              {
+                "name": "annotations.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "checkpoint.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "git-context.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "git-history.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "empty.md",
+                "type": "file"
+              },
+              {
+                "name": "frontmatter-only.md",
+                "type": "file"
+              },
+              {
+                "name": "large.md",
+                "type": "file"
+              },
+              {
+                "name": "no-frontmatter.md",
+                "type": "file"
+              },
+              {
+                "name": "sample.md",
+                "type": "file"
+              },
+              {
+                "name": "sample.ts",
+                "type": "file"
+              },
+              {
+                "name": "sample.txt",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "graph",
+            "type": "directory",
+            "children": [
+              {
+                "name": "graph.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "indexing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "chunker.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "indexer.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "line-numbers.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "parse.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "watcher.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "search",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analytics.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "benchmark.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "eval.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "find-usages.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "fts-special-chars.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "hybrid-search.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "read-relevant.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "scoped-search.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "search-symbols.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "search.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "server.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "wiki-tools.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wiki",
+            "type": "directory",
+            "children": [
+              {
+                "name": "categorization.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "community-detection.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "discovery.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "page-tree.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "section-selector.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "staleness.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "helpers.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "wiki",
+        "type": "directory",
+        "children": [
+          {
+            "name": "guides",
+            "type": "directory",
+            "children": [
+              {
+                "name": "conventions.md",
+                "type": "file"
+              },
+              {
+                "name": "getting-started.md",
+                "type": "file"
+              },
+              {
+                "name": "testing.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "db",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "conversation.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "files.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git-history.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "graph.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "wiki",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "discovery.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "section-selector.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "staleness.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cli.md",
+                "type": "file"
+              },
+              {
+                "name": "commands.md",
+                "type": "file"
+              },
+              {
+                "name": "config.md",
+                "type": "file"
+              },
+              {
+                "name": "conversation.md",
+                "type": "file"
+              },
+              {
+                "name": "embeddings.md",
+                "type": "file"
+              },
+              {
+                "name": "graph.md",
+                "type": "file"
+              },
+              {
+                "name": "indexing.md",
+                "type": "file"
+              },
+              {
+                "name": "search.md",
+                "type": "file"
+              },
+              {
+                "name": "tests.md",
+                "type": "file"
+              },
+              {
+                "name": "tools.md",
+                "type": "file"
+              },
+              {
+                "name": "utils.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "_classified.json",
+            "type": "file"
+          },
+          {
+            "name": "_content.json",
+            "type": "file"
+          },
+          {
+            "name": "_discovery.json",
+            "type": "file"
+          },
+          {
+            "name": "_manifest.json",
+            "type": "file"
+          },
+          {
+            "name": "_update-log.md",
+            "type": "file"
+          },
+          {
+            "name": "architecture.md",
+            "type": "file"
+          },
+          {
+            "name": "data-flows.md",
+            "type": "file"
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "BENCHMARKS.md",
+        "type": "file"
+      },
+      {
+        "name": "bun.lock",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "mimirs-logo-2.png",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "wiki-screen.png",
+        "type": "file"
+      }
+    ]
+  }
+}

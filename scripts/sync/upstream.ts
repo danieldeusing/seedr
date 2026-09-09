@@ -10,7 +10,7 @@
  * `registry-op.ts upstream-status`.
  */
 import { isFirstParty } from "@seedr/registry-ops/pure";
-import { MARKETPLACE_FILE, OFFICIAL_MARKETPLACE_NAME, PLUGINS_BRANCH, PLUGINS_REPO, SKILLS_BRANCH, SKILLS_REPO, describeError, loadMarketplace } from "./anthropic.js";
+import { MARKETPLACES, MARKETPLACE_FILE, SKILLS_BRANCH, SKILLS_REPO, describeError, loadMarketplace, treeUrl } from "./anthropic.js";
 import { findMarketplaceEntry } from "./community.js";
 import type { GitHubClient } from "./github.js";
 import { applyRenames, describeSource, pinSource, type MarketplaceFile } from "./marketplace.js";
@@ -67,13 +67,14 @@ export async function checkUpstream(client: GitHubClient, items: readonly Manife
     if (item.type === "skill" && item.sourceType === "official") {
       return { repo: SKILLS_REPO, sha: await headOf(SKILLS_REPO, SKILLS_BRANCH), path: `skills/${item.slug}` };
     }
-    if (item.type === "plugin" && (item.marketplaceRef?.name === OFFICIAL_MARKETPLACE_NAME || item.marketplace === OFFICIAL_MARKETPLACE_NAME)) {
-      const sha = await headOf(PLUGINS_REPO, PLUGINS_BRANCH);
-      const marketplace = await marketplaceAt(PLUGINS_REPO, sha);
+    const source = item.type === "plugin" ? MARKETPLACES.find((m) => m.name === item.marketplaceRef?.name || m.name === item.marketplace) : undefined;
+    if (source) {
+      const sha = await headOf(source.repo, source.branch);
+      const marketplace = await marketplaceAt(source.repo, sha);
       const name = applyRenames(item.slug, marketplace.renames);
       const entry = marketplace.plugins.find((candidate) => candidate.name === name);
-      if (!entry) throw new Error(`no longer listed in ${OFFICIAL_MARKETPLACE_NAME}`);
-      return pinSource(describeSource(entry, PLUGINS_REPO, sha), client);
+      if (!entry) throw new Error(`no longer listed in ${source.name}`);
+      return pinSource(describeSource(entry, source.repo, sha), client);
     }
     if (!item.externalUrl) throw new Error("no externalUrl to check against");
     const parsed = parseGitHubTreeUrl(item.externalUrl);
@@ -105,6 +106,10 @@ export async function checkUpstream(client: GitHubClient, items: readonly Manife
   return mapConcurrent(synced, CHECK_CONCURRENCY, async (item): Promise<UpstreamStatus> => {
     try {
       const pinned = await resolve(item);
+      // The item was built at exactly this commit and path, so its content is that commit's: no tree to fetch.
+      if (item.externalUrl === treeUrl(pinned.repo, pinned.sha, pinned.path)) {
+        return { type: item.type, slug: item.slug, state: "current", upstream: pinned };
+      }
       const tree = await client.getTree(pinned.repo, pinned.sha);
       if (!treeHasDirectory(tree, pinned.path)) {
         return { type: item.type, slug: item.slug, state: "unknown", reason: `${pinned.path || "."} is gone from ${pinned.repo} at ${pinned.sha.slice(0, 7)}`, upstream: pinned };

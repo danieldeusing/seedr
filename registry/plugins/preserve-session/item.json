@@ -1,0 +1,292 @@
+{
+  "slug": "preserve-session",
+  "name": "Preserve Session",
+  "type": "plugin",
+  "description": "Preserves Claude Code session history across project directory renames, moves, and copies by assigning each project a path-independent UUID and maintaining a global registry mapping UUID to current path.\n\nAddresses a long-standing pain point: --resume and --continue silently lose session history when paths change. Closes anthropics/claude-code#5768; also tracked in #38089, #28745, #26766, #27883.\n\nCommands: /preserve-session:fix recovers sessions after rename/move (with copy detection and automatic .jsonl merge on destination collision), /preserve-session:inherit copies session history from another registered project, /preserve-session:doctor diagnoses hash/registry state and slug collisions including non-ASCII path issues on macOS, /preserve-session:uninstall removes all preserve-session data with a preview-then-confirm safety pattern. A SessionStart hook auto-initializes .claude/hash.txt on first run — zero manual setup.\n\n  Demo: https://www.youtube.com/watch?v=lWMrzASG7_o\n\n  Quality signals: 24 verified test scenarios (rename, move, copy, slug collision, non-ASCII paths, registry corruption recovery, full --resume E2E). Atomic registry writes via fcntl.LOCK_EX + tempfile.mkstemp + os.replace. NFC slug normalization to match Claude Code's path encoding on macOS. Python heredoc isolation against shell injection. Symlink-safe uninstall (isinstance/dict guards).\n  Shared helpers in hooks/common.sh with cross-platform Python discovery and uuidgen fallback.\n\n  Full design rationale, security notes, and test plan are in two related submissions:\n  • https://github.com/anthropics/claude-code/pull/39148 (initial bundled-plugin attempt; comprehensive design + 24-item test plan with collapsible sections)\n  • https://github.com/anthropics/claude-plugins-official/pull/1347 (auto-closed by submission bot; retained as reference for the proposed marketplace.json entry)\n\n  Plugin location: lives at plugins/preserve-session/ inside the wonbywondev/claude-plugins monorepo. The marketplace entry should use the git-subdir source format pointing to that subdirectory.",
+  "longDescription": "Installs with `claude plugin install preserve-session@claude-community` from `wonbywondev/claude-plugins`.\n\nPersonal Claude Code plugins by wonbywondev.\n\nPreserves Claude Code session history across project directory renames, moves, and copies by assigning each project a path-independent UUID and maintaining a global registry mapping UUID to current path.\n\nAddresses a long-standing pain point: --resume and --continue silently lose session history when paths change. Closes anthropics/claude-code#5768; also tracked in #38089, #28745, #26766, #27883.\n\nCommands: /preserve-session:fix recovers sessions after rename/move (with copy detection and automatic .jsonl merge on destination collision), /preserve-session:inherit copies session history from another registered project, /preserve-session:doctor diagnoses hash/registry state and slug collisions including non-ASCII path issues on macOS, /preserve-session:uninstall removes all preserve-session data with a preview-then-confirm safety pattern. A SessionStart hook auto-initializes .claude/hash.txt on first run — zero manual setup.\n\n  Demo: https://www.youtube.com/watch?v=lWMrzASG7_o\n\n  Quality signals: 24 verified test scenarios (rename, move, copy, slug collision, non-ASCII paths, registry corruption recovery, full --resume E2E). Atomic registry writes via fcntl.LOCK_EX + tempfile.mkstemp + os.replace. NFC slug normalization to match Claude Code's path encoding on macOS. Python heredoc isolation against shell injection. Symlink-safe uninstall (isinstance/dict guards).\n  Shared helpers in hooks/common.sh with cross-platform Python discovery and uuidgen fallback.\n\n  Full design rationale, security notes, and test plan are in two related submissions:\n  • https://github.com/anthropics/claude-code/pull/39148 (initial bundled-plugin attempt; comprehensive design + 24-item test plan with collapsible sections)\n  • https://github.com/anthropics/claude-plugins-official/pull/1347 (auto-closed by submission bot; retained as reference for the proposed marketplace.json entry)\n\n  Plugin location: lives at plugins/preserve-session/ inside the wonbywondev/claude-plugins monorepo. The marketplace entry should use the git-subdir source format pointing to that subdirectory.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {},
+  "sourceType": "community",
+  "author": {
+    "name": "Community"
+  },
+  "externalUrl": "https://github.com/wonbywondev/claude-plugins/tree/547f0c416a69a37c418d57c9d69a6df65bb75781",
+  "marketplace": "claude-community",
+  "sourceRevision": "547f0c416a69a37c418d57c9d69a6df65bb75781",
+  "contentDigest": "90633556850f26ba708830c772ba815b2283f801b7c76a7e72cb240bdee6ad9c",
+  "contentHash": "fdd509ff9b9eb399",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/wonbywondev/claude-plugins.git",
+    "sha": "547f0c416a69a37c418d57c9d69a6df65bb75781"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-16T00:51:16Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plugins",
+        "type": "directory",
+        "children": [
+          {
+            "name": "preserve-session",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".claude-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "plugin.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cleanup.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "copy.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "doctor.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fix.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inherit.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "move.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "uninstall.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "tests",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "test-cleanup.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test-copy.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test-move.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "cleanup.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "common.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "copy.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "doctor.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fix.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "inherit.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "move.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scan.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-start.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "uninstall.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.ko.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skill-curator",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".claude-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "plugin.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "link.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "recommend.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "status.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unlink.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "classify.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "common.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "link.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "post-plan.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-start.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "test",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "run_tests.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_classify.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_common.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_hooks.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_link.sh",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.ko.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

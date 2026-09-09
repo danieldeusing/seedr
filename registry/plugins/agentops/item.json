@@ -1,0 +1,2135 @@
+{
+  "slug": "agentops",
+  "name": "Agentops",
+  "type": "plugin",
+  "description": "Enterprise guardrails, delivery lifecycle, and self-evolution for Claude Code. Wraps every session in 7 security layers (path validation, command validation, injection scanning, credential redaction, exfiltration detection), structures work with the STAR methodology, and orchestrates full project builds from vision to merged PR through an 8.5-phase lifecycle with TDD enforcement, wave-based parallel execution, and two-stage code review. Includes 37 commands, 44 hooks, 12 specialist agents, 49 templates, and 32+ feature flags.",
+  "longDescription": "Ships **12 agents**, **18 commands** and **7 hooks**.\n\n- **Agents** (12): `architecture-researcher` (Investigates architectural patterns suitable for a project based on its brief), `code-critic` (Reviews implementation quality, patterns, and suggests improvements), `delegation-router` (Routes tasks to appropriate specialist agents based on task type and complexity), `feature-researcher` (Investigates feature depth, MVP vs v2 scope, and feature trade-offs for a project), `interrogator` (Requirements discovery subagent that analyzes codebases and produces implementation plans), `pitfalls-researcher` (Investigates known failures, anti-patterns, and common pitfalls for a project type), `plan-validator` (Validates a build XML plan across 8 dimensions before execution begins), `proposer` (Analyzes agent execution failures and proposes skill additions or edits), and 4 more\n- **Commands** (18): `build` (Master project lifecycle command — orchestrates brainstorm → interrogation → planning → execution → review → approval), `code-analysis` (Run a structured code analysis on the current project or specified path), `code-field` (Apply the Code Field methodology (decompose, solve, verify, synthesize, reflect)), `compliance-check` (Run AgentOps compliance checks manually), `configure` (Unified configuration interface for all AgentOps plugin settings), `cost-report` (Display current session cost tracking and budget status), `evolve` (Run the EvoSkill loop to discover and refine skills from execution failures), `flags` (View or toggle AgentOps feature flags), and 10 more\n- **Hooks** (7): `SessionStart`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `SubagentStart`, `Stop`, `SessionEnd`\n\nInstalls with `claude plugin install agentops@claude-community` from `garethdaine/agentops`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "agent": 12,
+    "hook": 7,
+    "command": 18
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Gareth Daine"
+  },
+  "externalUrl": "https://github.com/garethdaine/agentops/tree/d550b464e88bc3810eb47c466249516e8ca366d9",
+  "marketplace": "claude-community",
+  "version": "0.9.0",
+  "sourceRevision": "d550b464e88bc3810eb47c466249516e8ca366d9",
+  "contentDigest": "525519ca67c61e8b9281e360f2e8b3bdae0af2e1ce20eb7d43d99be171619950",
+  "contentHash": "4c1914a154ab68dd",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/garethdaine/agentops.git",
+    "sha": "d550b464e88bc3810eb47c466249516e8ca366d9"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-03-29T19:22:39Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "DISCUSSION_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "delivery-workflow.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature-ideas.yml",
+                "type": "file"
+              },
+              {
+                "name": "q-and-a.yml",
+                "type": "file"
+              },
+              {
+                "name": "security-configurations.yml",
+                "type": "file"
+              },
+              {
+                "name": "show-and-tell.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              },
+              {
+                "name": "security_bypass.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "labeler.yml",
+                "type": "file"
+              },
+              {
+                "name": "lint.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              },
+              {
+                "name": "security.yml",
+                "type": "file"
+              },
+              {
+                "name": "stale.yml",
+                "type": "file"
+              },
+              {
+                "name": "tests.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "labeler.yml",
+            "type": "file"
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          },
+          {
+            "name": "SECURITY.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "architecture-researcher.md",
+            "type": "file"
+          },
+          {
+            "name": "code-critic.md",
+            "type": "file"
+          },
+          {
+            "name": "delegation-router.md",
+            "type": "file"
+          },
+          {
+            "name": "feature-researcher.md",
+            "type": "file"
+          },
+          {
+            "name": "interrogator.md",
+            "type": "file"
+          },
+          {
+            "name": "pitfalls-researcher.md",
+            "type": "file"
+          },
+          {
+            "name": "plan-validator.md",
+            "type": "file"
+          },
+          {
+            "name": "proposer.md",
+            "type": "file"
+          },
+          {
+            "name": "security-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "skill-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "spec-compliance-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "stack-researcher.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "banner.png",
+            "type": "file"
+          },
+          {
+            "name": "banner.svg",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "enterprise",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adr.md",
+                "type": "file"
+              },
+              {
+                "name": "brainstorm.md",
+                "type": "file"
+              },
+              {
+                "name": "design.md",
+                "type": "file"
+              },
+              {
+                "name": "dev-setup.md",
+                "type": "file"
+              },
+              {
+                "name": "docker-dev.md",
+                "type": "file"
+              },
+              {
+                "name": "e2e.md",
+                "type": "file"
+              },
+              {
+                "name": "feature.md",
+                "type": "file"
+              },
+              {
+                "name": "gap-analysis.md",
+                "type": "file"
+              },
+              {
+                "name": "handover.md",
+                "type": "file"
+              },
+              {
+                "name": "herd.md",
+                "type": "file"
+              },
+              {
+                "name": "idea.md",
+                "type": "file"
+              },
+              {
+                "name": "knowledge.md",
+                "type": "file"
+              },
+              {
+                "name": "onboard.md",
+                "type": "file"
+              },
+              {
+                "name": "qa-check.md",
+                "type": "file"
+              },
+              {
+                "name": "reason.md",
+                "type": "file"
+              },
+              {
+                "name": "review.md",
+                "type": "file"
+              },
+              {
+                "name": "scaffold.md",
+                "type": "file"
+              },
+              {
+                "name": "search.md",
+                "type": "file"
+              },
+              {
+                "name": "status-report.md",
+                "type": "file"
+              },
+              {
+                "name": "tech-catalog.md",
+                "type": "file"
+              },
+              {
+                "name": "test-gen.md",
+                "type": "file"
+              },
+              {
+                "name": "worklog.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "build.md",
+            "type": "file"
+          },
+          {
+            "name": "code-analysis.md",
+            "type": "file"
+          },
+          {
+            "name": "code-field.md",
+            "type": "file"
+          },
+          {
+            "name": "compliance-check.md",
+            "type": "file"
+          },
+          {
+            "name": "configure.md",
+            "type": "file"
+          },
+          {
+            "name": "cost-report.md",
+            "type": "file"
+          },
+          {
+            "name": "evolve.md",
+            "type": "file"
+          },
+          {
+            "name": "flags.md",
+            "type": "file"
+          },
+          {
+            "name": "interrogate.md",
+            "type": "file"
+          },
+          {
+            "name": "lesson.md",
+            "type": "file"
+          },
+          {
+            "name": "lessons.md",
+            "type": "file"
+          },
+          {
+            "name": "plan.md",
+            "type": "file"
+          },
+          {
+            "name": "prune.md",
+            "type": "file"
+          },
+          {
+            "name": "star.md",
+            "type": "file"
+          },
+          {
+            "name": "supply-chain-scan.md",
+            "type": "file"
+          },
+          {
+            "name": "unicode-scan.md",
+            "type": "file"
+          },
+          {
+            "name": "verify.md",
+            "type": "file"
+          },
+          {
+            "name": "workflow.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dashboard",
+        "type": "directory",
+        "children": [
+          {
+            "name": "docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "REMAINING-POLISH.md",
+                "type": "file"
+              },
+              {
+                "name": "WORKTREE-TELEMETRY.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "public",
+            "type": "directory",
+            "children": [
+              {
+                "name": "file.svg",
+                "type": "file"
+              },
+              {
+                "name": "globe.svg",
+                "type": "file"
+              },
+              {
+                "name": "next.svg",
+                "type": "file"
+              },
+              {
+                "name": "vercel.svg",
+                "type": "file"
+              },
+              {
+                "name": "window.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__tests__",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "relay-clients.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "client-tracker.ts",
+                "type": "file"
+              },
+              {
+                "name": "file-watcher.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "file-watcher.ts",
+                "type": "file"
+              },
+              {
+                "name": "jsonl-parser.ts",
+                "type": "file"
+              },
+              {
+                "name": "lifecycle.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "lifecycle.ts",
+                "type": "file"
+              },
+              {
+                "name": "relay.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "relay.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-registry.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-registry.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__tests__",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "dependency-imports.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "app",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "api",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cortex",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "route.ts",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "favicon.ico",
+                    "type": "file"
+                  },
+                  {
+                    "name": "globals.css",
+                    "type": "file"
+                  },
+                  {
+                    "name": "layout.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "page.test.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "page.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "components",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "office",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__tests__",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "agent-avatar.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "floorplan.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "furniture-geometry.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "scene-components.test.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "AgentAvatar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "MonitorScreen.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeCanvas.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeFloor.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeLighting.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeScene.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeWalls.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Workstation.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "panels",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ActivityTable.test.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ActivityTable.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ConnectionStatus.test.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ConnectionStatus.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ui",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "badge.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "button.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scroll-area.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "select.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sheet.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "table.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tabs.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "useHoverHighlight.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "useSpeechBubbles.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "useWASDCamera.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "useWASDCamera.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "useWebSocket.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__tests__",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "build-lifecycle.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "canvas-texture-pool.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dynamic-workstations.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "event-batcher.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "floorplan.test.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "avatar-animations.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "avatar-animations.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "build-lifecycle.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "canvas-texture-pool.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "decoration-layout.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dispose-scene.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dispose-scene.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dynamic-workstations.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "event-batcher.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "event-mapper.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "event-mapper.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "floorplan.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "furniture-geometry.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "lighting-config.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "outdoor-layout.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "telemetry-types.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "utils.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "wall-decoration-layout.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "weather-service.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "weather-service.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "zone-agent-filter.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slices",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__tests__",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "barrel-exports.test.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "agents",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "pathfinding",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "astar.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "pathfinding.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "waypoint-graph.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "AgentAvatar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "agents.slice.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "avatar-state-machine.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "avatar-state-machine.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "idle-behavior.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "idle-behavior.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "speech-bubble.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SpeechBubble.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "walk-along-path.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "walk-along-path.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "control",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__tests__",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "control-panel.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "control-protocol.test.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "control-panel-logic.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "control-protocol.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "control.slice.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ControlPanel.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "environment",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "day-night-cycle.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "DayNightCycle.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "environment.slice.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "particle-emitter.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ParticleEmitter.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "weather-particles.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WeatherParticles.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "panels",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "zone-panels",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "ArchivesPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "BreakRoomPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "CommsHubPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ConferenceRoomPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "EscalationPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "index.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SecurityPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ServerRoomPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ToolWorkshopPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WarRoomPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WorkstationsPanel.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ZonePanelLayout.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "activity-feed.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ActivityFeed.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "agent-detail-panel.test.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "AgentDetailPanel.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "BuildPhaseIndicator.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "panels.slice.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "session-selector.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SessionSelector.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "StatusBar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WeatherIndicator.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ZoneDetailPanel.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scene",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__tests__",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "OfficeDecorations.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "OfficeLighting.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "OfficeOutdoor.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "OfficeWalls.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WallDecorations.test.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeDecorations.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeFloor.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeLighting.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeOutdoor.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OfficeWalls.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "post-processing.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PostProcessing.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scene.slice.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WallDecorations.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "session",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__tests__",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "replay-engine.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "session-recorder.test.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "replay-engine.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "session-recorder.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "session.slice.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TimelineReplay.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "zones",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "__tests__",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "furniture-geometry.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "monitor-enhancements.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "workstation-chair.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "zone-feedback.test.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "furniture",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "AlarmBell.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "BarrierGate.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Bookshelf.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ConferenceChair.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ConferenceTable.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "FilingCabinet.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "FurnitureRenderer.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "IdeaBoard.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "index.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "KitchenCounter.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "MailStation.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "PingPongTable.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ServerRack.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ToolBench.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "TrafficLight.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "WarRoomScreen.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Whiteboard.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "hooks",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "usePulsingEmissive.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "monitor-enhancements.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "MonitorScreen.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Workstation.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "zone-feedback.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ZoneFurniture.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ZoneLabels.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "zones.slice.ts",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "stores",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__tests__",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "office-store.test.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "agent-store.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-store.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "office-store.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui-store.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ui-store.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "types",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "composed-store.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "events.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "office-store.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "office.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "test-setup.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "performance.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "security.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "AGENTS.md",
+            "type": "file"
+          },
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          },
+          {
+            "name": "components.json",
+            "type": "file"
+          },
+          {
+            "name": "eslint.config.mjs",
+            "type": "file"
+          },
+          {
+            "name": "next.config.ts",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "postcss.config.mjs",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "restart.sh",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          },
+          {
+            "name": "vitest.config.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai-guardrails.sh",
+            "type": "file"
+          },
+          {
+            "name": "audit-log.sh",
+            "type": "file"
+          },
+          {
+            "name": "auto-delegate.sh",
+            "type": "file"
+          },
+          {
+            "name": "auto-evolve.sh",
+            "type": "file"
+          },
+          {
+            "name": "auto-lesson.sh",
+            "type": "file"
+          },
+          {
+            "name": "auto-plan.sh",
+            "type": "file"
+          },
+          {
+            "name": "auto-test.sh",
+            "type": "file"
+          },
+          {
+            "name": "auto-verify.sh",
+            "type": "file"
+          },
+          {
+            "name": "budget-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "code-field-preamble.sh",
+            "type": "file"
+          },
+          {
+            "name": "compliance-gate.sh",
+            "type": "file"
+          },
+          {
+            "name": "content-trust.sh",
+            "type": "file"
+          },
+          {
+            "name": "credential-redact.sh",
+            "type": "file"
+          },
+          {
+            "name": "dashboard-launch.sh",
+            "type": "file"
+          },
+          {
+            "name": "delegation-trust.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-test-run.sh",
+            "type": "file"
+          },
+          {
+            "name": "enforcement-lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "evolve-gate.sh",
+            "type": "file"
+          },
+          {
+            "name": "evolve-lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "exfiltration-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "failure-collector.sh",
+            "type": "file"
+          },
+          {
+            "name": "feature-flags.sh",
+            "type": "file"
+          },
+          {
+            "name": "file-provenance.sh",
+            "type": "file"
+          },
+          {
+            "name": "flag-utils.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "injection-scan.sh",
+            "type": "file"
+          },
+          {
+            "name": "integrity-verify.sh",
+            "type": "file"
+          },
+          {
+            "name": "lessons-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "lockfile-audit.sh",
+            "type": "file"
+          },
+          {
+            "name": "patterns-lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "plan-gate.sh",
+            "type": "file"
+          },
+          {
+            "name": "redact-lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "runtime-mode.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-cleanup.sh",
+            "type": "file"
+          },
+          {
+            "name": "skill-validator.sh",
+            "type": "file"
+          },
+          {
+            "name": "standards-enforce.sh",
+            "type": "file"
+          },
+          {
+            "name": "star-gate.sh",
+            "type": "file"
+          },
+          {
+            "name": "star-preamble.sh",
+            "type": "file"
+          },
+          {
+            "name": "telemetry.sh",
+            "type": "file"
+          },
+          {
+            "name": "todo-prune.sh",
+            "type": "file"
+          },
+          {
+            "name": "unicode-firewall.sh",
+            "type": "file"
+          },
+          {
+            "name": "unicode-lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "unicode-scan-session.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-command.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-env.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-path.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai-config",
+            "type": "directory",
+            "children": [
+              {
+                "name": "tool-standards.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "architecture",
+            "type": "directory",
+            "children": [
+              {
+                "name": "api-first.md",
+                "type": "file"
+              },
+              {
+                "name": "auth-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "caching-strategy.md",
+                "type": "file"
+              },
+              {
+                "name": "database-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "event-driven.md",
+                "type": "file"
+              },
+              {
+                "name": "integration-patterns.md",
+                "type": "file"
+              },
+              {
+                "name": "multi-tenancy.md",
+                "type": "file"
+              },
+              {
+                "name": "service-boundaries.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "build",
+            "type": "directory",
+            "children": [
+              {
+                "name": "brief-template.md",
+                "type": "file"
+              },
+              {
+                "name": "summary-template.md",
+                "type": "file"
+              },
+              {
+                "name": "task-plan-template.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "communication",
+            "type": "directory",
+            "children": [
+              {
+                "name": "effort-estimate.md",
+                "type": "file"
+              },
+              {
+                "name": "incident-response.md",
+                "type": "file"
+              },
+              {
+                "name": "post-mortem.md",
+                "type": "file"
+              },
+              {
+                "name": "risk-register.md",
+                "type": "file"
+              },
+              {
+                "name": "sprint-demo-checklist.md",
+                "type": "file"
+              },
+              {
+                "name": "stakeholder-presentation-outline.md",
+                "type": "file"
+              },
+              {
+                "name": "technical-proposal.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "delivery",
+            "type": "directory",
+            "children": [
+              {
+                "name": "deployment",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "deployment-checklist.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "design",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "solution-design-checklist.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "discovery",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "stakeholder-questions.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "handover",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "knowledge-transfer-checklist.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "operational-runbook.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "support-escalation-matrix.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "implementation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "blocker-escalation-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sprint-planning-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-decomposition-guide.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "qa",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "test-plan-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-results-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "uat-signoff-template.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "governance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "codeowners.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapter-pattern.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scaffolds",
+            "type": "directory",
+            "children": [
+              {
+                "name": "env-validation.md",
+                "type": "file"
+              },
+              {
+                "name": "error-handling.md",
+                "type": "file"
+              },
+              {
+                "name": "graceful-shutdown.md",
+                "type": "file"
+              },
+              {
+                "name": "health-check.md",
+                "type": "file"
+              },
+              {
+                "name": "structured-logging.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "standards",
+            "type": "directory",
+            "children": [
+              {
+                "name": "engineering-standards.md",
+                "type": "file"
+              },
+              {
+                "name": "standards-checklist.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utilities",
+            "type": "directory",
+            "children": [
+              {
+                "name": "project-detection.md",
+                "type": "file"
+              },
+              {
+                "name": "requirements-collection.md",
+                "type": "file"
+              },
+              {
+                "name": "template-rendering.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "work-journal",
+            "type": "directory",
+            "children": [
+              {
+                "name": "conventions.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "architecture-decision.md",
+                "type": "file"
+              },
+              {
+                "name": "bug-investigation.md",
+                "type": "file"
+              },
+              {
+                "name": "feature-implementation.md",
+                "type": "file"
+              },
+              {
+                "name": "refactoring.md",
+                "type": "file"
+              },
+              {
+                "name": "spike-exploration.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tech-catalog.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audit-log.bats",
+            "type": "file"
+          },
+          {
+            "name": "auto-delegate.bats",
+            "type": "file"
+          },
+          {
+            "name": "auto-evolve.bats",
+            "type": "file"
+          },
+          {
+            "name": "auto-lesson.bats",
+            "type": "file"
+          },
+          {
+            "name": "auto-plan.bats",
+            "type": "file"
+          },
+          {
+            "name": "auto-test.bats",
+            "type": "file"
+          },
+          {
+            "name": "auto-verify.bats",
+            "type": "file"
+          },
+          {
+            "name": "budget-check.bats",
+            "type": "file"
+          },
+          {
+            "name": "compliance-gate.bats",
+            "type": "file"
+          },
+          {
+            "name": "content-trust.bats",
+            "type": "file"
+          },
+          {
+            "name": "credential-redact.bats",
+            "type": "file"
+          },
+          {
+            "name": "dashboard-flag.bats",
+            "type": "file"
+          },
+          {
+            "name": "dashboard-launch.bats",
+            "type": "file"
+          },
+          {
+            "name": "evolve-gate.bats",
+            "type": "file"
+          },
+          {
+            "name": "exfiltration-check.bats",
+            "type": "file"
+          },
+          {
+            "name": "failure-collector.bats",
+            "type": "file"
+          },
+          {
+            "name": "feature-flags.bats",
+            "type": "file"
+          },
+          {
+            "name": "injection-scan.bats",
+            "type": "file"
+          },
+          {
+            "name": "integrity-verify.bats",
+            "type": "file"
+          },
+          {
+            "name": "lockfile-audit.bats",
+            "type": "file"
+          },
+          {
+            "name": "security-benchmark.bats",
+            "type": "file"
+          },
+          {
+            "name": "session-registry.bats",
+            "type": "file"
+          },
+          {
+            "name": "standards-enforce.bats",
+            "type": "file"
+          },
+          {
+            "name": "telemetry-pretool.bats",
+            "type": "file"
+          },
+          {
+            "name": "test-helpers.bash",
+            "type": "file"
+          },
+          {
+            "name": "unicode-firewall.bats",
+            "type": "file"
+          },
+          {
+            "name": "validate-command.bats",
+            "type": "file"
+          },
+          {
+            "name": "validate-env.bats",
+            "type": "file"
+          },
+          {
+            "name": "validate-path.bats",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json.example",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "settings.json",
+        "type": "file"
+      }
+    ]
+  }
+}

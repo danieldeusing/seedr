@@ -1,0 +1,3478 @@
+{
+  "slug": "total-recall",
+  "name": "Total Recall",
+  "type": "plugin",
+  "description": "Coding Agents forget everything when a session ends. total-recall fixes that: a shared memory layer that persists across sessions, tools, and devices.\n\nMemory is organized into three tiers (Hot / Warm / Cold) with a 4,000-token budget enforced automatically — so Claude gets relevant context injected at session start without carrying stale noise. Semantic search (all-MiniLM-L6-v2 embeddings, offline) retrieves the right memories on demand.\n\nA knowledge base lets you ingest READMEs, API docs, and architecture notes that are retrieved semantically when relevant. An eval framework lets you measure retrieval quality, run benchmarks, and compare config changes — so you know memory is actually helping.\n\nAll state is local: SQLite + ONNX embeddings, no external services, no API keys required.\n\nWorks across Claude Code, Copilot CLI, Cursor, Cline, and OpenCode — existing memories auto-import on first run.",
+  "longDescription": "Ships **2 skills**, **1 agent**, **3 hooks** and **1 MCP server**.\n\n- **Skills** (2): `commands` (Manage the total-recall memory system and govern automatic capture, retrieval, and compaction), `using-total-recall` (Initialize total-recall memory system and ensure session_start has been called)\n- **Agents** (1): `compactor` (Use this agent at session end to perform intelligent hot-to-warm compaction)\n- **Hooks** (3): `SessionStart`, `UserPromptSubmit`, `SessionEnd`\n- **MCP servers** (1): `total-recall`\n\nInstalls with `claude plugin install total-recall@claude-community` from `strvmarv/total-recall`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 2,
+    "agent": 1,
+    "hook": 3,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "strvmarv"
+  },
+  "externalUrl": "https://github.com/strvmarv/total-recall/tree/a2630f671be9b12df8b8ac78df9d26f7053d2fa9",
+  "marketplace": "claude-community",
+  "version": "4.0.4",
+  "sourceRevision": "a2630f671be9b12df8b8ac78df9d26f7053d2fa9",
+  "contentDigest": "415b3b018dbb6dc02b8e7451b3c31bd3d337085c02667e4e9d8b9d644873d6fa",
+  "contentHash": "57dd208f9064b24d",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/strvmarv/total-recall.git",
+    "sha": "a2630f671be9b12df8b8ac78df9d26f7053d2fa9"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-11T04:20:44Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".copilot-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dotnet-ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".opencode",
+        "type": "directory",
+        "children": [
+          {
+            "name": "INSTALL.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "compactor.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "shim",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fake-engine.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "direct.js",
+                "type": "file"
+              },
+              {
+                "name": "direct.test.js",
+                "type": "file"
+              },
+              {
+                "name": "engine-proxy.js",
+                "type": "file"
+              },
+              {
+                "name": "engine-proxy.test.js",
+                "type": "file"
+              },
+              {
+                "name": "jsonrpc-stdio.js",
+                "type": "file"
+              },
+              {
+                "name": "jsonrpc-stdio.test.js",
+                "type": "file"
+              },
+              {
+                "name": "orchestrator.js",
+                "type": "file"
+              },
+              {
+                "name": "orchestrator.test.js",
+                "type": "file"
+              },
+              {
+                "name": "provisioner.js",
+                "type": "file"
+              },
+              {
+                "name": "provisioner.test.js",
+                "type": "file"
+              },
+              {
+                "name": "server-surface.js",
+                "type": "file"
+              },
+              {
+                "name": "server-surface.test.js",
+                "type": "file"
+              },
+              {
+                "name": "state.js",
+                "type": "file"
+              },
+              {
+                "name": "state.test.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "start.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "images",
+            "type": "directory",
+            "children": [
+              {
+                "name": "web-ui-dashboard.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ascii-option-c.txt",
+            "type": "file"
+          },
+          {
+            "name": "TODO.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "eval",
+        "type": "directory",
+        "children": [
+          {
+            "name": "benchmarks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "retrieval.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "smoke.jsonl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "corpus",
+            "type": "directory",
+            "children": [
+              {
+                "name": "memories.jsonl",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "git-hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "post-checkout",
+            "type": "file"
+          },
+          {
+            "name": "post-commit",
+            "type": "file"
+          },
+          {
+            "name": "post-merge",
+            "type": "file"
+          },
+          {
+            "name": "pre-commit",
+            "type": "file"
+          },
+          {
+            "name": "pre-push",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hermes-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "mcp_client.py",
+            "type": "file"
+          },
+          {
+            "name": "memory_tool_schema.py",
+            "type": "file"
+          },
+          {
+            "name": "plugin.yaml",
+            "type": "file"
+          },
+          {
+            "name": "provider.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "session-end",
+            "type": "directory",
+            "children": [
+              {
+                "name": "run.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "session-start",
+            "type": "directory",
+            "children": [
+              {
+                "name": "run.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "user-prompt-submit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "run.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks-cursor.json",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "models",
+        "type": "directory",
+        "children": [
+          {
+            "name": "registry.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fetch-bge-small.sh",
+            "type": "file"
+          },
+          {
+            "name": "fetch-binary.js",
+            "type": "file"
+          },
+          {
+            "name": "fetch-binary.test.js",
+            "type": "file"
+          },
+          {
+            "name": "install-hermes-plugin.js",
+            "type": "file"
+          },
+          {
+            "name": "postinstall.js",
+            "type": "file"
+          },
+          {
+            "name": "ui-aot-smoke.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-binaries.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "compact.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-total-recall",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "TotalRecall.Cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "GetCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SetCommand.cs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Eval",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "BenchmarkCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CompareCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GrowCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ReportCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SnapshotCommand.cs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Kb",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ListCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RefreshCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RemoveCommand.cs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Memory",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "DemoteCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ExportCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HistoryCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ImportCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "InspectCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "LineageCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PinCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PromoteCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RecentCommand.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "UnpinCommand.cs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "CompactCommand.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ImportHostCommand.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MigrateCommand.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedFloorCommand.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ReindexEmbeddingsCommand.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionEndHintCommand.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "StatusCommand.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageCommand.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Internal",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "MemoryComponents.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CliApp.cs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Cli.csproj",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "AGENTS.md",
+                "type": "file"
+              },
+              {
+                "name": "Chunker.fs",
+                "type": "file"
+              },
+              {
+                "name": "Compaction.fs",
+                "type": "file"
+              },
+              {
+                "name": "Config.fs",
+                "type": "file"
+              },
+              {
+                "name": "Decay.fs",
+                "type": "file"
+              },
+              {
+                "name": "Parsers.fs",
+                "type": "file"
+              },
+              {
+                "name": "Ranking.fs",
+                "type": "file"
+              },
+              {
+                "name": "Tokenizer.fs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Core.fsproj",
+                "type": "file"
+              },
+              {
+                "name": "Types.fs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Host",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Program.cs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Host.csproj",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Infrastructure",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ConfigJsonSerializer.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConfigLoader.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConfigWriter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "defaults.toml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Diagnostics",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ExceptionLogger.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Embedding",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "BedrockEmbedder.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbedderDescriptor.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbedderFactory.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbedderFingerprint.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbedderMigration.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbeddingJsonContext.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbeddingReindexer.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IEmbedder.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ModelManager.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ModelNotReadyException.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ModelRegistry.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ModelSpec.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OnModelChange.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OnnxEmbedder.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OpenAiEmbedder.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ReindexCoordinator.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ReindexProgress.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Eval",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "BenchmarkCandidates.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "BenchmarkRunner.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ComparisonMetrics.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConfigSnapshotStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EvalPaths.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IsolatedBenchmark.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Metrics.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SensitiveContentScanner.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Importers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ClaudeCodeImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ClineImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CopilotCliImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CursorImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HermesImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ImportUtils.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OpenCodeImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ProjectDocsImporter.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Ingestion",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "FileIngester.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HierarchicalIndex.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IFileIngester.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IngestValidation.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Json",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "JsonWriter.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Memory",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "AutoTagger.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CompactionNudge.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HotTierCompactor.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MoveHelpers.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedBlockRenderer.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedFloorDecider.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedFloorState.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedScope.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedTierLimits.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PreviewText.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ProjectKey.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ProjectResolver.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RecentQuery.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SourceToolParser.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TierNames.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Migration",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "IMigrateCommand.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TsDataMigrator.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Search",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "FtsSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HybridSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IFtsSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IHybridSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IVectorSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PgvectorSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PostgresFtsSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "VectorSearch.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CachedSkill.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ClaudeCodeSkillScanner.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CortexSkillClient.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CustomDirsSkillScanner.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FrontmatterParser.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ILocalSkillSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ImportedSkill.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ImportedSkillFile.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ISkillCache.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ISkillClient.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ISkillImportService.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "LocalSkillSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "NullSkillClient.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillBundleDto.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillContentHash.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillDto.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillImportRequestDto.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillImportService.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillImportSummaryDto.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillJsonContext.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillListResponseDto.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillScannerCore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillSearchHitDto.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SqliteSkillCache.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Storage",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "IMetaStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PostgresMigrationRunner.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PostgresStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Schema.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SqliteConnection.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SqliteStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TierV2DataMigration.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ToolCacheStore.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CompactionSyncPayload.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CortexClient.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IRemoteBackend.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PeriodicSync.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PluginSyncSkillDto.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PluginSyncSkillUsageEvent.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RetrievalSyncPayload.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RoutingStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncBacklogReader.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncJsonContext.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncModels.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncPayload.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncQueue.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncService.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageSyncPayload.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Telemetry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CompactionLog.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ImportLog.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "JsonStringWriter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PostgresCompactionLog.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PostgresImportLog.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RetrievalEventLog.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageDailyRollup.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageEventLog.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageWatermarkStore.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Usage",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ClaudeCodeUsageImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CopilotCliUsageImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IUsageImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageEvent.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageIndexer.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageJsonRenderer.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageQuery.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageQueryService.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "AGENTS.md",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Infrastructure.csproj",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Handlers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "AGENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ArgumentParsing.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CacheCheckHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CacheStoreHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CompactNowHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConfigGetHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConfigSetHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EntryMapping.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EvalBenchmarkHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EvalCompareHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EvalGrowHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EvalReportHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EvalSnapshotHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ImportHostHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "InsightsHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbIngestDirHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbIngestFileHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbListCollectionsHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbRefreshHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbRemoveHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbResolveHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbSearchHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbSummarizeHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryDeleteHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryDemoteHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryExportHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryExtractHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryFeedbackHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryGetAllHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryGetHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryHistoryHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryImportHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryInspectHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryLineageHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryListHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryPinHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryPromoteHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryRecentHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemorySearchHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryStoreHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryUnpinHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryUpdateHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MetadataHelpers.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MigrateToRemoteHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionContextHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionEndHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionRefreshHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionStartHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillDeleteHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillGetHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillImportHostHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillListHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillSearchHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "StatusHandler.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageStatusHandler.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "AutoMigrationGuard.cs",
+                "type": "file"
+              },
+              {
+                "name": "CatalogDumper.cs",
+                "type": "file"
+              },
+              {
+                "name": "ErrorTranslator.cs",
+                "type": "file"
+              },
+              {
+                "name": "ISessionLifecycle.cs",
+                "type": "file"
+              },
+              {
+                "name": "IToolHandler.cs",
+                "type": "file"
+              },
+              {
+                "name": "JsonContext.cs",
+                "type": "file"
+              },
+              {
+                "name": "McpServer.cs",
+                "type": "file"
+              },
+              {
+                "name": "ProvisionNotice.cs",
+                "type": "file"
+              },
+              {
+                "name": "ServerComposition.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionLifecycle.cs",
+                "type": "file"
+              },
+              {
+                "name": "ToolRegistry.cs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Server.csproj",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Web",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Api",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ApiError.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "BootstrapInfo.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HealthInfo.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ToolAllowlist.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "build",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "placeholder.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ClientApp",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "components",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "config",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "ConfigField.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "ConfigField.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "dashboard",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "PinnedPeek.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "PinnedPeek.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "RecentActivityPeek.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "RecentActivityPeek.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "RetrievalQualityCard.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "RetrievalQualityCard.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "TierCompositionCard.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "TierCompositionCard.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "TokenUsageCard.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "TokenUsageCard.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "TrendsCard.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "TrendsCard.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "insights",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "HealthScore.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "InsightCard.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "InsightCard.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "kb",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "KbCollectionsTable.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "KbCollectionsTable.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "KbIngest.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "KbIngest.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "KbSearch.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "KbSearch.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "memory",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "MemoryDetail.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "MemoryDetail.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "MemoryFilters.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "MemoryTable.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "MemoryTable.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "usage",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "UsageBreakdown.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageBreakdown.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageComposition.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageComposition.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageFilters.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageHeadline.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageHeadline.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageModelMix.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageModelMix.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageTopSessions.test.tsx",
+                                "type": "file"
+                              },
+                              {
+                                "name": "UsageTopSessions.tsx",
+                                "type": "file"
+                              }
+                            ]
+                          },
+                          {
+                            "name": "BackendBadge.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Card.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Card.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "CommandPalette.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "CommandPalette.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ConfirmDialog.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ConfirmDialog.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "nav.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "OperationProgress.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "OperationProgress.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SideRail.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SideRail.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Skeleton.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Skeleton.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ThemeToggle.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ThemeToggle.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "lib",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "api.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "api.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "bootstrap.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "bootstrap.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "chartTheme.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "configFields.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "configFields.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "insights.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "insights.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "pricing.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "pricing.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "time.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "time.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "trendsMath.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "trendsMath.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "types.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "usageCost.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "usageCost.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "usageMath.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "usageMath.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useAsync.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useHotkey.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useHotkey.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useTheme.test.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "useTheme.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "pages",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "Config.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Config.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Dashboard.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Dashboard.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Eval.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Eval.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Insights.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Insights.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "KnowledgeBase.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "KnowledgeBase.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Memory.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Memory.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "MemoryPlaceholder.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SectionPlaceholder.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Usage.test.tsx",
+                            "type": "file"
+                          },
+                          {
+                            "name": "Usage.tsx",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "styles",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "fonts.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "global.css",
+                            "type": "file"
+                          },
+                          {
+                            "name": "theme.css",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "test",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "setup.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "App.test.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "App.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "main.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "vite-env.d.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "index.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package-lock.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.node.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "vite.config.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Security",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "LocalAuth.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "AGENTS.md",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Web.csproj",
+                "type": "file"
+              },
+              {
+                "name": "WebJsonContext.cs",
+                "type": "file"
+              },
+              {
+                "name": "WebUiOptions.cs",
+                "type": "file"
+              },
+              {
+                "name": "WebUiServer.cs",
+                "type": "file"
+              },
+              {
+                "name": "WebUiServer.Run.cs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.sln",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "corpus",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "dbs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "embeddings",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tokenizer-reference.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bundle-skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "references",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "tools.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "scripts",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "setup.sh",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ignored-skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".skillignore",
+                        "type": "file"
+                      },
+                      {
+                        "name": "secret.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "malformed-skill",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "simple-skill.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Cli.Tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Config",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "GetCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SetCommandTests.cs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Eval",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "BenchmarkCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CompareCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GrowCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ReportCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SnapshotCommandTests.cs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Kb",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ListCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RefreshCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RemoveCommandTests.cs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Memory",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "DemoteCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ExportCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HistoryCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ImportCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "InspectCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "LineageCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PinCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PromoteCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RecentCommandTests.cs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "UnpinCommandTests.cs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "CompactCommandTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConsoleCaptureCollection.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ImportHostCommandTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MigrateCommandTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedFloorCommandTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ReindexEmbeddingsCommandTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionEndHintCommandTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "StatusCommandTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageCommandTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "TestSupport",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "FakeCompactionLog.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FakeFileIngester.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FakeImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FakeMemoryInfra.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CliAppTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Cli.Tests.csproj",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Core.Tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ChunkerTests.fs",
+                "type": "file"
+              },
+              {
+                "name": "CompactionTests.fs",
+                "type": "file"
+              },
+              {
+                "name": "ConfigTests.fs",
+                "type": "file"
+              },
+              {
+                "name": "DecayTests.fs",
+                "type": "file"
+              },
+              {
+                "name": "FixtureLoader.fs",
+                "type": "file"
+              },
+              {
+                "name": "ParsersTests.fs",
+                "type": "file"
+              },
+              {
+                "name": "Program.fs",
+                "type": "file"
+              },
+              {
+                "name": "RankingTests.fs",
+                "type": "file"
+              },
+              {
+                "name": "TokenizerTests.fs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Core.Tests.fsproj",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Infrastructure.Tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Config",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ConfigLoaderCortexTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConfigLoaderGrowTermsTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConfigWriterTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Embedding",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "BedrockEmbedderTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbedderFactoryTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbedderFingerprintTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbedderMigrationTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbeddingReindexerTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EmbedQueryDefaultTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OnModelChangeTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OpenAiEmbedderTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ReindexCoordinatorTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ReindexProgressTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "EndToEnd",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "PostgresSmokeTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Eval",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "BenchmarkCandidatesGuardTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "BenchmarkCandidatesResolveTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "BenchmarkRunnerTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ComparisonMetricsTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ConfigSnapshotStoreTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "EvalPathsTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IsolatedBenchmarkTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MetricsTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SensitiveContentScannerTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Memory",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CompactionNudgeTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HotTierCompactorTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedBlockRendererTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedFloorDeciderTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedFloorStateTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PinnedScopeTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ProjectKeyTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ProjectResolverTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Migration",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "TsDataMigratorTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ClaudeCodeSkillScannerTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CortexSkillClientPullTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CortexSkillClientPushTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CortexSkillClientTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CustomDirsSkillScannerTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "LocalSkillSearchTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillContentHashTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillImportServiceTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SqliteSkillCacheTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Storage",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "GlobalOnlyFilterTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HotStickyMigrationTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SkillCacheMigrationTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SqliteStoreStickyTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageTelemetrySchemaTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CortexClientSkillPullTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CortexClientTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PeriodicSyncSkillTickTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PeriodicSyncTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PluginSyncSkillDtoTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RoutingStoreTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncPayloadTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncQueueTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncServicePullSkillsMergeTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncServicePullSkillsTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncServiceSkillUsageFlushTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncServiceTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "TestSupport",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ConstantEmbedder.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FakeEmbedder.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "InMemoryMetaContentStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "InMemoryMetaOnlyStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "InMemoryMetaStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "InMemoryTestStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "StubEmbedder.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ThrowingEmbedder.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "Usage",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Fixtures",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "claude-code-sample.jsonl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "copilot-cli-sample.jsonl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ClaudeCodeUsageImporterTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CopilotCliUsageImporterTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageDailyRollupTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageEventLogTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageIndexerTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageQueryServiceTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "UsageWatermarkStoreTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "AutoTaggerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ClaudeCodeImporterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ClineImporterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "CompactionLogTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ConfigJsonSerializerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ConfigLoaderTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "CopilotCliImporterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "CursorImporterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "FileIngesterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "FtsSearchTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "HermesImporterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "HierarchicalIndexTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "HybridSearchTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ImportLogTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ImportUtilsTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "IngestValidationTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ModelManagerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ModelRegistryTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "OnnxEmbedderIntegrationTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "OpenCodeImporterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "PinnedTierSchemaTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "PreviewTextTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ProjectDocsImporterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "RetrievalEventLogTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "RetrievalEventStatsTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SanitizeFtsQueryTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SchemaTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SqliteConnectionPragmaTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SqliteConnectionTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SqliteStoreIntegrationTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SqliteStoreRowMappingTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SqliteStoreSourceFilterTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "TagsJsonTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "TierNamesPinnedTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ToolCacheStoreTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Infrastructure.Tests.csproj",
+                "type": "file"
+              },
+              {
+                "name": "VectorSearchTests.cs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Integration.Tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "CortexSyncIntegrationTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "GlobalUsings.cs",
+                "type": "file"
+              },
+              {
+                "name": "SkillsEndToEndTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Integration.Tests.csproj",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Server.Tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Handlers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CacheHandlerTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "KbResolveHandlerTests.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "MemoryExtractHandlerTests.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "TestSupport",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "FakeCompactionLog.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FakeImporter.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FakeSessionLifecycle.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FakeStore.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FakeVectorSearch.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RecordingFakeEmbedder.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RecordingFakeFileIngester.cs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RecordingFakeHybridSearch.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ArgumentParsingTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "AutoMigrationGuardTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "CompactNowHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ConfigGetHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ConfigSetHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "DumpCatalogTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "EndToEndStdioTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ErrorTranslatorTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "EvalBenchmarkHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "EvalCompareHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "EvalGrowHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "EvalReportHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "EvalSnapshotHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ImportHostHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "InsightsHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "KbIngestDirHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "KbIngestFileHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "KbListCollectionsHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "KbRefreshHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "KbRemoveHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "KbSearchHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "KbSummarizeHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "McpServerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryDeleteHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryDemoteHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryExportHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryFeedbackHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryGetHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryHistoryHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryImportHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryInspectHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryLineageHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryPinHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryPromoteHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryRecentHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemorySearchHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryStoreHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryStoreReproTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryUnpinHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MemoryUpdateHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "MigrateToRemoteHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ProvisionNoticeTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ServerCompositionCortexTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ServerCompositionReindexTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ServerCompositionTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionContextHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionEndHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionLifecycleHintsTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionLifecycleProjectScopeTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionLifecyclePromotionTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionLifecycleSkillFireAndForgetTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionLifecycleTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SessionStartHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SkillDeleteHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SkillGetHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SkillImportHostHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SkillListHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "SkillSearchHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "StatusHandlerTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "TierV2DataMigrationTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ToolRegistryTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Server.Tests.csproj",
+                "type": "file"
+              },
+              {
+                "name": "UsageStatusHandlerTests.cs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TotalRecall.Web.Tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "TestSupport",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "FakeToolHandler.cs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ApiIntegrationTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "DispatchErrorTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "LocalAuthTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "ToolAllowlistTests.cs",
+                "type": "file"
+              },
+              {
+                "name": "TotalRecall.Web.Tests.csproj",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "catalog.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "global.json",
+        "type": "file"
+      },
+      {
+        "name": "INSTALL.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

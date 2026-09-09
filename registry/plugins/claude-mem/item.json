@@ -1,0 +1,5091 @@
+{
+  "slug": "claude-mem",
+  "name": "Claude Mem",
+  "type": "plugin",
+  "description": "Persistent memory system for Claude Code - seamlessly preserve context across sessions",
+  "longDescription": "Persists context across Claude Code sessions: **7 lifecycle hook scripts** capture what happened, a Bun worker service compresses it into observations stored in SQLite with FTS5 full-text search, and hybrid search over a Chroma vector database answers natural-language questions about the project's history through search tools. Context from earlier sessions is injected into new ones without being asked. Also installs for the Antigravity CLI and on OpenClaw gateways, with optional cloud sync to cmem.ai. The plugin itself lives in `plugin/` (hooks, skills, `.mcp.json`, a `ui/` viewer) inside a much larger repository. Apache-2.0, version `13.15.0`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "command",
+  "sourceType": "community",
+  "author": {
+    "name": "Alex Newman"
+  },
+  "externalUrl": "https://github.com/thedotmack/claude-mem/tree/d768ba364302d12b76e69e4f021f0bb1d2d50ed6",
+  "marketplace": "claude-community",
+  "version": "13.15.0",
+  "sourceRevision": "d768ba364302d12b76e69e4f021f0bb1d2d50ed6",
+  "contentDigest": "f4bc8063d9209768a8cf7a39c521a0f6255b23e8d7efc2b11e05ffe27e634ae2",
+  "contentHash": "52cf983ee74ec55f",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/thedotmack/claude-mem.git",
+    "sha": "d768ba364302d12b76e69e4f021f0bb1d2d50ed6"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-10T20:35:56Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agent",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-mem-context.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "anti-pattern-czar.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "animated-installer.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reports",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test-audit-2026-01-05.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "claude.yml",
+                "type": "file"
+              },
+              {
+                "name": "close-tracked-issues.yml",
+                "type": "file"
+              },
+              {
+                "name": "convert-feature-requests.yml",
+                "type": "file"
+              },
+              {
+                "name": "deploy-install-scripts.yml",
+                "type": "file"
+              },
+              {
+                "name": "npm-publish.yml",
+                "type": "file"
+              },
+              {
+                "name": "summary.yml",
+                "type": "file"
+              },
+              {
+                "name": "windows.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "copilot-instructions.md",
+            "type": "file"
+          },
+          {
+            "name": "FUNDING.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".plan",
+        "type": "directory",
+        "children": [
+          {
+            "name": "issue-2341-reliability-slice.md",
+            "type": "file"
+          },
+          {
+            "name": "npx-distribution.md",
+            "type": "file"
+          },
+          {
+            "name": "subagent-summary-disable-and-labeling.md",
+            "type": "file"
+          },
+          {
+            "name": "worktree-adoption.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".windsurf",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-mem-context.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "cursor-hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "CONTEXT-INJECTION.md",
+            "type": "file"
+          },
+          {
+            "name": "cursorrules-template.md",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "INTEGRATION.md",
+            "type": "file"
+          },
+          {
+            "name": "PARITY.md",
+            "type": "file"
+          },
+          {
+            "name": "QUICKSTART.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "REVIEW.md",
+            "type": "file"
+          },
+          {
+            "name": "STANDALONE-SETUP.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docker",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-mem",
+            "type": "directory",
+            "children": [
+              {
+                "name": "build.sh",
+                "type": "file"
+              },
+              {
+                "name": "Dockerfile",
+                "type": "file"
+              },
+              {
+                "name": "entrypoint.sh",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "run.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "e2e",
+            "type": "directory",
+            "children": [
+              {
+                "name": "server-e2e.mjs",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "merge-clinic",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "slide-01.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-02.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-03.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-04.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-05.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-06.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-07.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-08.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-09.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-10.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-11.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-12.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-13.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-14.jpg",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slide-15.jpg",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "bug-fixes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "windows-spaces-issue.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-sdk-v2-examples.ts",
+                "type": "file"
+              },
+              {
+                "name": "agent-sdk-v2-preview.md",
+                "type": "file"
+              },
+              {
+                "name": "cursor-hooks-reference.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "i18n",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".translation-cache.json",
+                "type": "file"
+              },
+              {
+                "name": "README.ar.md",
+                "type": "file"
+              },
+              {
+                "name": "README.bn.md",
+                "type": "file"
+              },
+              {
+                "name": "README.cs.md",
+                "type": "file"
+              },
+              {
+                "name": "README.da.md",
+                "type": "file"
+              },
+              {
+                "name": "README.de.md",
+                "type": "file"
+              },
+              {
+                "name": "README.el.md",
+                "type": "file"
+              },
+              {
+                "name": "README.es.md",
+                "type": "file"
+              },
+              {
+                "name": "README.fi.md",
+                "type": "file"
+              },
+              {
+                "name": "README.fr.md",
+                "type": "file"
+              },
+              {
+                "name": "README.he.md",
+                "type": "file"
+              },
+              {
+                "name": "README.hi.md",
+                "type": "file"
+              },
+              {
+                "name": "README.hu.md",
+                "type": "file"
+              },
+              {
+                "name": "README.id.md",
+                "type": "file"
+              },
+              {
+                "name": "README.it.md",
+                "type": "file"
+              },
+              {
+                "name": "README.ja.md",
+                "type": "file"
+              },
+              {
+                "name": "README.ko.md",
+                "type": "file"
+              },
+              {
+                "name": "README.nl.md",
+                "type": "file"
+              },
+              {
+                "name": "README.no.md",
+                "type": "file"
+              },
+              {
+                "name": "README.pl.md",
+                "type": "file"
+              },
+              {
+                "name": "README.pt-br.md",
+                "type": "file"
+              },
+              {
+                "name": "README.pt.md",
+                "type": "file"
+              },
+              {
+                "name": "README.ro.md",
+                "type": "file"
+              },
+              {
+                "name": "README.ru.md",
+                "type": "file"
+              },
+              {
+                "name": "README.sv.md",
+                "type": "file"
+              },
+              {
+                "name": "README.th.md",
+                "type": "file"
+              },
+              {
+                "name": "README.tl.md",
+                "type": "file"
+              },
+              {
+                "name": "README.tr.md",
+                "type": "file"
+              },
+              {
+                "name": "README.uk.md",
+                "type": "file"
+              },
+              {
+                "name": "README.ur.md",
+                "type": "file"
+              },
+              {
+                "name": "README.vi.md",
+                "type": "file"
+              },
+              {
+                "name": "README.zh-tw.md",
+                "type": "file"
+              },
+              {
+                "name": "README.zh.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "public",
+            "type": "directory",
+            "children": [
+              {
+                "name": "antigravity-cli",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "setup.mdx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "architecture",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "database.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "overview.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pm2-to-bun-migration.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search-architecture.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worker-service.mdx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "configuration",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "custom-anthropic-backends.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "litellm-gateway.mdx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cursor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "gemini-setup.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openrouter-setup.mdx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "usage",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-desktop.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "export-import.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "folder-context.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gemini-provider.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "getting-started.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "knowledge-agents.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manual-recovery.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "openrouter-provider.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "private-tags.mdx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search-tools.mdx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "architecture-evolution.mdx",
+                "type": "file"
+              },
+              {
+                "name": "branches.mdx",
+                "type": "file"
+              },
+              {
+                "name": "claude-mem-logo-for-dark-mode.webp",
+                "type": "file"
+              },
+              {
+                "name": "claude-mem-logo-for-light-mode.webp",
+                "type": "file"
+              },
+              {
+                "name": "claude-mem-logomark.webp",
+                "type": "file"
+              },
+              {
+                "name": "cloud-sync.mdx",
+                "type": "file"
+              },
+              {
+                "name": "cm-preview.gif",
+                "type": "file"
+              },
+              {
+                "name": "configuration.mdx",
+                "type": "file"
+              },
+              {
+                "name": "context-engineering.mdx",
+                "type": "file"
+              },
+              {
+                "name": "development.mdx",
+                "type": "file"
+              },
+              {
+                "name": "docs.json",
+                "type": "file"
+              },
+              {
+                "name": "file-read-gate.mdx",
+                "type": "file"
+              },
+              {
+                "name": "hooks-architecture.mdx",
+                "type": "file"
+              },
+              {
+                "name": "hosted-server.mdx",
+                "type": "file"
+              },
+              {
+                "name": "installation.mdx",
+                "type": "file"
+              },
+              {
+                "name": "introduction.mdx",
+                "type": "file"
+              },
+              {
+                "name": "modes.mdx",
+                "type": "file"
+              },
+              {
+                "name": "openclaw-integration.mdx",
+                "type": "file"
+              },
+              {
+                "name": "platform-integration.mdx",
+                "type": "file"
+              },
+              {
+                "name": "progressive-disclosure.mdx",
+                "type": "file"
+              },
+              {
+                "name": "smart-explore-benchmark.mdx",
+                "type": "file"
+              },
+              {
+                "name": "telemetry.mdx",
+                "type": "file"
+              },
+              {
+                "name": "trendshift-badge-dark.svg",
+                "type": "file"
+              },
+              {
+                "name": "trendshift-badge.svg",
+                "type": "file"
+              },
+              {
+                "name": "troubleshooting.mdx",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "adapters.md",
+            "type": "file"
+          },
+          {
+            "name": "anti-pattern-cleanup-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "api.md",
+            "type": "file"
+          },
+          {
+            "name": "architecture-overview.md",
+            "type": "file"
+          },
+          {
+            "name": "docker.md",
+            "type": "file"
+          },
+          {
+            "name": "ip-boundary.md",
+            "type": "file"
+          },
+          {
+            "name": "license.md",
+            "type": "file"
+          },
+          {
+            "name": "merge-rubric.md",
+            "type": "file"
+          },
+          {
+            "name": "migration-worker-to-server.md",
+            "type": "file"
+          },
+          {
+            "name": "production-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "security.md",
+            "type": "file"
+          },
+          {
+            "name": "server-architecture-and-team-vision.md",
+            "type": "file"
+          },
+          {
+            "name": "server-parity-map.md",
+            "type": "file"
+          },
+          {
+            "name": "server-release-readiness.md",
+            "type": "file"
+          },
+          {
+            "name": "server-storage-boundary.md",
+            "type": "file"
+          },
+          {
+            "name": "server.md",
+            "type": "file"
+          },
+          {
+            "name": "SESSION_ID_ARCHITECTURE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "fixtures",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tpuf-content-v2.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "install",
+        "type": "directory",
+        "children": [
+          {
+            "name": "public",
+            "type": "directory",
+            "children": [
+              {
+                "name": "install.sh",
+                "type": "file"
+              },
+              {
+                "name": "installer.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "vercel.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "openclaw",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": ".npmignore",
+            "type": "file"
+          },
+          {
+            "name": "Dockerfile.e2e",
+            "type": "file"
+          },
+          {
+            "name": "e2e-verify.sh",
+            "type": "file"
+          },
+          {
+            "name": "install.sh",
+            "type": "file"
+          },
+          {
+            "name": "openclaw.plugin.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "SKILL.md",
+            "type": "file"
+          },
+          {
+            "name": "test-e2e.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-install.sh",
+            "type": "file"
+          },
+          {
+            "name": "test-sse-consumer.js",
+            "type": "file"
+          },
+          {
+            "name": "TESTING.md",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plans",
+        "type": "directory",
+        "children": [
+          {
+            "name": "inbox",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-07-09-cloud-sync-native.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "02-spawn-contract-templating.md",
+            "type": "file"
+          },
+          {
+            "name": "04-installer-transparency.md",
+            "type": "file"
+          },
+          {
+            "name": "08-opencode-integration.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-05-07-server-beta-independent-bullmq-observation-runtime.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-05-25-cmem-sdk-and-server-rename.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-06-10-worker-restart-single-source-of-truth.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-07-03-antigravity-cli-migration.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-07-05-three-release-branches.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-07-17-phase5-two-lane-sync.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-07-22-cmem-launch.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-07-23-overnight-fixes-single-round.md",
+            "type": "file"
+          },
+          {
+            "name": "root-cause-holistic-execution.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".claude-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".codex-plugin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugin.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bugfixes-2026-01-10.md",
+                "type": "file"
+              },
+              {
+                "name": "codex-hooks.json",
+                "type": "file"
+              },
+              {
+                "name": "hooks.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "modes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "code--ar.json",
+                "type": "file"
+              },
+              {
+                "name": "code--bn.json",
+                "type": "file"
+              },
+              {
+                "name": "code--chill.json",
+                "type": "file"
+              },
+              {
+                "name": "code--cs.json",
+                "type": "file"
+              },
+              {
+                "name": "code--da.json",
+                "type": "file"
+              },
+              {
+                "name": "code--de.json",
+                "type": "file"
+              },
+              {
+                "name": "code--el.json",
+                "type": "file"
+              },
+              {
+                "name": "code--es.json",
+                "type": "file"
+              },
+              {
+                "name": "code--fi.json",
+                "type": "file"
+              },
+              {
+                "name": "code--fr.json",
+                "type": "file"
+              },
+              {
+                "name": "code--he.json",
+                "type": "file"
+              },
+              {
+                "name": "code--hi.json",
+                "type": "file"
+              },
+              {
+                "name": "code--hu.json",
+                "type": "file"
+              },
+              {
+                "name": "code--id.json",
+                "type": "file"
+              },
+              {
+                "name": "code--it.json",
+                "type": "file"
+              },
+              {
+                "name": "code--ja.json",
+                "type": "file"
+              },
+              {
+                "name": "code--ko.json",
+                "type": "file"
+              },
+              {
+                "name": "code--nl.json",
+                "type": "file"
+              },
+              {
+                "name": "code--no.json",
+                "type": "file"
+              },
+              {
+                "name": "code--pl.json",
+                "type": "file"
+              },
+              {
+                "name": "code--pt-br.json",
+                "type": "file"
+              },
+              {
+                "name": "code--ro.json",
+                "type": "file"
+              },
+              {
+                "name": "code--ru.json",
+                "type": "file"
+              },
+              {
+                "name": "code--sv.json",
+                "type": "file"
+              },
+              {
+                "name": "code--th.json",
+                "type": "file"
+              },
+              {
+                "name": "code--tr.json",
+                "type": "file"
+              },
+              {
+                "name": "code--uk.json",
+                "type": "file"
+              },
+              {
+                "name": "code--ur.json",
+                "type": "file"
+              },
+              {
+                "name": "code--vi.json",
+                "type": "file"
+              },
+              {
+                "name": "code--zh.json",
+                "type": "file"
+              },
+              {
+                "name": "code.json",
+                "type": "file"
+              },
+              {
+                "name": "email-investigation.json",
+                "type": "file"
+              },
+              {
+                "name": "law-study--chill.json",
+                "type": "file"
+              },
+              {
+                "name": "law-study-CLAUDE.md",
+                "type": "file"
+              },
+              {
+                "name": "law-study.json",
+                "type": "file"
+              },
+              {
+                "name": "meme-tokens.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bun-runner.js",
+                "type": "file"
+              },
+              {
+                "name": "context-generator.cjs",
+                "type": "file"
+              },
+              {
+                "name": "mcp-server.cjs",
+                "type": "file"
+              },
+              {
+                "name": "server-service.cjs",
+                "type": "file"
+              },
+              {
+                "name": "statusline-counts.js",
+                "type": "file"
+              },
+              {
+                "name": "transcript-watcher.cjs",
+                "type": "file"
+              },
+              {
+                "name": "version-check.js",
+                "type": "file"
+              },
+              {
+                "name": "worker-service.cjs",
+                "type": "file"
+              },
+              {
+                "name": "worker-wrapper.cjs",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "babysit",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "cloud-sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "design-is",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "do",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "how-it-works",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "onboarding-explainer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "knowledge-agent",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "learn-codebase",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "make-plan",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mem-search",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mode-creator",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "evals",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "evals.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "mode-authoring.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "telegram.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scripts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "configure-telegram.mjs",
+                        "type": "file"
+                      },
+                      {
+                        "name": "install-mode.mjs",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "oh-my-issues",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pathfinder",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "smart-explore",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "standup",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-brief.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "standup.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "timeline-report",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "version-bump",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "scripts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "generate_changelog.js",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "weekly-digests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "what-the",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "wowerpoint",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "sqlite",
+            "type": "directory",
+            "children": [
+              {
+                "name": "observations",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "files.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SessionStore.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fonts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "monaspace-radon-var.woff",
+                        "type": "file"
+                      },
+                      {
+                        "name": "monaspace-radon-var.woff2",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "claude-mem-logo-for-dark-mode.webp",
+                "type": "file"
+              },
+              {
+                "name": "claude-mem-logo-stylized.png",
+                "type": "file"
+              },
+              {
+                "name": "claude-mem-logomark.webp",
+                "type": "file"
+              },
+              {
+                "name": "icon-thick-completed.svg",
+                "type": "file"
+              },
+              {
+                "name": "icon-thick-investigated.svg",
+                "type": "file"
+              },
+              {
+                "name": "icon-thick-learned.svg",
+                "type": "file"
+              },
+              {
+                "name": "icon-thick-next-steps.svg",
+                "type": "file"
+              },
+              {
+                "name": "viewer-bundle.js",
+                "type": "file"
+              },
+              {
+                "name": "viewer.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "bun.lock",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "ragtime",
+        "type": "directory",
+        "children": [
+          {
+            "name": "LICENSE",
+            "type": "file"
+          },
+          {
+            "name": "ragtime.ts",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "anti-pattern-test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "detect-error-handling-antipatterns.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bug-report",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli.ts",
+                "type": "file"
+              },
+              {
+                "name": "collector.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "translate-readme",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "build-hooks.js",
+            "type": "file"
+          },
+          {
+            "name": "build-viewer.js",
+            "type": "file"
+          },
+          {
+            "name": "build-worker-binary.js",
+            "type": "file"
+          },
+          {
+            "name": "check-hook-io-discipline.cjs",
+            "type": "file"
+          },
+          {
+            "name": "check-pending-queue.ts",
+            "type": "file"
+          },
+          {
+            "name": "check-postinstall-allowlist.js",
+            "type": "file"
+          },
+          {
+            "name": "check-spawn-env-discipline.cjs",
+            "type": "file"
+          },
+          {
+            "name": "claude-mem-sync",
+            "type": "file"
+          },
+          {
+            "name": "clear-pending-queue.ts",
+            "type": "file"
+          },
+          {
+            "name": "discord-release-notify.js",
+            "type": "file"
+          },
+          {
+            "name": "e2e-server-docker.sh",
+            "type": "file"
+          },
+          {
+            "name": "export-memories.ts",
+            "type": "file"
+          },
+          {
+            "name": "gen-plugin-lockfile.cjs",
+            "type": "file"
+          },
+          {
+            "name": "generate-changelog.js",
+            "type": "file"
+          },
+          {
+            "name": "import-memories.ts",
+            "type": "file"
+          },
+          {
+            "name": "pr-babysit-status.ts",
+            "type": "file"
+          },
+          {
+            "name": "regenerate-claude-md.ts",
+            "type": "file"
+          },
+          {
+            "name": "smoke-clean-room.cjs",
+            "type": "file"
+          },
+          {
+            "name": "strip-comments.ts",
+            "type": "file"
+          },
+          {
+            "name": "sync-kill-switch-e2e.ts",
+            "type": "file"
+          },
+          {
+            "name": "sync-marketplace.cjs",
+            "type": "file"
+          },
+          {
+            "name": "sync-matrix-e2e.ts",
+            "type": "file"
+          },
+          {
+            "name": "sync-plugin-manifests.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "build",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hook-shell-template.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapters",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "antigravity-cli.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "claude-code.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex-file-context.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cursor.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "errors.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "raw.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "windsurf.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "handlers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "context.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "file-context.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "file-edit.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "observation.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-init.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "summarize.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "user-message.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-md-commands.ts",
+                "type": "file"
+              },
+              {
+                "name": "hook-command.ts",
+                "type": "file"
+              },
+              {
+                "name": "stdin-reader.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "schemas",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-event.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-item.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "project.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "team.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hook-response.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integrations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "opencode-plugin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "npx-cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "doctor.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ide-detection.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "install.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "runtime.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-jobs.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-runtime-setup.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "telemetry.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "uninstall.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "install",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "error-reporter.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error-taxonomy.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "npm-install-helper.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "setup-runtime.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "utils",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "paths.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "settings.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "banner-frames.ts",
+                "type": "file"
+              },
+              {
+                "name": "banner.ts",
+                "type": "file"
+              },
+              {
+                "name": "cmem-pro-costs.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdk",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hardened-options.ts",
+                "type": "file"
+              },
+              {
+                "name": "output-classifier.ts",
+                "type": "file"
+              },
+              {
+                "name": "parser.ts",
+                "type": "file"
+              },
+              {
+                "name": "prompts.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auth",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auth.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "BetterAuthRoutes.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sqlite-api-key-service.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "compat",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SessionsObservationsAdapter.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionsSummarizeAdapter.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "generation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "providers",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "shared",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "error-classification.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "prompt-builder.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "types.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "ClaudeObservationProvider.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GeminiObservationProvider.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "OpenRouterObservationProvider.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "processGeneratedResponse.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ProviderObservationGenerator.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jobs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "job-id.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ServerJobQueue.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mcp",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "recall-mcp-server.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "middleware",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auth.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "postgres-auth.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rate-limit.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "request-auth-helpers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "request-id.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "usage-metering.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "queue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "queue-health-types.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "redis-config.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "routes",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "v1",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ServerV1PostgresRoutes.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ServerV1Routes.ts",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "runtime",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ActiveServerGenerationWorkerManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ActiveServerQueueManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "create-server-service.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ServerService.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ServerViewerRoutes.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionGenerationPolicy.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "services",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "EndSessionService.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "IngestEventsService.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "servers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mcp-server.ts",
+                "type": "file"
+              },
+              {
+                "name": "mcp-tool-visibility.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "services",
+            "type": "directory",
+            "children": [
+              {
+                "name": "context",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "formatters",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "AgentFormatter.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HumanFormatter.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "sections",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "FooterRenderer.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HeaderRenderer.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SummaryRenderer.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TimelineRenderer.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ContextBuilder.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ContextConfigLoader.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ObservationCompiler.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TokenCalculator.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "domain",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ModeManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "runtime-selector.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-bootstrap.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-client.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "infrastructure",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CleanupV12_4_3.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "GracefulShutdown.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "HealthMonitor.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ProcessManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "WorktreeAdoption.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "install",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "shutdown-helper.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "integrations",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "AntigravityCliHooksInstaller.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CodexCliInstaller.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CursorHooksInstaller.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "install-paths.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "McpIntegrations.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OpenClawInstaller.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OpenCodeInstaller.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TelegramNotifier.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "WindsurfHooksInstaller.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "server",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "allowed-constants.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ErrorHandler.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "flushResponseThen.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Server.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "smart-file-read",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "parser.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sqlite",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "observations",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "files.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "get.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "recent.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "store.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "prompts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "get.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "connection.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt-storage.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionSearch.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionStore.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CanonicalContent.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ChromaMcpManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ChromaSync.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ChromaSyncState.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CloudSync.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "remap-outbox.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncApply.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SyncClient.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "telemetry",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "backfill.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "buffer.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli-telemetry.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "common.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "consent.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error-scrub.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "install-stats.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scrub.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "telemetry.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "transcripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cli.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "field-utils.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "processor.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript-watcher-entry.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watcher.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "worker",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agents",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "FallbackErrorHandler.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ObservationBroadcaster.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ResponseProcessor.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "events",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SessionEventBroadcaster.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "http",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "middleware",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "validateBody.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "routes",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "ChromaRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "CloudSyncRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "CorpusRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "DataRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "LogsRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "MemoryRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SearchRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SessionRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SettingsRoutes.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ViewerRoutes.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "BaseRouteHandler.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "middleware.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "shared.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "knowledge",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "CorpusBuilder.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CorpusRenderer.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CorpusStore.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "KnowledgeAgent.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "search",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "strategies",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "ChromaSearchStrategy.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "HybridSearchStrategy.ts",
+                            "type": "file"
+                          },
+                          {
+                            "name": "SQLiteSearchStrategy.ts",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "errors.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ResultFormatter.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SearchOrchestrator.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "types.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "session",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "GeneratorExitHandler.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SessionCompletionHandler.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "validation",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PrivacyCheckValidator.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ClaudeProvider.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "DatabaseManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dependency-preflight.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "FormattingService.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "GeminiProvider.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "model-aliases.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "onboarding-explainer.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OpenAICompatibleProvider.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "OpenRouterProvider.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PaginationHelper.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "provider-errors.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "RateLimitStore.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "retry.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SearchManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SessionMessageBuffer.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SettingsManager.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SSEBroadcaster.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "TimelineService.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "context-generator.ts",
+                "type": "file"
+              },
+              {
+                "name": "restart-verify.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-service.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-shutdown.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-spawner.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "atomic-json.ts",
+                "type": "file"
+              },
+              {
+                "name": "dependency-health.ts",
+                "type": "file"
+              },
+              {
+                "name": "EnvManager.ts",
+                "type": "file"
+              },
+              {
+                "name": "find-claude-executable.ts",
+                "type": "file"
+              },
+              {
+                "name": "hook-constants.ts",
+                "type": "file"
+              },
+              {
+                "name": "hook-io.ts",
+                "type": "file"
+              },
+              {
+                "name": "hook-settings.ts",
+                "type": "file"
+              },
+              {
+                "name": "mcp-client.ts",
+                "type": "file"
+              },
+              {
+                "name": "oauth-token.ts",
+                "type": "file"
+              },
+              {
+                "name": "openrouter-base-url.ts",
+                "type": "file"
+              },
+              {
+                "name": "path-utils.ts",
+                "type": "file"
+              },
+              {
+                "name": "paths.ts",
+                "type": "file"
+              },
+              {
+                "name": "platform-source.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin-state.ts",
+                "type": "file"
+              },
+              {
+                "name": "SettingsDefaultsManager.ts",
+                "type": "file"
+              },
+              {
+                "name": "should-track-project.ts",
+                "type": "file"
+              },
+              {
+                "name": "spawn.ts",
+                "type": "file"
+              },
+              {
+                "name": "timeline-formatting.ts",
+                "type": "file"
+              },
+              {
+                "name": "transcript-parser.ts",
+                "type": "file"
+              },
+              {
+                "name": "uptime.ts",
+                "type": "file"
+              },
+              {
+                "name": "user-prompts.ts",
+                "type": "file"
+              },
+              {
+                "name": "uvx-bin-dirs.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-spawn-gate.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-utils.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "storage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "postgres",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-events.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-deletion.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "generation-jobs.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "observations.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pool.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "projects.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "rate-limit.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-sessions.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "teams.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "usage.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "utils.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sqlite",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-events.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "auth.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory-items.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "projects.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "schema.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "serde.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-sessions.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "supervisor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "env-sanitizer.ts",
+                "type": "file"
+              },
+              {
+                "name": "health-checker.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "process-registry.ts",
+                "type": "file"
+              },
+              {
+                "name": "shutdown.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "types",
+            "type": "directory",
+            "children": [
+              {
+                "name": "database.ts",
+                "type": "file"
+              },
+              {
+                "name": "shell-quote.d.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ui",
+            "type": "directory",
+            "children": [
+              {
+                "name": "viewer",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "assets",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fonts",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "monaspace-radon-var.woff",
+                            "type": "file"
+                          },
+                          {
+                            "name": "monaspace-radon-var.woff2",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "components",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ContextSettingsModal.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ErrorBoundary.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Feed.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "GitHubStarsButton.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Header.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "LogsModal.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ObservationCard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PromptCard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ScrollToTop.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SummaryCard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "TerminalPreview.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ThemeToggle.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WelcomeCard.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "constants",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "api.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "settings.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "timing.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ui.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "hooks",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "useContextPreview.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "usePagination.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "useSettings.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "useSpinningFavicon.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "useSSE.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "useTheme.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "utils",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "data.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "formatters.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "App.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-mem-logo-stylized.png",
+                "type": "file"
+              },
+              {
+                "name": "claude-mem-logomark.webp",
+                "type": "file"
+              },
+              {
+                "name": "icon-thick-completed.svg",
+                "type": "file"
+              },
+              {
+                "name": "icon-thick-investigated.svg",
+                "type": "file"
+              },
+              {
+                "name": "icon-thick-learned.svg",
+                "type": "file"
+              },
+              {
+                "name": "icon-thick-next-steps.svg",
+                "type": "file"
+              },
+              {
+                "name": "viewer-template.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents-md-utils.ts",
+                "type": "file"
+              },
+              {
+                "name": "bmp-safe.ts",
+                "type": "file"
+              },
+              {
+                "name": "claude-md-utils.ts",
+                "type": "file"
+              },
+              {
+                "name": "context-injection.ts",
+                "type": "file"
+              },
+              {
+                "name": "cursor-utils.ts",
+                "type": "file"
+              },
+              {
+                "name": "json-utils.ts",
+                "type": "file"
+              },
+              {
+                "name": "logger.ts",
+                "type": "file"
+              },
+              {
+                "name": "observer-audit.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-filter.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-name.ts",
+                "type": "file"
+              },
+              {
+                "name": "tag-stripping.ts",
+                "type": "file"
+              },
+              {
+                "name": "worktree.ts",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "adapters",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "claude-code-subagent.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex-file-context.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "handlers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "context-mcp-session-start.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "file-edit-observer-session-skip.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-init-semantic-platform-source.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-init-server-beta-context.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "summarize-subagent-skip.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "summarize-tag-stripping.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hook-io-discipline.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "hook-io.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "hook-stream-discipline.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-jobs.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "stdin-reader.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "verify-critical-modules.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compat",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sessions-observations-adapter.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context",
+            "type": "directory",
+            "children": [
+              {
+                "name": "formatters",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-formatter.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "context-builder-readonly.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "include-last-message-dot-path.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "observation-compiler.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "token-calculator.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "schemas",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "server-storage-schemas.test.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cursor-session.jsonl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "file-context.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "runtime-selector.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-client.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "infrastructure",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cleanup-v12_4_3.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "graceful-shutdown.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "health-monitor.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin-disabled-check.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin-distribution.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "process-manager.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sync-matrix-e2e-safety.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig-module-resolution.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "version-consistency.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "windows-hide-regressions.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "wmic-parsing.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-json-status.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "chroma-vector-sync.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-cli-installer.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "hook-execution-e2e.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "opencode-installer.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-api-endpoints.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integrations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "opencode-plugin-contract.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "npx-cli",
+            "type": "directory",
+            "children": [
+              {
+                "name": "server-runtime-setup.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "export-memories.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "pr-babysit-status.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdk",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hardened-options-thinking.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "output-classifier.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "parse-summary.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "parser.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "pg-isolation.ts",
+                "type": "file"
+              },
+              {
+                "name": "prompts.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "security",
+            "type": "directory",
+            "children": [
+              {
+                "name": "observer-tool-enforcement.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "generation",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "process-generated-response.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "provider-observation-generator.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "providers.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scope-enforcement.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jobs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "job-id.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "payload-schema.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-job-queue.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mcp",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "recall-mcp-server.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "middleware",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "request-id.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "runtime",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "active-queue-manager.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "jobs-list-and-operator-routes.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-mcp-http-routes.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-mcp-routes.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-session-linkage.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-session-routes.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server-session-runtime.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "team-project-jobs-routes.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "agent-event-platform-source.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "auth-api-key.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "connect-keys.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "data-deletion.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "error-handler.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "paid-readiness.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-boot.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-cli.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-runtime-guard.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-runtime-smoke.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-security-headers.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-service.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-viewer-routes.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "v1-routes.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "servers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "mcp-runtime-tool-visibility.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "mcp-server-name-safety.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "mcp-tool-schemas.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "services",
+            "type": "directory",
+            "children": [
+              {
+                "name": "infrastructure",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "worktree-adoption-chroma.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worktree-adoption-errors.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "integrations",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "spawn-contract-windows.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "queue",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "redis-config.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sqlite",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "get-observations-by-ids-relevance.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "merged-project-id-hydration.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "observations-by-file-path-candidates.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "parse-file-list.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search-platform-source-scoping.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-search-path-matching.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-store-mark-completed.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "chroma-mcp-manager-cwd.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chroma-mcp-manager-path.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chroma-mcp-manager-singleton.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chroma-mcp-manager-ssl.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chroma-merged-project-typed-lookup.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chroma-sync-reconcile.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chroma-sync-unavailable.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "chroma-sync-watermarks.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "worker",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "session-message-buffer.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "logs-routes-tail-read.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "mode-manager-custom.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "stale-abort-controller-guard.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-daemon-port-race.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-restart-verify.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-shutdown-sequence.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-spawner.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "find-claude-executable.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "oauth-token.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "openrouter-base-url.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "paths.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "settings-defaults-manager.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "should-track-project.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "spawn-cmd-verbatim.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "timeline-formatting.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "welcome-hint-default.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-spawn-gate.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-utils-timeout.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-utils-version-recycle.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sqlite",
+            "type": "directory",
+            "children": [
+              {
+                "name": "session-store-dedup.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-store-migrations.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-store-observations.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-store-orphan-fk-repair.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-store-prompts.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-store-sessions.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-store-summaries.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-store-synced-at.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-store-transactions.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "storage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "postgres",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "platform-source-scoping.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "postgres-storage.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sqlite",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "server-storage.test.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "supervisor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "env-sanitizer.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "health-checker.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "process-registry.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "shutdown.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "wait-for-slot.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "telemetry",
+            "type": "directory",
+            "children": [
+              {
+                "name": "backfill.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "buffer.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "consent.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "error-capture.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "error-scrub.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "install-stats.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "scrub.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "shutdown.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "telemetry-client.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "transcripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cli-dispatch.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "cursor-extraction.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "match-rule-negation.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "processor-codex-context.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "watcher-start-at-end.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-md-utils.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "logger-format-tool.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "mode-creator-skill.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-filter.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-name-isolation.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-name.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "skill-docs-placement.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "tag-stripping.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "viewer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "welcome-card-storage.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "worker",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fallback-error-handler.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "response-processor.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "http",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "routes",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cloud-sync-routes.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "corpus-routes-coercion.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "data-routes-coercion.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "data-routes-delete-sync.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "data-routes-import-platform.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "data-routes-platform-scoping.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "memory-routes.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "search-routes-platform-header.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "search-routes-semantic-platform.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "search-routes-welcome-hint.test.ts",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "knowledge",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "corpus-store-name-validation.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "middleware",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "cors-restriction.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "search",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "strategies",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "chroma-search-strategy.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "hybrid-search-strategy.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sqlite-search-strategy.test.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "search-orchestrator.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "canonical-content.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cloud-sync.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "content-v2-helpers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mutation-sites.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sync-apply.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sync-client-ws.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sync-client.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "claude-setup-gate.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "dependency-preflight.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "model-aliases.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "openai-compatible-summary-tier.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "poison-respawn.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "privacy-check-validator.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "provider-classifiers.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "provider-errors.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "rate-limit-store.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "search-manager.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "SearchManager.timeline-anchor.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-manager-null-prompt.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-manager-project.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "antigravity-cli-compat.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "bmp-safe.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "bun-runner.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "claude-provider-error-classifier.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "claude-provider-resume.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "codex-transcript-watcher-windows.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "context-injection.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "cursor-context-update.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "cursor-mcp-config.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "cursor-registry.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "env-isolation.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "fk-constraint-fix.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "gemini_provider.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "hook-command.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "hook-constants.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "hook-lifecycle.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "install-disable-auto-memory.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "install-error-matrix.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "install-non-tty.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "json-utils.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "logger-usage-standards.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "mcp-integrations.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "npm-install-windows-hide.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "npx-cli-server-namespace.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "plugin-scripts-line-endings.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "plugin-version-check-ensure-deps.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "plugin-version-check.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "preload.ts",
+            "type": "file"
+          },
+          {
+            "name": "session_id_usage_validation.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "session_store.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "setup-runtime.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "uninstall-clear-auto-memory.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "worker-script-resolution.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "worker-spawn.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "worker-wrapper-windows-hide.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "write-json-file-atomic.test.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "workers",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sync-hub",
+            "type": "directory",
+            "children": [
+              {
+                "name": "canary",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "canary.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "do",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "SyncHub.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "canonical-content.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "control-plane-probe.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "discord.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kill-switch.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "projection-protocol.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "secrets.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watchdog.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "test",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "auth.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "content-v2-helpers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "control-plane-probe.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "env.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "kill-switch.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "miniflare-pro-e2e-node.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "miniflare-pro-e2e-node.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "miniflare-pro-e2e.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "miniflare-pro-e2e.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-miniflare-pro-e2e.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sync-hub.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "watchdog.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ws.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".dev.vars.example",
+                "type": "file"
+              },
+              {
+                "name": ".editorconfig",
+                "type": "file"
+              },
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": ".prettierrc",
+                "type": "file"
+              },
+              {
+                "name": "bun.lock",
+                "type": "file"
+              },
+              {
+                "name": "DEPLOY.md",
+                "type": "file"
+              },
+              {
+                "name": "eslint.config.mjs",
+                "type": "file"
+              },
+              {
+                "name": "METADATA-CONTRACT.md",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              },
+              {
+                "name": "vitest.config.ts",
+                "type": "file"
+              },
+              {
+                "name": "worker-configuration.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "wrangler.jsonc",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".dockerignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".markdownlint.json",
+        "type": "file"
+      },
+      {
+        "name": ".npmignore",
+        "type": "file"
+      },
+      {
+        "name": ".npmrc",
+        "type": "file"
+      },
+      {
+        "name": ".translation-cache.json",
+        "type": "file"
+      },
+      {
+        "name": "bunfig.toml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.e2e.yml",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.yml",
+        "type": "file"
+      },
+      {
+        "name": "Dockerfile.test-installer",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "NOTICE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "transcript-watch.example.json",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "WARP.md",
+        "type": "file"
+      }
+    ]
+  }
+}

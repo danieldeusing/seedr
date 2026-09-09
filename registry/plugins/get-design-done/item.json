@@ -1,0 +1,1454 @@
+{
+  "slug": "get-design-done",
+  "name": "Get Design Done",
+  "type": "plugin",
+  "description": "Agent-orchestrated design pipeline for Claude Code. Five stages (brief → discover → plan → design → verify), 33 specialized agents, 12 tool connections including Figma, shadcn/ui, and Magic MCP. Takes a design brief from vague idea to verified, shipped code — with explicit decisions, pattern-mapped plans, and goal-backward audits. Solves the \"Claude made it look fine but nothing ties together\" problem: every token, component, and copy choice is decided, applied, and verified against the original goals.",
+  "longDescription": "Ships **58 skills**, **35 agents** and **3 hooks**.\n\n- **Skills** (58): `add-backlog` (Park a design idea for a future cycle), `analyze-dependencies` (Queries the intel store to surface token fan-out, component call-graphs, decision traceability, and circular dependency detection), `apply-reflections` (Review and selectively apply proposals from .design/reflections/<cycle-slug>.md), `audit` (Run design audit — wraps design-verifier + design-auditor + design-reflector), `brief` (Design intake — captures problem statement, audience, constraints, success metrics, and scope into .design/BRIEF.md (Stage 1 of 5)), `cache-manager` (Maintains .design/cache-manifest.json for Layer B explicit cache per D-08), `check-update` (Manual plugin-update check), `compare` (Compute delta between DESIGN.md baseline (from scan) and DESIGN-VERIFICATION.md result (from verify)), and 50 more\n- **Agents** (35): `a11y-mapper` (Maps static accessibility signals — ARIA usage, keyboard nav, focus states, skip links, semantic markup — to .design/map/a11y.md), `component-taxonomy-mapper` (Maps the component inventory — React/Vue/Svelte components, design patterns, reuse opportunities — to .design/map/components.md), `design-advisor` (Researches a single gray area and produces a 5-column comparison table with rationale), `design-assumptions-analyzer` (Reads codebase and DESIGN-CONTEXT.md to surface hidden design assumptions (unstated brand signals, inferred constraints, gray-area candidates) with confidence…), `design-auditor` (Retrospective 6-pillar audit (copy, visual hierarchy, color, typography, layout/spacing, experience) with 1–4 scores), `design-authority-watcher` (Fetches a curated whitelist of design-authority feeds, diffs against .design/authority-snapshot.json, classifies new entries into five buckets, emits .design/authority-report.md), `design-component-generator` (Generates UI components via AI-native design tools (21st.dev Magic MCP or Magic Patterns)), `design-context-builder` (Detects existing design system state via grep/glob, runs discovery interview asking ONLY unanswered questions, produces .design/DESIGN-CONTEXT.md), and 27 more\n- **Hooks** (3): `SessionStart`, `PreToolUse`, `PostToolUse`\n\nInstalls with `claude plugin install get-design-done@claude-community` from `hegemonart/get-design-done`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 58,
+    "agent": 35,
+    "hook": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "hegemonart",
+    "url": "https://github.com/hegemonart"
+  },
+  "externalUrl": "https://github.com/hegemonart/get-design-done/tree/fa949e2889f3e7114d6d164e83c225d0d63dc79c",
+  "marketplace": "claude-community",
+  "version": "1.14.5",
+  "sourceRevision": "fa949e2889f3e7114d6d164e83c225d0d63dc79c",
+  "contentDigest": "697e378217b9b83b08725ab519fe2dae5c226cfa3de647f6b4b133c8da6e6b19",
+  "contentHash": "e88079f5ebd835f0",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/hegemonart/get-design-done.git",
+    "sha": "fa949e2889f3e7114d6d164e83c225d0d63dc79c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-23T00:31:59Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "npm-backfill.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "a11y-mapper.md",
+            "type": "file"
+          },
+          {
+            "name": "component-taxonomy-mapper.md",
+            "type": "file"
+          },
+          {
+            "name": "design-advisor.md",
+            "type": "file"
+          },
+          {
+            "name": "design-assumptions-analyzer.md",
+            "type": "file"
+          },
+          {
+            "name": "design-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "design-authority-watcher.md",
+            "type": "file"
+          },
+          {
+            "name": "design-component-generator.md",
+            "type": "file"
+          },
+          {
+            "name": "design-context-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "design-context-checker-gate.md",
+            "type": "file"
+          },
+          {
+            "name": "design-context-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "design-discussant.md",
+            "type": "file"
+          },
+          {
+            "name": "design-doc-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "design-executor.md",
+            "type": "file"
+          },
+          {
+            "name": "design-figma-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "design-fixer.md",
+            "type": "file"
+          },
+          {
+            "name": "design-integration-checker-gate.md",
+            "type": "file"
+          },
+          {
+            "name": "design-integration-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "design-paper-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "design-pattern-mapper.md",
+            "type": "file"
+          },
+          {
+            "name": "design-pencil-writer.md",
+            "type": "file"
+          },
+          {
+            "name": "design-phase-researcher.md",
+            "type": "file"
+          },
+          {
+            "name": "design-plan-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "design-planner.md",
+            "type": "file"
+          },
+          {
+            "name": "design-reflector.md",
+            "type": "file"
+          },
+          {
+            "name": "design-research-synthesizer.md",
+            "type": "file"
+          },
+          {
+            "name": "design-update-checker.md",
+            "type": "file"
+          },
+          {
+            "name": "design-verifier-gate.md",
+            "type": "file"
+          },
+          {
+            "name": "design-verifier.md",
+            "type": "file"
+          },
+          {
+            "name": "gdd-graphify-sync.md",
+            "type": "file"
+          },
+          {
+            "name": "gdd-intel-updater.md",
+            "type": "file"
+          },
+          {
+            "name": "gdd-learnings-extractor.md",
+            "type": "file"
+          },
+          {
+            "name": "motion-mapper.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "token-mapper.md",
+            "type": "file"
+          },
+          {
+            "name": "visual-hierarchy-mapper.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "connections",
+        "type": "directory",
+        "children": [
+          {
+            "name": "21st-dev.md",
+            "type": "file"
+          },
+          {
+            "name": "chromatic.md",
+            "type": "file"
+          },
+          {
+            "name": "claude-design.md",
+            "type": "file"
+          },
+          {
+            "name": "connections.md",
+            "type": "file"
+          },
+          {
+            "name": "figma.md",
+            "type": "file"
+          },
+          {
+            "name": "graphify.md",
+            "type": "file"
+          },
+          {
+            "name": "magic-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "paper-design.md",
+            "type": "file"
+          },
+          {
+            "name": "pencil-dev.md",
+            "type": "file"
+          },
+          {
+            "name": "pinterest.md",
+            "type": "file"
+          },
+          {
+            "name": "preview.md",
+            "type": "file"
+          },
+          {
+            "name": "refero.md",
+            "type": "file"
+          },
+          {
+            "name": "storybook.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "budget-enforcer.js",
+            "type": "file"
+          },
+          {
+            "name": "context-exhaustion.js",
+            "type": "file"
+          },
+          {
+            "name": "gdd-read-injection-scanner.js",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "update-check.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "reference",
+        "type": "directory",
+        "children": [
+          {
+            "name": "schemas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "authority-snapshot.schema.json",
+                "type": "file"
+              },
+              {
+                "name": "config.schema.json",
+                "type": "file"
+              },
+              {
+                "name": "hooks.schema.json",
+                "type": "file"
+              },
+              {
+                "name": "intel.schema.json",
+                "type": "file"
+              },
+              {
+                "name": "marketplace.schema.json",
+                "type": "file"
+              },
+              {
+                "name": "plugin.schema.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "accessibility.md",
+            "type": "file"
+          },
+          {
+            "name": "ai-native-tool-interface.md",
+            "type": "file"
+          },
+          {
+            "name": "anti-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "audit-scoring.md",
+            "type": "file"
+          },
+          {
+            "name": "authority-feeds.md",
+            "type": "file"
+          },
+          {
+            "name": "checklists.md",
+            "type": "file"
+          },
+          {
+            "name": "config-schema.md",
+            "type": "file"
+          },
+          {
+            "name": "debugger-philosophy.md",
+            "type": "file"
+          },
+          {
+            "name": "DEPRECATIONS.md",
+            "type": "file"
+          },
+          {
+            "name": "heuristics.md",
+            "type": "file"
+          },
+          {
+            "name": "intel-schema.md",
+            "type": "file"
+          },
+          {
+            "name": "model-prices.md",
+            "type": "file"
+          },
+          {
+            "name": "model-tiers.md",
+            "type": "file"
+          },
+          {
+            "name": "motion.md",
+            "type": "file"
+          },
+          {
+            "name": "parallelism-rules.md",
+            "type": "file"
+          },
+          {
+            "name": "priority-matrix.md",
+            "type": "file"
+          },
+          {
+            "name": "project-skills-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "review-format.md",
+            "type": "file"
+          },
+          {
+            "name": "shared-preamble.md",
+            "type": "file"
+          },
+          {
+            "name": "STATE-TEMPLATE.md",
+            "type": "file"
+          },
+          {
+            "name": "typography.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test-authority-rejected-kinds.sh",
+                "type": "file"
+              },
+              {
+                "name": "test-authority-watcher-diff.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "aggregate-agent-metrics.js",
+            "type": "file"
+          },
+          {
+            "name": "bootstrap-manifest.txt",
+            "type": "file"
+          },
+          {
+            "name": "bootstrap.sh",
+            "type": "file"
+          },
+          {
+            "name": "build-intel.cjs",
+            "type": "file"
+          },
+          {
+            "name": "detect-stale-refs.cjs",
+            "type": "file"
+          },
+          {
+            "name": "extract-changelog-section.cjs",
+            "type": "file"
+          },
+          {
+            "name": "injection-patterns.cjs",
+            "type": "file"
+          },
+          {
+            "name": "install.cjs",
+            "type": "file"
+          },
+          {
+            "name": "release-smoke-test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "rollback-release.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-injection-scanner-ci.cjs",
+            "type": "file"
+          },
+          {
+            "name": "validate-frontmatter.cjs",
+            "type": "file"
+          },
+          {
+            "name": "validate-schemas.cjs",
+            "type": "file"
+          },
+          {
+            "name": "verify-version-sync.cjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-backlog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "analyze-dependencies",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "apply-reflections",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "audit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "brief",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cache-manager",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check-update",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compare",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "complete-cycle",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "connections",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "darkmode",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "debug",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "discover",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "discuss",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "do",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "explore",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "extract-learnings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fast",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "figma-write",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "graphify",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "health",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "help",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "list-assumptions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "map",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "new-cycle",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "new-project",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "next",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "note",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "optimize",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pause",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plant-seed",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pr-branch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "progress",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "quick",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reapply-patches",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reflect",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "resume",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review-backlog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "router",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "settings",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sketch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sketch-wrap-up",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skill-manifest",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spike",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "spike-wrap-up",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "stats",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "style",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "synthesize",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "todo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "undo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "update",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verify",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "warm-cache",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "watch-authorities",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "test-fixture",
+        "type": "directory",
+        "children": [
+          {
+            "name": "authority-feeds",
+            "type": "directory",
+            "children": [
+              {
+                "name": "arena-channel-sample.json",
+                "type": "file"
+              },
+              {
+                "name": "nng-articles.rss",
+                "type": "file"
+              },
+              {
+                "name": "radix-ui-releases.atom",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "wai-aria-apg.atom",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "baselines",
+            "type": "directory",
+            "children": [
+              {
+                "name": "current",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "agent-frontmatter-snapshot.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "agent-list.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "BASELINE.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "connection-list.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "expected-reflection-proposals.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "plugin-version.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sample-agent-metrics.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sample-costs.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-list.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "phase-13.2",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "authority-report.expected.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "phase-13.3",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "BASELINE.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "mapper-outputs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "a11y.json",
+                "type": "file"
+              },
+              {
+                "name": "components.json",
+                "type": "file"
+              },
+              {
+                "name": "hierarchy.json",
+                "type": "file"
+              },
+              {
+                "name": "motion.json",
+                "type": "file"
+              },
+              {
+                "name": "tokens.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "App.css",
+                "type": "file"
+              },
+              {
+                "name": "App.jsx",
+                "type": "file"
+              },
+              {
+                "name": "index.css",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-frontmatter.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "agent-required-reading-consistency.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "agent-size-budget.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "atomic-write.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "command-count-sync.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "commands.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "config.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "connection-probe.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "connections-skill.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "cycle-lifecycle.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "deprecation-redirect.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "figma-writer-dry-run.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "frontmatter.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "helpers.cjs",
+            "type": "file"
+          },
+          {
+            "name": "hook-validation.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "install-script.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "intel-consistency.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "mapper-schema.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "model-profiles.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "nng-coverage.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "optimization-layer.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "parallelism-engine.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "pipeline-smoke.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "read-injection-scanner.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "reflection-proposal.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "regression-baseline.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "schema-drift.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "semver-compare.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "sketch-determinism.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "stale-colon-refs.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "touches-analysis.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "verify-health.test.cjs",
+            "type": "file"
+          },
+          {
+            "name": "worktree-safety.test.cjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitleaks.toml",
+        "type": "file"
+      },
+      {
+        "name": ".lycheeignore",
+        "type": "file"
+      },
+      {
+        "name": ".markdownlint.jsonc",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "README.zh-CN.md",
+        "type": "file"
+      },
+      {
+        "name": "SKILL.md",
+        "type": "file"
+      }
+    ]
+  }
+}

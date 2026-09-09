@@ -1,0 +1,1081 @@
+{
+  "slug": "enuff-is-enuff-unsubscribe",
+  "name": "Enuff Is Enuff Unsubscribe",
+  "type": "plugin",
+  "description": "Find recurring email and make it stop with Claude. Scan inbox exports, review brand-by-brand in chat, then unsubscribe one item at a time with per-action approval. Local-first; runs anywhere Claude Code does, with no extra installs.",
+  "longDescription": "Ships **3 skills**, **3 agents** and **3 commands**.\n\n- **Skills** (3): `inbox-scan` (Parse exported mailboxes, group recurring senders, classify email streams, and generate a local cleanup report), `safe-action` (Drive a browser-control MCP to actually click unsubscribe controls, verify via DOM state, and enforce the approval gate), `unsubscribe-planning` (Walk the user company-by-company through unsubscribe candidates in chat, collect their per-brand selections, then generate the read-only HTML…)\n- **Agents** (3): `inbox-detective` (Finds recurring senders and separates noise from useful account, receipt, and security streams), `safety-reviewer` (Blocks risky cleanup actions and protects transactional, security, and regulated senders), `unsubscribe-operator` (Executes approved unsubscribe, filter, and draft-message actions while stopping before irreversible steps)\n- **Commands** (3): `act` (Execute approved unsubscribe actions by driving Chrome via a browser-control MCP, with DOM-state verification), `review` (Review company-wise unsubscribe candidates in Claude and generate the read-only report), `scan` (Scan an exported mailbox and summarize recurring company-wise unsubscribe candidates)\n\nInstalls with `claude plugin install enuff-is-enuff-unsubscribe@claude-community` from `codecoincognition/enuff-is-enuff-unsubscribe`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 3,
+    "agent": 3,
+    "command": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Vikas Sah"
+  },
+  "externalUrl": "https://github.com/codecoincognition/enuff-is-enuff-unsubscribe/tree/fbfdb650f3dc1a3f98576a3b1583541820aebd3d",
+  "marketplace": "claude-community",
+  "version": "0.2.0",
+  "sourceRevision": "fbfdb650f3dc1a3f98576a3b1583541820aebd3d",
+  "contentDigest": "aadd81aea5b51fb30dca5dbf34df58ea7f5457800b291e54b626eaa6fa231831",
+  "contentHash": "3f948e8eea6a207b",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/codecoincognition/enuff-is-enuff-unsubscribe.git",
+    "sha": "fbfdb650f3dc1a3f98576a3b1583541820aebd3d"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-05T01:41:09Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "inbox-detective.md",
+            "type": "file"
+          },
+          {
+            "name": "safety-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "unsubscribe-operator.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace",
+            "type": "directory",
+            "children": [
+              {
+                "name": "CAPTURE-RECIPE.md",
+                "type": "file"
+              },
+              {
+                "name": "getting-started-hero.png",
+                "type": "file"
+              },
+              {
+                "name": "hero.png",
+                "type": "file"
+              },
+              {
+                "name": "report-full.png",
+                "type": "file"
+              },
+              {
+                "name": "review-chat.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "enuff-is-enuff-1024.png",
+            "type": "file"
+          },
+          {
+            "name": "enuff-is-enuff-512.png",
+            "type": "file"
+          },
+          {
+            "name": "enuff-is-enuff.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "enuff_scan.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "act.md",
+            "type": "file"
+          },
+          {
+            "name": "review.md",
+            "type": "file"
+          },
+          {
+            "name": "scan.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sample-inbox",
+            "type": "directory",
+            "children": [
+              {
+                "name": "01-ollama-weekly.eml",
+                "type": "file"
+              },
+              {
+                "name": "02-ollama-release.eml",
+                "type": "file"
+              },
+              {
+                "name": "03-ollama-blog.eml",
+                "type": "file"
+              },
+              {
+                "name": "04-ollama-community.eml",
+                "type": "file"
+              },
+              {
+                "name": "05-ollama-event.eml",
+                "type": "file"
+              },
+              {
+                "name": "06-lennys-newsletter.eml",
+                "type": "file"
+              },
+              {
+                "name": "07-lennys-podcast.eml",
+                "type": "file"
+              },
+              {
+                "name": "08-lennys-promo.eml",
+                "type": "file"
+              },
+              {
+                "name": "09-acme-sale.eml",
+                "type": "file"
+              },
+              {
+                "name": "10-acme-clearance.eml",
+                "type": "file"
+              },
+              {
+                "name": "104-sephora-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "104-sephora-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "104-sephora-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "104-sephora-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "104-sephora-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "104-sephora-6.eml",
+                "type": "file"
+              },
+              {
+                "name": "11-acme-shipping.eml",
+                "type": "file"
+              },
+              {
+                "name": "110-bestbuy-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "110-bestbuy-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "110-bestbuy-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "110-bestbuy-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "110-bestbuy-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "115-crate-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "115-crate-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "115-crate-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "115-crate-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "119-williams-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "119-williams-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "119-williams-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "119-williams-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "12-snackbox-promo.eml",
+                "type": "file"
+              },
+              {
+                "name": "123-notion-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "123-notion-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "123-notion-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "126-figma-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "126-figma-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "126-figma-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "129-vercel-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "129-vercel-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "13-apple-receipt.eml",
+                "type": "file"
+              },
+              {
+                "name": "131-asana-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "131-asana-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "131-asana-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "134-slack-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "134-slack-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "136-loom-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "136-loom-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "138-1password.eml",
+                "type": "file"
+              },
+              {
+                "name": "139-google-sec-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "139-google-sec-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "14-doordash-delivery.eml",
+                "type": "file"
+              },
+              {
+                "name": "141-apple-sec-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "141-apple-sec-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "143-microsoft-sec-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "143-microsoft-sec-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "145-lastpass-sec.eml",
+                "type": "file"
+              },
+              {
+                "name": "146-amazon-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "146-amazon-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "146-amazon-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "146-amazon-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "146-amazon-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "15-github-signin.eml",
+                "type": "file"
+              },
+              {
+                "name": "151-uber-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "151-uber-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "151-uber-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "154-lyft-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "154-lyft-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "156-etsy-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "156-etsy-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "158-bofa-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "158-bofa-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "16-github-2fa.eml",
+                "type": "file"
+              },
+              {
+                "name": "160-capitalone-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "160-capitalone-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "162-wellsfargo.eml",
+                "type": "file"
+              },
+              {
+                "name": "163-amex-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "163-amex-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "165-irs.eml",
+                "type": "file"
+              },
+              {
+                "name": "166-linkedin-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "166-linkedin-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "166-linkedin-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "166-linkedin-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "166-linkedin-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "17-chase-statement.eml",
+                "type": "file"
+              },
+              {
+                "name": "171-instagram-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "171-instagram-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "173-reddit-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "173-reddit-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "173-reddit-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "176-xtwitter-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "176-xtwitter-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "176-xtwitter-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "176-xtwitter-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "18-linear-welcome.eml",
+                "type": "file"
+              },
+              {
+                "name": "180-onefulthing-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "180-onefulthing-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "180-onefulthing-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "180-onefulthing-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "180-onefulthing-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "180-onefulthing-6.eml",
+                "type": "file"
+              },
+              {
+                "name": "186-notboring-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "186-notboring-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "186-notboring-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "186-notboring-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "186-notboring-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "19-railway-trial.eml",
+                "type": "file"
+              },
+              {
+                "name": "192-glide-reactivate-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "192-glide-reactivate-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "192-glide-reactivate-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "192-glide-reactivate-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "196-sunriseyoga-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "196-sunriseyoga-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "196-sunriseyoga-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "196-sunriseyoga-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "20-x-mention.eml",
+                "type": "file"
+              },
+              {
+                "name": "200-aiengineersummit-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "200-aiengineersummit-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "200-aiengineersummit-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "200-aiengineersummit-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "200-aiengineersummit-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "200-aiengineersummit-6.eml",
+                "type": "file"
+              },
+              {
+                "name": "200-aiengineersummit-7.eml",
+                "type": "file"
+              },
+              {
+                "name": "200-aiengineersummit-8.eml",
+                "type": "file"
+              },
+              {
+                "name": "21-stratechery-21.eml",
+                "type": "file"
+              },
+              {
+                "name": "21-stratechery-22.eml",
+                "type": "file"
+              },
+              {
+                "name": "21-stratechery-23.eml",
+                "type": "file"
+              },
+              {
+                "name": "21-stratechery-24.eml",
+                "type": "file"
+              },
+              {
+                "name": "21-stratechery-25.eml",
+                "type": "file"
+              },
+              {
+                "name": "210-lennys-extra-05.eml",
+                "type": "file"
+              },
+              {
+                "name": "230-lennys-podcast-01.eml",
+                "type": "file"
+              },
+              {
+                "name": "240-lennys-promo-01.eml",
+                "type": "file"
+              },
+              {
+                "name": "26-pragmatic-01.eml",
+                "type": "file"
+              },
+              {
+                "name": "26-pragmatic-02.eml",
+                "type": "file"
+              },
+              {
+                "name": "26-pragmatic-03.eml",
+                "type": "file"
+              },
+              {
+                "name": "26-pragmatic-04.eml",
+                "type": "file"
+              },
+              {
+                "name": "26-pragmatic-05.eml",
+                "type": "file"
+              },
+              {
+                "name": "26-pragmatic-06.eml",
+                "type": "file"
+              },
+              {
+                "name": "26-pragmatic-07.eml",
+                "type": "file"
+              },
+              {
+                "name": "26-pragmatic-08.eml",
+                "type": "file"
+              },
+              {
+                "name": "260-slowboring-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "260-slowboring-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "260-slowboring-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "263-acx-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "263-acx-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "263-acx-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-01.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-02.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-03.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-04.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-05.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-06.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-07.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-08.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-09.eml",
+                "type": "file"
+              },
+              {
+                "name": "34-money-stuff-10.eml",
+                "type": "file"
+              },
+              {
+                "name": "50-platformer-01.eml",
+                "type": "file"
+              },
+              {
+                "name": "50-platformer-02.eml",
+                "type": "file"
+              },
+              {
+                "name": "50-platformer-03.eml",
+                "type": "file"
+              },
+              {
+                "name": "50-platformer-04.eml",
+                "type": "file"
+              },
+              {
+                "name": "50-platformer-05.eml",
+                "type": "file"
+              },
+              {
+                "name": "50-platformer-06.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-01.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-02.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-03.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-04.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-05.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-06.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-07.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-08.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-09.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-10.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-11.eml",
+                "type": "file"
+              },
+              {
+                "name": "56-morningbrew-12.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-01.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-02.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-03.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-04.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-05.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-06.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-07.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-08.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-09.eml",
+                "type": "file"
+              },
+              {
+                "name": "68-tldr-10.eml",
+                "type": "file"
+              },
+              {
+                "name": "78-hackernewsletter-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "78-hackernewsletter-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "78-hackernewsletter-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "78-hackernewsletter-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "82-oldnavy-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "82-oldnavy-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "82-oldnavy-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "82-oldnavy-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "82-oldnavy-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "87-nike-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "87-nike-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "87-nike-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "87-nike-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "87-nike-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "87-nike-6.eml",
+                "type": "file"
+              },
+              {
+                "name": "93-patagonia-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "93-patagonia-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "93-patagonia-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "93-patagonia-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "97-bbw-1.eml",
+                "type": "file"
+              },
+              {
+                "name": "97-bbw-2.eml",
+                "type": "file"
+              },
+              {
+                "name": "97-bbw-3.eml",
+                "type": "file"
+              },
+              {
+                "name": "97-bbw-4.eml",
+                "type": "file"
+              },
+              {
+                "name": "97-bbw-5.eml",
+                "type": "file"
+              },
+              {
+                "name": "97-bbw-6.eml",
+                "type": "file"
+              },
+              {
+                "name": "97-bbw-7.eml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "receipt.eml",
+            "type": "file"
+          },
+          {
+            "name": "sample.eml",
+            "type": "file"
+          },
+          {
+            "name": "security.eml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "inbox-scan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "safe-action",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "unsubscribe-planning",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "GETTING_STARTED.md",
+        "type": "file"
+      },
+      {
+        "name": "getting-started.html",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "ROADMAP.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

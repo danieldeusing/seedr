@@ -1,0 +1,227 @@
+{
+  "slug": "supergraph",
+  "name": "Supergraph",
+  "type": "plugin",
+  "description": "Supergraph là plugin cho Claude Code, kết hợp hai phương pháp:\n\n- **Superpowers** (obra): Bắt buộc AI tuân theo quy trình làm việc có kỷ luật — brainstorm, plan, TDD, review.\n- **Code-review-graph** (tirth8205): Phân tích cấu trúc code bằng AST graph — blast radius, hub nodes, community detection, surprise scoring.\n\n### Vấn đề supergraph giải quyết\n\n**Không có supergraph:**\n\nUser: \"Thêm authentication cho API\"\nAI: *đọc toàn bộ 27,700 file*\n*viết code không có kế hoạch*\n*không viết test*\n*gửi PR*\nTokens: ~443,200\nChất lượng: không đảm bảo\n\n**Có supergraph:**\n\nUser: \"Thêm authentication cho API\"\nAI: 1. get_stats() → \"Repo: 27,700 file, 12 communities, 8 languages\"\n2. Brainstorm → \"JWT hay session? Endpoint nào?\"\n3. blast_radius([\"src/auth/\"]) → \"15 file bị ảnh hưởng, 2 hub nodes\"\n4. Plan → 6 task, mỗi task 2-5 phút, có bước verify\n5. TDD → viết test trước, implement sau, refactor\n6. Auto-fix → chạy test + lint + review, tự sửa nếu lỗi\n7. Review → blast_radius xác nhận tất cả file đã xử lý\nTokens: ~4,260\nChất lượng: production-ready\nTiết kiệm: 104x tokens\n\n### Ngôn ngữ hỗ trợ\n\n| Ngôn ngữ             | Test                          | Lint            | Trạng thái |\n| -------------------- | ----------------------------- | --------------- | ---------- |\n| Node.js / TypeScript | npm test, jest, vitest, mocha | eslint          | Đầy đủ     |\n| Flutter / Dart       | flutter test                  | flutter analyze | Đầy đủ     |\n| PHP                  | phpunit, pest                 | phpstan, phpcs  | Đầy đủ     |",
+  "longDescription": "Ships **7 skills**, **2 agents** and **3 hooks**.\n\n- **Skills** (7): `context` (Load codebase graph context at session start), `execute` (Dispatch and execute implementation plans with TDD checkpoints), `fix` (Auto-fix loop after coding), `integration` (Run integration and end-to-end tests after unit tests pass), `plan` (Create graph-informed implementation plans before writing code), `review` (Graph-enhanced code review before merge), `tdd` (Test-Driven Development for every implementation)\n- **Agents** (2): `executor` (Specialized agent for executing implementation plans), `planner` (Specialized agent for creating implementation plans)\n- **Hooks** (3): `PreToolUse`, `PostToolUse`, `Stop`\n\nInstalls with `claude plugin install supergraph@claude-community` from `datit309/supergraph` (`plugins/supergraph-claude`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 7,
+    "agent": 2,
+    "hook": 3
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "datit309"
+  },
+  "externalUrl": "https://github.com/datit309/supergraph/tree/6c811bf533a152afa3d1bb0a92487dee18b9627c/plugins/supergraph-claude",
+  "marketplace": "claude-community",
+  "version": "1.0.0",
+  "sourceRevision": "6c811bf533a152afa3d1bb0a92487dee18b9627c",
+  "contentDigest": "bce229cece081058d1a0e4aee786e82907de4fc5e4a7e02179e848fd51e5455b",
+  "contentHash": "7de6829421e1b39c",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/supergraph-claude",
+    "url": "https://github.com/datit309/supergraph.git",
+    "ref": "master",
+    "sha": "6c811bf533a152afa3d1bb0a92487dee18b9627c"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-05-11T08:55:22Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".githooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-commit",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "graph-review.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pull_request_template.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "executor.md",
+            "type": "file"
+          },
+          {
+            "name": "planner.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "detect-project.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "TEAM-SETUP.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "context",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "execute",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fix",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integration",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tdd",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore.supergraph",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "settings.json",
+        "type": "file"
+      }
+    ]
+  }
+}

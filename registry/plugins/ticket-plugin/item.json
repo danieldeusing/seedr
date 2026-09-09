@@ -1,0 +1,1089 @@
+{
+  "slug": "ticket-plugin",
+  "name": "Ticket Plugin",
+  "type": "plugin",
+  "description": "A Claude Code plugin that keeps a durable per-ticket plan, findings, and progress log for every ticket you work on — without bloating the ticket itself or polluting the repo. Auto-detects Linear or JIRA as your ticket system at run-time.\n\nThe four slash commands form a complete loop around a ticket:\n\n- /ticket-plugin:start <KEY> fetches the ticket, transitions it to \"In Progress\", and seeds task_plan.md, findings.md, and progress.md. Resuming an existing ticket reads back the tracking files and prints a summary.\n- /ticket-plugin:update is a mid-session checkpoint. The ticket stays active.\n- /ticket-plugin:pause snapshots state and clears the active-ticket pointer. Local-only.\n- /ticket-plugin:archive pushes the final task plan back to the ticket as its description and posts findings as a comment, then archives the local folder. Refuses to run unless the ticket is already in a terminal state on the ticket system — the user controls the state transition.\n\nThe aim: fewer wasted tokens re-explaining context between sessions, and a clean ticket-system record of what was actually done by the time you close the ticket.\n\nRequires either the Linear or Atlassian MCP (installable as plugins from anthropics/claude-plugins-official).",
+  "longDescription": "Ships **17 skills** and **5 agents**.\n\n- **Skills** (17): `adversary` (One adversarial round against a target artifact — attack it for gaps against its stated goals, verify every…), `archive` (Push every file in a ticket's tracking directory to the ticket as one comment per file — task…), `complexity-check` (Run the cyclomatic-complexity gate over a branch diff with lizard and return every function at or over the…), `create-ticket` (Publish drafted tickets to whichever ticket system the project uses — create each issue, assign its key, link…), `design` (Stage 1 of the slopstop process — grill the user to shared understanding, then write the PRD and…), `doc-sync` (Mirror the design/ directory to the project's ticket-system documentation store (GitHub wiki, Linear Docs)), `gh-init` (Bootstrap a GitHub repo for the slopstop ticket workflow), `grill` (Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the…), and 9 more\n- **Agents** (5): `slopstop-effort-high` (slopstop worker carrier at high reasoning effort), `slopstop-effort-low` (slopstop worker carrier at low reasoning effort), `slopstop-effort-max` (slopstop worker carrier at max reasoning effort), `slopstop-effort-medium` (slopstop worker carrier at medium reasoning effort), `slopstop-effort-xhigh` (slopstop worker carrier at xhigh reasoning effort)\n\nInstalls with `claude plugin install ticket-plugin@claude-community` from `iansmith/ticket-plugin`.",
+  "compatibility": [
+    "claude",
+    "copilot"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 17,
+    "agent": 5
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Ian Smith"
+  },
+  "externalUrl": "https://github.com/iansmith/ticket-plugin/tree/18a7ab1791a77b6ad57e3f12850eb8a907df7962",
+  "marketplace": "claude-community",
+  "version": "4.0.0",
+  "sourceRevision": "18a7ab1791a77b6ad57e3f12850eb8a907df7962",
+  "contentDigest": "3a33ee2f617af17cef2e3a3f643dfb1fd629fc3f62a208874716950f55df342b",
+  "contentHash": "134db2c649eb782f",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/iansmith/ticket-plugin.git",
+    "sha": "18a7ab1791a77b6ad57e3f12850eb8a907df7962"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "CC-BY-SA-4.0",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-08T13:36:37Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "slopstop-effort-high.md",
+                "type": "file"
+              },
+              {
+                "name": "slopstop-effort-low.md",
+                "type": "file"
+              },
+              {
+                "name": "slopstop-effort-max.md",
+                "type": "file"
+              },
+              {
+                "name": "slopstop-effort-medium.md",
+                "type": "file"
+              },
+              {
+                "name": "slopstop-effort-xhigh.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "repo-conventions.md",
+                "type": "file"
+              },
+              {
+                "name": "universal.md",
+                "type": "file"
+              },
+              {
+                "name": "universal.sha256",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "release",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-adversary",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-archive",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-complexity-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-create-ticket",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-design",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-doc-sync",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "doc-sync-github.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "doc-sync-linear.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-gh-init",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-grill",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-implement",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-investigate",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-mutation-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-red-tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-review",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-run",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "branch-type.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "config-resolution.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dod-scoring.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "failure-and-salvage.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "handoff-verification.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "node-ids.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "run-jsonl.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tracking-dir-resolution.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "worker-launch.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-slop-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-tickets",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "references",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "document-push-backends.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ticket-standard.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "slopstop-vacuity-check",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "SKILL.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pages.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "slopstop-effort-high.md",
+            "type": "file"
+          },
+          {
+            "name": "slopstop-effort-low.md",
+            "type": "file"
+          },
+          {
+            "name": "slopstop-effort-max.md",
+            "type": "file"
+          },
+          {
+            "name": "slopstop-effort-medium.md",
+            "type": "file"
+          },
+          {
+            "name": "slopstop-effort-xhigh.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_slopstop-lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "pre-commit-file-size.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "design",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-effort-capability.md",
+            "type": "file"
+          },
+          {
+            "name": "base-process.md",
+            "type": "file"
+          },
+          {
+            "name": "charter-slopstop-reorg.md",
+            "type": "file"
+          },
+          {
+            "name": "github-backend-primitives.md",
+            "type": "file"
+          },
+          {
+            "name": "multi-ticket.md",
+            "type": "file"
+          },
+          {
+            "name": "pause-update.md",
+            "type": "file"
+          },
+          {
+            "name": "prd-slopstop-reorg.md",
+            "type": "file"
+          },
+          {
+            "name": "project-conf-options.md",
+            "type": "file"
+          },
+          {
+            "name": "project-conf-toml.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "reorg-carveouts.md",
+            "type": "file"
+          },
+          {
+            "name": "slopstop-process.md",
+            "type": "file"
+          },
+          {
+            "name": "ticket-doc-sync.md",
+            "type": "file"
+          },
+          {
+            "name": "ticket-gh-init.md",
+            "type": "file"
+          },
+          {
+            "name": "worktree-parallelism-prior-art.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "invite.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "router",
+        "type": "directory",
+        "children": [
+          {
+            "name": "testdata",
+            "type": "directory",
+            "children": [
+              {
+                "name": "request_messages.json",
+                "type": "file"
+              },
+              {
+                "name": "response_nonstreaming.json",
+                "type": "file"
+              },
+              {
+                "name": "response_stream.sse",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "budget_test.go",
+            "type": "file"
+          },
+          {
+            "name": "budget.go",
+            "type": "file"
+          },
+          {
+            "name": "go.mod",
+            "type": "file"
+          },
+          {
+            "name": "go.sum",
+            "type": "file"
+          },
+          {
+            "name": "integration_test.go",
+            "type": "file"
+          },
+          {
+            "name": "main.go",
+            "type": "file"
+          },
+          {
+            "name": "meter_test.go",
+            "type": "file"
+          },
+          {
+            "name": "meter.go",
+            "type": "file"
+          },
+          {
+            "name": "ornith-dev.toml",
+            "type": "file"
+          },
+          {
+            "name": "prices_test.go",
+            "type": "file"
+          },
+          {
+            "name": "prices.go",
+            "type": "file"
+          },
+          {
+            "name": "prices.toml",
+            "type": "file"
+          },
+          {
+            "name": "proxy_test.go",
+            "type": "file"
+          },
+          {
+            "name": "proxy.go",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "routing.go",
+            "type": "file"
+          },
+          {
+            "name": "spend_test.go",
+            "type": "file"
+          },
+          {
+            "name": "spend.go",
+            "type": "file"
+          },
+          {
+            "name": "tag_handler_test.go",
+            "type": "file"
+          },
+          {
+            "name": "tag_handler.go",
+            "type": "file"
+          },
+          {
+            "name": "tagmap_test.go",
+            "type": "file"
+          },
+          {
+            "name": "tagmap.go",
+            "type": "file"
+          },
+          {
+            "name": "tags_test.go",
+            "type": "file"
+          },
+          {
+            "name": "tags.go",
+            "type": "file"
+          },
+          {
+            "name": "tokens.go",
+            "type": "file"
+          },
+          {
+            "name": "usage_test.go",
+            "type": "file"
+          },
+          {
+            "name": "usage.go",
+            "type": "file"
+          },
+          {
+            "name": "verify.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "site",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_layouts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "article.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "css",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "style.scss",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "_config.yml",
+            "type": "file"
+          },
+          {
+            "name": "gates.md",
+            "type": "file"
+          },
+          {
+            "name": "how_slopstop_works.md",
+            "type": "file"
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          },
+          {
+            "name": "what_is_slopstop.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "adversary",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "archive",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "complexity-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "create-ticket",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "doc-sync",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "doc-sync-github.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "doc-sync-linear.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.txt",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gh-init",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "grill",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "implement",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "investigate",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mutation-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "red-tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "run",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "branch-type.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config-resolution.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dod-scoring.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "failure-and-salvage.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "handoff-verification.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "node-ids.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "run-jsonl.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tracking-dir-resolution.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worker-launch.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "slop-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tickets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "document-push-backends.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ticket-standard.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "vacuity-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tools",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fleet-sync",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit-project-conf.py",
+                "type": "file"
+              },
+              {
+                "name": "fleet.py",
+                "type": "file"
+              },
+              {
+                "name": "setup-project.py",
+                "type": "file"
+              },
+              {
+                "name": "sync-project-conf.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "slopstop_hook.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "metrics",
+            "type": "directory",
+            "children": [
+              {
+                "name": "derive.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "walkthrough",
+        "type": "directory",
+        "children": [
+          {
+            "name": "01-design-and-grill.md",
+            "type": "file"
+          },
+          {
+            "name": "02-tickets-and-adversary.md",
+            "type": "file"
+          },
+          {
+            "name": "03-handoff-and-gates.md",
+            "type": "file"
+          },
+          {
+            "name": "04-fleet-execution.md",
+            "type": "file"
+          },
+          {
+            "name": "05-report-adversary.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".project-conf.toml",
+        "type": "file"
+      },
+      {
+        "name": ".project-conf.toml.example",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "COMMANDS.md",
+        "type": "file"
+      },
+      {
+        "name": "CONFIG.md",
+        "type": "file"
+      },
+      {
+        "name": "install-for-claude-desktop-local.sh",
+        "type": "file"
+      },
+      {
+        "name": "install-for-claude-desktop.sh",
+        "type": "file"
+      },
+      {
+        "name": "install-for-project.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "QUICKSTART.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SETUP-GUIDE.md",
+        "type": "file"
+      },
+      {
+        "name": "WORKFLOW.md",
+        "type": "file"
+      }
+    ]
+  }
+}

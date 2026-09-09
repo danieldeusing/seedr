@@ -1,0 +1,2161 @@
+{
+  "slug": "nyann",
+  "name": "Nyann",
+  "type": "plugin",
+  "description": "Nyann is a Claude Code plugin that sets up and maintains project governance: git workflow, hooks, branching, commits, releases, CI, docs routing, and health monitoring. From first init through every PR after.",
+  "longDescription": "Ships **30 skills**, **30 commands** and **2 hooks**.\n\n- **Skills** (30): `add-team-source` (Register a git URL as a team-profile source so nyann can periodically sync and expose its profiles under…), `bootstrap-project` (Bootstrap a fresh or existing repo with nyann), `check-prereqs` (Survey the machine and report which nyann features are usable right now), `cleanup-branches` (Prune local branches whose work is already merged into the base), `commit` (Generate a Conventional Commits message from the staged diff and create the commit after user confirmation), `diagnose` (Bundle a redacted, support-grade snapshot of the current nyann state for inclusion in a bug report or support…), `doctor` (Run a read-only hygiene + documentation audit on the current repo), `explain-state` (Summarize what nyann currently sees in this repo: stack detection, active profile, branching strategy, hook status, CLAUDE.md, and…), and 22 more\n- **Commands** (30): `add-team-source` (Register a team-profile git source in ~/.claude/nyann/config.json), `bootstrap` (Explicit entry point for nyann's bootstrap flow), `branch` (Create a strategy-compliant git branch), `check-prereqs` (Survey the machine and report which nyann features are usable right now), `cleanup-branches` (Prune local branches whose work is already merged into the base), `commit` (Generate a Conventional Commits message from the staged diff and commit after confirmation), `diagnose` (Bundle a redacted support-grade snapshot of the current nyann state (state + drift + hooks + config +…), `doctor` (Run nyann's read-only hygiene + documentation audit on the current repo), and 22 more\n- **Hooks** (2): `PreToolUse`, `PostToolUse`\n\nInstalls with `claude plugin install nyann@claude-community` from `thettwe/nyann`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 30,
+    "hook": 2,
+    "command": 30
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Thet Twe Aung"
+  },
+  "externalUrl": "https://github.com/thettwe/nyann/tree/f2990edd9a9fe7f264e7eb7fbddc5c7a1b548e92",
+  "marketplace": "claude-community",
+  "version": "1.1.1",
+  "sourceRevision": "f2990edd9a9fe7f264e7eb7fbddc5c7a1b548e92",
+  "contentDigest": "1884bec939e19b32c54144e08b41c06ac1adad12e0cc34e563417613bde02ee3",
+  "contentHash": "d417b19a8365e26a",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/thettwe/nyann.git",
+    "sha": "f2990edd9a9fe7f264e7eb7fbddc5c7a1b548e92"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-27T16:34:11Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "nightly-evals.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_lib.sh",
+            "type": "file"
+          },
+          {
+            "name": "add-team-source.sh",
+            "type": "file"
+          },
+          {
+            "name": "analyze-claudemd-usage.sh",
+            "type": "file"
+          },
+          {
+            "name": "bootstrap.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-claude-md-size.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-links.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-prereqs.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-stale-branches.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-staleness.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-team-drift.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-team-staleness.sh",
+            "type": "file"
+          },
+          {
+            "name": "claude-hook-block-main.sh",
+            "type": "file"
+          },
+          {
+            "name": "cleanup-branches.sh",
+            "type": "file"
+          },
+          {
+            "name": "commit.sh",
+            "type": "file"
+          },
+          {
+            "name": "compute-drift.sh",
+            "type": "file"
+          },
+          {
+            "name": "compute-health-score.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-mcp-docs.sh",
+            "type": "file"
+          },
+          {
+            "name": "detect-stack.sh",
+            "type": "file"
+          },
+          {
+            "name": "diagnose.sh",
+            "type": "file"
+          },
+          {
+            "name": "doctor.sh",
+            "type": "file"
+          },
+          {
+            "name": "explain-state.sh",
+            "type": "file"
+          },
+          {
+            "name": "find-orphans.sh",
+            "type": "file"
+          },
+          {
+            "name": "gen-ci.sh",
+            "type": "file"
+          },
+          {
+            "name": "gen-claudemd.sh",
+            "type": "file"
+          },
+          {
+            "name": "gen-codeowners.sh",
+            "type": "file"
+          },
+          {
+            "name": "gen-templates.sh",
+            "type": "file"
+          },
+          {
+            "name": "gh-integration.sh",
+            "type": "file"
+          },
+          {
+            "name": "gitignore-combiner.sh",
+            "type": "file"
+          },
+          {
+            "name": "hotfix.sh",
+            "type": "file"
+          },
+          {
+            "name": "inspect-profile.sh",
+            "type": "file"
+          },
+          {
+            "name": "install-hooks.sh",
+            "type": "file"
+          },
+          {
+            "name": "learn-profile.sh",
+            "type": "file"
+          },
+          {
+            "name": "load-profile.sh",
+            "type": "file"
+          },
+          {
+            "name": "migrate-profile.sh",
+            "type": "file"
+          },
+          {
+            "name": "new-branch.sh",
+            "type": "file"
+          },
+          {
+            "name": "optimize-claudemd.sh",
+            "type": "file"
+          },
+          {
+            "name": "persist-health-score.sh",
+            "type": "file"
+          },
+          {
+            "name": "pr.sh",
+            "type": "file"
+          },
+          {
+            "name": "preview.sh",
+            "type": "file"
+          },
+          {
+            "name": "recommend-branch.sh",
+            "type": "file"
+          },
+          {
+            "name": "record-decision.sh",
+            "type": "file"
+          },
+          {
+            "name": "release.sh",
+            "type": "file"
+          },
+          {
+            "name": "resolve-workspace-configs.sh",
+            "type": "file"
+          },
+          {
+            "name": "retrofit.sh",
+            "type": "file"
+          },
+          {
+            "name": "route-docs.sh",
+            "type": "file"
+          },
+          {
+            "name": "scaffold-docs.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup.sh",
+            "type": "file"
+          },
+          {
+            "name": "ship.sh",
+            "type": "file"
+          },
+          {
+            "name": "suggest-profile-updates.sh",
+            "type": "file"
+          },
+          {
+            "name": "switch-profile.sh",
+            "type": "file"
+          },
+          {
+            "name": "sync-team-profiles.sh",
+            "type": "file"
+          },
+          {
+            "name": "sync.sh",
+            "type": "file"
+          },
+          {
+            "name": "track-claudemd-usage.sh",
+            "type": "file"
+          },
+          {
+            "name": "try-commit.sh",
+            "type": "file"
+          },
+          {
+            "name": "undo.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-profile.sh",
+            "type": "file"
+          },
+          {
+            "name": "wait-for-pr-checks.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-team-source.md",
+            "type": "file"
+          },
+          {
+            "name": "bootstrap.md",
+            "type": "file"
+          },
+          {
+            "name": "branch.md",
+            "type": "file"
+          },
+          {
+            "name": "check-prereqs.md",
+            "type": "file"
+          },
+          {
+            "name": "cleanup-branches.md",
+            "type": "file"
+          },
+          {
+            "name": "commit.md",
+            "type": "file"
+          },
+          {
+            "name": "diagnose.md",
+            "type": "file"
+          },
+          {
+            "name": "doctor.md",
+            "type": "file"
+          },
+          {
+            "name": "explain-state.md",
+            "type": "file"
+          },
+          {
+            "name": "gen-ci.md",
+            "type": "file"
+          },
+          {
+            "name": "gen-claudemd.md",
+            "type": "file"
+          },
+          {
+            "name": "gen-templates.md",
+            "type": "file"
+          },
+          {
+            "name": "gh-protect.md",
+            "type": "file"
+          },
+          {
+            "name": "hotfix.md",
+            "type": "file"
+          },
+          {
+            "name": "inspect-profile.md",
+            "type": "file"
+          },
+          {
+            "name": "learn-profile.md",
+            "type": "file"
+          },
+          {
+            "name": "migrate-profile.md",
+            "type": "file"
+          },
+          {
+            "name": "optimize-claudemd.md",
+            "type": "file"
+          },
+          {
+            "name": "pr.md",
+            "type": "file"
+          },
+          {
+            "name": "record-decision.md",
+            "type": "file"
+          },
+          {
+            "name": "release.md",
+            "type": "file"
+          },
+          {
+            "name": "retrofit.md",
+            "type": "file"
+          },
+          {
+            "name": "route-docs.md",
+            "type": "file"
+          },
+          {
+            "name": "setup.md",
+            "type": "file"
+          },
+          {
+            "name": "ship.md",
+            "type": "file"
+          },
+          {
+            "name": "suggest.md",
+            "type": "file"
+          },
+          {
+            "name": "sync-team-profiles.md",
+            "type": "file"
+          },
+          {
+            "name": "sync.md",
+            "type": "file"
+          },
+          {
+            "name": "undo.md",
+            "type": "file"
+          },
+          {
+            "name": "wait-for-pr-checks.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "RELEASING.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "evals",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-team-source.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "bootstrap-project.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "check-prereqs.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "commit.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "diagnose.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "doctor.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "explain-state.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "gen-ci.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "gen-templates.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "inspect-profile.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "learn-profile.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "migrate-profile.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "new-branch.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "optimize-claudemd.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "pr.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "record-decision.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "release.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "retrofit.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "run.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "suggest.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "sync-team-profiles.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "sync.evals.json",
+            "type": "file"
+          },
+          {
+            "name": "undo.evals.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "monitors",
+        "type": "directory",
+        "children": [
+          {
+            "name": "monitors.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "profiles",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_schema.json",
+            "type": "file"
+          },
+          {
+            "name": "default.json",
+            "type": "file"
+          },
+          {
+            "name": "django-app.json",
+            "type": "file"
+          },
+          {
+            "name": "fastapi-service.json",
+            "type": "file"
+          },
+          {
+            "name": "go-service.json",
+            "type": "file"
+          },
+          {
+            "name": "kotlin-android.json",
+            "type": "file"
+          },
+          {
+            "name": "nextjs-prototype.json",
+            "type": "file"
+          },
+          {
+            "name": "node-api.json",
+            "type": "file"
+          },
+          {
+            "name": "python-cli.json",
+            "type": "file"
+          },
+          {
+            "name": "react-vite.json",
+            "type": "file"
+          },
+          {
+            "name": "rust-cli.json",
+            "type": "file"
+          },
+          {
+            "name": "shell-cli.json",
+            "type": "file"
+          },
+          {
+            "name": "swift-ios.json",
+            "type": "file"
+          },
+          {
+            "name": "typescript-library.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "schemas",
+        "type": "directory",
+        "children": [
+          {
+            "name": "action-plan.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "branching-choice.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "claudemd-analysis.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "claudemd-size-report.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "claudemd-usage.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "cleanup-branches-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "commit-context.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "commit-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "config.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "diagnose-bundle.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "documentation-plan.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "drift-report.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "gh-integration-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "health-score.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "hotfix-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "link-check-report.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "mcp-doc-targets.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "mcp-registry.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "migration-plan.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "orphan-report.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "pr-checks-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "pr-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "preferences.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "prereqs-report.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "protection-audit.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "release-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "setup-status.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "ship-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "stack-descriptor.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "stale-branches-report.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "staleness-report.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "state-summary.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "suggestions.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "sync-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "team-drift-report.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "team-sync-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "undo-result.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "workspace-configs.schema.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-team-source",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bootstrap-project",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "javascript.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-routing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "python.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check-prereqs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cleanup-branches",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "commit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "conventional-commits.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diagnose",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "doctor",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "explain-state",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gen-ci",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gen-claudemd",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gen-templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gh-protect",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hotfix",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "inspect-profile",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "learn-profile",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "migrate-profile",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "new-branch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "optimize-claudemd",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "record-decision",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "release",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "retrofit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "route-docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setup",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ship",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "suggest",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sync",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sync-team-profiles",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "undo",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wait-for-pr-checks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ci",
+            "type": "directory",
+            "children": [
+              {
+                "name": "generic.yml",
+                "type": "file"
+              },
+              {
+                "name": "go.yml",
+                "type": "file"
+              },
+              {
+                "name": "python.yml",
+                "type": "file"
+              },
+              {
+                "name": "rust.yml",
+                "type": "file"
+              },
+              {
+                "name": "typescript.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "docs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "decisions",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-000-record-architecture-decisions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ADR-template.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.tmpl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "architecture.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "prd.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "README.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "research-README.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "github",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ISSUE_TEMPLATE",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bug_report.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "config.yml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "feature_request.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PULL_REQUEST_TEMPLATE.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gitignore",
+            "type": "directory",
+            "children": [
+              {
+                "name": "generic.gitignore",
+                "type": "file"
+              },
+              {
+                "name": "go.gitignore",
+                "type": "file"
+              },
+              {
+                "name": "jsts.gitignore",
+                "type": "file"
+              },
+              {
+                "name": "python.gitignore",
+                "type": "file"
+              },
+              {
+                "name": "rust.gitignore",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "commit-msg",
+                "type": "file"
+              },
+              {
+                "name": "pre-commit",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "husky",
+            "type": "directory",
+            "children": [
+              {
+                "name": "commit-msg",
+                "type": "file"
+              },
+              {
+                "name": "commitlint.config.js",
+                "type": "file"
+              },
+              {
+                "name": "pre-commit",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "memory",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "README.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pre-commit-configs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "go.yaml",
+                "type": "file"
+              },
+              {
+                "name": "python.yaml",
+                "type": "file"
+              },
+              {
+                "name": "rust.yaml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mcp-registry.json",
+            "type": "file"
+          },
+          {
+            "name": "orphan-exclusions.txt",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bats",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test-analyze-claudemd-usage.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-bootstrap-editorconfig.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-bootstrap-preview-gates.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-bootstrap-profile-match.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-check-links.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-check-stale-branches.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-check-team-staleness.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-claude-hook-block-main-bypass.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-claude-hook-block-main.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-cleanup-branches.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-commit.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-detect-mcp.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-detect.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-diagnose.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-doctor.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-drift-report-integrity.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-explain-state.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-find-orphans.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-gen-ci.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-gen-claudemd-trap.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-gen-claudemd.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-gen-codeowners.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-gen-templates.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-gh-integration.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-gitignore-combiner.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-go-rust-hooks.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-health-score.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-hook-regressions.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-hotfix.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-inspect-profile.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-install-hooks-hardening.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-install-hooks.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-internal-reference-hygiene.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-learn-profile.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-lib-helpers.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-load-profile.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-monorepo-bootstrap.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-new-branch.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-optimize-claudemd.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-path-safety.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-path-traversal-regressions.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-path-under-target.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-persist-health-score.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-plan-sha-binding.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-pr.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-prereqs-degrade.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-profile-migration.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-profile-schema.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-public-surface-counts.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-recommend.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-record-decision.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-release.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-resolve-workspace-configs.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-retrofit.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-route-docs.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-safe-md-cell.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-scaffold-docs-safety.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-schema-validation.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-security-hardening.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-session-check.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-setup.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-ship.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-skill-length.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-skill-script-invocations.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-suggest-profile-updates.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-switch-profile.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-sync-team.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-sync.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-team-sources-safety.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-track-claudemd-usage.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-try-commit.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-undo.bats",
+                "type": "file"
+              },
+              {
+                "name": "test-wait-for-pr-checks.bats",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "docs-with-broken-links",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "docs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "architecture.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prd.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "memory",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "CLAUDE.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "docs-with-orphans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "docs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "research",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "old-competitor.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "README.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "architecture.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "memory",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "CLAUDE.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "empty",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitkeep",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "go-empty",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "go.mod",
+                    "type": "file"
+                  },
+                  {
+                    "name": "go.sum",
+                    "type": "file"
+                  },
+                  {
+                    "name": "main.go",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jsts-bootstrapped",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".husky",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "commit-msg",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pre-commit",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "docs",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "decisions",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "ADR-000-record-architecture-decisions.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "ADR-template.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "README.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "research",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": ".gitkeep",
+                            "type": "file"
+                          },
+                          {
+                            "name": "README.md",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "architecture.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "prd.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "memory",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": ".gitkeep",
+                        "type": "file"
+                      },
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".editorconfig",
+                    "type": "file"
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "CLAUDE.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "commitlint.config.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hello.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pnpm-lock.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "seed.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "jsts-empty",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pnpm-lock.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "legacy-with-drift",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pnpm-lock.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "seed.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mcp-configs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "both-available.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "notion-available.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "obsidian-available.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "obsidian-disabled.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "unknown-server.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "monorepo",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "packages",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "api",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "pyproject.toml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "web",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "package.json",
+                            "type": "file"
+                          },
+                          {
+                            "name": "tsconfig.json",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pnpm-lock.yaml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pnpm-workspace.yaml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "profiles",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "invalid-changelog-traversal.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "invalid-missing-stack.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "invalid-preferred-mcp-shellmeta.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "invalid-tag-prefix-injection.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "invalid-workspace-hook-id.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "invalid-workspace-key.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "valid-minimal.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "python-empty",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "pyproject.toml",
+                    "type": "file"
+                  },
+                  {
+                    "name": "uv.lock",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rust-empty",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Cargo.lock",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Cargo.toml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "rust-workspace",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "crates",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "cli",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "Cargo.toml",
+                            "type": "file"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "core",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "Cargo.toml",
+                            "type": "file"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Cargo.toml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lint.sh",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "logo-banner.jpg",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,2088 @@
+{
+  "slug": "writ",
+  "name": "Writ",
+  "type": "plugin",
+  "description": "Hybrid RAG rule retrieval and workflow enforcement for Claude Code. A five-stage pipeline (BM25 + vector + graph traversal + two-pass ranking) retrieves the right coding rules for each task in under 1ms from a Neo4j knowledge graph,.\n\n726x context reduction vs loading a full rulebook at 10K rules. A mode and gate state machine enforces workflow discipline at the tool-call boundary:\n- writes are blocked until plans and tests are approved.\n- Ships with 276 rules across 12 domains (Security, Clean Code, DRY, SOLID, Architecture, Testing, Error Handling, Performance, Scaling, API Design, Process, Documentation).\n- AI agents can propose new rules through a structural gate; frequency-driven graduation and human review control what stays.",
+  "longDescription": "Ships **6 agents** and **1 command**.\n\n- **Agents** (6): `writ-code-quality-reviewer` (Reviews an implementation diff for code quality), `writ-explorer` (Explores a codebase to understand project structure, framework, existing patterns, and relevant files for a task), `writ-implementer` (Implements all files listed in an approved plan), `writ-planner` (Designs implementation plans for coding tasks), `writ-spec-reviewer` (Reviews an implementation diff for compliance with the approved spec), `writ-test-writer` (Writes test skeleton files with method signatures and assertions based on an approved plan)\n- **Commands** (1): `writ-approve` (Advance the current Writ workflow phase)\n\nInstalls with `claude plugin install writ@claude-community` from `infinri/Writ`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "agent": 6,
+    "command": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Community"
+  },
+  "externalUrl": "https://github.com/infinri/Writ/tree/d3c33d3e35adc30dc4448d0829801f5a8a9138da",
+  "marketplace": "claude-community",
+  "version": "2.0.0",
+  "sourceRevision": "d3c33d3e35adc30dc4448d0829801f5a8a9138da",
+  "contentDigest": "d89330bdd9b47c8f75666528d624b9c585052d90216c1900868f518002a88670",
+  "contentHash": "55a787bf556a7ebf",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/infinri/Writ.git",
+    "sha": "d3c33d3e35adc30dc4448d0829801f5a8a9138da"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-11T00:50:02Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "writ-code-quality-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "writ-explorer.md",
+                "type": "file"
+              },
+              {
+                "name": "writ-implementer.md",
+                "type": "file"
+              },
+              {
+                "name": "writ-planner.md",
+                "type": "file"
+              },
+              {
+                "name": "writ-spec-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "writ-test-writer.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "writ-approve.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auto-approve-gate.sh",
+                "type": "file"
+              },
+              {
+                "name": "enforce-violations.sh",
+                "type": "file"
+              },
+              {
+                "name": "friction-logger.sh",
+                "type": "file"
+              },
+              {
+                "name": "inject-tier-workflow.sh",
+                "type": "file"
+              },
+              {
+                "name": "pre-validate-file.sh",
+                "type": "file"
+              },
+              {
+                "name": "track-failed-writes.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate-design-doc.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate-exit-plan.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate-file.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate-handoff.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate-rules.sh",
+                "type": "file"
+              },
+              {
+                "name": "validate-test-file.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-context-tracker.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-cwd-changed.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-instructions-loaded.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-memory-policy-guard.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-postcompact.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-posttool-rag.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-pre-write-dispatch.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-precompact.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-pressure-audit.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-quality-judge.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-rag-inject.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-read-rag.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-sdd-review-order.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-session-end.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-subagent-start.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-subagent-stop.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-verify-before-claim.sh",
+                "type": "file"
+              },
+              {
+                "name": "writ-worktree-safety.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEBASE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "benchmarks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bench_targets.py",
+            "type": "file"
+          },
+          {
+            "name": "methodology_bench.py",
+            "type": "file"
+          },
+          {
+            "name": "run_benchmarks.py",
+            "type": "file"
+          },
+          {
+            "name": "scale_benchmark.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bible",
+        "type": "directory",
+        "children": [
+          {
+            "name": "api-design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "architecture",
+            "type": "directory",
+            "children": [
+              {
+                "name": "principles.md",
+                "type": "file"
+              },
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "code-quality",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "communication",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "database",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sql-authoring.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "documentation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "enforcement",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ai-checklist.md",
+                "type": "file"
+              },
+              {
+                "name": "operational-claims.md",
+                "type": "file"
+              },
+              {
+                "name": "reasoning-discipline.md",
+                "type": "file"
+              },
+              {
+                "name": "security-boundaries.md",
+                "type": "file"
+              },
+              {
+                "name": "system-dynamics.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "frameworks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "magento",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "implementation-constraints.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "runtime-constraints.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "languages",
+            "type": "directory",
+            "children": [
+              {
+                "name": "php",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "coding-standards.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "error-handling.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "python",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "coding-standards.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "meta-authoring",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "methodology",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ANT-PROC-DEBUG-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-PARALLEL-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-PLAN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-SDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-TDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-TDD-002.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-TDD-003.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-TDD-004.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-TDD-005.md",
+                "type": "file"
+              },
+              {
+                "name": "ANT-PROC-VERIFY-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ENF-COMMS-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ENF-PROC-BRAIN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ENF-PROC-DEBUG-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ENF-PROC-PLAN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ENF-PROC-SDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ENF-PROC-TDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ENF-PROC-VERIFY-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ENF-PROC-WORKTREE-001.md",
+                "type": "file"
+              },
+              {
+                "name": "EXM-DEBUG-001.md",
+                "type": "file"
+              },
+              {
+                "name": "EXM-TDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "FRB-COMMS-001.md",
+                "type": "file"
+              },
+              {
+                "name": "FRB-COMMS-002.md",
+                "type": "file"
+              },
+              {
+                "name": "META-AUTH-001.md",
+                "type": "file"
+              },
+              {
+                "name": "META-AUTH-002.md",
+                "type": "file"
+              },
+              {
+                "name": "PBK-AUTHOR-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PBK-PROC-BRAIN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PBK-PROC-DEBUG-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PBK-PROC-FINISH-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PBK-PROC-PLAN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PBK-PROC-REVREQ-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PBK-PROC-SDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PBK-PROC-TDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-002.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-003.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-004.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-005.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-006.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-007.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-008.md",
+                "type": "file"
+              },
+              {
+                "name": "PHA-BRAIN-009.md",
+                "type": "file"
+              },
+              {
+                "name": "PSC-BRAIN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PSC-TDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "PSC-VERIFY-001.md",
+                "type": "file"
+              },
+              {
+                "name": "RAT-BRAIN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "RAT-TDD-001.md",
+                "type": "file"
+              },
+              {
+                "name": "RAT-VERIFY-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ROL-CODE-REVIEWER-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ROL-IMPLEMENTER-001.md",
+                "type": "file"
+              },
+              {
+                "name": "ROL-SPEC-REVIEWER-001.md",
+                "type": "file"
+              },
+              {
+                "name": "SKL-PROC-BRAIN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "SKL-PROC-EXEC-001.md",
+                "type": "file"
+              },
+              {
+                "name": "SKL-PROC-PARALLEL-001.md",
+                "type": "file"
+              },
+              {
+                "name": "SKL-PROC-PLAN-001.md",
+                "type": "file"
+              },
+              {
+                "name": "SKL-PROC-REVRECV-001.md",
+                "type": "file"
+              },
+              {
+                "name": "SKL-PROC-VERIFY-001.md",
+                "type": "file"
+              },
+              {
+                "name": "SKL-PROC-VISUAL-001.md",
+                "type": "file"
+              },
+              {
+                "name": "SKL-PROC-WORKTREE-001.md",
+                "type": "file"
+              },
+              {
+                "name": "TEC-PROC-HYPOTHESIS-001.md",
+                "type": "file"
+              },
+              {
+                "name": "TEC-PROC-ROOTCAUSE-001.md",
+                "type": "file"
+              },
+              {
+                "name": "TEC-PROC-SPEC-REVIEW-001.md",
+                "type": "file"
+              },
+              {
+                "name": "TEC-PROC-WORKTREE-001.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "performance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "profiling.md",
+                "type": "file"
+              },
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "playbooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "api-endpoint.md",
+                "type": "file"
+              },
+              {
+                "name": "queue-feature.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "process",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "CORE_PRINCIPLES.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scaling",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "security",
+            "type": "directory",
+            "children": [
+              {
+                "name": "boundaries.md",
+                "type": "file"
+              },
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "testing",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rules.md",
+                "type": "file"
+              },
+              {
+                "name": "unit-testing.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".export_timestamp",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "checklists.json",
+                "type": "file"
+              },
+              {
+                "name": "common.sh",
+                "type": "file"
+              },
+              {
+                "name": "gate-categories.json",
+                "type": "file"
+              },
+              {
+                "name": "parse-hook-stdin.py",
+                "type": "file"
+              },
+              {
+                "name": "writ-session.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "check-gates.sh",
+            "type": "file"
+          },
+          {
+            "name": "run-analysis.sh",
+            "type": "file"
+          },
+          {
+            "name": "scan-deps.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-handoff.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-files.sh",
+            "type": "file"
+          },
+          {
+            "name": "writ",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "extraction",
+            "type": "directory",
+            "children": [
+              {
+                "name": "01-architecture-and-data-flow.md",
+                "type": "file"
+              },
+              {
+                "name": "02-graph-and-storage.md",
+                "type": "file"
+              },
+              {
+                "name": "03-retrieval-pipeline.md",
+                "type": "file"
+              },
+              {
+                "name": "04-cli-commands.md",
+                "type": "file"
+              },
+              {
+                "name": "05-http-api.md",
+                "type": "file"
+              },
+              {
+                "name": "06-hooks-and-claude-code-integration.md",
+                "type": "file"
+              },
+              {
+                "name": "07-rule-schema-and-validation.md",
+                "type": "file"
+              },
+              {
+                "name": "08-testing-and-benchmarks.md",
+                "type": "file"
+              },
+              {
+                "name": "09-configuration-and-deployment.md",
+                "type": "file"
+              },
+              {
+                "name": "10-compression-and-abstractions.md",
+                "type": "file"
+              },
+              {
+                "name": "11-evolution-and-authority.md",
+                "type": "file"
+              },
+              {
+                "name": "12-session-and-agentic-retrieval.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "monthly-reviews",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitkeep",
+                "type": "file"
+              },
+              {
+                "name": "2026-05.md",
+                "type": "file"
+              },
+              {
+                "name": "TEMPLATE.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pressure-runs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "PSR-001",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-002",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-003",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-003b",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-003c",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-004",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-004b",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-004c",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "baseline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "directive-snapshot.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "post-run-state.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-005",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "baseline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "post-run-state.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "take-after-snapshot.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-005b",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "baseline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "post-run-state.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "take-after-snapshot.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-006",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "baseline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "master-friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "post-run-state.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "take-after-snapshot.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-project-friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-007",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "baseline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "master-friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "post-run-state.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "take-after-snapshot.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-project-friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "PSR-008",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "baseline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "master-friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "post-run-state.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "take-after-snapshot.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-prompt.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test-project-friction.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transcript.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "scenarios",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "PSR-001-quick-fix.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PSR-002-scope-creep.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PSR-003-trust-ship.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PSR-004-post-compact-reflex.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "PSR-005-skip-plan.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "analysis-template.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "install-writ.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "rules",
+        "type": "directory",
+        "children": [
+          {
+            "name": "writ-orchestrator.md",
+            "type": "file"
+          },
+          {
+            "name": "writ-workflow.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bootstrap.sh",
+            "type": "file"
+          },
+          {
+            "name": "ensure-server.sh",
+            "type": "file"
+          },
+          {
+            "name": "export_onnx.py",
+            "type": "file"
+          },
+          {
+            "name": "export_subagent_roles.py",
+            "type": "file"
+          },
+          {
+            "name": "friction-log-delta.py",
+            "type": "file"
+          },
+          {
+            "name": "ingest_subagent_roles.py",
+            "type": "file"
+          },
+          {
+            "name": "install-harness-config.sh",
+            "type": "file"
+          },
+          {
+            "name": "install-user-commands.sh",
+            "type": "file"
+          },
+          {
+            "name": "migrate.py",
+            "type": "file"
+          },
+          {
+            "name": "profile_hotpath.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_1a_injection.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_1b_auth.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_1c_crypto_headers_rate.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_1d_data_deps.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_2a_clean_dry.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_2b_solid_arch.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_3a_testing_error.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_3b_performance.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_4_scale_api_docs.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_phase_5_process.py",
+            "type": "file"
+          },
+          {
+            "name": "stop-server.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "writ-approve.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CLAUDE.md",
+            "type": "file"
+          },
+          {
+            "name": "settings.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "gamed_artifacts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "trivially_bad",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "design-empty.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "design-missing-sections.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "design-placeholder-heavy.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plan-empty-sections.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plan-lorem-ipsum.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plan-single-word.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "plan-todo-placeholders.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test-no-assertions.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test-only-mocks.py",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test-trivially-true.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ground_truth_proc.candidates.json",
+                "type": "file"
+              },
+              {
+                "name": "ground_truth_proc.curation-proposal.json",
+                "type": "file"
+              },
+              {
+                "name": "ground_truth_proc.json",
+                "type": "file"
+              },
+              {
+                "name": "ground_truth_queries.json",
+                "type": "file"
+              },
+              {
+                "name": "methodology_loader.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_always_on_methodology.py",
+            "type": "file"
+          },
+          {
+            "name": "test_analysis.py",
+            "type": "file"
+          },
+          {
+            "name": "test_analyze_endpoint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_approval_patterns.py",
+            "type": "file"
+          },
+          {
+            "name": "test_authoring.py",
+            "type": "file"
+          },
+          {
+            "name": "test_authority.py",
+            "type": "file"
+          },
+          {
+            "name": "test_bootstrap.py",
+            "type": "file"
+          },
+          {
+            "name": "test_bundle_cohesion.py",
+            "type": "file"
+          },
+          {
+            "name": "test_checklist_injection.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cleanup_cycle.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cli_rename.py",
+            "type": "file"
+          },
+          {
+            "name": "test_compaction_detection.py",
+            "type": "file"
+          },
+          {
+            "name": "test_compaction_hooks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_compression.py",
+            "type": "file"
+          },
+          {
+            "name": "test_config_integration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_config.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cwd_changed.py",
+            "type": "file"
+          },
+          {
+            "name": "test_embeddings.py",
+            "type": "file"
+          },
+          {
+            "name": "test_enforce_violations.py",
+            "type": "file"
+          },
+          {
+            "name": "test_env_var_removal.py",
+            "type": "file"
+          },
+          {
+            "name": "test_exit_code_audit.py",
+            "type": "file"
+          },
+          {
+            "name": "test_exit_plan_phase_reset.py",
+            "type": "file"
+          },
+          {
+            "name": "test_export.py",
+            "type": "file"
+          },
+          {
+            "name": "test_failed_write_tracking.py",
+            "type": "file"
+          },
+          {
+            "name": "test_feedback_enrichment.py",
+            "type": "file"
+          },
+          {
+            "name": "test_frequency.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gate.py",
+            "type": "file"
+          },
+          {
+            "name": "test_graph_proximity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hardening.py",
+            "type": "file"
+          },
+          {
+            "name": "test_harness_installer.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hnsw_persistence.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hook_stderr_logging.py",
+            "type": "file"
+          },
+          {
+            "name": "test_infrastructure.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ingest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_instructions_loaded.py",
+            "type": "file"
+          },
+          {
+            "name": "test_integrity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_methodology_companion_orchestrator.py",
+            "type": "file"
+          },
+          {
+            "name": "test_methodology_retrieval.py",
+            "type": "file"
+          },
+          {
+            "name": "test_metrics.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mode_infrastructure.py",
+            "type": "file"
+          },
+          {
+            "name": "test_multi_node_ingest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_orchestrator_hardening.py",
+            "type": "file"
+          },
+          {
+            "name": "test_orchestrator_mode.py",
+            "type": "file"
+          },
+          {
+            "name": "test_origin_context.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase_machine_reset.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase2_gate_policy.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase2_hooks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase3_approval_flow.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase3_centralization.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase3b_approval_rewrap.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase3b_export_subagent_roles.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase4_analyze_friction.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase4_friction_delta.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase4b_memory_guard_robustness.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase4b_memory_policy_guard.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase4c_postcompact_directive.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase4c_stderr_capture.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase5_analyzers.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase5_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase5_dashboard.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase5_instrumentation.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase6_hook_defensive_json.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase6a_node_models.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase6bcd_verification.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase6efg_corpus_promotion.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase6hi_methodology_retrieval_and_playbook_wiring.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase6j_always_on_budget.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phase6j_node_types.py",
+            "type": "file"
+          },
+          {
+            "name": "test_playbook_state.py",
+            "type": "file"
+          },
+          {
+            "name": "test_post_suite_neo4j_restoration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_posttool_rag.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pre_write_dispatch.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pyproject_packaging.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_rag_hook.py",
+            "type": "file"
+          },
+          {
+            "name": "test_retrievable_filter.py",
+            "type": "file"
+          },
+          {
+            "name": "test_retrieval.py",
+            "type": "file"
+          },
+          {
+            "name": "test_schema_roundtrip.py",
+            "type": "file"
+          },
+          {
+            "name": "test_schema.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdd_review_order_hook_json_decode.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_cache_migration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_end.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sticky_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "test_subagent_isolation.py",
+            "type": "file"
+          },
+          {
+            "name": "test_v1_punch_list.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validate_rules.py",
+            "type": "file"
+          },
+          {
+            "name": "test_writ_audit_session.py",
+            "type": "file"
+          },
+          {
+            "name": "test_writ_cli_shim.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "writ",
+        "type": "directory",
+        "children": [
+          {
+            "name": "analysis",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "analyzer.py",
+                "type": "file"
+              },
+              {
+                "name": "friction.py",
+                "type": "file"
+              },
+              {
+                "name": "instrumentation.py",
+                "type": "file"
+              },
+              {
+                "name": "llm.py",
+                "type": "file"
+              },
+              {
+                "name": "patterns.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compression",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "abstractions.py",
+                "type": "file"
+              },
+              {
+                "name": "clusters.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "graph",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "db.py",
+                "type": "file"
+              },
+              {
+                "name": "ingest.py",
+                "type": "file"
+              },
+              {
+                "name": "integrity.py",
+                "type": "file"
+              },
+              {
+                "name": "schema.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "retrieval",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "embeddings.py",
+                "type": "file"
+              },
+              {
+                "name": "keyword.py",
+                "type": "file"
+              },
+              {
+                "name": "pipeline.py",
+                "type": "file"
+              },
+              {
+                "name": "ranking.py",
+                "type": "file"
+              },
+              {
+                "name": "session.py",
+                "type": "file"
+              },
+              {
+                "name": "traversal.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "shared",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "budget.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "authoring.py",
+            "type": "file"
+          },
+          {
+            "name": "cli.py",
+            "type": "file"
+          },
+          {
+            "name": "config.py",
+            "type": "file"
+          },
+          {
+            "name": "dashboard.py",
+            "type": "file"
+          },
+          {
+            "name": "export.py",
+            "type": "file"
+          },
+          {
+            "name": "frequency.py",
+            "type": "file"
+          },
+          {
+            "name": "gate.py",
+            "type": "file"
+          },
+          {
+            "name": "origin_context.py",
+            "type": "file"
+          },
+          {
+            "name": "server.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".pre-commit-config.yaml",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.yml",
+        "type": "file"
+      },
+      {
+        "name": "HANDBOOK.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "Makefile",
+        "type": "file"
+      },
+      {
+        "name": "out-of-the-box-rules.md",
+        "type": "file"
+      },
+      {
+        "name": "PROMOTIONAL-BRIEF.md",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SCALE_BENCHMARK_RESULTS.md",
+        "type": "file"
+      },
+      {
+        "name": "SKILL.md",
+        "type": "file"
+      },
+      {
+        "name": "writ.toml",
+        "type": "file"
+      }
+    ]
+  }
+}

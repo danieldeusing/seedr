@@ -1,0 +1,3406 @@
+{
+  "slug": "supertool",
+  "name": "Supertool",
+  "type": "plugin",
+  "description": "Batch multiple file operations (read, grep, glob, ls, tail, head) into a single Bash round-trip. Instead of N separate Read/Grep/Glob tool calls — each re-paying the cached context prefix — one ./supertool call handles them all. Includes auto-promote (concrete glob becomes read, single-file grep includes full file), enforcement mode that blocks redundant built-in tools, and per-call logging with caller tracking. Python 3.6+, stdlib-only, 80 tests.",
+  "longDescription": "Ships **1 hook**, `SessionStart` and **1 MCP server**, `claude-channel`.\n\nInstalls with `claude plugin install supertool@claude-community` from `Digital-Process-Tools/claude-supertool`.\n\nSaves tokens. Saves money. Saves turns. Works the same in interactive sessions and autonomous runs — humans pair-programming with Claude Code use it every day, not just Kevin-style headless agents. One Python file, zero deps, Python 3.9+.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "hook": 1,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Digital Process Tools"
+  },
+  "externalUrl": "https://github.com/Digital-Process-Tools/claude-supertool/tree/dcb574ea3444080bb6977288498e4dc44d50cf57",
+  "marketplace": "claude-community",
+  "version": "0.27.0",
+  "sourceRevision": "dcb574ea3444080bb6977288498e4dc44d50cf57",
+  "contentDigest": "c5ee3c5f33ce9665a30f635bb7955d63269191b6e3c711880230120e59aa12af",
+  "contentHash": "0b11387fee9746e4",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/Digital-Process-Tools/claude-supertool.git",
+    "sha": "dcb574ea3444080bb6977288498e4dc44d50cf57"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-08T02:03:32Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cclsp.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".githooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-commit",
+            "type": "file"
+          },
+          {
+            "name": "pre-push",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "scripts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "assemble_changelog.py",
+                "type": "file"
+              },
+              {
+                "name": "coverage_gate.py",
+                "type": "file"
+              },
+              {
+                "name": "junit_summary.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "changelog.yml",
+                "type": "file"
+              },
+              {
+                "name": "slow-tests.yml",
+                "type": "file"
+              },
+              {
+                "name": "tests.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "changelog.d",
+        "type": "directory",
+        "children": [
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "operations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "edits.md",
+                "type": "file"
+              },
+              {
+                "name": "index.md",
+                "type": "file"
+              },
+              {
+                "name": "map.md",
+                "type": "file"
+              },
+              {
+                "name": "meta.md",
+                "type": "file"
+              },
+              {
+                "name": "reads.md",
+                "type": "file"
+              },
+              {
+                "name": "search.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "presets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bluesky.md",
+                "type": "file"
+              },
+              {
+                "name": "claude-log.md",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.md",
+                "type": "file"
+              },
+              {
+                "name": "devto.md",
+                "type": "file"
+              },
+              {
+                "name": "git.md",
+                "type": "file"
+              },
+              {
+                "name": "github.md",
+                "type": "file"
+              },
+              {
+                "name": "gitlab.md",
+                "type": "file"
+              },
+              {
+                "name": "hashnode.md",
+                "type": "file"
+              },
+              {
+                "name": "index.md",
+                "type": "file"
+              },
+              {
+                "name": "watch.md",
+                "type": "file"
+              },
+              {
+                "name": "xml.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "configuration.md",
+            "type": "file"
+          },
+          {
+            "name": "contributing.md",
+            "type": "file"
+          },
+          {
+            "name": "cursor-witness.md",
+            "type": "file"
+          },
+          {
+            "name": "formatters.md",
+            "type": "file"
+          },
+          {
+            "name": "input-forms.md",
+            "type": "file"
+          },
+          {
+            "name": "mcp-integration.md",
+            "type": "file"
+          },
+          {
+            "name": "mcp-warm-process-servers.md",
+            "type": "file"
+          },
+          {
+            "name": "notifiers.md",
+            "type": "file"
+          },
+          {
+            "name": "validators.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "formatters",
+        "type": "directory",
+        "children": [
+          {
+            "name": "php-cs-fixer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "php-cs-fixer.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "phpcbf",
+            "type": "directory",
+            "children": [
+              {
+                "name": "phpcbf.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prettier-write",
+            "type": "directory",
+            "children": [
+              {
+                "name": "prettier-write.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "session-start.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "notifiers",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-channel",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".gitignore",
+                "type": "file"
+              },
+              {
+                "name": "bun.lock",
+                "type": "file"
+              },
+              {
+                "name": "channel.ts",
+                "type": "file"
+              },
+              {
+                "name": "install.sh",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cursor-witness",
+            "type": "directory",
+            "children": [
+              {
+                "name": "extension",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "extension.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".gitignore",
+                    "type": "file"
+                  },
+                  {
+                    "name": "icon.png",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package-lock.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "README.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tsconfig.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "install.sh",
+                "type": "file"
+              },
+              {
+                "name": "listen.py",
+                "type": "file"
+              },
+              {
+                "name": "notify.py",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "presets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bluesky",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_atproto.py",
+                "type": "file"
+              },
+              {
+                "name": "_auth.py",
+                "type": "file"
+              },
+              {
+                "name": "_sanitize.py",
+                "type": "file"
+              },
+              {
+                "name": "follow.py",
+                "type": "file"
+              },
+              {
+                "name": "like.py",
+                "type": "file"
+              },
+              {
+                "name": "list.py",
+                "type": "file"
+              },
+              {
+                "name": "publish.py",
+                "type": "file"
+              },
+              {
+                "name": "read.py",
+                "type": "file"
+              },
+              {
+                "name": "repost.py",
+                "type": "file"
+              },
+              {
+                "name": "search.py",
+                "type": "file"
+              },
+              {
+                "name": "status_since.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude-log",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_common.py",
+                "type": "file"
+              },
+              {
+                "name": "list.py",
+                "type": "file"
+              },
+              {
+                "name": "summary.py",
+                "type": "file"
+              },
+              {
+                "name": "tail.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dashboard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dashboard.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "devto",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_auth.py",
+                "type": "file"
+              },
+              {
+                "name": "_me.py",
+                "type": "file"
+              },
+              {
+                "name": "_outbound.py",
+                "type": "file"
+              },
+              {
+                "name": "_resolve.py",
+                "type": "file"
+              },
+              {
+                "name": "_rest.py",
+                "type": "file"
+              },
+              {
+                "name": "_sanitize.py",
+                "type": "file"
+              },
+              {
+                "name": "_session.py",
+                "type": "file"
+              },
+              {
+                "name": "browse.py",
+                "type": "file"
+              },
+              {
+                "name": "comment.py",
+                "type": "file"
+              },
+              {
+                "name": "comments.py",
+                "type": "file"
+              },
+              {
+                "name": "list.py",
+                "type": "file"
+              },
+              {
+                "name": "publish.py",
+                "type": "file"
+              },
+              {
+                "name": "react.py",
+                "type": "file"
+              },
+              {
+                "name": "read.py",
+                "type": "file"
+              },
+              {
+                "name": "status_since.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "git",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_git_common.py",
+                "type": "file"
+              },
+              {
+                "name": "blame.py",
+                "type": "file"
+              },
+              {
+                "name": "checkout.py",
+                "type": "file"
+              },
+              {
+                "name": "commit.py",
+                "type": "file"
+              },
+              {
+                "name": "conflicts.py",
+                "type": "file"
+              },
+              {
+                "name": "diff.py",
+                "type": "file"
+              },
+              {
+                "name": "diverge.py",
+                "type": "file"
+              },
+              {
+                "name": "investigate.py",
+                "type": "file"
+              },
+              {
+                "name": "merge.py",
+                "type": "file"
+              },
+              {
+                "name": "push.py",
+                "type": "file"
+              },
+              {
+                "name": "resolve.py",
+                "type": "file"
+              },
+              {
+                "name": "status.py",
+                "type": "file"
+              },
+              {
+                "name": "trail.py",
+                "type": "file"
+              },
+              {
+                "name": "worktrees.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "github",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_pr_diff.py",
+                "type": "file"
+              },
+              {
+                "name": "batch_follow.py",
+                "type": "file"
+              },
+              {
+                "name": "batch_star.py",
+                "type": "file"
+              },
+              {
+                "name": "branch.py",
+                "type": "file"
+              },
+              {
+                "name": "check.py",
+                "type": "file"
+              },
+              {
+                "name": "find_followable.py",
+                "type": "file"
+              },
+              {
+                "name": "find_starable.py",
+                "type": "file"
+              },
+              {
+                "name": "follow.py",
+                "type": "file"
+              },
+              {
+                "name": "following.py",
+                "type": "file"
+              },
+              {
+                "name": "issue_create.py",
+                "type": "file"
+              },
+              {
+                "name": "issue.py",
+                "type": "file"
+              },
+              {
+                "name": "issues.py",
+                "type": "file"
+              },
+              {
+                "name": "job.py",
+                "type": "file"
+              },
+              {
+                "name": "pr_create.py",
+                "type": "file"
+              },
+              {
+                "name": "pr_merge.py",
+                "type": "file"
+              },
+              {
+                "name": "pr.py",
+                "type": "file"
+              },
+              {
+                "name": "prs.py",
+                "type": "file"
+              },
+              {
+                "name": "run.py",
+                "type": "file"
+              },
+              {
+                "name": "star.py",
+                "type": "file"
+              },
+              {
+                "name": "starred.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gitlab",
+            "type": "directory",
+            "children": [
+              {
+                "name": "api.py",
+                "type": "file"
+              },
+              {
+                "name": "issue_create.py",
+                "type": "file"
+              },
+              {
+                "name": "issue.py",
+                "type": "file"
+              },
+              {
+                "name": "job.py",
+                "type": "file"
+              },
+              {
+                "name": "mr.py",
+                "type": "file"
+              },
+              {
+                "name": "mrs.py",
+                "type": "file"
+              },
+              {
+                "name": "pipeline.py",
+                "type": "file"
+              },
+              {
+                "name": "runners.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hashnode",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_auth.py",
+                "type": "file"
+              },
+              {
+                "name": "_graphql.py",
+                "type": "file"
+              },
+              {
+                "name": "_me.py",
+                "type": "file"
+              },
+              {
+                "name": "_outbound.py",
+                "type": "file"
+              },
+              {
+                "name": "_resolve.py",
+                "type": "file"
+              },
+              {
+                "name": "_sanitize.py",
+                "type": "file"
+              },
+              {
+                "name": "browse.py",
+                "type": "file"
+              },
+              {
+                "name": "comment.py",
+                "type": "file"
+              },
+              {
+                "name": "comments.py",
+                "type": "file"
+              },
+              {
+                "name": "list.py",
+                "type": "file"
+              },
+              {
+                "name": "publish.py",
+                "type": "file"
+              },
+              {
+                "name": "react.py",
+                "type": "file"
+              },
+              {
+                "name": "read.py",
+                "type": "file"
+              },
+              {
+                "name": "reply.py",
+                "type": "file"
+              },
+              {
+                "name": "search.py",
+                "type": "file"
+              },
+              {
+                "name": "status_since.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_paths.py",
+                "type": "file"
+              },
+              {
+                "name": "_spawn.py",
+                "type": "file"
+              },
+              {
+                "name": "daemon.py",
+                "type": "file"
+              },
+              {
+                "name": "status.py",
+                "type": "file"
+              },
+              {
+                "name": "stop.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "watch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sources",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "gh-run",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "events.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "poller.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "github-pr",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "events.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "poller.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gitlab-mr",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "events.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "poller.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gitlab-mr-feed",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "events.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "poller.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gl-pipeline",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "events.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "poller.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gl-runners",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "events.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "poller.py",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "tiers",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "_snapshot.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gh_prs.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "gl_mrs.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "defaults.py",
+                "type": "file"
+              },
+              {
+                "name": "dispatcher.py",
+                "type": "file"
+              },
+              {
+                "name": "radar.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "transport.py",
+                "type": "file"
+              },
+              {
+                "name": "watch-mine.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "xml",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "_common.py",
+                "type": "file"
+              },
+              {
+                "name": "attr.py",
+                "type": "file"
+              },
+              {
+                "name": "count.py",
+                "type": "file"
+              },
+              {
+                "name": "query.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "_board.py",
+            "type": "file"
+          },
+          {
+            "name": "_body.py",
+            "type": "file"
+          },
+          {
+            "name": "_branch_locale.py",
+            "type": "file"
+          },
+          {
+            "name": "_checks.py",
+            "type": "file"
+          },
+          {
+            "name": "_declared_legs.py",
+            "type": "file"
+          },
+          {
+            "name": "_env.py",
+            "type": "file"
+          },
+          {
+            "name": "_filter_tokens.py",
+            "type": "file"
+          },
+          {
+            "name": "_http.py",
+            "type": "file"
+          },
+          {
+            "name": "_proc.py",
+            "type": "file"
+          },
+          {
+            "name": "_publish_safety.py",
+            "type": "file"
+          },
+          {
+            "name": "_refname.py",
+            "type": "file"
+          },
+          {
+            "name": "_remote_default.py",
+            "type": "file"
+          },
+          {
+            "name": "_repo_target.py",
+            "type": "file"
+          },
+          {
+            "name": "_secrets.py",
+            "type": "file"
+          },
+          {
+            "name": "_untrusted.py",
+            "type": "file"
+          },
+          {
+            "name": "bluesky.json",
+            "type": "file"
+          },
+          {
+            "name": "claude-log.json",
+            "type": "file"
+          },
+          {
+            "name": "dashboard.json",
+            "type": "file"
+          },
+          {
+            "name": "devto.json",
+            "type": "file"
+          },
+          {
+            "name": "git.json",
+            "type": "file"
+          },
+          {
+            "name": "github.json",
+            "type": "file"
+          },
+          {
+            "name": "gitlab.json",
+            "type": "file"
+          },
+          {
+            "name": "hashnode.json",
+            "type": "file"
+          },
+          {
+            "name": "mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "watch.json",
+            "type": "file"
+          },
+          {
+            "name": "xml.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "resolve",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Foo",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "Bar.class.php",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "mypkg",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "utils.py",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "util.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "xml",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "clover_sample.xml",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "mock_mcp_server.py",
+                "type": "file"
+              },
+              {
+                "name": "print_watch_sock_path.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "_adapter_budget.py",
+            "type": "file"
+          },
+          {
+            "name": "_adapter_verdict.py",
+            "type": "file"
+          },
+          {
+            "name": "_mcp_mock.py",
+            "type": "file"
+          },
+          {
+            "name": "_no_fqdn_server.py",
+            "type": "file"
+          },
+          {
+            "name": "_preset_loader.py",
+            "type": "file"
+          },
+          {
+            "name": "_render.py",
+            "type": "file"
+          },
+          {
+            "name": "_repo_walk.py",
+            "type": "file"
+          },
+          {
+            "name": "_toolchain_gate.py",
+            "type": "file"
+          },
+          {
+            "name": "_winenv.py",
+            "type": "file"
+          },
+          {
+            "name": "_workflow_parse.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_adapter_cannot_forge_core_keys_1036.py",
+            "type": "file"
+          },
+          {
+            "name": "test_adapter_timeout_policy_702_658.py",
+            "type": "file"
+          },
+          {
+            "name": "test_adapter_tool_vs_file_753.py",
+            "type": "file"
+          },
+          {
+            "name": "test_adapter_verdict_diagnostics_725_717.py",
+            "type": "file"
+          },
+          {
+            "name": "test_append_op_383.py",
+            "type": "file"
+          },
+          {
+            "name": "test_around_byte_cap_241.py",
+            "type": "file"
+          },
+          {
+            "name": "test_around_line_hint_734.py",
+            "type": "file"
+          },
+          {
+            "name": "test_around_line.py",
+            "type": "file"
+          },
+          {
+            "name": "test_around.py",
+            "type": "file"
+          },
+          {
+            "name": "test_at_file_cwd_root_672.py",
+            "type": "file"
+          },
+          {
+            "name": "test_at_file_mixed_args.py",
+            "type": "file"
+          },
+          {
+            "name": "test_at_file_route.py",
+            "type": "file"
+          },
+          {
+            "name": "test_atomic_write_mode_259.py",
+            "type": "file"
+          },
+          {
+            "name": "test_autoread_line_cap_362.py",
+            "type": "file"
+          },
+          {
+            "name": "test_batch_at_file_error_paths.py",
+            "type": "file"
+          },
+          {
+            "name": "test_batch_colon_content_252.py",
+            "type": "file"
+          },
+          {
+            "name": "test_batch_op.py",
+            "type": "file"
+          },
+          {
+            "name": "test_batch_parallel_paths.py",
+            "type": "file"
+          },
+          {
+            "name": "test_batch_payload_header_fidelity_644.py",
+            "type": "file"
+          },
+          {
+            "name": "test_batch_skip_report_680.py",
+            "type": "file"
+          },
+          {
+            "name": "test_between_line_range_983.py",
+            "type": "file"
+          },
+          {
+            "name": "test_between.py",
+            "type": "file"
+          },
+          {
+            "name": "test_blank_line_alignment.py",
+            "type": "file"
+          },
+          {
+            "name": "test_bluesky.py",
+            "type": "file"
+          },
+          {
+            "name": "test_board_extra_segment_964.py",
+            "type": "file"
+          },
+          {
+            "name": "test_board_row.py",
+            "type": "file"
+          },
+          {
+            "name": "test_body_truncation_disclosure_698.py",
+            "type": "file"
+          },
+          {
+            "name": "test_branch_locale_shell_injection_924.py",
+            "type": "file"
+          },
+          {
+            "name": "test_branch_worktree_locale_850.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cached_result_cannot_forge_core_keys_1044.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cargo_segment_floor_1037.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cargo_sibling_attribution_754.py",
+            "type": "file"
+          },
+          {
+            "name": "test_changelog_fragment_content_923.py",
+            "type": "file"
+          },
+          {
+            "name": "test_changelog_fragment_indent_bypass_930.py",
+            "type": "file"
+          },
+          {
+            "name": "test_changelog_fragment_parser_936.py",
+            "type": "file"
+          },
+          {
+            "name": "test_changelog_fragment_whitelist_934.py",
+            "type": "file"
+          },
+          {
+            "name": "test_changelog_fragments_906.py",
+            "type": "file"
+          },
+          {
+            "name": "test_changelog_link_refs_918.py",
+            "type": "file"
+          },
+          {
+            "name": "test_chaos_multi_op_chains.py",
+            "type": "file"
+          },
+          {
+            "name": "test_check_tally_454.py",
+            "type": "file"
+          },
+          {
+            "name": "test_check_tally_shortfall_724.py",
+            "type": "file"
+          },
+          {
+            "name": "test_check.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ci_encoding_546.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ci_job_timeouts_722.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ci_non_python_coverage_557.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ci_pip_cache_890.py",
+            "type": "file"
+          },
+          {
+            "name": "test_claude_log_raw_syntax_778.py",
+            "type": "file"
+          },
+          {
+            "name": "test_claude_log.py",
+            "type": "file"
+          },
+          {
+            "name": "test_comment_cap_disclosure_719.py",
+            "type": "file"
+          },
+          {
+            "name": "test_comment_file.py",
+            "type": "file"
+          },
+          {
+            "name": "test_compact_header_384.py",
+            "type": "file"
+          },
+          {
+            "name": "test_compact.py",
+            "type": "file"
+          },
+          {
+            "name": "test_console_entry_point_442.py",
+            "type": "file"
+          },
+          {
+            "name": "test_count_lines_388.py",
+            "type": "file"
+          },
+          {
+            "name": "test_coverage_gate_floor_991.py",
+            "type": "file"
+          },
+          {
+            "name": "test_coverage_gate_workdir_877.py",
+            "type": "file"
+          },
+          {
+            "name": "test_coverage_scope_861.py",
+            "type": "file"
+          },
+          {
+            "name": "test_csharp_grammar_790.py",
+            "type": "file"
+          },
+          {
+            "name": "test_custom_ops.py",
+            "type": "file"
+          },
+          {
+            "name": "test_cwd_op.py",
+            "type": "file"
+          },
+          {
+            "name": "test_dashboard_953.py",
+            "type": "file"
+          },
+          {
+            "name": "test_dashboard_lane_prefix_1007.py",
+            "type": "file"
+          },
+          {
+            "name": "test_deferred_baseline_unmeasured_832.py",
+            "type": "file"
+          },
+          {
+            "name": "test_delegated_grep_disclosure_764.py",
+            "type": "file"
+          },
+          {
+            "name": "test_devto_csrf_diagnosis_766.py",
+            "type": "file"
+          },
+          {
+            "name": "test_devto_preflight_unknown_562.py",
+            "type": "file"
+          },
+          {
+            "name": "test_devto.py",
+            "type": "file"
+          },
+          {
+            "name": "test_diff.py",
+            "type": "file"
+          },
+          {
+            "name": "test_dispatch.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edge_cases_at_file_security.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edge_cases_batch_security.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edge_cases_git_commit.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edge_cases_git_ops_silent_data_loss.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edge_cases_glob.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edge_cases_paste_security.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edge_cases_replace_lines.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edge_cases_vim.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edit_diagnostics_381_380.py",
+            "type": "file"
+          },
+          {
+            "name": "test_edit_ops.py",
+            "type": "file"
+          },
+          {
+            "name": "test_encoding_seam.py",
+            "type": "file"
+          },
+          {
+            "name": "test_entry_point_shim_931.py",
+            "type": "file"
+          },
+          {
+            "name": "test_env_field.py",
+            "type": "file"
+          },
+          {
+            "name": "test_env_knob_parsing_654.py",
+            "type": "file"
+          },
+          {
+            "name": "test_error_format.py",
+            "type": "file"
+          },
+          {
+            "name": "test_exclude_paths.py",
+            "type": "file"
+          },
+          {
+            "name": "test_forged_branch_line_965.py",
+            "type": "file"
+          },
+          {
+            "name": "test_forged_runner_line_970.py",
+            "type": "file"
+          },
+          {
+            "name": "test_formatter_optin_393.py",
+            "type": "file"
+          },
+          {
+            "name": "test_formatters_deferred.py",
+            "type": "file"
+          },
+          {
+            "name": "test_formatters_php_cs_fixer.py",
+            "type": "file"
+          },
+          {
+            "name": "test_formatters_phpcbf.py",
+            "type": "file"
+          },
+          {
+            "name": "test_formatters_prettier_write.py",
+            "type": "file"
+          },
+          {
+            "name": "test_formatters.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gc_474.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_branch_green_615.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_branch_leg_reconcile_837.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_branch_ref_dash_guard_852.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_issue_linked_pr_tally_815.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_issues_linked_means_closes_782.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_issues_milestone_864.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_issues_row_id_842.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_job_fail_non_failure_916.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_job_routes_check_run_827.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_conflicting_594.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_create_950.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_create_main_950.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_diff_875.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_merge_950.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_merge_main_950.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_names_check_run_id_827.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_ops_edges_950.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_pending_age_801.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_run_coverage_804.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_pr_run_states_585.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_run_failed_section_803.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_run_header_tally_789.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gh_run_matrix_reconcile_804.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_arg_injection_818.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_checkout_pathspec_756.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_checkout_rebase_state_900.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_checkout_recovery_649.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_checkout.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_commit_colon_message_751.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_commit_existing_mr.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_commit_payload_route.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_commit.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_common.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_conflicts.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_diff_patch_358.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_diff.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_diverge.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_env_leak_416.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_env_scrub_692.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_env_scrub_builtins_714.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_helper_adoption_704.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_investigate_separator_759.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_merge.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_mr_lookup_948.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_first_upstream_354.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_force_discard_655.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_hazards_640_642_647.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_hook_text_nff_641.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_mismatched_upstream_787.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_post_push_receipt_675.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_receipt_truthfulness_661_662_663.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_remote_resolution_656.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_result_first_623.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push_set_upstream_879.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_push.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_resolve_heading_dup_839.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_resolve_source_guard_744.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_resolve_validate_child_failure_883.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_resolve_validate_scope_876.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_resolve_validator_skipped_880.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_resolve.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_state_guard.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_status_run_states_587.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_status.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_timeout_disclosure_650.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_trail_635.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_worktrees_860.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_worktrees_876.py",
+            "type": "file"
+          },
+          {
+            "name": "test_git_worktrees_941.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_check_run_annotations_793.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_issue_linked_prs_search_wrong_780_items_2_3.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_issue_linked_unknown_780.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_issue.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_issues_769.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_job_missing_log_states_723.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_job.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_pr.py",
+            "type": "file"
+          },
+          {
+            "name": "test_github_prs.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitignore_walk_449.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_api_831.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_issue_related_mrs_635.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_issue.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_job.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_mr_approvals_720.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_mr_declines_812.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_mr_element_guards_735.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_mr.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_mrs_failed_cap_652.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_mrs.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gitlab_pipeline.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gl_api_url_refusal_1035.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gl_issue_related_mr_pipeline_815.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gl_runners_done_note_scope_806.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gl_runners_done_window_531.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gl_runners_false_alarms_750.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gl_runners_silent_marker_814.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gl_runners_superseded_613.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gl_runners.py",
+            "type": "file"
+          },
+          {
+            "name": "test_glab_paginated_json_352_359.py",
+            "type": "file"
+          },
+          {
+            "name": "test_glob_braces.py",
+            "type": "file"
+          },
+          {
+            "name": "test_glob.py",
+            "type": "file"
+          },
+          {
+            "name": "test_grep_comma_path_list_921.py",
+            "type": "file"
+          },
+          {
+            "name": "test_grep.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hadolint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_hashnode.py",
+            "type": "file"
+          },
+          {
+            "name": "test_http_bounds.py",
+            "type": "file"
+          },
+          {
+            "name": "test_image_fetch_ssrf_817.py",
+            "type": "file"
+          },
+          {
+            "name": "test_inilint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_introduction.py",
+            "type": "file"
+          },
+          {
+            "name": "test_issue_attachment_fetch.py",
+            "type": "file"
+          },
+          {
+            "name": "test_issue_create.py",
+            "type": "file"
+          },
+          {
+            "name": "test_job_grep_size_disclosure_622.py",
+            "type": "file"
+          },
+          {
+            "name": "test_jsonlint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_kevin_2026_05_17.py",
+            "type": "file"
+          },
+          {
+            "name": "test_language_formatters.py",
+            "type": "file"
+          },
+          {
+            "name": "test_linked_issue_591.py",
+            "type": "file"
+          },
+          {
+            "name": "test_literal_fallback_287.py",
+            "type": "file"
+          },
+          {
+            "name": "test_local_branch_hint_531.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ls.py",
+            "type": "file"
+          },
+          {
+            "name": "test_lsp_diag_staleness_482.py",
+            "type": "file"
+          },
+          {
+            "name": "test_map_markdown_887.py",
+            "type": "file"
+          },
+          {
+            "name": "test_map.py",
+            "type": "file"
+          },
+          {
+            "name": "test_markdownlint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_match_glob_braces.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_autospawn_provenance_475.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_client.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_config_279.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_daemon_dedup_451.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_daemon_dirfd_598.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_daemon_missing_cmd_666.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_list_pidfiles_decline_551.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_msg_cap.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_routing.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_runtime_dir_ancestry_607.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_runtime_dir_mode_568.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_runtime_dir_nofollow_583.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_status_unknown_549.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_status_unreadable_config_569.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_stop_crash_574.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_stop_outcome_547.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_stop_pid_zero_569.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_workspace.py",
+            "type": "file"
+          },
+          {
+            "name": "test_meta_ops.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mixed_tree_guard_678.py",
+            "type": "file"
+          },
+          {
+            "name": "test_named_legs_619.py",
+            "type": "file"
+          },
+          {
+            "name": "test_no_bare_python3_spawn.py",
+            "type": "file"
+          },
+          {
+            "name": "test_no_getfqdn_928.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifier_first_changed_line.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifier_placeholder_379.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifiers_claude_channel_550.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifiers_claude_channel_554.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifiers_claude_channel_605_burst.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifiers_claude_channel_605.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifiers_claude_channel_609.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifiers_claude_channel_612.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifiers_cursor_witness.py",
+            "type": "file"
+          },
+          {
+            "name": "test_notifiers.py",
+            "type": "file"
+          },
+          {
+            "name": "test_op_format.py",
+            "type": "file"
+          },
+          {
+            "name": "test_op_resolve.py",
+            "type": "file"
+          },
+          {
+            "name": "test_op_staged.py",
+            "type": "file"
+          },
+          {
+            "name": "test_op_unavailable_here_614.py",
+            "type": "file"
+          },
+          {
+            "name": "test_op_workspace.py",
+            "type": "file"
+          },
+          {
+            "name": "test_output_format.py",
+            "type": "file"
+          },
+          {
+            "name": "test_parallel_helpers.py",
+            "type": "file"
+          },
+          {
+            "name": "test_parallel.py",
+            "type": "file"
+          },
+          {
+            "name": "test_path_not_found_root_624.py",
+            "type": "file"
+          },
+          {
+            "name": "test_payload_literal_backslash_834.py",
+            "type": "file"
+          },
+          {
+            "name": "test_payload_literal_double_backslash_1027.py",
+            "type": "file"
+          },
+          {
+            "name": "test_payload_sh_eol_backslash_835.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phplint_tool_vs_file_745.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phpmd_ci_ruleset_356.py",
+            "type": "file"
+          },
+          {
+            "name": "test_plain_mode.py",
+            "type": "file"
+          },
+          {
+            "name": "test_poller_argv_label_571.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pre_push_interpreter_572.py",
+            "type": "file"
+          },
+          {
+            "name": "test_preflight_unknown_601.py",
+            "type": "file"
+          },
+          {
+            "name": "test_preset_basename_collision_726.py",
+            "type": "file"
+          },
+          {
+            "name": "test_preset_global_lifetimes_686.py",
+            "type": "file"
+          },
+          {
+            "name": "test_preset_loader.py",
+            "type": "file"
+          },
+          {
+            "name": "test_presets.py",
+            "type": "file"
+          },
+          {
+            "name": "test_printed_shell_refs_694.py",
+            "type": "file"
+          },
+          {
+            "name": "test_proc.py",
+            "type": "file"
+          },
+          {
+            "name": "test_prs_mrs_unknown_token_939.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pyproject_version_522.py",
+            "type": "file"
+          },
+          {
+            "name": "test_pyright.py",
+            "type": "file"
+          },
+          {
+            "name": "test_radar_delta_elision_1022.py",
+            "type": "file"
+          },
+          {
+            "name": "test_radar_gl_mrs_unknown_token_961.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_abstract_languages_670.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_nav_friction_363.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_op_colon_escape_625.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_range_382.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_when_ready.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_window_grep_limit_945.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_window_truth_945.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read.py",
+            "type": "file"
+          },
+          {
+            "name": "test_reapply_disclosure_701.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rector_mcp_engine_glitches.py",
+            "type": "file"
+          },
+          {
+            "name": "test_remote_default.py",
+            "type": "file"
+          },
+          {
+            "name": "test_remote_text_demarcation_694.py",
+            "type": "file"
+          },
+          {
+            "name": "test_render_determinism_643.py",
+            "type": "file"
+          },
+          {
+            "name": "test_replace.py",
+            "type": "file"
+          },
+          {
+            "name": "test_repo_target_673.py",
+            "type": "file"
+          },
+          {
+            "name": "test_repo_target_job_hints_673.py",
+            "type": "file"
+          },
+          {
+            "name": "test_require_validators_core_975.py",
+            "type": "file"
+          },
+          {
+            "name": "test_result_footer_621.py",
+            "type": "file"
+          },
+          {
+            "name": "test_review_regressions_395.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rollback_no_verdict_969.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rollback_receipt_952_984.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rtk.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ruby_check.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sanitize.py",
+            "type": "file"
+          },
+          {
+            "name": "test_secret_files_691.py",
+            "type": "file"
+          },
+          {
+            "name": "test_secret_redaction_760.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_bluesky.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_claude_log.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_config.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_devto.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_dispatch_parser.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_edge_cases.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_error_echo_691.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_github.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_glab.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_hardening_150.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_hashnode.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_lsp.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_mcp_daemon_148.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_mcp_daemon.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_publish_149.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_redirect.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_safe_path.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_tree_sitter.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_validate_format.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_vim_shell.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_xml.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_hook_plugin_path.py",
+            "type": "file"
+          },
+          {
+            "name": "test_session_hook_supertool_checkout_711.py",
+            "type": "file"
+          },
+          {
+            "name": "test_skipped_shape_contract_515.py",
+            "type": "file"
+          },
+          {
+            "name": "test_slow_marker_ci_exclusion_891.py",
+            "type": "file"
+          },
+          {
+            "name": "test_stat.py",
+            "type": "file"
+          },
+          {
+            "name": "test_state_reset_and_lint_timeout.py",
+            "type": "file"
+          },
+          {
+            "name": "test_status_casing_documented_469.py",
+            "type": "file"
+          },
+          {
+            "name": "test_status_swallowed_705.py",
+            "type": "file"
+          },
+          {
+            "name": "test_stdin_clash_341.py",
+            "type": "file"
+          },
+          {
+            "name": "test_syntax_floor_478.py",
+            "type": "file"
+          },
+          {
+            "name": "test_syntax_rollback_477.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tail_head.py",
+            "type": "file"
+          },
+          {
+            "name": "test_timeout_elapsed_727.py",
+            "type": "file"
+          },
+          {
+            "name": "test_toml_delimiter_hint_394.py",
+            "type": "file"
+          },
+          {
+            "name": "test_toml_escape_divergence_684.py",
+            "type": "file"
+          },
+          {
+            "name": "test_toml_ops_detect_357.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tomllint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tree_sitter_compat.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tree.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tsc_check.py",
+            "type": "file"
+          },
+          {
+            "name": "test_unanswerable_checks_693.py",
+            "type": "file"
+          },
+          {
+            "name": "test_undecodable_subprocess_output.py",
+            "type": "file"
+          },
+          {
+            "name": "test_untrusted_check_branch_851.py",
+            "type": "file"
+          },
+          {
+            "name": "test_untrusted_console_encoding_863.py",
+            "type": "file"
+          },
+          {
+            "name": "test_untrusted_crlf_tab_render_854.py",
+            "type": "file"
+          },
+          {
+            "name": "test_untrusted_watch_board_channel_819.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validate_header_forgery_and_payload_scope.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validator_adapter_reply_634.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validator_cache_fingerprint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validator_daemon_unavailable_531.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validator_render_diff.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validator_warm_unsafe_345.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_deferred_file_header.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_deferred.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_eslint_667.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_git_status.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_gitleaks_668.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_lsp_diag.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_phpmd.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_phpstan_paths_412.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_phpstan_scope_263.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_phpstan.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_prettier_check.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_psr.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_required_not_checked_665.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_ruff.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_shellcheck_665.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_skip_state.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_stop_on_new_file.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators_tier2.py",
+            "type": "file"
+          },
+          {
+            "name": "test_validators.py",
+            "type": "file"
+          },
+          {
+            "name": "test_version.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_autocorrect.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_canonical.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_case_operator_motion.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_dot_repeat_verbs.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_escape_literal_501.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_ex_delete.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_hex_escape.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_indent_motion.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_insert_family.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_integration.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_kevin_fixes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_line_range.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_misc_paths.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_more_coverage.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_more_edges.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_motion_audit.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_number_and_case.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_operator_motion.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_receipt_diff_and_lint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_run3_fixes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_s_backslash_autocorrect.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_search_retry.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_state_persistence.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_text_objects_extra.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_text_objects.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_tier1_grab_bag.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_tier2_marks_gi_indent_R.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_word_motion_edges.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim_x1e_and_text_verb_merge.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vim.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_death_supervision_513.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_dispatcher.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_fetch_refusal_541.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_gh_run_524.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_github_pr_poller.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_gitlab_mr_feed.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_gitlab_mr_poller.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_gl_pipeline_353.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_mine_defaults.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_notify_argv.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_pid_set_511.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_pidfile_singleton_476.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_radar_gh_prs_859.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_radar_reap_749.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_radar_reap_inspection_957.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_radar_unchecked_659.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_radar.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_sock_path_581.py",
+            "type": "file"
+          },
+          {
+            "name": "test_watch_transport.py",
+            "type": "file"
+          },
+          {
+            "name": "test_wc.py",
+            "type": "file"
+          },
+          {
+            "name": "test_windows_warm_validators_544.py",
+            "type": "file"
+          },
+          {
+            "name": "test_xml.py",
+            "type": "file"
+          },
+          {
+            "name": "test_yaml_check.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "validators",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bash-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bash-check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cargo-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cargo-check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "common",
+            "type": "directory",
+            "children": [
+              {
+                "name": "refusal.py",
+                "type": "file"
+              },
+              {
+                "name": "source_context.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "eslint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "eslint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "git-status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "git-status.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gitleaks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "gitleaks.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gofmt-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "gofmt-check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hadolint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hadolint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "inilint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "inilint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "jsonlint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "jsonlint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "lsp-diag",
+            "type": "directory",
+            "children": [
+              {
+                "name": "lsp-diag.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "markdownlint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "markdownlint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "node-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "node-check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "phplint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "phplint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "phpmd",
+            "type": "directory",
+            "children": [
+              {
+                "name": "phpmd.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "phpmd-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "phpmd-mcp.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "phpstan",
+            "type": "directory",
+            "children": [
+              {
+                "name": "phpstan.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "phpstan-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "phpstan-mcp.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "phpunit-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "phpunit-mcp.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "prettier-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "prettier-check.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "psr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "psr.py",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "py-compile",
+            "type": "directory",
+            "children": [
+              {
+                "name": "py-compile.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "pyright",
+            "type": "directory",
+            "children": [
+              {
+                "name": "pyright.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rector-mcp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "rector-mcp.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ruby-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ruby-check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ruff",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ruff.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "shellcheck",
+            "type": "directory",
+            "children": [
+              {
+                "name": "shellcheck.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "stylelint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "stylelint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "terraform-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "terraform-check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tomllint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "tomllint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tsc-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "tsc-check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "xmllint",
+            "type": "directory",
+            "children": [
+              {
+                "name": "xmllint.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "yaml-check",
+            "type": "directory",
+            "children": [
+              {
+                "name": "yaml-check.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "SCHEMA.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "_supertool.py",
+        "type": "file"
+      },
+      {
+        "name": ".editorconfig",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".supertool.example.json",
+        "type": "file"
+      },
+      {
+        "name": ".supertool.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "supertool-banner.webp",
+        "type": "file"
+      },
+      {
+        "name": "supertool.py",
+        "type": "file"
+      }
+    ]
+  }
+}

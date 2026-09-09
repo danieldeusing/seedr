@@ -156,7 +156,10 @@ export interface GitHubRepoRef {
 
 /** Accepts https://github.com/o/r(.git)(/…), http, and git@github.com:o/r.git forms. */
 export function parseGitHubRepoUrl(url: string): GitHubRepoRef | null {
-  const match = /^(?:https?:\/\/(?:www\.)?github\.com\/|git@github\.com:)([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[/#?].*)?$/.exec(url.trim());
+  // A bare `owner/repo` is how Claude Code's marketplaces abbreviate a GitHub repository too.
+  const match =
+    /^(?:https?:\/\/(?:www\.)?github\.com\/|git@github\.com:)([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[/#?].*)?$/.exec(url.trim()) ??
+    /^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?$/.exec(url.trim());
   if (!match) return null;
   const repo = `${match[1]}/${match[2]}`;
   return { repo, cloneUrl: `https://github.com/${repo}.git` };
@@ -263,6 +266,12 @@ export function parsePluginContents(files: FileTreeNode[]): ParsedPluginContents
     processDir(dir, false);
   }
 
+  // Skills kept beside plugin.json instead of under skills/ (`<name>/SKILL.md` at the top level)
+  if (!contents.skills) {
+    const loose = skillNamesIn(files);
+    if (loose.length > 0) contents.skills = loose;
+  }
+
   // Detect .mcp.json at root level (most MCP plugins use this pattern)
   if (files.some((f) => f.type === "file" && f.name === ".mcp.json")) {
     contents.mcpServers = [".mcp.json"];
@@ -290,4 +299,6 @@ export interface PluginJson {
   skills?: string | string[];
   /** Inline server map, a path to an .mcp.json inside the plugin, or a list of such paths. */
   mcpServers?: Record<string, unknown> | string | string[];
+  /** Language servers declared by the plugin itself rather than by its marketplace entry. */
+  lspServers?: Record<string, unknown>;
 }

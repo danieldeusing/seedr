@@ -1,0 +1,444 @@
+{
+  "slug": "flow",
+  "name": "Flow",
+  "type": "plugin",
+  "description": "Flow turns Claude into a project partner who manages your backlog. Say \"park this for later,\" and it queues the idea. Say \"what's next?\" and it finds the highest-priority ready item and offers to start, handling the bookkeeping so you stay in flow.\n\nIt works as a lightweight scrum board with three ways to interact: talk to Claude conversationally, drag cards on the built-in Kanban board, or run multiple agents in parallel, each with filtered views. All three read and write the same backlog.json, no sync step, no drift.\n\nLanes are fully configurable. Start with the default agile flow (Backlog → Refined → Ready → In Progress → Code Review → Done) or define your own columns and gate rules. The board, the API, and the agent all enforce them consistently.\n\nConversational management: Add, reorder, refine, and complete items by talking naturally; no commands to memorize.\nBuilt-in Kanban board: Drag-and-drop web UI that syncs with the agent in real time; launch with one command.\nMulti-agent support: Leader agents assign work, worker agents get filtered views of only their items, plus unassigned ready work.\nAgent-initiated items: Claude adds bugs, tech debt, and follow-ups he discovers while working, linking them back to the source task.\nLinked items: Connect related items with typed links (blocks, follow-up, discovered-during, related) and a reason.\nConfigurable lanes: Define your own workflow columns and gate rules; the board, REST API, and agent all enforce them at every layer.\nThreaded refinement: Structured Q&A threads on items keep discussions organized; tag @Agent for async responses\nConcurrency safe: Optimistic versioning and atomic writes prevent data loss when board and agent write simultaneously",
+  "longDescription": "Ships **1 skill** and **6 agents**.\n\n- **Skills** (1): `backlog-manager` (Manage a project backlog — add, prioritize, refine, and pick up work items)\n- **Agents** (6): `backend-dev` (Backend specialist — Python, APIs, databases, auth), `frontend-dev` (Frontend specialist — React, TypeScript, CSS, UI), `lead-dev` (Lead agent — orchestrates the dev cycle, refines items, assigns work), `qa` (QA specialist — testing, API validation, e2e coverage), `reviewer` (Code reviewer — correctness, idempotency, edge cases, write safety), `sub-lead-reviewer` (Independent lead that reviews a complex backlog item's spec for READINESS before it goes to an implementer)\n\nInstalls with `claude plugin install flow@claude-community` from `prajyotbankade/Flow`.",
+  "compatibility": [
+    "claude",
+    "copilot"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 1,
+    "agent": 6
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Prajyot Bankade",
+    "url": "https://github.com/prajyotbankade"
+  },
+  "externalUrl": "https://github.com/prajyotbankade/Flow/tree/6cd2edf119840b2191f511da14e9af1adbee35b0",
+  "marketplace": "claude-community",
+  "version": "0.1.1",
+  "sourceRevision": "6cd2edf119840b2191f511da14e9af1adbee35b0",
+  "contentDigest": "4e15f985b72ee6815655ea8b00b6b7f3c5fb3e3764e13ebc04c6307eae442c8a",
+  "contentHash": "4bd5187aca8cfb1f",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/prajyotbankade/Flow.git",
+    "sha": "6cd2edf119840b2191f511da14e9af1adbee35b0"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-07-21T03:17:32Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "backend-dev.md",
+                "type": "file"
+              },
+              {
+                "name": "frontend-dev.md",
+                "type": "file"
+              },
+              {
+                "name": "lead-dev.md",
+                "type": "file"
+              },
+              {
+                "name": "qa.md",
+                "type": "file"
+              },
+              {
+                "name": "reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "sub-lead-reviewer.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "launch.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "test.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "backlog-manager",
+            "type": "directory",
+            "children": [
+              {
+                "name": "backlog",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "assets",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "backlog-board.html",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cli.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "core.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "exceptions.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "evals",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "files",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "backlog_with_items.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "backlog_with_ready.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "backlog_with_scores.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "results",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "test_results_20260328_150911.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_results_20260328_152735.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_results_20260328_154755.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_results_20260328_163343.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_results_20260328_165131.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_results_20260329_233059.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_results_20260330_183410.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_results_full.txt",
+                        "type": "file"
+                      },
+                      {
+                        "name": "test_results_summary.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "conftest.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "context_slicer.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval_flow_skill.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "evals.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "requirements.txt",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_cli.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_flow_live.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "validate_fixtures.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "schema.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_cli_board.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_cli_commit_gate.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_cli_commit.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_cli_core.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_cli_ingest_handoff.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_commit_drift_hint.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_complexity_gated_review.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_doctor_divergence.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_doctor_duplicate_section.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_doctor_trunk_ahead.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_external_refs_cli.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_external_refs_server.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_link_commands.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_recovery_journal.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_server_git_dirty_warning.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_server_no_autocommit.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_server_policy_engine.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_server_scoring.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_write_safety.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "CLAUDE.md",
+                "type": "file"
+              },
+              {
+                "name": "pyproject.toml",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "REFERENCE.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "stress-tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "backlog_stress_2000.json",
+            "type": "file"
+          },
+          {
+            "name": "backlog_stress_300.json",
+            "type": "file"
+          },
+          {
+            "name": "backlog_stress_500.json",
+            "type": "file"
+          },
+          {
+            "name": "critical_path_fixture.json",
+            "type": "file"
+          },
+          {
+            "name": "tribunal_ties_fixture.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "backlog.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PLAN.md",
+        "type": "file"
+      },
+      {
+        "name": "planv2.md",
+        "type": "file"
+      },
+      {
+        "name": "planv3.md",
+        "type": "file"
+      },
+      {
+        "name": "planv4.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

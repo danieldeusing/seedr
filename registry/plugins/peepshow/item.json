@@ -1,0 +1,978 @@
+{
+  "slug": "peepshow",
+  "name": "Peepshow",
+  "type": "plugin",
+  "description": "Turn videos + animated images into a timeline of still frames so LLMs can watch them. CLI + Claude Code plugin with 19 pluggable sinks.",
+  "longDescription": "Ships **2 skills**, `sink` (Manage peepshow's persistent auto-sink list (list, add, remove, clear)), `slides` (Extract relevant frames from a video or animated image (GIF, APNG, animated WebP) so the model can view…).\n\nInstalls with `claude plugin install peepshow@claude-community` from `t0mtaylor/peepshow`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Tom Taylor"
+  },
+  "externalUrl": "https://github.com/t0mtaylor/peepshow/tree/17d9d24190007df0039aae0f1219aae897bf550d",
+  "marketplace": "claude-community",
+  "version": "0.9.0",
+  "sourceRevision": "17d9d24190007df0039aae0f1219aae897bf550d",
+  "contentDigest": "e362f78d48bc1589d9799268712d7bcb1bd8808198d931a44efe9ed8f0549277",
+  "contentHash": "ce5915d54914058c",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/t0mtaylor/peepshow.git",
+    "sha": "17d9d24190007df0039aae0f1219aae897bf550d"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-30T16:24:52Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugins",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plugins",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "peepshow",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "README.md",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "marketplace.json",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".clinerules",
+        "type": "directory",
+        "children": [
+          {
+            "name": "peepshow.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".codex",
+        "type": "directory",
+        "children": [
+          {
+            "name": "config.toml",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "peepshow.mdc",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".windsurf",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "peepshow.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-gifs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-code.gif",
+                "type": "file"
+              },
+              {
+                "name": "cline.gif",
+                "type": "file"
+              },
+              {
+                "name": "codex.gif",
+                "type": "file"
+              },
+              {
+                "name": "cursor.gif",
+                "type": "file"
+              },
+              {
+                "name": "gemini.gif",
+                "type": "file"
+              },
+              {
+                "name": "windsurf.gif",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sink-gifs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "aider.gif",
+                "type": "file"
+              },
+              {
+                "name": "apple-notes.gif",
+                "type": "file"
+              },
+              {
+                "name": "apple-reminders.gif",
+                "type": "file"
+              },
+              {
+                "name": "asana.gif",
+                "type": "file"
+              },
+              {
+                "name": "azure-blob.gif",
+                "type": "file"
+              },
+              {
+                "name": "bear.gif",
+                "type": "file"
+              },
+              {
+                "name": "box.gif",
+                "type": "file"
+              },
+              {
+                "name": "chroma.gif",
+                "type": "file"
+              },
+              {
+                "name": "clickup.gif",
+                "type": "file"
+              },
+              {
+                "name": "cody.gif",
+                "type": "file"
+              },
+              {
+                "name": "confluence.gif",
+                "type": "file"
+              },
+              {
+                "name": "continue.gif",
+                "type": "file"
+              },
+              {
+                "name": "datadog.gif",
+                "type": "file"
+              },
+              {
+                "name": "discord.gif",
+                "type": "file"
+              },
+              {
+                "name": "dropbox.gif",
+                "type": "file"
+              },
+              {
+                "name": "event-track.gif",
+                "type": "file"
+              },
+              {
+                "name": "figma.gif",
+                "type": "file"
+              },
+              {
+                "name": "firebase-storage.gif",
+                "type": "file"
+              },
+              {
+                "name": "gcs.gif",
+                "type": "file"
+              },
+              {
+                "name": "gdrive.gif",
+                "type": "file"
+              },
+              {
+                "name": "github-issues.gif",
+                "type": "file"
+              },
+              {
+                "name": "grafana-oncall.gif",
+                "type": "file"
+              },
+              {
+                "name": "graphql.gif",
+                "type": "file"
+              },
+              {
+                "name": "height.gif",
+                "type": "file"
+              },
+              {
+                "name": "honeycomb.gif",
+                "type": "file"
+              },
+              {
+                "name": "ide.gif",
+                "type": "file"
+              },
+              {
+                "name": "imessage.gif",
+                "type": "file"
+              },
+              {
+                "name": "jira.gif",
+                "type": "file"
+              },
+              {
+                "name": "letta.gif",
+                "type": "file"
+              },
+              {
+                "name": "linear.gif",
+                "type": "file"
+              },
+              {
+                "name": "logseq.gif",
+                "type": "file"
+              },
+              {
+                "name": "matrix.gif",
+                "type": "file"
+              },
+              {
+                "name": "mattermost.gif",
+                "type": "file"
+              },
+              {
+                "name": "mem0.gif",
+                "type": "file"
+              },
+              {
+                "name": "mempalace.gif",
+                "type": "file"
+              },
+              {
+                "name": "milvus.gif",
+                "type": "file"
+              },
+              {
+                "name": "miro.gif",
+                "type": "file"
+              },
+              {
+                "name": "mongodb.gif",
+                "type": "file"
+              },
+              {
+                "name": "msteams.gif",
+                "type": "file"
+              },
+              {
+                "name": "newrelic.gif",
+                "type": "file"
+              },
+              {
+                "name": "notion.gif",
+                "type": "file"
+              },
+              {
+                "name": "obsidian.gif",
+                "type": "file"
+              },
+              {
+                "name": "openai-files.gif",
+                "type": "file"
+              },
+              {
+                "name": "opsgenie.gif",
+                "type": "file"
+              },
+              {
+                "name": "outline.gif",
+                "type": "file"
+              },
+              {
+                "name": "pagerduty.gif",
+                "type": "file"
+              },
+              {
+                "name": "pgvector.gif",
+                "type": "file"
+              },
+              {
+                "name": "pinecone.gif",
+                "type": "file"
+              },
+              {
+                "name": "pipedream.gif",
+                "type": "file"
+              },
+              {
+                "name": "plausible.gif",
+                "type": "file"
+              },
+              {
+                "name": "postgres.gif",
+                "type": "file"
+              },
+              {
+                "name": "posthog.gif",
+                "type": "file"
+              },
+              {
+                "name": "qdrant.gif",
+                "type": "file"
+              },
+              {
+                "name": "raycast.gif",
+                "type": "file"
+              },
+              {
+                "name": "rocketchat.gif",
+                "type": "file"
+              },
+              {
+                "name": "s3.gif",
+                "type": "file"
+              },
+              {
+                "name": "sentry.gif",
+                "type": "file"
+              },
+              {
+                "name": "shortcut.gif",
+                "type": "file"
+              },
+              {
+                "name": "shortcuts.gif",
+                "type": "file"
+              },
+              {
+                "name": "slack.gif",
+                "type": "file"
+              },
+              {
+                "name": "sqlite.gif",
+                "type": "file"
+              },
+              {
+                "name": "supabase.gif",
+                "type": "file"
+              },
+              {
+                "name": "telegram.gif",
+                "type": "file"
+              },
+              {
+                "name": "things.gif",
+                "type": "file"
+              },
+              {
+                "name": "trello.gif",
+                "type": "file"
+              },
+              {
+                "name": "weaviate.gif",
+                "type": "file"
+              },
+              {
+                "name": "webhook.gif",
+                "type": "file"
+              },
+              {
+                "name": "whatsapp.gif",
+                "type": "file"
+              },
+              {
+                "name": "zapier.gif",
+                "type": "file"
+              },
+              {
+                "name": "zep.gif",
+                "type": "file"
+              },
+              {
+                "name": "zulip.gif",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sinks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "aider.md",
+                "type": "file"
+              },
+              {
+                "name": "airtable.md",
+                "type": "file"
+              },
+              {
+                "name": "algolia.md",
+                "type": "file"
+              },
+              {
+                "name": "anytype.md",
+                "type": "file"
+              },
+              {
+                "name": "apple-notes.md",
+                "type": "file"
+              },
+              {
+                "name": "apple-reminders.md",
+                "type": "file"
+              },
+              {
+                "name": "apprise.md",
+                "type": "file"
+              },
+              {
+                "name": "asana.md",
+                "type": "file"
+              },
+              {
+                "name": "azure-blob.md",
+                "type": "file"
+              },
+              {
+                "name": "bear.md",
+                "type": "file"
+              },
+              {
+                "name": "bigquery.md",
+                "type": "file"
+              },
+              {
+                "name": "bluesky.md",
+                "type": "file"
+              },
+              {
+                "name": "box.md",
+                "type": "file"
+              },
+              {
+                "name": "cassandra.md",
+                "type": "file"
+              },
+              {
+                "name": "chroma.md",
+                "type": "file"
+              },
+              {
+                "name": "clickhouse.md",
+                "type": "file"
+              },
+              {
+                "name": "clickup.md",
+                "type": "file"
+              },
+              {
+                "name": "coda.md",
+                "type": "file"
+              },
+              {
+                "name": "cody.md",
+                "type": "file"
+              },
+              {
+                "name": "confluence.md",
+                "type": "file"
+              },
+              {
+                "name": "continue.md",
+                "type": "file"
+              },
+              {
+                "name": "databricks.md",
+                "type": "file"
+              },
+              {
+                "name": "datadog.md",
+                "type": "file"
+              },
+              {
+                "name": "discord.md",
+                "type": "file"
+              },
+              {
+                "name": "dropbox.md",
+                "type": "file"
+              },
+              {
+                "name": "duckdb.md",
+                "type": "file"
+              },
+              {
+                "name": "elasticsearch.md",
+                "type": "file"
+              },
+              {
+                "name": "event-track.md",
+                "type": "file"
+              },
+              {
+                "name": "figma.md",
+                "type": "file"
+              },
+              {
+                "name": "firebase-storage.md",
+                "type": "file"
+              },
+              {
+                "name": "fireflies.md",
+                "type": "file"
+              },
+              {
+                "name": "gcs.md",
+                "type": "file"
+              },
+              {
+                "name": "gdrive.md",
+                "type": "file"
+              },
+              {
+                "name": "github-issues.md",
+                "type": "file"
+              },
+              {
+                "name": "grafana-oncall.md",
+                "type": "file"
+              },
+              {
+                "name": "granola.md",
+                "type": "file"
+              },
+              {
+                "name": "graphql.md",
+                "type": "file"
+              },
+              {
+                "name": "height.md",
+                "type": "file"
+              },
+              {
+                "name": "honeycomb.md",
+                "type": "file"
+              },
+              {
+                "name": "ide.md",
+                "type": "file"
+              },
+              {
+                "name": "imessage.md",
+                "type": "file"
+              },
+              {
+                "name": "jira.md",
+                "type": "file"
+              },
+              {
+                "name": "letta.md",
+                "type": "file"
+              },
+              {
+                "name": "linear.md",
+                "type": "file"
+              },
+              {
+                "name": "logseq.md",
+                "type": "file"
+              },
+              {
+                "name": "mastodon.md",
+                "type": "file"
+              },
+              {
+                "name": "matrix.md",
+                "type": "file"
+              },
+              {
+                "name": "mattermost.md",
+                "type": "file"
+              },
+              {
+                "name": "meilisearch.md",
+                "type": "file"
+              },
+              {
+                "name": "mem0.md",
+                "type": "file"
+              },
+              {
+                "name": "mempalace.md",
+                "type": "file"
+              },
+              {
+                "name": "milvus.md",
+                "type": "file"
+              },
+              {
+                "name": "miro.md",
+                "type": "file"
+              },
+              {
+                "name": "mongodb.md",
+                "type": "file"
+              },
+              {
+                "name": "msteams.md",
+                "type": "file"
+              },
+              {
+                "name": "newrelic.md",
+                "type": "file"
+              },
+              {
+                "name": "notion.md",
+                "type": "file"
+              },
+              {
+                "name": "ntfy.md",
+                "type": "file"
+              },
+              {
+                "name": "obsidian.md",
+                "type": "file"
+              },
+              {
+                "name": "openai-files.md",
+                "type": "file"
+              },
+              {
+                "name": "opsgenie.md",
+                "type": "file"
+              },
+              {
+                "name": "otter.md",
+                "type": "file"
+              },
+              {
+                "name": "outline.md",
+                "type": "file"
+              },
+              {
+                "name": "pagerduty.md",
+                "type": "file"
+              },
+              {
+                "name": "pgvector.md",
+                "type": "file"
+              },
+              {
+                "name": "pinecone.md",
+                "type": "file"
+              },
+              {
+                "name": "pipedream.md",
+                "type": "file"
+              },
+              {
+                "name": "plane.md",
+                "type": "file"
+              },
+              {
+                "name": "plausible.md",
+                "type": "file"
+              },
+              {
+                "name": "postgres.md",
+                "type": "file"
+              },
+              {
+                "name": "posthog.md",
+                "type": "file"
+              },
+              {
+                "name": "pushover.md",
+                "type": "file"
+              },
+              {
+                "name": "qdrant.md",
+                "type": "file"
+              },
+              {
+                "name": "raycast.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "redis-vector.md",
+                "type": "file"
+              },
+              {
+                "name": "rocketchat.md",
+                "type": "file"
+              },
+              {
+                "name": "s3.md",
+                "type": "file"
+              },
+              {
+                "name": "sentry.md",
+                "type": "file"
+              },
+              {
+                "name": "shortcut.md",
+                "type": "file"
+              },
+              {
+                "name": "shortcuts.md",
+                "type": "file"
+              },
+              {
+                "name": "skeletons.md",
+                "type": "file"
+              },
+              {
+                "name": "slack.md",
+                "type": "file"
+              },
+              {
+                "name": "snowflake.md",
+                "type": "file"
+              },
+              {
+                "name": "sqlite.md",
+                "type": "file"
+              },
+              {
+                "name": "supabase.md",
+                "type": "file"
+              },
+              {
+                "name": "telegram.md",
+                "type": "file"
+              },
+              {
+                "name": "things.md",
+                "type": "file"
+              },
+              {
+                "name": "trello.md",
+                "type": "file"
+              },
+              {
+                "name": "typesense.md",
+                "type": "file"
+              },
+              {
+                "name": "weaviate.md",
+                "type": "file"
+              },
+              {
+                "name": "webhook.md",
+                "type": "file"
+              },
+              {
+                "name": "whatsapp.md",
+                "type": "file"
+              },
+              {
+                "name": "zapier.md",
+                "type": "file"
+              },
+              {
+                "name": "zep.md",
+                "type": "file"
+              },
+              {
+                "name": "zoom.md",
+                "type": "file"
+              },
+              {
+                "name": "zulip.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "demo-drop.png",
+            "type": "file"
+          },
+          {
+            "name": "demo.gif",
+            "type": "file"
+          },
+          {
+            "name": "INTEGRATIONS.md",
+            "type": "file"
+          },
+          {
+            "name": "logo.svg",
+            "type": "file"
+          },
+          {
+            "name": "PLUGINS.md",
+            "type": "file"
+          },
+          {
+            "name": "report-outro.gif",
+            "type": "file"
+          },
+          {
+            "name": "REPORT.md",
+            "type": "file"
+          },
+          {
+            "name": "SERVER-ROADMAP.md",
+            "type": "file"
+          },
+          {
+            "name": "SINKS-MISSING.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "peepshow-session-start.cjs",
+            "type": "file"
+          },
+          {
+            "name": "peepshow-statusline.sh",
+            "type": "file"
+          },
+          {
+            "name": "peepshow-user-prompt.cjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "sink",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "slides",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

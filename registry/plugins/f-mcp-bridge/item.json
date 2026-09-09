@@ -1,0 +1,1486 @@
+{
+  "slug": "f-mcp-bridge",
+  "name": "F Mcp Bridge",
+  "type": "plugin",
+  "description": "Connect Claude Code to Figma with 46 MCP tools, 20 specialized skills, and 8 commands. Read, write, and analyze Figma designs directly — no REST API token required. Privacy-first, plugin-only architecture with Zero Trust design. Supports design system audits, token pipelines, screen generation, accessibility checks, and Figma-to-code workflows.",
+  "longDescription": "Ships **26 skills**, **4 agents**, **8 commands**, **2 hooks** and **1 MCP server**.\n\n- **Skills** (26): `ai-handoff-export` (Figma tasarım verisini AI'nın kod üretimi için kullanabileceği tek bir handoff paketine dönüştürür (HANDOFF şablonu + JSON manifest)), `apply-figma-design-system` (Mevcut Figma ekranını yayınlanmış design system bileşenleri ve token'larıyla çok bölümlü şekilde hizalar; yedek, envanter, bölüm bölüm swap/compose), `audit-figma-design-system` (Figma ekran veya bileşenini design system entegrasyonu açısından okuma-only denetler; eksik kütüphane instance'ları, yerel override'lar ve bağlanmamış token'ları…), `code-design-mapper` (Figma tasarım bileşenlerini iOS, Android ve Web platformlarındaki kod bileşenlerine eşler), `component-documentation` (Figma bileşeni için kullanım kılavuzu oluşturur), `design-drift-detector` (iOS, Android ve Web platformlarında mevcut kod ile Figma tasarımı arasındaki farkları (drift) tespit eder), `design-system-rules` (iOS, Android ve Web platformlarına özel design system kuralları oluşturur), `design-token-pipeline` (Figma variable'larını iOS (Swift Color/Font/Spacing), Android (colors.xml, dimens.xml, Compose Theme), ve Web (CSS, Tailwind, Sass, TS) formatlarında otomatik…), and 18 more\n- **Agents** (4): `_orchestrator-protocol`, `ds-auditor` (Figma ekranlarını 5 kategori açısından denetler (DS compliance / a11y / drift / visual QA / impact)), `screen-builder` (DS-compliant Figma ekran üretim agent'ı), `token-syncer` (Figma design token'larını kod dosyalarıyla (CSS/Tailwind/Swift/Compose/Sass) senkronize eder)\n- **Commands** (8): `add-library`, `ds-add`, `ds-sync`, `implement`, `install-library`, `setup`, `test`, `update`\n- **Hooks** (2): `SessionStart`, `PreToolUse`\n- **MCP servers** (1): `figma-mcp-bridge`\n\nInstalls with `claude plugin install f-mcp-bridge@claude-community` from `atezer/FMCP`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 26,
+    "agent": 4,
+    "hook": 2,
+    "command": 8,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Abdussamed Tezer",
+    "url": "https://github.com/atezer"
+  },
+  "externalUrl": "https://github.com/atezer/FMCP/tree/faf8a42272b841a2759dd9f8554c0e7fa574d0df",
+  "marketplace": "claude-community",
+  "version": "1.7.28",
+  "sourceRevision": "faf8a42272b841a2759dd9f8554c0e7fa574d0df",
+  "contentDigest": "6c50da2488032a87bdcbd0bca870e9bdb125f02f4e6c2cc3fa14aef73f0c141a",
+  "contentHash": "e225d897d1391a8d",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/atezer/FMCP.git",
+    "sha": "faf8a42272b841a2759dd9f8554c0e7fa574d0df"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-17T13:56:13Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "design-systems",
+            "type": "directory",
+            "children": [
+              {
+                "name": "sui",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "components.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SUI_CHEATSHEET.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tokens.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "active-ds.md",
+                "type": "file"
+              },
+              {
+                "name": "intent-history.md",
+                "type": "file"
+              },
+              {
+                "name": "last-intent.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "binary-frolicking-puddle-agent-a0663406655b0969e.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude.json",
+            "type": "file"
+          },
+          {
+            "name": "project-context.md",
+            "type": "file"
+          },
+          {
+            "name": "settings.local.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".cursor-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_orchestrator-protocol.md",
+            "type": "file"
+          },
+          {
+            "name": "ds-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "screen-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "token-syncer.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "logo.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-library.md",
+            "type": "file"
+          },
+          {
+            "name": "ds-add.md",
+            "type": "file"
+          },
+          {
+            "name": "ds-sync.md",
+            "type": "file"
+          },
+          {
+            "name": "implement.md",
+            "type": "file"
+          },
+          {
+            "name": "install-library.md",
+            "type": "file"
+          },
+          {
+            "name": "setup.md",
+            "type": "file"
+          },
+          {
+            "name": "test.md",
+            "type": "file"
+          },
+          {
+            "name": "update.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "dist",
+        "type": "directory",
+        "children": [
+          {
+            "name": "cloudflare",
+            "type": "directory",
+            "children": [
+              {
+                "name": "core",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "instructions.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "version.js",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "types",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "figma.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "figma.d.ts.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "figma.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "figma.js.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.d.ts.map",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.js.map",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit-log.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "audit-log.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "audit-log.js",
+                "type": "file"
+              },
+              {
+                "name": "audit-log.js.map",
+                "type": "file"
+              },
+              {
+                "name": "code-warnings.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "code-warnings.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "code-warnings.js",
+                "type": "file"
+              },
+              {
+                "name": "code-warnings.js.map",
+                "type": "file"
+              },
+              {
+                "name": "config.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "config.js",
+                "type": "file"
+              },
+              {
+                "name": "config.js.map",
+                "type": "file"
+              },
+              {
+                "name": "device-presets.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "device-presets.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "device-presets.js",
+                "type": "file"
+              },
+              {
+                "name": "device-presets.js.map",
+                "type": "file"
+              },
+              {
+                "name": "discovery-counter.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "discovery-counter.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "discovery-counter.js",
+                "type": "file"
+              },
+              {
+                "name": "discovery-counter.js.map",
+                "type": "file"
+              },
+              {
+                "name": "figma-url.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "figma-url.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "figma-url.js",
+                "type": "file"
+              },
+              {
+                "name": "figma-url.js.map",
+                "type": "file"
+              },
+              {
+                "name": "instructions.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "instructions.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "instructions.js",
+                "type": "file"
+              },
+              {
+                "name": "instructions.js.map",
+                "type": "file"
+              },
+              {
+                "name": "logger.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "logger.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "logger.js",
+                "type": "file"
+              },
+              {
+                "name": "logger.js.map",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-connector.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-connector.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-connector.js",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-connector.js.map",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-server.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-server.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-server.js",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-server.js.map",
+                "type": "file"
+              },
+              {
+                "name": "response-cache.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "response-cache.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "response-cache.js",
+                "type": "file"
+              },
+              {
+                "name": "response-cache.js.map",
+                "type": "file"
+              },
+              {
+                "name": "response-guard.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "response-guard.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "response-guard.js",
+                "type": "file"
+              },
+              {
+                "name": "response-guard.js.map",
+                "type": "file"
+              },
+              {
+                "name": "version.d.ts",
+                "type": "file"
+              },
+              {
+                "name": "version.d.ts.map",
+                "type": "file"
+              },
+              {
+                "name": "version.js",
+                "type": "file"
+              },
+              {
+                "name": "version.js.map",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "local-plugin-only.d.ts",
+            "type": "file"
+          },
+          {
+            "name": "local-plugin-only.d.ts.map",
+            "type": "file"
+          },
+          {
+            "name": "local-plugin-only.js",
+            "type": "file"
+          },
+          {
+            "name": "local-plugin-only.js.map",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "archived",
+            "type": "directory",
+            "children": [
+              {
+                "name": "BITBUCKET-README.md",
+                "type": "file"
+              },
+              {
+                "name": "CLAUDE_DESKTOP_CONFIG.md",
+                "type": "file"
+              },
+              {
+                "name": "DEPENDENCY_LAYERS.md",
+                "type": "file"
+              },
+              {
+                "name": "DEPLOYMENT_COMPARISON.md",
+                "type": "file"
+              },
+              {
+                "name": "FIGMA_USE_STRUCTURED_INTENT.md",
+                "type": "file"
+              },
+              {
+                "name": "FMCP_AGENT_CANVAS_COMPAT.md",
+                "type": "file"
+              },
+              {
+                "name": "HANDOFF_TEMPLATE.md",
+                "type": "file"
+              },
+              {
+                "name": "NPX-INSTALLATION.md",
+                "type": "file"
+              },
+              {
+                "name": "OAUTH_SETUP.md",
+                "type": "file"
+              },
+              {
+                "name": "PLUGIN-MCP-BAGLANTI.md",
+                "type": "file"
+              },
+              {
+                "name": "PLUGIN-NASIL-CALISIR.md",
+                "type": "file"
+              },
+              {
+                "name": "PUBLISH-PLUGIN.md",
+                "type": "file"
+              },
+              {
+                "name": "RECONSTRUCTION_FORMAT.md",
+                "type": "file"
+              },
+              {
+                "name": "RELEASE_NOTES_TEMPLATE.md",
+                "type": "file"
+              },
+              {
+                "name": "SECURITY_FIXES_ANALYSIS.md",
+                "type": "file"
+              },
+              {
+                "name": "SELF_HOSTING.md",
+                "type": "file"
+              },
+              {
+                "name": "WEBSOCKET-AUTH-K4-ANALYSIS.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "releases",
+            "type": "directory",
+            "children": [
+              {
+                "name": "v1.2.0-body.md",
+                "type": "file"
+              },
+              {
+                "name": "v1.2.1-body.md",
+                "type": "file"
+              },
+              {
+                "name": "v1.2.2-body.md",
+                "type": "file"
+              },
+              {
+                "name": "v1.3.0-body.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file"
+          },
+          {
+            "name": "CODE_CONNECT_USE_PLAN.md",
+            "type": "file"
+          },
+          {
+            "name": "DEVELOPER_FIGMA_CAPABILITIES.md",
+            "type": "file"
+          },
+          {
+            "name": "ENTERPRISE.md",
+            "type": "file"
+          },
+          {
+            "name": "FEEDBACK_RESPONSE.md",
+            "type": "file"
+          },
+          {
+            "name": "FMCP_ENTERPRISE_WORKFLOWS.md",
+            "type": "file"
+          },
+          {
+            "name": "handoff.manifest.schema.json",
+            "type": "file"
+          },
+          {
+            "name": "MULTI_INSTANCE.md",
+            "type": "file"
+          },
+          {
+            "name": "ONBOARDING.md",
+            "type": "file"
+          },
+          {
+            "name": "PORT-5454-KAPALI.md",
+            "type": "file"
+          },
+          {
+            "name": "REST_API_GUIDE.md",
+            "type": "file"
+          },
+          {
+            "name": "SECURITY_AUDIT.md",
+            "type": "file"
+          },
+          {
+            "name": "SETUP.md",
+            "type": "file"
+          },
+          {
+            "name": "STANDALONE_PLAN.md",
+            "type": "file"
+          },
+          {
+            "name": "TEST_REPORT.md",
+            "type": "file"
+          },
+          {
+            "name": "TOOLS_FULL_LIST.md",
+            "type": "file"
+          },
+          {
+            "name": "TOOLS.md",
+            "type": "file"
+          },
+          {
+            "name": "TROUBLESHOOTING.md",
+            "type": "file"
+          },
+          {
+            "name": "UPDATE.md",
+            "type": "file"
+          },
+          {
+            "name": "USE_CASES.md",
+            "type": "file"
+          },
+          {
+            "name": "WINDOWS-INSTALLATION.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "f-mcp-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "code.js",
+            "type": "file"
+          },
+          {
+            "name": "manifest.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "ui.html",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "install",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-code",
+            "type": "directory",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude-desktop",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude_desktop_config.json",
+                "type": "file"
+              },
+              {
+                "name": "HOW-TO-ENFORCE.md",
+                "type": "file"
+              },
+              {
+                "name": "PROJECT-KNOWLEDGE.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "claude-web",
+            "type": "directory",
+            "children": [
+              {
+                "name": "DEFERRED-BRIDGE.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cursor",
+            "type": "directory",
+            "children": [
+              {
+                "name": ".cursor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "rules",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "fmcp-orchestration.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "mcp.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "TOKEN-BUDGET.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "python-bridge",
+        "type": "directory",
+        "children": [
+          {
+            "name": "fmcp_bridge",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "__main__.py",
+                "type": "file"
+              },
+              {
+                "name": "bridge.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "requirements.txt",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "Figma Bridge Launcher.app",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Contents",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "MacOS",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "launcher",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Info.plist",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "autorun-bridge.applescript",
+            "type": "file"
+          },
+          {
+            "name": "autorun-bridge.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-ports.sh",
+            "type": "file"
+          },
+          {
+            "name": "cleanup-ports.sh",
+            "type": "file"
+          },
+          {
+            "name": "com.figma.desktop-bridge.plist",
+            "type": "file"
+          },
+          {
+            "name": "cursor-mcp-plugin-bridge.sh",
+            "type": "file"
+          },
+          {
+            "name": "install-autorun.sh",
+            "type": "file"
+          },
+          {
+            "name": "IZINLER.md",
+            "type": "file"
+          },
+          {
+            "name": "KULLANIM.md",
+            "type": "file"
+          },
+          {
+            "name": "Plugin Ac.command",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "setup-npx.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup.sh",
+            "type": "file"
+          },
+          {
+            "name": "smoke-fmcp-cloud.mjs",
+            "type": "file"
+          },
+          {
+            "name": "test-autorun.sh",
+            "type": "file"
+          },
+          {
+            "name": "uninstall-autorun.sh",
+            "type": "file"
+          },
+          {
+            "name": "update.sh",
+            "type": "file"
+          },
+          {
+            "name": "validate-fmcp-skills-tools.mjs",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai-handoff-export",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "apply-figma-design-system",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "audit-figma-design-system",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "code-design-mapper",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "component-documentation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-drift-detector",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-system-rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-token-pipeline",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ds-impact-analysis",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "figjam-diagram-builder",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "figma-a11y-audit",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "figma-canvas-ops",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "figma-screen-analyzer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fix-figma-design-system-finding",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fmcp-ds-audit-orchestrator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fmcp-intent-router",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fmcp-project-rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fmcp-screen-orchestrator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fmcp-screen-recipes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fmcp-token-sync-orchestrator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generate-figma-library",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "generate-figma-screen",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "implement-design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "inspiration-intake",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ux-copy-guidance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "visual-qa-compare",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "BRAND_PROFILE_SCHEMA.md",
+            "type": "file"
+          },
+          {
+            "name": "SKILL_INDEX.md",
+            "type": "file"
+          },
+          {
+            "name": "TOOL_MAPPING.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "types",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "figma.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "audit-log.ts",
+                "type": "file"
+              },
+              {
+                "name": "code-warnings.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.ts",
+                "type": "file"
+              },
+              {
+                "name": "device-presets.ts",
+                "type": "file"
+              },
+              {
+                "name": "discovery-counter.ts",
+                "type": "file"
+              },
+              {
+                "name": "figma-url.ts",
+                "type": "file"
+              },
+              {
+                "name": "instructions.ts",
+                "type": "file"
+              },
+              {
+                "name": "logger.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-connector.ts",
+                "type": "file"
+              },
+              {
+                "name": "plugin-bridge-server.ts",
+                "type": "file"
+              },
+              {
+                "name": "response-cache.ts",
+                "type": "file"
+              },
+              {
+                "name": "response-guard.ts",
+                "type": "file"
+              },
+              {
+                "name": "version.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "local-plugin-only.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "test-output",
+        "type": "directory",
+        "children": [
+          {
+            "name": "DesignTokens.kt",
+            "type": "file"
+          },
+          {
+            "name": "DesignTokens.swift",
+            "type": "file"
+          },
+          {
+            "name": "HANDOFF.md",
+            "type": "file"
+          },
+          {
+            "name": "LoginScreen.kt",
+            "type": "file"
+          },
+          {
+            "name": "LoginScreen.tsx",
+            "type": "file"
+          },
+          {
+            "name": "LoginView.swift",
+            "type": "file"
+          },
+          {
+            "name": "tailwind.tokens.js",
+            "type": "file"
+          },
+          {
+            "name": "tokens.css",
+            "type": "file"
+          },
+          {
+            "name": "tokens.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "core",
+            "type": "directory",
+            "children": [
+              {
+                "name": "code-warnings.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "figma-url.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "response-guard.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "basic.test.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".eslintrc.json",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": ".prettierrc",
+        "type": "file"
+      },
+      {
+        "name": "biome.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "claude_desktop_config_ornek.json",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "ensure-git-push.sh",
+        "type": "file"
+      },
+      {
+        "name": "FUTURE.md",
+        "type": "file"
+      },
+      {
+        "name": "git-push-readme.sh",
+        "type": "file"
+      },
+      {
+        "name": "git-yedekle-ve-push.sh",
+        "type": "file"
+      },
+      {
+        "name": "github-guncelle.sh",
+        "type": "file"
+      },
+      {
+        "name": "github-yukle.sh",
+        "type": "file"
+      },
+      {
+        "name": "jest.config.cjs",
+        "type": "file"
+      },
+      {
+        "name": "KURULUM.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "manifest.json",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "run-mcp-plugin-only.sh",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.local.json",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1436 @@
+{
+  "slug": "smarthealthconnect",
+  "name": "Smarthealthconnect",
+  "type": "plugin",
+  "description": "SmartHealthConnect turns Claude into a patient-facing health copilot. Six auto-discoverable skills invoke themselves based on natural prompts:\n\n• care-completion — tracks preventive screenings, referrals, and follow-ups against HEDIS and USPSTF quality measures. Triggers on \"what screenings am I due for\", \"show my care gaps\".\n• medication-refills — monitors refill windows, requests refills, and projects 90-day timelines. Triggers on \"refill my lisinopril\", \"which meds am I about to run out of\".\n• healthy-habits — a longitudinal health operating picture integrating sleep, exercise, medication adherence, vitals, and goal progress.\n• diet-exercise — logs activity and meals and analyzes correlations between exercise/diet and clinical outcomes (BP, HbA1c, weight).\n• kids-health — CDC immunization schedules, well-child visit cadence, and state-specific school health compliance.\n• research-monitor — filters bioRxiv / medRxiv preprints, ClinicalTrials.gov, and OpenFDA drug-safety signals to the patient's actual conditions and medications.\n\nBuilt on SMART on FHIR with PHI redaction, audit logging, and human-in-the-loop on write tools (add_journal_entry, generate_care_plan, generate_appointment_prep). Pairs cleanly with healthclaw-guardrails for the backend FHIR layer.",
+  "longDescription": "Ships **6 skills** and **1 MCP server**.\n\n- **Skills** (6): `care-completion` (Track care completion for preventive screenings, specialist referrals, and follow-up visits against HEDIS quality measures), `diet-exercise` (Log physical activity, meals, and wellness patterns, and analyze correlations between exercise/diet and clinical outcomes (BP, glucose, weight,…), `healthy-habits` (Maintain a longitudinal health operating picture integrating sleep, exercise, medication adherence, vital signs, and goal progress into one…), `kids-health` (Manage pediatric health against CDC immunization schedules, well-child visit cadence, and state school health compliance), `medication-refills` (Monitor medication refill windows, request refills proactively, and project prescription timelines so no dose gets missed), `research-monitor` (Monitor biomedical research preprints (bioRxiv, medRxiv), clinical trials (ClinicalTrials.gov), and FDA drug-safety signals (OpenFDA) filtered to the patient's…)\n- **MCP servers** (1): `smarthealthconnect`\n\nInstalls with `claude plugin install smarthealthconnect@claude-community` from `aks129/SmartHealthConnect`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 6,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "aks129"
+  },
+  "externalUrl": "https://github.com/aks129/SmartHealthConnect/tree/60b3ab52e237299f1c59ac91c35132ef70b57721",
+  "marketplace": "claude-community",
+  "version": "1.0.0",
+  "sourceRevision": "60b3ab52e237299f1c59ac91c35132ef70b57721",
+  "contentDigest": "16a885959d78451883761a2bc26dba4c4a2493d9d3e82da81d866e262e921245",
+  "contentHash": "a8c05a014e8ba92a",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/aks129/SmartHealthConnect.git",
+    "sha": "60b3ab52e237299f1c59ac91c35132ef70b57721"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-07-19T23:22:20Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "security-baseline.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "api",
+        "type": "directory",
+        "children": [
+          {
+            "name": "index.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "client",
+        "type": "directory",
+        "children": [
+          {
+            "name": "public",
+            "type": "directory",
+            "children": [
+              {
+                "name": "liara-logo.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "components",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "analytics",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "AdvancedAnalytics.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ReadinessScore.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "auth",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "AuthModal.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ErrorModal.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "branding",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "BrandProvider.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "BrandSwitcher.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "chat",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ChatInterface.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "community",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "CommunityChallenge.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "family",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "FamilyDashboard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "FamilyMemberCard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HealthNarrativeSummary.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "fhir",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "FhirExplorer.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "health",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "AppointmentPrep.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CareGapsSection.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "CarePlanGenerator.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ClinicalTrialsMatcher.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ConditionsSection.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ConnectCard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ConnectionDetails.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ConnectSelector.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "DiabetesDashboard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ExecutiveSummary.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HealthFeed.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HealthInsights.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "HealthNavigator.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "InsuranceSection.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "LongitudinalTimeline.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "MedicationHub.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ObservationsSection.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PatientSummary.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "PatientSummaryIPS.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "SchedulingModal.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "Sidebar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "VitalsTracker.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "insurance",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "PriorAuthWorkflow.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "journal",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "HealthJournal.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "literature",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "MedicalLiterature.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "medications",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "DrugInteractionChecker.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "RefillRequest.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "navigation",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "MobileBottomNav.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "notifications",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "HealthAlerts.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "index.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "WeeklyDigest.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "onboarding",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "OnboardingCarousel.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "provider",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ConnectedOrganizations.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ConnectedProviders.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ProviderDirectory.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ProviderFinder.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "research",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ResearchDashboard.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ResearchInsights.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scheduling",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "AppointmentScheduler.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "UpcomingAppointments.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "settings",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "UserSettings.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "tour",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "GuidedTour.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ui",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "accordion.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "alert-dialog.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "alert.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "aspect-ratio.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "avatar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "badge.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "breadcrumb.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "button.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "calendar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "card.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "carousel.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "chart.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "checkbox.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "clinical-disclaimer.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "collapsible.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "command.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "context-menu.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dialog.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "drawer.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "dropdown-menu.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "empty-state.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "form.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "help-tooltip.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "hover-card.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input-otp.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "input.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "label.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "liara-logo.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "medical-spinner.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "menubar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "navigation-menu.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "page-transition.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pagination.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "popover.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "progress.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "provider-logo.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "radio-group.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "resizable.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "scroll-area.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "select.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "separator.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sheet.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sidebar.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "skeleton-card.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "skeleton.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "slider.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "switch.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tab-navigation.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "table.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tabs.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "textarea.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "theme-toggle.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "toast.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "toaster.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "toggle-group.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "toggle.tsx",
+                        "type": "file"
+                      },
+                      {
+                        "name": "tooltip.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "visualizations",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "FhirVisualizations.tsx",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "mode-toggle.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "theme-provider.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "hooks",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "use-data-connections.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "use-external-apis.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "use-media-query.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "use-mobile.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "use-toast.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fhir-client.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "providers.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "queryClient.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "smart-auth.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "utils.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "pages",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "about.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "callback.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dashboard.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "home.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "not-found.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tutorial.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "App.tsx",
+                "type": "file"
+              },
+              {
+                "name": "index.css",
+                "type": "file"
+              },
+              {
+                "name": "main.tsx",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "fhir-server",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "main",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "java",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "com",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "example",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "fhirserver",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "AllergyIntoleranceResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "BaseResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "ClaimResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "ConditionResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "CoverageResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "ExplanationOfBenefitResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "FhirServerApplication.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "ImmunizationResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "MedicationRequestResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "ObservationResourceProvider.java",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "PatientResourceProvider.java",
+                                    "type": "file"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "resources",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "application.yaml",
+                        "type": "file"
+                      },
+                      {
+                        "name": "logback.xml",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "build-and-run.sh",
+            "type": "file"
+          },
+          {
+            "name": "pom.xml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "mcp-app",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "views",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "care-gaps.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "care-gaps.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "clinical-trials.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "clinical-trials.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-connections.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data-connections.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "drug-interactions.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "drug-interactions.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "find-specialists.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "find-specialists.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "health-summary.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "health-summary.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "research-insights.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "research-insights.ts",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "build-views.js",
+            "type": "file"
+          },
+          {
+            "name": "icon.svg",
+            "type": "file"
+          },
+          {
+            "name": "main.ts",
+            "type": "file"
+          },
+          {
+            "name": "manifest.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "server.ts",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.server.json",
+            "type": "file"
+          },
+          {
+            "name": "vite.config.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "mcp-server",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "guardrails.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "retrospectives",
+        "type": "directory",
+        "children": [
+          {
+            "name": "TEMPLATE.md",
+            "type": "file"
+          },
+          {
+            "name": "v1.1.0.md",
+            "type": "file"
+          },
+          {
+            "name": "v1.2.0.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "server",
+        "type": "directory",
+        "children": [
+          {
+            "name": "auth",
+            "type": "directory",
+            "children": [
+              {
+                "name": "index.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "integrations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "biorxiv.ts",
+                "type": "file"
+              },
+              {
+                "name": "clinicaltrials.ts",
+                "type": "file"
+              },
+              {
+                "name": "flexpa-client.ts",
+                "type": "file"
+              },
+              {
+                "name": "health-skillz-client.ts",
+                "type": "file"
+              },
+              {
+                "name": "npi.ts",
+                "type": "file"
+              },
+              {
+                "name": "openfda.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "middleware",
+            "type": "directory",
+            "children": [
+              {
+                "name": "audit.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "activity-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "ai-service.ts",
+            "type": "file"
+          },
+          {
+            "name": "care-completion-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "care-gaps-service.ts",
+            "type": "file"
+          },
+          {
+            "name": "cdc-schedule.ts",
+            "type": "file"
+          },
+          {
+            "name": "data-connections-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "database-storage.ts",
+            "type": "file"
+          },
+          {
+            "name": "db.ts",
+            "type": "file"
+          },
+          {
+            "name": "external-api-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "family-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "fhir-client.ts",
+            "type": "file"
+          },
+          {
+            "name": "fhir-migration-service.ts",
+            "type": "file"
+          },
+          {
+            "name": "habits-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          },
+          {
+            "name": "mcp-guardrails.ts",
+            "type": "file"
+          },
+          {
+            "name": "narrative-service.ts",
+            "type": "file"
+          },
+          {
+            "name": "notification-service.ts",
+            "type": "file"
+          },
+          {
+            "name": "pediatric-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "refill-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "research-monitor-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "scheduling-service.ts",
+            "type": "file"
+          },
+          {
+            "name": "storage.ts",
+            "type": "file"
+          },
+          {
+            "name": "user-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "vitals-routes.ts",
+            "type": "file"
+          },
+          {
+            "name": "vite.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "shared",
+        "type": "directory",
+        "children": [
+          {
+            "name": "schema.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "care-completion",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "diet-exercise",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "healthy-habits",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kids-health",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "medication-refills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "research-monitor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "e2e",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dashboard.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "demo-mode.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "health-claw-skills.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "landing.spec.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "auth.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "data-connections-routes.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "flexpa-client.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "health-skillz-client.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "mcp-guardrails.test.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".health-context.yaml",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "drizzle.config.ts",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "playwright.config.ts",
+        "type": "file"
+      },
+      {
+        "name": "postcss.config.js",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "tailwind.config.ts",
+        "type": "file"
+      },
+      {
+        "name": "theme.json",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "vercel.json",
+        "type": "file"
+      },
+      {
+        "name": "vite.config.ts",
+        "type": "file"
+      },
+      {
+        "name": "vitest.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

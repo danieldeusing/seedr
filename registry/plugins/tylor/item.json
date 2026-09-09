@@ -1,0 +1,604 @@
+{
+  "slug": "tylor",
+  "name": "Tylor",
+  "type": "plugin",
+  "description": "▎ Eliminates Claude session death. Gives Claude persistent named threads — isolated\n  ▎  context scopes that survive restarts, machine changes, and version updates.     \n  ▎ Switch between projects instantly with zero re-priming. Includes silent code     \n  ▎ indexing (Claude navigates directly to the right file/line), a live thread     \n  ▎ visualizer, agent personas (CEO, CTO, Analyst, Code Agent), and AFK autonomous\n  ▎ execution.",
+  "longDescription": "Ships **11 skills** and **1 MCP server**.\n\n- **Skills** (11): `add-skill` (Install an agent101 skill package by copying it into skills/ and generating a registry.json entry), `afk-status` (Report current AFK execution progress for the active thread), `bmad` (Use when the user wants to create a PRD, review stories, or run BMAD workflows), `help-agent101` (Show a current structured listing of agent101 commands, tools, skills, personas, and ECC categories), `kill-thread` (Close an agent101 thread with kill_thread and confirm that async summarization has started), `list-threads` (List agent101 threads by calling list_threads and formatting active, killed, and message_count details), `new-thread` (Create a new agent101 thread by prompting for a thread name and calling the new_thread MCP tool), `recall` (Recall relevant agent101 memory facts by asking for a thread ID and query, then calling recall_memory), and 3 more\n- **MCP servers** (1): `agent101`\n\nInstalls with `claude plugin install tylor@claude-community` from `GunjanGrunge/tylor`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 11,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "GunjanGrunge"
+  },
+  "externalUrl": "https://github.com/GunjanGrunge/tylor/tree/3c3894b6e2f980fd4f2bd68fbcef3c7de099a023",
+  "marketplace": "claude-community",
+  "version": "0.1.0",
+  "sourceRevision": "3c3894b6e2f980fd4f2bd68fbcef3c7de099a023",
+  "contentDigest": "e1d2dfb58cd653be30d3dc5b2cfb1683d5c9c40770483629e186f8d8c08d09ce",
+  "contentHash": "c566e404a35b0fd5",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/GunjanGrunge/tylor.git",
+    "sha": "3c3894b6e2f980fd4f2bd68fbcef3c7de099a023"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-05-19T11:07:00Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tylor_logo.png",
+            "type": "file"
+          },
+          {
+            "name": "tylor_threads_concept.png",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tylor.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "kill-thread-trigger.sh",
+            "type": "file"
+          },
+          {
+            "name": "post-tool-use-code-index.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-checkpoint.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-start.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "server",
+        "type": "directory",
+        "children": [
+          {
+            "name": "personas",
+            "type": "directory",
+            "children": [
+              {
+                "name": "analyst.md",
+                "type": "file"
+              },
+              {
+                "name": "ceo.md",
+                "type": "file"
+              },
+              {
+                "name": "code_agent.md",
+                "type": "file"
+              },
+              {
+                "name": "cto.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "storage",
+            "type": "directory",
+            "children": [
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_dynamo.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_json_store.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_opensearch.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_s3.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "dynamo.py",
+                "type": "file"
+              },
+              {
+                "name": "json_store.py",
+                "type": "file"
+              },
+              {
+                "name": "opensearch.py",
+                "type": "file"
+              },
+              {
+                "name": "s3.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_install.py",
+                "type": "file"
+              },
+              {
+                "name": "test_isolation.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ui_server.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ui_shader_background.py",
+                "type": "file"
+              },
+              {
+                "name": "test_ui_story_6_3.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ecc",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "data.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "diagrams.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "pipeline.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "presentation.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "web.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "tests",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_agents.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_code_index.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_ecc_tools.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_executor.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_help_agent101.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_hooks.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_kill_thread.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_new_thread_list_threads.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_personas.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_recall_memory.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_registry_client.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_router.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_skill_installer.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_switch_thread.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_thread_command_skills.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_thread_resolver.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "test_tier1_schema.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "_mcp.py",
+                "type": "file"
+              },
+              {
+                "name": "agents.py",
+                "type": "file"
+              },
+              {
+                "name": "executor.py",
+                "type": "file"
+              },
+              {
+                "name": "harness.py",
+                "type": "file"
+              },
+              {
+                "name": "help.py",
+                "type": "file"
+              },
+              {
+                "name": "hooks.py",
+                "type": "file"
+              },
+              {
+                "name": "personas.py",
+                "type": "file"
+              },
+              {
+                "name": "registry.py",
+                "type": "file"
+              },
+              {
+                "name": "router.py",
+                "type": "file"
+              },
+              {
+                "name": "skill_installer.py",
+                "type": "file"
+              },
+              {
+                "name": "summarizer.py",
+                "type": "file"
+              },
+              {
+                "name": "thread_resolver.py",
+                "type": "file"
+              },
+              {
+                "name": "tylor.py",
+                "type": "file"
+              },
+              {
+                "name": "ui.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": ".env.example",
+            "type": "file"
+          },
+          {
+            "name": "config.py",
+            "type": "file"
+          },
+          {
+            "name": "main.py",
+            "type": "file"
+          },
+          {
+            "name": "provision_opensearch.py",
+            "type": "file"
+          },
+          {
+            "name": "provision.py",
+            "type": "file"
+          },
+          {
+            "name": "requirements.txt",
+            "type": "file"
+          },
+          {
+            "name": "ui_server.py",
+            "type": "file"
+          },
+          {
+            "name": "validate.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "add-skill",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "afk-status",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "bmad",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "help-agent101",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "kill-thread",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "list-threads",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "new-thread",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "recall",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "run",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "set-sandbox",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "switch-thread",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "ui",
+        "type": "directory",
+        "children": [
+          {
+            "name": "claude-logo.png",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".aws-setup.sh",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE_PLATFORM_AWS_SETUP.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "install.py",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "pytest.ini",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "registry.json",
+        "type": "file"
+      }
+    ]
+  }
+}

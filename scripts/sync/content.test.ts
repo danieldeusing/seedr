@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FakeGitHub, SHA_A } from "../test/fake-github.js";
-import { classifyPlugin, collectContent, declaredMcpServerNames, declaredSkillNames, withDeclaredLicense, type CollectedContent } from "./content.js";
+import { classifyPlugin, collectContent, declaredMcpServerNames, declaredSkillNames, resolvePluginComponents, withDeclaredLicense, type CollectedContent } from "./content.js";
 import { computeContentDigest } from "./digest.js";
 import { GitHubClient } from "./github.js";
 import { buildFileTree } from "./utils.js";
@@ -50,6 +50,22 @@ describe("classifyPlugin", () => {
     expect(classifyPlugin(c, { pluginJson: null, existing: { pluginType: "integration", integration: "custom" } as never })).toEqual({ pluginType: "integration", integration: "custom" });
   });
 
+  it("counts a skill kept beside plugin.json, and a repository that is one skill by its frontmatter name", () => {
+    const beside = content({ ".claude-plugin/plugin.json": "{}", "uikit-max/SKILL.md": "---\nname: uikit-max\n---\n", "README.md": "" });
+    expect(classifyPlugin(beside, { pluginJson: {}, existing: null })).toEqual({ pluginType: "wrapper", wrapper: "skill" });
+
+    const whole = content({ "SKILL.md": "---\nname: dev-tracker\ndescription: A journal\n---\n", "references/a.md": "" });
+    expect(resolvePluginComponents(whole, { pluginJson: { name: "tracker" } }).skills).toEqual(["dev-tracker"]);
+    expect(resolvePluginComponents(content({ "SKILL.md": "# no frontmatter\n" }), { pluginJson: { name: "tracker" } }).skills).toEqual(["tracker"]);
+  });
+
+  it("treats a language server declared in plugin.json or a root .lsp.json as an integration", () => {
+    const viaPluginJson = classifyPlugin(content({ "README.md": "" }), { pluginJson: { lspServers: { roslyn: { command: "dotnet" } } }, existing: null });
+    expect(viaPluginJson).toEqual({ pluginType: "integration", integration: "lsp" });
+    const viaFile = classifyPlugin(content({ ".lsp.json": "{}", "README.md": "" }), { pluginJson: {}, existing: null });
+    expect(viaFile).toEqual({ pluginType: "integration", integration: "lsp" });
+  });
+
   it("uses inline marketplace skills when the tree has no skills folder", () => {
     const c = content({ "README.md": "" });
     expect(classifyPlugin(c, { pluginJson: null, inlineSkills: ["./a", "./b"], existing: null })).toEqual({ pluginType: "wrapper", wrapper: "skill" });
@@ -92,5 +108,36 @@ describe("collectContent", () => {
     expect(bare.files.map((f) => f.name)).toEqual(["SKILL.md"]);
 
     await expect(collectContent(client, { repo: "o/r", sha: SHA_A, path: "nope" }, tree)).rejects.toThrow(/directory "nope" does not exist/);
+  });
+
+  it("reads a repository that fits the size cap from one archive, and one beyond it file by file from the raw host", async () => {
+    const fake = new FakeGitHub({
+      "o/r": { branches: { main: SHA_A }, commits: { [SHA_A]: { files: { "a/SKILL.md": "a\n", "a/ref.md": "r\n", "b/SKILL.md": "b\n" } } } },
+    });
+    vi.stubGlobal("fetch", fake.fetch);
+    const client = new GitHubClient({ env: {}, log: () => {} });
+    const tree = await client.getTree("o/r", SHA_A);
+
+    await collectContent(client, { repo: "o/r", sha: SHA_A, path: "a" }, tree);
+    await collectContent(client, { repo: "o/r", sha: SHA_A, path: "b" }, tree);
+    expect(fake.requests.filter((request) => request.includes("/tarball/"))).toEqual([`GET https://api.github.com/repos/o/r/tarball/${SHA_A}`]);
+    expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com"))).toEqual([]);
+
+    // a file the tree lists but the archive left out (export-ignore) comes from the raw host
+    const partial = new Map((await client.getArchive("o/r", SHA_A)).entries());
+    partial.delete("a/ref.md");
+    vi.spyOn(client, "getArchive").mockResolvedValueOnce(partial);
+    fake.requests.length = 0;
+    const withFallback = await collectContent(client, { repo: "o/r", sha: SHA_A, path: "a" }, tree);
+    expect(withFallback.entries.map((entry) => entry.path).sort()).toEqual(["SKILL.md", "ref.md"]);
+    expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com"))).toEqual([`GET https://raw.githubusercontent.com/o/r/${SHA_A}/a/ref.md`]);
+    fake.requests.length = 0;
+
+    // the item fits, but the repository around it does not
+    const huge = tree.map((item) => (item.path === "b/SKILL.md" ? { ...item, size: 201 * 1024 * 1024 } : item));
+    const fromRaw = await collectContent(client, { repo: "o/r", sha: SHA_A, path: "a" }, huge);
+    expect(fromRaw.entries.map((entry) => entry.path).sort()).toEqual(["SKILL.md", "ref.md"]);
+    // ref.md was fetched above and its blob is cached for the run; only SKILL.md is new to the raw host
+    expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com"))).toEqual([`GET https://raw.githubusercontent.com/o/r/${SHA_A}/a/SKILL.md`]);
   });
 });

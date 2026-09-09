@@ -1,0 +1,617 @@
+{
+  "slug": "codeledger",
+  "name": "Codeledger",
+  "type": "plugin",
+  "description": "Token-level cost intelligence for Claude Code. Tracks per-project, per-agent, and per-skill usage with automatic user vs overhead cost separation. 6 MCP tools for conversational querying, real-time session tracking via hooks, session category classification, cost optimization recommendations, and a local web dashboard at localhost:4321.",
+  "longDescription": "Ships **2 commands**, **4 hooks** and **1 MCP server**.\n\n- **Commands** (2): `codeledger`, `dashboard`\n- **Hooks** (4): `SubagentStop`, `PostToolUse`, `Stop`, `SessionEnd`\n- **MCP servers** (1): `codeledger-server`\n\nInstalls with `claude plugin install codeledger@claude-community` from `bhvbhushan/codeledger`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "hook": 4,
+    "command": 2,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Bhavya Bhushan"
+  },
+  "externalUrl": "https://github.com/bhvbhushan/codeledger/tree/80a7b649fba70911e229800ba20c7dd206ced8c4",
+  "marketplace": "claude-community",
+  "version": "0.2.6",
+  "sourceRevision": "80a7b649fba70911e229800ba20c7dd206ced8c4",
+  "contentDigest": "8d2eb6436791bcc2a8369ca9dba1cf0955b9b35d0a2ab10019e6c9cb2d409e11",
+  "contentHash": "9a9807e33532ffa1",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/bhvbhushan/codeledger.git",
+    "sha": "80a7b649fba70911e229800ba20c7dd206ced8c4"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-03T12:59:49Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "CODEOWNERS",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "codeledger.md",
+            "type": "file"
+          },
+          {
+            "name": "dashboard.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "demo",
+        "type": "directory",
+        "children": [
+          {
+            "name": "codeledger-dashboard.gif",
+            "type": "file"
+          },
+          {
+            "name": "codeledger-setup.gif",
+            "type": "file"
+          },
+          {
+            "name": "codeledger.mp4",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "classifier",
+            "type": "directory",
+            "children": [
+              {
+                "name": "categorize-session.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "collectors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cline-collector.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-collector.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-collector.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dashboard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "routes.ts",
+                "type": "file"
+              },
+              {
+                "name": "server.ts",
+                "type": "file"
+              },
+              {
+                "name": "static-assets.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "db",
+            "type": "directory",
+            "children": [
+              {
+                "name": "connection.ts",
+                "type": "file"
+              },
+              {
+                "name": "migrate.ts",
+                "type": "file"
+              },
+              {
+                "name": "pricing.ts",
+                "type": "file"
+              },
+              {
+                "name": "queries.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema-v2.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema-v3.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema-v4.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema-v5.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema-v6.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "budget-alert.ts",
+                "type": "file"
+              },
+              {
+                "name": "init-db.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-session-end.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-skill-use.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-stop.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-stop.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "parser",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-parser.ts",
+                "type": "file"
+              },
+              {
+                "name": "classify-agent.ts",
+                "type": "file"
+              },
+              {
+                "name": "jsonl-reader.ts",
+                "type": "file"
+              },
+              {
+                "name": "message-extractor.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-parser.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sync",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scanner.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-usage.ts",
+                "type": "file"
+              },
+              {
+                "name": "budget-set.ts",
+                "type": "file"
+              },
+              {
+                "name": "budget-status.ts",
+                "type": "file"
+              },
+              {
+                "name": "cost-optimize.ts",
+                "type": "file"
+              },
+              {
+                "name": "cross-tool-cost.ts",
+                "type": "file"
+              },
+              {
+                "name": "model-stats.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-usage.ts",
+                "type": "file"
+              },
+              {
+                "name": "skill-usage.ts",
+                "type": "file"
+              },
+              {
+                "name": "usage-summary.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "utils",
+            "type": "directory",
+            "children": [
+              {
+                "name": "format.ts",
+                "type": "file"
+              },
+              {
+                "name": "period.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cli.ts",
+            "type": "file"
+          },
+          {
+            "name": "index.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "classifier",
+            "type": "directory",
+            "children": [
+              {
+                "name": "categorize-session.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "collectors",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cline-collector.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "codex-collector.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "gemini-collector.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "db",
+            "type": "directory",
+            "children": [
+              {
+                "name": "migrate.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "pricing.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema-v2.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "schema.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-meta.json",
+                "type": "file"
+              },
+              {
+                "name": "agent-session.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "error-session.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "hook-payload.json",
+                "type": "file"
+              },
+              {
+                "name": "simple-session.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "skill-use-payload.json",
+                "type": "file"
+              },
+              {
+                "name": "streaming-session.jsonl",
+                "type": "file"
+              },
+              {
+                "name": "subagent-stop-payload.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "on-session-end.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-skill-use.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-stop.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "on-subagent-stop.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "parser",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-parser.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "classify-agent.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "jsonl-reader.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "message-extractor.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "session-parser.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sync",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scanner.test.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-usage.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "budget-set.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "budget-status.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "cost-optimize.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "cross-tool-cost.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "model-stats.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "project-usage.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "skill-usage.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "usage-summary.test.ts",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "tsup.config.ts",
+        "type": "file"
+      }
+    ]
+  }
+}

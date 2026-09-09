@@ -1,0 +1,2960 @@
+{
+  "slug": "healthclaw-guardrails",
+  "name": "Healthclaw Guardrails",
+  "type": "plugin",
+  "description": "HealthClaw Guardrails is the security layer between AI agents and clinical FHIR data. Every agent read passes through PHI redaction (names truncated to initials, DOBs to year, identifiers masked). Every write requires an HMAC-signed step-up token with a 5-minute TTL. Clinical writes (Condition, MedicationRequest, DiagnosticReport) return HTTP 428 until a human confirms. Every access lands in an append-only audit trail scoped by tenant.\n\nSupports FHIR R4 US Core v9 (stable) and FHIR R6 v6.0.0-ballot3 (experimental). Proxies upstream FHIR servers (HAPI, Epic sandbox, Medplum via OAuth2 client-credentials, SMART Health IT) so the same guardrails apply whether you're on local SQLite or production EHRs.\n\nBundled skills: fhir-r6-guardrails (core MCP + 14 tools), curatr (patient-facing data-quality evaluation and correction), fasten-connect (patient-authorized EHR ingestion + TEFCA), phi-redaction (HIPAA Safe Harbor de-identification), fhir-upstream-proxy (vendor-neutral server proxy), healthex-export (portable health record export).",
+  "longDescription": "Ships **14 skills** and **2 MCP servers**.\n\n- **Skills** (14): `check-sources` (Survey ALL connected health data sources at once), `curatr` (HealthClaw Curatr (healthclaw.io) — patient-facing FHIR data quality evaluation and correction), `fasten-connect` (Use this skill whenever connecting a patient's real health records from EHR systems (Epic, Cerner, Athena) or the…), `fhir-r6-guardrails` (HealthClaw Guardrails (healthclaw.io) — FHIR agent guardrails for clinical data access via MCP), `fhir-upstream-proxy` (Connect to real FHIR servers through the MCP guardrail proxy), `getting-started` (End-to-end onboarding for the HealthClaw + OpenClaw personal-health-agent stack), `healthbankone` (Pull verified medical records and digital-identity context from Health Bank One (https://www.healthbankone.com) via their MCP server), `healthex-export` (HealthClaw HealthEx Export (healthclaw.io) — automated personal health record export from the local HealthClaw FHIR store), and 6 more\n- **MCP servers** (2): `healthclaw-local`, `healthbankone`\n\nInstalls with `claude plugin install healthclaw-guardrails@claude-community` from `aks129/HealthClawGuardrails`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "codex"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 14,
+    "mcp": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "aks129"
+  },
+  "externalUrl": "https://github.com/aks129/HealthClawGuardrails/tree/bb315afc54e5bf44aa91b38b1c20b05483d6aeec",
+  "marketplace": "claude-community",
+  "version": "1.0.0",
+  "sourceRevision": "bb315afc54e5bf44aa91b38b1c20b05483d6aeec",
+  "contentDigest": "020bc18836974ab6599aef6918025ce360779456b08c0ec93ec955287774d3e1",
+  "contentHash": "fc6ddb0e15791480",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/aks129/HealthClawGuardrails.git",
+    "sha": "bb315afc54e5bf44aa91b38b1c20b05483d6aeec"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-08-10T00:48:34Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "healthclaw-logo.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "claude-pr-review.yml",
+                "type": "file"
+              },
+              {
+                "name": "prod-watch.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              },
+              {
+                "name": "security-baseline.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dependabot.yml",
+            "type": "file"
+          },
+          {
+            "name": "exempt-superpowers-docs",
+            "type": "file"
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          },
+          {
+            "name": "REVIEW_STANDARDS.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "adapters",
+        "type": "directory",
+        "children": [
+          {
+            "name": "examples",
+            "type": "directory",
+            "children": [
+              {
+                "name": "gemini_agent.py",
+                "type": "file"
+              },
+              {
+                "name": "langchain_agent.py",
+                "type": "file"
+              },
+              {
+                "name": "openai_agent.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "healthclaw_bridge.py",
+            "type": "file"
+          },
+          {
+            "name": "tools.manifest.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "api",
+        "type": "directory",
+        "children": [
+          {
+            "name": "index.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "careagents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "static",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fonts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "fraunces-latin-1.woff2",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fraunces-latin-ext-1.woff2",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fraunces-latin-ext.woff2",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fraunces-latin.woff2",
+                    "type": "file"
+                  },
+                  {
+                    "name": "public-sans-latin-1.woff2",
+                    "type": "file"
+                  },
+                  {
+                    "name": "public-sans-latin-ext-1.woff2",
+                    "type": "file"
+                  },
+                  {
+                    "name": "public-sans-latin-ext.woff2",
+                    "type": "file"
+                  },
+                  {
+                    "name": "public-sans-latin.woff2",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "auth.js",
+                "type": "file"
+              },
+              {
+                "name": "careagents.css",
+                "type": "file"
+              },
+              {
+                "name": "chat.js",
+                "type": "file"
+              },
+              {
+                "name": "fonts.css",
+                "type": "file"
+              },
+              {
+                "name": "home.js",
+                "type": "file"
+              },
+              {
+                "name": "icon.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "templates",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auth.html",
+                "type": "file"
+              },
+              {
+                "name": "base.html",
+                "type": "file"
+              },
+              {
+                "name": "brief.html",
+                "type": "file"
+              },
+              {
+                "name": "chat_error.html",
+                "type": "file"
+              },
+              {
+                "name": "chat.html",
+                "type": "file"
+              },
+              {
+                "name": "home.html",
+                "type": "file"
+              },
+              {
+                "name": "landing.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "_build.py",
+            "type": "file"
+          },
+          {
+            "name": "accounts.py",
+            "type": "file"
+          },
+          {
+            "name": "advisors.py",
+            "type": "file"
+          },
+          {
+            "name": "agent.py",
+            "type": "file"
+          },
+          {
+            "name": "app.py",
+            "type": "file"
+          },
+          {
+            "name": "config.py",
+            "type": "file"
+          },
+          {
+            "name": "connectors.py",
+            "type": "file"
+          },
+          {
+            "name": "conversation_locks.py",
+            "type": "file"
+          },
+          {
+            "name": "healthcheck.py",
+            "type": "file"
+          },
+          {
+            "name": "healthclaw.py",
+            "type": "file"
+          },
+          {
+            "name": "intake_state.py",
+            "type": "file"
+          },
+          {
+            "name": "labs_timeline.py",
+            "type": "file"
+          },
+          {
+            "name": "llm.py",
+            "type": "file"
+          },
+          {
+            "name": "mail.py",
+            "type": "file"
+          },
+          {
+            "name": "models.py",
+            "type": "file"
+          },
+          {
+            "name": "personas.py",
+            "type": "file"
+          },
+          {
+            "name": "worker.py",
+            "type": "file"
+          },
+          {
+            "name": "wsgi.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "deploy",
+        "type": "directory",
+        "children": [
+          {
+            "name": "careagents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "careagents-worker.service",
+                "type": "file"
+              },
+              {
+                "name": "careagents.service",
+                "type": "file"
+              },
+              {
+                "name": "deploy.sh",
+                "type": "file"
+              },
+              {
+                "name": "Dockerfile",
+                "type": "file"
+              },
+              {
+                "name": "imessage_relay.py",
+                "type": "file"
+              },
+              {
+                "name": "stamp_build.sh",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "blog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "2026-07-24-agents-on-fhir-need-an-enforcement-layer.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "demos",
+            "type": "directory",
+            "children": [
+              {
+                "name": "forms-rail-run-of-show.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cms-0057-prior-auth-dtr.md",
+                "type": "file"
+              },
+              {
+                "name": "oauth-scope-mapping-hbo.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "quickstarts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "chatgpt.md",
+                "type": "file"
+              },
+              {
+                "name": "claude.md",
+                "type": "file"
+              },
+              {
+                "name": "mcp-generic.md",
+                "type": "file"
+              },
+              {
+                "name": "perplexity.md",
+                "type": "file"
+              },
+              {
+                "name": "README.md",
+                "type": "file"
+              },
+              {
+                "name": "telegram.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "recipes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "any-agent-framework.md",
+                "type": "file"
+              },
+              {
+                "name": "healthclaw-in-front-of-aidbox.md",
+                "type": "file"
+              },
+              {
+                "name": "healthclaw-in-front-of-healthbankone.md",
+                "type": "file"
+              },
+              {
+                "name": "healthclaw-in-front-of-medplum.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "runbooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "agent-run-control-plane.md",
+                "type": "file"
+              },
+              {
+                "name": "careagents-durable-worker.md",
+                "type": "file"
+              },
+              {
+                "name": "conversation-identity.md",
+                "type": "file"
+              },
+              {
+                "name": "database-migrations.md",
+                "type": "file"
+              },
+              {
+                "name": "resource-identity-migration.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "superpowers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-07-12-forms-rail-plan.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-07-12-forms-rail-scope.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-07-12-pr1-action-contracts.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-07-11-real-actions-reliability-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-07-14-careagents-accounts-identity-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-07-14-careagents-hosted-experience-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-07-16-careagents-connector-marketplace-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "2026-08-01-alignment-review.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-01-webinar-delivery-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-02-architecture-audit-and-refactor-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-02-retro.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-03-access-kernel-spec.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-03-audit-assertion-ruling.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-03-refactor-working-protocol.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-04-condition-grounding-design.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-04-plan-live-data-shakeout.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-04-shakeout-rulings.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-04-wrapup-review-and-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-graph-and-scaling-review.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-healthclaw-2.0-playbook.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-medicationstatement-support-decision.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-pattern-first-architecture-review.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-prioritized-backlog.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-sprint-1-retro.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-sprint-2-retro.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-sprint-3-retro.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-05-worker-claim-poll-design.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-06-retro-and-2.0-release-plan.md",
+            "type": "file"
+          },
+          {
+            "name": "2026-08-06-two-generators-three-laws.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-task-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "beta-program.md",
+            "type": "file"
+          },
+          {
+            "name": "beta-tester-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "constitution.md",
+            "type": "file"
+          },
+          {
+            "name": "development.md",
+            "type": "file"
+          },
+          {
+            "name": "extending-the-action-rail.md",
+            "type": "file"
+          },
+          {
+            "name": "healthcare-ai-advisors-roadmap.md",
+            "type": "file"
+          },
+          {
+            "name": "plugin-desktop-verification.md",
+            "type": "file"
+          },
+          {
+            "name": "ROADMAP.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "e2e",
+        "type": "directory",
+        "children": [
+          {
+            "name": "tests",
+            "type": "directory",
+            "children": [
+              {
+                "name": "api.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "careagents.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "dashboard.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "design-invariants.spec.ts",
+                "type": "file"
+              },
+              {
+                "name": "landing.spec.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "playwright.config.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hermes",
+        "type": "directory",
+        "children": [
+          {
+            "name": "install.sh",
+            "type": "file"
+          },
+          {
+            "name": "mcp.json",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "SOUL.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "knowledge",
+        "type": "directory",
+        "children": [
+          {
+            "name": "integrations",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hypotheses.md",
+                "type": "file"
+              },
+              {
+                "name": "knowledge.md",
+                "type": "file"
+              },
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "hypotheses.md",
+                "type": "file"
+              },
+              {
+                "name": "knowledge.md",
+                "type": "file"
+              },
+              {
+                "name": "rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "migrations",
+        "type": "directory",
+        "children": [
+          {
+            "name": "versions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "0001_v1_8_0_baseline.py",
+                "type": "file"
+              },
+              {
+                "name": "0002_current_schema_contract.py",
+                "type": "file"
+              },
+              {
+                "name": "0003_audit_outcome_detail.py",
+                "type": "file"
+              },
+              {
+                "name": "0004_conversation_identity.py",
+                "type": "file"
+              },
+              {
+                "name": "0005_agent_run_control_plane.py",
+                "type": "file"
+              },
+              {
+                "name": "0006_tool_reconciliation_state.py",
+                "type": "file"
+              },
+              {
+                "name": "0007_agent_worker_presence.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "env.py",
+            "type": "file"
+          },
+          {
+            "name": "README",
+            "type": "file"
+          },
+          {
+            "name": "script.py.mako",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "openclaw",
+        "type": "directory",
+        "children": [
+          {
+            "name": "bot.py",
+            "type": "file"
+          },
+          {
+            "name": "Dockerfile",
+            "type": "file"
+          },
+          {
+            "name": "railway.toml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "r6",
+        "type": "directory",
+        "children": [
+          {
+            "name": "actions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "rails",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "__init__.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "form_fill.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "phone.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sms.py",
+                    "type": "file"
+                  },
+                  {
+                    "name": "webhook_poster.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "confirmations.py",
+                "type": "file"
+              },
+              {
+                "name": "errors.py",
+                "type": "file"
+              },
+              {
+                "name": "events.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "registry.py",
+                "type": "file"
+              },
+              {
+                "name": "review.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              },
+              {
+                "name": "rx_transfer.py",
+                "type": "file"
+              },
+              {
+                "name": "safety.py",
+                "type": "file"
+              },
+              {
+                "name": "state.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "agent_runs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              },
+              {
+                "name": "service.py",
+                "type": "file"
+              },
+              {
+                "name": "state.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "brief",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "engine.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "caregaps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "evaluate.py",
+                "type": "file"
+              },
+              {
+                "name": "report.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "command_center",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "access.py",
+                "type": "file"
+              },
+              {
+                "name": "agent_templates.yaml",
+                "type": "file"
+              },
+              {
+                "name": "agents.py",
+                "type": "file"
+              },
+              {
+                "name": "agents.yaml",
+                "type": "file"
+              },
+              {
+                "name": "gateway.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "projector.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "conformance",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "probes.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fasten",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "api.py",
+                "type": "file"
+              },
+              {
+                "name": "enrollment.py",
+                "type": "file"
+              },
+              {
+                "name": "ingester.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "reaper.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              },
+              {
+                "name": "verify.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "labs",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "interpret.py",
+                "type": "file"
+              },
+              {
+                "name": "report.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ops",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "checks.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "quality",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "measures.py",
+                "type": "file"
+              },
+              {
+                "name": "report.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "sdc",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "delivery.py",
+                "type": "file"
+              },
+              {
+                "name": "documents.py",
+                "type": "file"
+              },
+              {
+                "name": "expressions.py",
+                "type": "file"
+              },
+              {
+                "name": "extract.py",
+                "type": "file"
+              },
+              {
+                "name": "intake.py",
+                "type": "file"
+              },
+              {
+                "name": "pdf.py",
+                "type": "file"
+              },
+              {
+                "name": "populate.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "shc",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "smbp",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "content.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "monitoring.py",
+                "type": "file"
+              },
+              {
+                "name": "outreach.py",
+                "type": "file"
+              },
+              {
+                "name": "report.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              },
+              {
+                "name": "scheduler_routes.py",
+                "type": "file"
+              },
+              {
+                "name": "scheduler.py",
+                "type": "file"
+              },
+              {
+                "name": "triage.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "wearables",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "client.py",
+                "type": "file"
+              },
+              {
+                "name": "mapper.py",
+                "type": "file"
+              },
+              {
+                "name": "models.py",
+                "type": "file"
+              },
+              {
+                "name": "poller.py",
+                "type": "file"
+              },
+              {
+                "name": "routes.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "access.py",
+            "type": "file"
+          },
+          {
+            "name": "agent_client.py",
+            "type": "file"
+          },
+          {
+            "name": "audit.py",
+            "type": "file"
+          },
+          {
+            "name": "body_guard.py",
+            "type": "file"
+          },
+          {
+            "name": "context_builder.py",
+            "type": "file"
+          },
+          {
+            "name": "curatr.py",
+            "type": "file"
+          },
+          {
+            "name": "database_migrations.py",
+            "type": "file"
+          },
+          {
+            "name": "email_inbound.py",
+            "type": "file"
+          },
+          {
+            "name": "fhir_proxy.py",
+            "type": "file"
+          },
+          {
+            "name": "health_compliance.py",
+            "type": "file"
+          },
+          {
+            "name": "health_context.py",
+            "type": "file"
+          },
+          {
+            "name": "internal_auth.py",
+            "type": "file"
+          },
+          {
+            "name": "models.py",
+            "type": "file"
+          },
+          {
+            "name": "oauth.py",
+            "type": "file"
+          },
+          {
+            "name": "purge.py",
+            "type": "file"
+          },
+          {
+            "name": "rate_limit.py",
+            "type": "file"
+          },
+          {
+            "name": "read_auth.py",
+            "type": "file"
+          },
+          {
+            "name": "redaction.py",
+            "type": "file"
+          },
+          {
+            "name": "routes.py",
+            "type": "file"
+          },
+          {
+            "name": "runtime_config.py",
+            "type": "file"
+          },
+          {
+            "name": "schema_sync.py",
+            "type": "file"
+          },
+          {
+            "name": "seed.py",
+            "type": "file"
+          },
+          {
+            "name": "stepup.py",
+            "type": "file"
+          },
+          {
+            "name": "telegram_push.py",
+            "type": "file"
+          },
+          {
+            "name": "terminology_resolver.py",
+            "type": "file"
+          },
+          {
+            "name": "terminology.py",
+            "type": "file"
+          },
+          {
+            "name": "validator.py",
+            "type": "file"
+          },
+          {
+            "name": "version.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "demo_bundles",
+            "type": "directory",
+            "children": [
+              {
+                "name": "winters_hypertension.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "benchmark_claude_cli.py",
+            "type": "file"
+          },
+          {
+            "name": "benchmark_local_models.py",
+            "type": "file"
+          },
+          {
+            "name": "bot_commands_install.sh",
+            "type": "file"
+          },
+          {
+            "name": "bot_commands.py",
+            "type": "file"
+          },
+          {
+            "name": "build_quickstart_pdf.py",
+            "type": "file"
+          },
+          {
+            "name": "careagents_smoke.py",
+            "type": "file"
+          },
+          {
+            "name": "check_audit_coverage.py",
+            "type": "file"
+          },
+          {
+            "name": "check_table_stakes.py",
+            "type": "file"
+          },
+          {
+            "name": "convert_fasten.py",
+            "type": "file"
+          },
+          {
+            "name": "convert_hbo_export.py",
+            "type": "file"
+          },
+          {
+            "name": "demo_e2e.sh",
+            "type": "file"
+          },
+          {
+            "name": "demo_smoke.py",
+            "type": "file"
+          },
+          {
+            "name": "demo_telemetry.py",
+            "type": "file"
+          },
+          {
+            "name": "export_healthbankone_mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "export_healthex_legacy.py",
+            "type": "file"
+          },
+          {
+            "name": "export_healthex_mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "export_healthex.py",
+            "type": "file"
+          },
+          {
+            "name": "export_medent_fhir.py",
+            "type": "file"
+          },
+          {
+            "name": "guardrail_conformance.py",
+            "type": "file"
+          },
+          {
+            "name": "healthbankone_oauth.py",
+            "type": "file"
+          },
+          {
+            "name": "healthclaw_redact.py",
+            "type": "file"
+          },
+          {
+            "name": "import_healthex.py",
+            "type": "file"
+          },
+          {
+            "name": "kristy_install.sh",
+            "type": "file"
+          },
+          {
+            "name": "kristy_schedule_watcher.py",
+            "type": "file"
+          },
+          {
+            "name": "linkedin_digest.py",
+            "type": "file"
+          },
+          {
+            "name": "medent_oauth.py",
+            "type": "file"
+          },
+          {
+            "name": "migrate_resource_identity.py",
+            "type": "file"
+          },
+          {
+            "name": "prod_watch.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_demo_tenant.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_openclaw_workspaces.sh",
+            "type": "file"
+          },
+          {
+            "name": "seed_quality_demo.py",
+            "type": "file"
+          },
+          {
+            "name": "seed_winters_demo.py",
+            "type": "file"
+          },
+          {
+            "name": "shakeout_live.py",
+            "type": "file"
+          },
+          {
+            "name": "smoke_medplum.py",
+            "type": "file"
+          },
+          {
+            "name": "smoke_test.py",
+            "type": "file"
+          },
+          {
+            "name": "update_agent_prompts.sh",
+            "type": "file"
+          },
+          {
+            "name": "vendor_frontend_assets.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "services",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-orchestrator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "ktc",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "encoding.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "hkdf.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "jwe.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "ktc.test.ts",
+                        "type": "file"
+                      },
+                      {
+                        "name": "shlink.ts",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "backend-failure.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fetch-timeout.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fetch-timeout.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "generate-manifest.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "manifest.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "mcp-tool-result.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "reproducibility.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stdio.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "step-up-gate.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tools.test.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tools.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "transport-errors.test.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": ".dockerignore",
+                "type": "file"
+              },
+              {
+                "name": "Dockerfile",
+                "type": "file"
+              },
+              {
+                "name": "package-lock.json",
+                "type": "file"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              },
+              {
+                "name": "tsconfig.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "shl-server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "Dockerfile",
+                "type": "file"
+              },
+              {
+                "name": "railway.toml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "check-sources",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "curatr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fasten-connect",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fhir-r6-guardrails",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fhir-upstream-proxy",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "getting-started",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "healthbankone",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "healthex-export",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "healthex-export-redacted",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hermes",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hypertension-coordinator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "personal-health-records",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "phi-redaction",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "share-health-qr",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "static",
+        "type": "directory",
+        "children": [
+          {
+            "name": "css",
+            "type": "directory",
+            "children": [
+              {
+                "name": "vendor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bootstrap.min.css",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fontawesome.min.css",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "command-center.css",
+                "type": "file"
+              },
+              {
+                "name": "fhir-control-panel.css",
+                "type": "file"
+              },
+              {
+                "name": "fonts.css",
+                "type": "file"
+              },
+              {
+                "name": "healthclaw.css",
+                "type": "file"
+              },
+              {
+                "name": "r6-dashboard.css",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fonts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "archivo-latin-1.woff2",
+                "type": "file"
+              },
+              {
+                "name": "archivo-latin-ext-1.woff2",
+                "type": "file"
+              },
+              {
+                "name": "archivo-latin-ext.woff2",
+                "type": "file"
+              },
+              {
+                "name": "archivo-latin.woff2",
+                "type": "file"
+              },
+              {
+                "name": "fragment-mono-latin-1.woff2",
+                "type": "file"
+              },
+              {
+                "name": "fragment-mono-latin-ext-1.woff2",
+                "type": "file"
+              },
+              {
+                "name": "fragment-mono-latin-ext.woff2",
+                "type": "file"
+              },
+              {
+                "name": "fragment-mono-latin.woff2",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "js",
+            "type": "directory",
+            "children": [
+              {
+                "name": "vendor",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "bootstrap.bundle.min.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "command-center.js",
+                "type": "file"
+              },
+              {
+                "name": "fhir-control-panel.js",
+                "type": "file"
+              },
+              {
+                "name": "landing.js",
+                "type": "file"
+              },
+              {
+                "name": "r6-dashboard.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "videos",
+            "type": "directory",
+            "children": [
+              {
+                "name": "healthclaw-3min.mp4",
+                "type": "file"
+              },
+              {
+                "name": "healthclaw-5min.mp4",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "webfonts",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fa-brands-400.woff2",
+                "type": "file"
+              },
+              {
+                "name": "fa-regular-400.woff2",
+                "type": "file"
+              },
+              {
+                "name": "fa-solid-900.woff2",
+                "type": "file"
+              },
+              {
+                "name": "fa-v4compatibility.woff2",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "healthclaw-quickstart.pdf",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "templates",
+        "type": "directory",
+        "children": [
+          {
+            "name": "mcp_apps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "care_gaps.html",
+                "type": "file"
+              },
+              {
+                "name": "compiled_truth.html",
+                "type": "file"
+              },
+              {
+                "name": "lab_trends.html",
+                "type": "file"
+              },
+              {
+                "name": "wearables.html",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "action_review.html",
+            "type": "file"
+          },
+          {
+            "name": "base.html",
+            "type": "file"
+          },
+          {
+            "name": "command_center_login.html",
+            "type": "file"
+          },
+          {
+            "name": "command_center.html",
+            "type": "file"
+          },
+          {
+            "name": "demo_intake_form.html",
+            "type": "file"
+          },
+          {
+            "name": "faq.html",
+            "type": "file"
+          },
+          {
+            "name": "fasten_connect.html",
+            "type": "file"
+          },
+          {
+            "name": "fhir_control_panel.html",
+            "type": "file"
+          },
+          {
+            "name": "index.html",
+            "type": "file"
+          },
+          {
+            "name": "privacy.html",
+            "type": "file"
+          },
+          {
+            "name": "r6_dashboard.html",
+            "type": "file"
+          },
+          {
+            "name": "review_base.html",
+            "type": "file"
+          },
+          {
+            "name": "skills.html",
+            "type": "file"
+          },
+          {
+            "name": "terms.html",
+            "type": "file"
+          },
+          {
+            "name": "wiki.html",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "actions",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "conftest.py",
+                "type": "file"
+              },
+              {
+                "name": "test_attempt_ledger.py",
+                "type": "file"
+              },
+              {
+                "name": "test_boot_registration.py",
+                "type": "file"
+              },
+              {
+                "name": "test_confirm_is_commit.py",
+                "type": "file"
+              },
+              {
+                "name": "test_confirmations.py",
+                "type": "file"
+              },
+              {
+                "name": "test_contract_generic.py",
+                "type": "file"
+              },
+              {
+                "name": "test_errors.py",
+                "type": "file"
+              },
+              {
+                "name": "test_form_fill_execute.py",
+                "type": "file"
+              },
+              {
+                "name": "test_form_fill_executor.py",
+                "type": "file"
+              },
+              {
+                "name": "test_rails_ported.py",
+                "type": "file"
+              },
+              {
+                "name": "test_registry.py",
+                "type": "file"
+              },
+              {
+                "name": "test_review_flow.py",
+                "type": "file"
+              },
+              {
+                "name": "test_review_gate_adversarial.py",
+                "type": "file"
+              },
+              {
+                "name": "test_safety_redflag.py",
+                "type": "file"
+              },
+              {
+                "name": "test_state_transitions.py",
+                "type": "file"
+              },
+              {
+                "name": "test_webhook_poster_executor.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "ops",
+            "type": "directory",
+            "children": [
+              {
+                "name": "__init__.py",
+                "type": "file"
+              },
+              {
+                "name": "test_preflight.py",
+                "type": "file"
+              },
+              {
+                "name": "test_reaper.py",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "tools",
+            "type": "directory",
+            "children": [
+              {
+                "name": "prod_watch_alarm_sim.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "conftest.py",
+            "type": "file"
+          },
+          {
+            "name": "test_207_unreadable_never_absent.py",
+            "type": "file"
+          },
+          {
+            "name": "test_access_kernel.py",
+            "type": "file"
+          },
+          {
+            "name": "test_actions_callbacks.py",
+            "type": "file"
+          },
+          {
+            "name": "test_actions_models.py",
+            "type": "file"
+          },
+          {
+            "name": "test_actions_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_adapters_bridge.py",
+            "type": "file"
+          },
+          {
+            "name": "test_agent_runs.py",
+            "type": "file"
+          },
+          {
+            "name": "test_app_factory.py",
+            "type": "file"
+          },
+          {
+            "name": "test_audit_coverage_gate.py",
+            "type": "file"
+          },
+          {
+            "name": "test_audit_failure_posture.py",
+            "type": "file"
+          },
+          {
+            "name": "test_audit_transactions.py",
+            "type": "file"
+          },
+          {
+            "name": "test_boot_reaper_wiring.py",
+            "type": "file"
+          },
+          {
+            "name": "test_bot_commands.py",
+            "type": "file"
+          },
+          {
+            "name": "test_bot_singleton_hardening.py",
+            "type": "file"
+          },
+          {
+            "name": "test_brief_caregaps_contract.py",
+            "type": "file"
+          },
+          {
+            "name": "test_brief_engine.py",
+            "type": "file"
+          },
+          {
+            "name": "test_brief_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_browser_js_hygiene.py",
+            "type": "file"
+          },
+          {
+            "name": "test_build_marker_stamp.py",
+            "type": "file"
+          },
+          {
+            "name": "test_careagents_container_roles_qa.py",
+            "type": "file"
+          },
+          {
+            "name": "test_careagents_container_roles.py",
+            "type": "file"
+          },
+          {
+            "name": "test_careagents_runbook_railway_qa.py",
+            "type": "file"
+          },
+          {
+            "name": "test_careagents.py",
+            "type": "file"
+          },
+          {
+            "name": "test_caregaps_evaluate.py",
+            "type": "file"
+          },
+          {
+            "name": "test_caregaps_report.py",
+            "type": "file"
+          },
+          {
+            "name": "test_caregaps_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ci_hardening.py",
+            "type": "file"
+          },
+          {
+            "name": "test_claimed_properties_are_pinned.py",
+            "type": "file"
+          },
+          {
+            "name": "test_command_center.py",
+            "type": "file"
+          },
+          {
+            "name": "test_conformance_endpoint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_context_builder.py",
+            "type": "file"
+          },
+          {
+            "name": "test_curatr.py",
+            "type": "file"
+          },
+          {
+            "name": "test_database_migrations.py",
+            "type": "file"
+          },
+          {
+            "name": "test_deidentification_language.py",
+            "type": "file"
+          },
+          {
+            "name": "test_docs_endpoint_drift.py",
+            "type": "file"
+          },
+          {
+            "name": "test_docs_tool_catalogue_drift.py",
+            "type": "file"
+          },
+          {
+            "name": "test_email_inbound.py",
+            "type": "file"
+          },
+          {
+            "name": "test_export_healthbankone.py",
+            "type": "file"
+          },
+          {
+            "name": "test_export_healthex.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_boot_reaper.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_dialog_reachable.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_download_host.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_export_trigger.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_import_not_fabricated.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_job_recovery.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_models_widths.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_verify_signature.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_webhook_shape.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fasten_widget_events.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fhir_control_panel.py",
+            "type": "file"
+          },
+          {
+            "name": "test_fhir_proxy.py",
+            "type": "file"
+          },
+          {
+            "name": "test_gemini_extension.py",
+            "type": "file"
+          },
+          {
+            "name": "test_guardrail_conformance.py",
+            "type": "file"
+          },
+          {
+            "name": "test_healthclaw_redact.py",
+            "type": "file"
+          },
+          {
+            "name": "test_healthclaw_transport.py",
+            "type": "file"
+          },
+          {
+            "name": "test_import_acyclicity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_import_healthex.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ingest_auth.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ingest_bundle_endpoint.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ingest_resilience.py",
+            "type": "file"
+          },
+          {
+            "name": "test_intake_questionnaire.py",
+            "type": "file"
+          },
+          {
+            "name": "test_intake_state.py",
+            "type": "file"
+          },
+          {
+            "name": "test_kristy_watcher.py",
+            "type": "file"
+          },
+          {
+            "name": "test_labs_interpret.py",
+            "type": "file"
+          },
+          {
+            "name": "test_labs_report.py",
+            "type": "file"
+          },
+          {
+            "name": "test_labs_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_labs_timeline.py",
+            "type": "file"
+          },
+          {
+            "name": "test_llm_retry.py",
+            "type": "file"
+          },
+          {
+            "name": "test_mcp_app_lab_trends.py",
+            "type": "file"
+          },
+          {
+            "name": "test_medication_deref.py",
+            "type": "file"
+          },
+          {
+            "name": "test_medplum_in_front.py",
+            "type": "file"
+          },
+          {
+            "name": "test_metadata_security.py",
+            "type": "file"
+          },
+          {
+            "name": "test_non_dict_body_refused.py",
+            "type": "file"
+          },
+          {
+            "name": "test_oauth_redis.py",
+            "type": "file"
+          },
+          {
+            "name": "test_oauth_tenant_binding.py",
+            "type": "file"
+          },
+          {
+            "name": "test_openclaw_mcp_auth.py",
+            "type": "file"
+          },
+          {
+            "name": "test_patient_connect_token.py",
+            "type": "file"
+          },
+          {
+            "name": "test_phi_safe_errors.py",
+            "type": "file"
+          },
+          {
+            "name": "test_populate_lists.py",
+            "type": "file"
+          },
+          {
+            "name": "test_prod_watch_build.py",
+            "type": "file"
+          },
+          {
+            "name": "test_public_fhir_servers.py",
+            "type": "file"
+          },
+          {
+            "name": "test_quality_nqf0018.py",
+            "type": "file"
+          },
+          {
+            "name": "test_quality_report.py",
+            "type": "file"
+          },
+          {
+            "name": "test_quality_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_quality_seed.py",
+            "type": "file"
+          },
+          {
+            "name": "test_r6_dashboard.py",
+            "type": "file"
+          },
+          {
+            "name": "test_r6_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ratchets.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rate_limit_client_ip.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rate_limit_store.py",
+            "type": "file"
+          },
+          {
+            "name": "test_read_auth.py",
+            "type": "file"
+          },
+          {
+            "name": "test_recursive_redaction.py",
+            "type": "file"
+          },
+          {
+            "name": "test_redaction_coverage_inventory.py",
+            "type": "file"
+          },
+          {
+            "name": "test_redaction_probes_multistep.py",
+            "type": "file"
+          },
+          {
+            "name": "test_relayed_review_page_is_self_contained.py",
+            "type": "file"
+          },
+          {
+            "name": "test_request_access_log.py",
+            "type": "file"
+          },
+          {
+            "name": "test_resource_identity.py",
+            "type": "file"
+          },
+          {
+            "name": "test_review_page_carries_no_credentials.py",
+            "type": "file"
+          },
+          {
+            "name": "test_runtime_security_config.py",
+            "type": "file"
+          },
+          {
+            "name": "test_runtime_version.py",
+            "type": "file"
+          },
+          {
+            "name": "test_rx_transfer.py",
+            "type": "file"
+          },
+          {
+            "name": "test_safe_modifier_tokens_drift.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_delivery.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_documents.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_expressions.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_extract.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_guardrails.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_pdf.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_populate.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_roundtrip.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sdc_types.py",
+            "type": "file"
+          },
+          {
+            "name": "test_security_hardening.py",
+            "type": "file"
+          },
+          {
+            "name": "test_seed_demo.py",
+            "type": "file"
+          },
+          {
+            "name": "test_shakeout_live.py",
+            "type": "file"
+          },
+          {
+            "name": "test_share_bundle.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sharp_on_mcp.py",
+            "type": "file"
+          },
+          {
+            "name": "test_shc_bridge.py",
+            "type": "file"
+          },
+          {
+            "name": "test_site_version_sync.py",
+            "type": "file"
+          },
+          {
+            "name": "test_skills_page.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_content.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_monitoring.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_outreach.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_report.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_routes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_scheduler.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_seed.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_startup.py",
+            "type": "file"
+          },
+          {
+            "name": "test_smbp_triage.py",
+            "type": "file"
+          },
+          {
+            "name": "test_sources_summary.py",
+            "type": "file"
+          },
+          {
+            "name": "test_ssrf_upstream.py",
+            "type": "file"
+          },
+          {
+            "name": "test_stepup_redis.py",
+            "type": "file"
+          },
+          {
+            "name": "test_subscribe.py",
+            "type": "file"
+          },
+          {
+            "name": "test_table_stakes.py",
+            "type": "file"
+          },
+          {
+            "name": "test_telegram_connect_flow.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tenant_format_blueprints.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tenant_purge.py",
+            "type": "file"
+          },
+          {
+            "name": "test_tenant_read_boundaries.py",
+            "type": "file"
+          },
+          {
+            "name": "test_terminology_labels.py",
+            "type": "file"
+          },
+          {
+            "name": "test_terminology_resolver.py",
+            "type": "file"
+          },
+          {
+            "name": "test_uncoded_wording.py",
+            "type": "file"
+          },
+          {
+            "name": "test_unredacted_exits.py",
+            "type": "file"
+          },
+          {
+            "name": "test_us_core_r4.py",
+            "type": "file"
+          },
+          {
+            "name": "test_vendored_assets_resolve.py",
+            "type": "file"
+          },
+          {
+            "name": "test_wearables.py",
+            "type": "file"
+          },
+          {
+            "name": "test_wellknown_skills.py",
+            "type": "file"
+          },
+          {
+            "name": "test_winters_bundle.py",
+            "type": "file"
+          },
+          {
+            "name": "test_write_guard_matrix.py",
+            "type": "file"
+          },
+          {
+            "name": "test_write_tier_docs_match_code.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".dockerignore",
+        "type": "file"
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".health-context.yaml",
+        "type": "file"
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "action_policy.yaml",
+        "type": "file"
+      },
+      {
+        "name": "alembic.ini",
+        "type": "file"
+      },
+      {
+        "name": "app.py",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "design.md",
+        "type": "file"
+      },
+      {
+        "name": "docker-compose.yml",
+        "type": "file"
+      },
+      {
+        "name": "Dockerfile",
+        "type": "file"
+      },
+      {
+        "name": "gemini-extension.json",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "glama.json",
+        "type": "file"
+      },
+      {
+        "name": "INTEGRATION.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "LICENSING.md",
+        "type": "file"
+      },
+      {
+        "name": "main.py",
+        "type": "file"
+      },
+      {
+        "name": "models.py",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "railway.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "RELEASING.md",
+        "type": "file"
+      },
+      {
+        "name": "ROADMAP.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "server.json",
+        "type": "file"
+      },
+      {
+        "name": "uv.lock",
+        "type": "file"
+      },
+      {
+        "name": "vercel.json",
+        "type": "file"
+      }
+    ]
+  }
+}

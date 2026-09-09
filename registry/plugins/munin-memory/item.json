@@ -1,0 +1,164 @@
+{
+  "slug": "munin-memory",
+  "name": "Munin Memory",
+  "type": "plugin",
+  "description": "# Munin for Claude Code\n\n> **Munin** is a long-term memory system for developers. Every time you work with Claude Code, Munin remembers your context, decisions, bugs, and solutions — so you never have to repeat yourself.\n\n**Munin** is your project's memory companion, integrated directly into Claude Code. It remembers your project, finds past errors, and suggests solutions based on what you've done before.\n\n---\n\n## Features\n\n### 🤖 Munin Agent\nCall `@munin` in any conversation to talk directly with your project's memory. Munin has full access to your memories — search, retrieve, store — all following the Memory Index Protocol.\n\n### 🔍 Automatic Memory Search\nEvery time you start a Claude Code session, Munin automatically finds relevant memories from your project. No need to ask — context is already there.\n\n### 💾 Session Summarization\nWhen a session ends, Munin automatically saves a summary to memory. Tasks, decisions, bugs — everything is recorded.\n\n### 📚 Error Catalog\nWhen an error occurs, Munin will:\n1. **Search** the error catalog first — a fix might already exist\n2. **Fix** following the precedent\n3. **Store** the new resolution so the next time is faster\n\n### 🧠 GraphRAG Memory\nEvery memory is automatically indexed into a knowledge graph:\n- **Entities** — services, libraries, models are extracted\n- **Relationships** — connections between components are mapped\n- **Semantic search** — find anything using natural language\n\n---\n\n## How It Works\n\n```\nYou open Claude Code\n│\n▼\nSessionStart Hook\n→ Munin searches relevant memories\n→ Context injected into conversation\n│\n▼\nYou work on your task\n→ Munin monitors for errors\n→ Errors → Error Catalog\n│\n▼\nSession ends (or /compact)\n→ Summary saved to memory\n│\n▼\nNext session — Munin remembers\n```\n\n---\n\n## Quick Start\n\n### 1. Create a Free Munin Account\n\nSign up at [munin.kalera.app](https://munin.kalera.app) — FREE FOREVER.\n\nAfter signing up, create a new project and copy your **Project ID** (`proj_xxxxxxxxxxxx`).\n\n### 2. Add Your Project ID\n\nCreate or edit `.env` in your project root:\n\n```bash\nMUNIN_PROJECT=proj_your_project_id\n```\n\n### 3. Enable the MCP Server\n\n**Option A — Global (recommended, works in any project):**\n```bash\n# Download the Munin MCP wrapper\ncurl -fsSL https://raw.githubusercontent.com/3d-era/munin/main/scripts/munin-mcp-wrapper.sh \\\n-o ~/.claude/munin-mcp-wrapper.sh\nchmod +x ~/.claude/munin-mcp-wrapper.sh\n\n# Enable globally\nclaude mcp add --scope user munin bash ~/.claude/munin-mcp-wrapper.sh\n```\n\n**Option B — Project-specific:**\n```bash\nclaude mcp add --scope project munin bash -c '\nENV_FILE=\"$(pwd)/.env\"\nif [[ -f \"$ENV_FILE\" ]]; then\nwhile IFS=\"=\" read -r key rest; do\n[[ \"$key\" =~ ^[[:space:]]*# ]] && continue\n[[ -z \"$key\" ]] && continue\nkey=$(echo \"$key\" | sed \"s/^[[:space:]]*//;s/[[:space:]]*$//\")\nvalue=$(echo \"$rest\" | sed \"s/^[[:space:]]*//;s/#.*$//;s/[[:space:]]*$//\")\n[[ -n \"$value\" ]] && export \"$key=$value\" 2>/dev/null || true\ndone < \"$ENV_FILE\"\nfi\nexec npx @kalera/munin-claude mcp\n'\n```\n\n**Option C — From this repo (development):**\n```bash\nclaude mcp add --scope user munin bash -c '\nPROJECT_DIR=\"${CLAUDE_PROJECT_DIR:-$(pwd)}\"\nENV_FILE=\"$PROJECT_DIR/.env\"\nif [[ -f \"$ENV_FILE\" ]]; then\ngrep -E \"^MUNIN_PROJECT=\" \"$ENV_FILE\" | while IFS=\"=\" read -r key val; do\nexport \"$key=$val\"\ndone\nfi\nexec npx @kalera/munin-claude mcp\n'\n```\n\n### 4. Start Using\n\n```bash\n# Talk to Munin directly\n@munion ask about the SePay integration\n@munion what did we decide about the auth system?\n\n# Or just start working — Munin auto-loads context\n# Munin will remember everything when you finish\n```\n\n---\n\n## Configuration\n\n### Environment Variables\n\n| Variable | Default | Description |\n|----------|---------|-------------|\n| `MUNIN_PROJECT` | *(required)* | Your project ID from munin.kalera.app |\n| `MUNIN_BASE_URL` | `https://munin.kalera.dev` | Munin API server |\n| `MUNIN_API_KEY` | *(from dashboard)* | API key for authentication |\n\n### Self-hosted Munin\n\nIf you're running your own Munin instance:\n\n```bash\nMUNIN_BASE_URL=https://your-munin-instance.com \\\nclaude mcp add --scope user munin bash -c \\\n'MUNIN_BASE_URL=\"https://your-munin-instance.com\" exec npx @kalera/munin-claude mcp'\n```\n\n---\n\n## Skills — What Triggers Munin\n\nMunin activates automatically based on context:\n\n| Skill | Triggers | What It Does |\n|-------|----------|--------------|\n| `munin-memory` | \"search memory\", \"remember\", \"find in memory\" | Full memory operations |\n| `munin-architecture` | \"architecture\", \"tech stack\", \"system design\" | Architecture context |\n| `munin-error-catalog` | \"bug\", \"error\", \"crash\", \"doesn't work\" | Error resolution |\n\n---\n\n## Memory Protocol — How Munin Works\n\n### At Task Start\n1. `munin_search_memories` with keywords relevant to the task\n2. `munin_retrieve_memory` for detailed context\n3. Present findings — **verify from memory, don't guess**\n\n### At Task End\n`munin_store_memory` with:\n- **title**: Concise summary (max 80 chars)\n- **content**: Details including file paths, decisions, outcomes\n- **tags**: Categories (`task`, `architecture`, `bug-fix`, etc.)\n\n### On Bug Fixes\n1. Search error catalog first\n2. Present existing fix if found\n3. Fix and **store the new resolution**\n\n### On Decisions\nTag as `architecture` + `decision`, include timeline/version\n\n---\n\n## Pricing\n\n| Plan | Price | Memories | Projects |\n|------|-------|----------|----------|\n| **Free** | $0 | 500 | 3 |\n| Pro | $9/mo | Unlimited | Unlimited |\n| Team | $29/mo | Unlimited | Unlimited |\n\n**[Sign up at munin.kalera.app →](https://munin.kalera.app)**\n\n---\n\n## Resources\n\n| Resource | Link                                                                                           |\n|----------|------------------------------------------------------------------------------------------------|\n| 🌐 **Website** | [munin.kalera.app](https://munin.kalera.app)                                                   |\n| 📖 **Docs** | [munin.kalera.app/docs](https://munin.kalera.app/docs)                                         |\n| 💬 **Discord** | Coming soon                                                                                    |\n| 🐛 **Issues** | [github.com/3d-era/munin-for-agents/issues](https://github.com/3d-era/munin-for-agents/issues) |\n| 📦 **npm** | [npmjs.com/package/@kalera/munin-claude](https://npmjs.com/package/@kalera/munin-claude)       |\n| 🔌 **Gemini Extension** | [github.com/3d-era/munin-gemini-extension](https://github.com/3d-era/munin-gemini-extension)   |\n\n---\n\n## License\n\nMIT — [github.com/3d-era/munin-for-agents](https://github.com/3d-era/munin-for-agents)",
+  "longDescription": "Ships **4 skills**, **1 agent**, **4 hooks** and **1 MCP server**.\n\n- **Skills** (4): `munin-architecture` (Use when discussing \"architecture\", \"tech stack\", \"system design\", \"kiến trúc\", \"thiết kế\", \"cấu trúc project\", or how components…), `munin-error-catalog` (Use when errors, bugs, exceptions, crashes, or failures appear), `munin-memory` (Use when user mentions \"search memory\", \"remember\", \"what did we do before\", \"check memory\", \"lookup\", \"find in memory\",…), `munin-projectid` (Use when user says \"/munin:projectid\", \"/projectid\", or wants to set the current project ID for Munin memory system)\n- **Agents** (1): `munin`\n- **Hooks** (4): `SessionStart`, `Stop`, `UserPromptSubmit`, `PostToolUse`\n- **MCP servers** (1): `munin`\n\nInstalls with `claude plugin install munin-memory@claude-community` from `3d-era/munin-for-agents` (`plugins/munin-claude-code`).",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 4,
+    "agent": 1,
+    "hook": 4,
+    "mcp": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Kalera"
+  },
+  "externalUrl": "https://github.com/3d-era/munin-for-agents/tree/b4366744828e5c51fd6b7d788aea13d261a8f35f/plugins/munin-claude-code",
+  "marketplace": "claude-community",
+  "version": "1.5.0",
+  "sourceRevision": "b4366744828e5c51fd6b7d788aea13d261a8f35f",
+  "contentDigest": "17eb349d0e52e43a64d606841af0ac66c3a45408ac1c65ac1ccf951922aafebb",
+  "contentHash": "770c37a1b6bf8762",
+  "pluginSource": {
+    "kind": "git-subdir",
+    "path": "plugins/munin-claude-code",
+    "url": "https://github.com/3d-era/munin-for-agents.git",
+    "ref": "main",
+    "sha": "b4366744828e5c51fd6b7d788aea13d261a8f35f"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "note": "No license text found upstream (searched the item directory and the repository root). plugin.json declares \"MIT\"."
+  },
+  "updatedAt": "2026-06-25T06:53:49Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "munin",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "_env.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "error-catalog-hook.sh",
+            "type": "file"
+          },
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "post-compact-hook.sh",
+            "type": "file"
+          },
+          {
+            "name": "session-start-hook.sh",
+            "type": "file"
+          },
+          {
+            "name": "stop-hook.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "munin-architecture",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "munin-error-catalog",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "munin-memory",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "munin-projectid",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".mcp.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

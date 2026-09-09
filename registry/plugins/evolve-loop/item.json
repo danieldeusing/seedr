@@ -1,0 +1,765 @@
+{
+  "slug": "evolve-loop",
+  "name": "Evolve Loop",
+  "type": "plugin",
+  "description": "A self-learning development pipeline that gets smarter with every cycle. It calibrates itself against your codebase, dynamically selects the highest-impact tasks, implements them in isolated git worktrees, and blocks bad code through eval gates — then learns from each cycle to make better decisions next time.\n\n4 specialized agents (Scout, Builder, Auditor, Operator) work across 5 phases: DISCOVER → BUILD → AUDIT → SHIP → LEARN. The Scout uses multi-armed bandit\nscoring and 8-dimension quality benchmarks to target your codebase's weakest areas. The Builder implements in isolation. The Auditor blocks MEDIUM+ severity\nissues. After each cycle, the pipeline extracts reusable \"instincts\" — patterns about what worked and what failed — that compound over time.\n\nEvery 5 cycles, a meta-cycle evaluates the pipeline itself and evolves its own agent prompts based on measured performance. It ran 151 cycles on its own\ncodebase, shipping 67+ improvements and raising its quality score from 83.8 to 94.4 — all autonomously.\n\nNo external dependencies. MIT licensed.",
+  "longDescription": "Ships **5 skills** and **5 agents**.\n\n- **Skills** (5): `code-review-simplify` (Use when reviewing code changes for quality, security, performance, or maintainability issues and identifying simplification opportunities in a…), `evaluator` (Use when the user invokes /evaluator or asks to evaluate, assess, score, or independently audit code quality, project…), `evolve-loop` (Use when the user invokes /evolve-loop or asks to run autonomous improvement cycles, self-evolving development, compound discovery, or…), `inspirer` (Use when the user invokes /inspirer or asks to brainstorm creatively, think outside the box, explore unconventional approaches,…), `refactor` (Use when the user asks to refactor code, review code quality, or fix code smells — orchestrates the…)\n- **Agents** (5): `agent-templates` (Base schemas and context blocks for all agents), `evolve-auditor` (Single-pass review agent for the Evolve Loop), `evolve-builder` (Implementation agent for the Evolve Loop), `evolve-operator` (Post-cycle monitoring agent for the Evolve Loop), `evolve-scout` (Discovery and planning agent for the Evolve Loop)\n\nInstalls with `claude plugin install evolve-loop@claude-community` from `mickeyyaya/evolve-loop`.",
+  "compatibility": [
+    "claude",
+    "copilot"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 5,
+    "agent": 5
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Dan Lee"
+  },
+  "externalUrl": "https://github.com/mickeyyaya/evolve-loop/tree/36eebb0512f466510ace20942e046ca7a70ed990",
+  "marketplace": "claude-community",
+  "version": "8.11.1",
+  "sourceRevision": "36eebb0512f466510ace20942e046ca7a70ed990",
+  "contentDigest": "345c66cfde1454c52a5dbca32ed7e28d4c1e3cdbb8e622f283f2f9889eb8bfa7",
+  "contentHash": "b116aa8b07754bb1",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/mickeyyaya/evolve-loop.git",
+    "sha": "36eebb0512f466510ace20942e046ca7a70ed990"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-20T10:57:43Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "marketplace.json",
+            "type": "file"
+          },
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug_report.md",
+                "type": "file"
+              },
+              {
+                "name": "feature_request.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "PULL_REQUEST_TEMPLATE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agent-templates.md",
+            "type": "file"
+          },
+          {
+            "name": "evolve-auditor.md",
+            "type": "file"
+          },
+          {
+            "name": "evolve-builder.md",
+            "type": "file"
+          },
+          {
+            "name": "evolve-operator.md",
+            "type": "file"
+          },
+          {
+            "name": "evolve-scout.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "incidents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cycle-102-111.md",
+                "type": "file"
+              },
+              {
+                "name": "cycle-132-141.md",
+                "type": "file"
+              },
+              {
+                "name": "flawless-execution-anomaly.md",
+                "type": "file"
+              },
+              {
+                "name": "gemini-forgery.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "reference",
+            "type": "directory",
+            "children": [
+              {
+                "name": "auditor-techniques.md",
+                "type": "file"
+              },
+              {
+                "name": "builder-techniques.md",
+                "type": "file"
+              },
+              {
+                "name": "orchestrator-techniques.md",
+                "type": "file"
+              },
+              {
+                "name": "scout-discovery.md",
+                "type": "file"
+              },
+              {
+                "name": "scout-techniques.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "accuracy-self-correction.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-capability-benchmarking.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-collaboration-games.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-config-versioning.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-deployment-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-economics.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-failure-tracing.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-governance-compliance.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-interoperability-protocols.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-interpretability.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-lifecycle-management.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-orchestration-anti-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-output-validation.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-role-specialization.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-sandboxing-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-skill-composition.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-state-persistence.md",
+            "type": "file"
+          },
+          {
+            "name": "agent-testing-frameworks.md",
+            "type": "file"
+          },
+          {
+            "name": "agentic-ide-integration.md",
+            "type": "file"
+          },
+          {
+            "name": "agentic-rag-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "agentic-systems-roadmap.md",
+            "type": "file"
+          },
+          {
+            "name": "ai-code-review-agents.md",
+            "type": "file"
+          },
+          {
+            "name": "autonomous-experiment-loops.md",
+            "type": "file"
+          },
+          {
+            "name": "code-correctness-verification.md",
+            "type": "file"
+          },
+          {
+            "name": "code-review-simplify-solution.md",
+            "type": "file"
+          },
+          {
+            "name": "configuration.md",
+            "type": "file"
+          },
+          {
+            "name": "constrained-decoding-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "context-engineering-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "emergent-agent-behaviors.md",
+            "type": "file"
+          },
+          {
+            "name": "eval-grader-best-practices.md",
+            "type": "file"
+          },
+          {
+            "name": "evaluator-research.md",
+            "type": "file"
+          },
+          {
+            "name": "genes.md",
+            "type": "file"
+          },
+          {
+            "name": "hitl-trust-calibration.md",
+            "type": "file"
+          },
+          {
+            "name": "index.md",
+            "type": "file"
+          },
+          {
+            "name": "inspirer-solution.md",
+            "type": "file"
+          },
+          {
+            "name": "instincts.md",
+            "type": "file"
+          },
+          {
+            "name": "knowledge-distillation-agents.md",
+            "type": "file"
+          },
+          {
+            "name": "long-context-agent-strategies.md",
+            "type": "file"
+          },
+          {
+            "name": "memory-consolidation-pipeline.md",
+            "type": "file"
+          },
+          {
+            "name": "model-routing.md",
+            "type": "file"
+          },
+          {
+            "name": "multi-agent-blackboard.md",
+            "type": "file"
+          },
+          {
+            "name": "performance-profiling.md",
+            "type": "file"
+          },
+          {
+            "name": "prompt-evolution-optimization.md",
+            "type": "file"
+          },
+          {
+            "name": "reasoning-orchestration-patterns.md",
+            "type": "file"
+          },
+          {
+            "name": "refactoring-llm-research.md",
+            "type": "file"
+          },
+          {
+            "name": "refactoring-pipeline-architecture.md",
+            "type": "file"
+          },
+          {
+            "name": "refactoring-tools-landscape.md",
+            "type": "file"
+          },
+          {
+            "name": "research-index.md",
+            "type": "file"
+          },
+          {
+            "name": "reward-hacking-prevention.md",
+            "type": "file"
+          },
+          {
+            "name": "self-evolving-tool-creation.md",
+            "type": "file"
+          },
+          {
+            "name": "self-healing-agents.md",
+            "type": "file"
+          },
+          {
+            "name": "synthetic-data-generation.md",
+            "type": "file"
+          },
+          {
+            "name": "token-cost-optimization.md",
+            "type": "file"
+          },
+          {
+            "name": "token-optimization-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "workflow-dag-patterns.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "examples",
+        "type": "directory",
+        "children": [
+          {
+            "name": "eval.md",
+            "type": "file"
+          },
+          {
+            "name": "gene.yaml",
+            "type": "file"
+          },
+          {
+            "name": "instinct.yaml",
+            "type": "file"
+          },
+          {
+            "name": "secure-orchestrator.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "code-review-simplify.sh",
+            "type": "file"
+          },
+          {
+            "name": "complexity-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "context-budget.sh",
+            "type": "file"
+          },
+          {
+            "name": "cycle-health-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "doc-lint.sh",
+            "type": "file"
+          },
+          {
+            "name": "eval-quality-check.sh",
+            "type": "file"
+          },
+          {
+            "name": "phase-gate.sh",
+            "type": "file"
+          },
+          {
+            "name": "release.sh",
+            "type": "file"
+          },
+          {
+            "name": "setup_skill_inventory_test.py",
+            "type": "file"
+          },
+          {
+            "name": "setup_skill_inventory.py",
+            "type": "file"
+          },
+          {
+            "name": "setup-skill-inventory.sh",
+            "type": "file"
+          },
+          {
+            "name": "token-profiler.sh",
+            "type": "file"
+          },
+          {
+            "name": "verify-eval.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "code-review-simplify",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evaluator",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "anti-gaming.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "eval-lifecycle.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scoring-dimensions.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "evolve-loop",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "initialization.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "policies.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "safety.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search-integration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "search-stages.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skill-routing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "task-selection.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "benchmark-eval.md",
+                "type": "file"
+              },
+              {
+                "name": "eval-runner.md",
+                "type": "file"
+              },
+              {
+                "name": "memory-protocol.md",
+                "type": "file"
+              },
+              {
+                "name": "online-researcher.md",
+                "type": "file"
+              },
+              {
+                "name": "phase0-calibrate.md",
+                "type": "file"
+              },
+              {
+                "name": "phase1-research.md",
+                "type": "file"
+              },
+              {
+                "name": "phase2-discover.md",
+                "type": "file"
+              },
+              {
+                "name": "phase3-build.md",
+                "type": "file"
+              },
+              {
+                "name": "phase5-ship.md",
+                "type": "file"
+              },
+              {
+                "name": "phase6-learn.md",
+                "type": "file"
+              },
+              {
+                "name": "phase7-meta.md",
+                "type": "file"
+              },
+              {
+                "name": "phases.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "smart-web-search.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "inspirer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "provocation-lenses.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scoring-rubric.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worked-examples.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "refactor",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reference",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "architecture-analysis.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "code-smells.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "complexity-scoring.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "continuous-integration.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "health-scoring.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "language-notes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt-engineering.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "refactoring-techniques.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "safety-protocols.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "scan-pipeline.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "smell-to-technique-map.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "worked-example.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workflow.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "calibrate.sh",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "evolve-status.py",
+        "type": "file"
+      },
+      {
+        "name": "GEMINI.md",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "status.sh",
+        "type": "file"
+      },
+      {
+        "name": "uninstall.sh",
+        "type": "file"
+      }
+    ]
+  }
+}

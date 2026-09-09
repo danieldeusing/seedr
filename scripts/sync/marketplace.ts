@@ -21,6 +21,8 @@ export interface MarketplaceAuthor {
 
 export interface MarketplaceEntry {
   name: string;
+  /** Human-readable name, where the marketplace gives one; the item's `name` starts from it. */
+  displayName?: string;
   description?: string;
   version?: string;
   author?: MarketplaceAuthor;
@@ -75,6 +77,7 @@ export function parseMarketplace(json: unknown, origin: string): MarketplaceFile
       : undefined;
     plugins.push({
       name: entry.name,
+      ...(typeof entry.displayName === "string" && entry.displayName.trim().length > 0 && { displayName: entry.displayName.trim() }),
       ...(typeof entry.description === "string" && { description: entry.description }),
       ...(typeof entry.version === "string" && { version: entry.version }),
       ...(author && { author }),

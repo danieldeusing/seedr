@@ -1,0 +1,690 @@
+{
+  "slug": "reflect",
+  "name": "Reflect",
+  "type": "plugin",
+  "description": "Session-local metacognition harness for long-running Claude Code work.\n\nWhen suggestions get reverted 3+ times within 10 tool calls, reflect invokes Opus 4.7 to reason about why the rejections clustered. The model reads back the last 20 tool calls, the rolled-back diff, and active rules, then writes structured guidance — pattern, signal, adjustment, confidence — to .reflect/session-guidance.md. The next turn auto-loads it via path-scoped rule injection and adjusts.\n\nKey features:\n• 3-tier weighted signal taxonomy: git revert/restore (Tier 1, +100), user-file deletes (Tier 2, +70), utterance negation regex (Tier 3, +50). Cumulative threshold 240 + 5-turn cooldown — fires only when reverts genuinely cluster.\n• Single-shot Opus 4.7 with adaptive thinking (effort: high) and 3-layer prompt cache (L1 1h, L2 5m, L3 ephemeral).\nMeasured: cold ~$0.05, warm ~$0.01, 95.9% L1 cache hit.\n• Two cross-platform hooks: PostToolUse (Tier 1+2) and UserPromptSubmit (Tier 3). Pure-bash arithmetic — no jq/bc dependency on Windows git-bash.\n• Session-local by design: no persistence, no cross-session sync, no telemetry. The guidance file evaporates at session end.\n• Failure modes characterized: cold-start refusal (< 5 turns), false-trigger flagging on intent shifts, abstention on regulatory/opaque domains.\n• Optional localhost Next.js companion Viewer (binds 127.0.0.1, never deploys, PII redactor on every read) for live state + reflection history + cross-session drift clustering.\n• MIT-licensed. SLSA v1 provenance via GitHub Actions OIDC trusted publisher (Sigstore-signed).",
+  "longDescription": "Ships **1 agent**, **1 command** and **2 hooks**.\n\n- **Agents** (1): `reflection-orchestrator` (Use to trigger a session-local metacognition reflection)\n- **Commands** (1): `brain-reflect` (Manually trigger reflect — a session-local metacognition reflection on recent tool calls)\n- **Hooks** (2): `PostToolUse`, `UserPromptSubmit`\n\nInstalls with `claude plugin install reflect@claude-community` from `chanjoongx/reflect`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "agent": 1,
+    "hook": 2,
+    "command": 1
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Chanjoong Kim",
+    "url": "https://github.com/chanjoongx"
+  },
+  "externalUrl": "https://github.com/chanjoongx/reflect/tree/bc4c9cfdafffa0713efff363a26d4eacb0033c7d",
+  "marketplace": "claude-community",
+  "version": "0.1.4",
+  "sourceRevision": "bc4c9cfdafffa0713efff363a26d4eacb0033c7d",
+  "contentDigest": "27a7d41e9bfa87f088573c30a4d9806d5bcab13412d5683dee5bdcca4a352a72",
+  "contentHash": "e29664c1d8c329fb",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/chanjoongx/reflect.git",
+    "sha": "bc4c9cfdafffa0713efff363a26d4eacb0033c7d"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-29T09:44:47Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude",
+        "type": "directory",
+        "children": [
+          {
+            "name": "agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reflection-orchestrator.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "commands",
+            "type": "directory",
+            "children": [
+              {
+                "name": "brain-reflect.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "hooks",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reflect-trigger.ps1",
+                "type": "file"
+              },
+              {
+                "name": "reflect-trigger.sh",
+                "type": "file"
+              },
+              {
+                "name": "reflect-utterance.ps1",
+                "type": "file"
+              },
+              {
+                "name": "reflect-utterance.sh",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rules",
+            "type": "directory",
+            "children": [
+              {
+                "name": "reflect-rules.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "settings.example.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ISSUE_TEMPLATE",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bug.yml",
+                "type": "file"
+              },
+              {
+                "name": "config.yml",
+                "type": "file"
+              },
+              {
+                "name": "feature.yml",
+                "type": "file"
+              },
+              {
+                "name": "reflection_quality.yml",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ci.yml",
+                "type": "file"
+              },
+              {
+                "name": "publish.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "reflection-orchestrator.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "reflect.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "brain-reflect.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "diagrams",
+            "type": "directory",
+            "children": [
+              {
+                "name": "architecture.mmd",
+                "type": "file"
+              },
+              {
+                "name": "architecture.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "api-cost-economics.md",
+            "type": "file"
+          },
+          {
+            "name": "benchmark-comparison.md",
+            "type": "file"
+          },
+          {
+            "name": "getting-started.md",
+            "type": "file"
+          },
+          {
+            "name": "launch-korea.md",
+            "type": "file"
+          },
+          {
+            "name": "measurements.md",
+            "type": "file"
+          },
+          {
+            "name": "opus-4.7-best-practices.md",
+            "type": "file"
+          },
+          {
+            "name": "reflection-prompt-design.md",
+            "type": "file"
+          },
+          {
+            "name": "troubleshooting.md",
+            "type": "file"
+          },
+          {
+            "name": "tutorial.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "experiments",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ablation-components.md",
+            "type": "file"
+          },
+          {
+            "name": "ablation-with-without.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "reflect-trigger.ps1",
+            "type": "file"
+          },
+          {
+            "name": "reflect-trigger.sh",
+            "type": "file"
+          },
+          {
+            "name": "reflect-utterance.ps1",
+            "type": "file"
+          },
+          {
+            "name": "reflect-utterance.sh",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          {
+            "name": "example",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dummy.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "context-assembler.ts",
+            "type": "file"
+          },
+          {
+            "name": "guidance-injector.ts",
+            "type": "file"
+          },
+          {
+            "name": "logger.ts",
+            "type": "file"
+          },
+          {
+            "name": "opus-reflection.ts",
+            "type": "file"
+          },
+          {
+            "name": "revert-detector.ts",
+            "type": "file"
+          },
+          {
+            "name": "types.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "web",
+        "type": "directory",
+        "children": [
+          {
+            "name": "app",
+            "type": "directory",
+            "children": [
+              {
+                "name": "install",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "CopyBlock.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "page.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "patterns",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "page.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "reflections",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "page.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "roadmap",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "page.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "favicon.ico",
+                "type": "file"
+              },
+              {
+                "name": "globals.css",
+                "type": "file"
+              },
+              {
+                "name": "layout.tsx",
+                "type": "file"
+              },
+              {
+                "name": "not-found.tsx",
+                "type": "file"
+              },
+              {
+                "name": "page.tsx",
+                "type": "file"
+              },
+              {
+                "name": "robots.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "components",
+            "type": "directory",
+            "children": [
+              {
+                "name": "ui",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "Badge.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Button.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Card.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Pill.tsx",
+                    "type": "file"
+                  },
+                  {
+                    "name": "ScrollArea.tsx",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ActiveGuidanceCard.tsx",
+                "type": "file"
+              },
+              {
+                "name": "CallTimeline.tsx",
+                "type": "file"
+              },
+              {
+                "name": "ClusterArcGraph.tsx",
+                "type": "file"
+              },
+              {
+                "name": "ClusterDetails.tsx",
+                "type": "file"
+              },
+              {
+                "name": "CooldownPill.tsx",
+                "type": "file"
+              },
+              {
+                "name": "CopySessionId.tsx",
+                "type": "file"
+              },
+              {
+                "name": "CumMeter.tsx",
+                "type": "file"
+              },
+              {
+                "name": "FadeInOnScroll.tsx",
+                "type": "file"
+              },
+              {
+                "name": "Footer.tsx",
+                "type": "file"
+              },
+              {
+                "name": "GhostPulse.tsx",
+                "type": "file"
+              },
+              {
+                "name": "Nav.tsx",
+                "type": "file"
+              },
+              {
+                "name": "NavLinks.tsx",
+                "type": "file"
+              },
+              {
+                "name": "PatternCluster.tsx",
+                "type": "file"
+              },
+              {
+                "name": "ReflectionCard.tsx",
+                "type": "file"
+              },
+              {
+                "name": "ReflectionDetailPanel.tsx",
+                "type": "file"
+              },
+              {
+                "name": "ReflectionListClient.tsx",
+                "type": "file"
+              },
+              {
+                "name": "ReflectionListItem.tsx",
+                "type": "file"
+              },
+              {
+                "name": "SessionState.tsx",
+                "type": "file"
+              },
+              {
+                "name": "Sparkline.tsx",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "fixtures",
+            "type": "directory",
+            "children": [
+              {
+                "name": "example-session",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "recent-calls.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-guidance.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "session-log.jsonl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.json",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+              {
+                "name": "cn.ts",
+                "type": "file"
+              },
+              {
+                "name": "motion.ts",
+                "type": "file"
+              },
+              {
+                "name": "pattern-detector.ts",
+                "type": "file"
+              },
+              {
+                "name": "redact.ts",
+                "type": "file"
+              },
+              {
+                "name": "safe-read.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "public",
+            "type": "directory",
+            "children": [
+              {
+                "name": "file.svg",
+                "type": "file"
+              },
+              {
+                "name": "globe.svg",
+                "type": "file"
+              },
+              {
+                "name": "next.svg",
+                "type": "file"
+              },
+              {
+                "name": "vercel.svg",
+                "type": "file"
+              },
+              {
+                "name": "window.svg",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitignore",
+            "type": "file"
+          },
+          {
+            "name": "AGENTS.md",
+            "type": "file"
+          },
+          {
+            "name": "next.config.ts",
+            "type": "file"
+          },
+          {
+            "name": "package-lock.json",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "postcss.config.mjs",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "tsconfig.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".env.example",
+        "type": "file"
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "ARCHITECTURE.md",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CODE_OF_CONDUCT.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "PRIVACY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "REFLECT.md",
+        "type": "file"
+      },
+      {
+        "name": "SECURITY.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      }
+    ]
+  }
+}

@@ -2,20 +2,22 @@
  * Official sources:
  *
  *   - anthropics/skills — every `skills/<slug>` directory at the branch head, pinned to it.
- *   - anthropics/claude-plugins-official — the marketplace file is the source of truth. Each
+ *   - Anthropic's marketplaces (MARKETPLACES, in order of precedence) — each marketplace file
+ *     is the source of truth for the plugins it lists, and every entry is imported (decided
+ *     2026-09-09; until then the official marketplace's third-party entries stayed out). An
  *     entry's `source` descriptor says where the content lives (a path inside the marketplace
  *     repo, or another repository at a pinned sha); the registry records the effective pin,
- *     the full file tree and the digest at that pin.
+ *     the full file tree and the digest at that pin. A slug an earlier marketplace claimed is
+ *     left to it.
  *
- * Inclusion set for the marketplace: plugins the registry already carries (matched by name,
- * after `renames`) plus every entry sourced from a local `./plugins/*` or `./external_plugins/*`
- * path. The ~230 entries that point at third-party repositories are not imported wholesale;
- * widening that is a product decision.
+ * Thousands of entries are too many to rebuild daily, so an entry whose pin has not moved
+ * keeps its item as it is (SYNC_REBUILD=1 rebuilds anyway), and a new item gets a first
+ * longDescription drafted from its own files (tldr.ts) — curated afterwards, like `name`.
  */
 
 import { CANONICAL_AGENTS, derivePluginCompatibility, storageAgents } from "@seedr/registry-ops/pure";
 import { validateItem } from "../lib/validate-item.js";
-import { classifyPlugin, collectContent, findEntry, parseJsonEntry, withDeclaredLicense } from "./content.js";
+import { classifyPlugin, collectContent, findEntry, parseJsonEntry, resolvePluginComponents, withDeclaredLicense, type CollectedContent } from "./content.js";
 import type { GitHubClient } from "./github.js";
 import { finalizeItem } from "./item.js";
 import {
@@ -28,17 +30,49 @@ import {
   type MarketplaceFile,
   type PinnedSource,
 } from "./marketplace.js";
+import { draftLongDescription } from "./tldr.js";
 import type { Author, GitTreeItem, ItemKey, ManifestItem, SourceResult, SourceType } from "./types.js";
 import { itemKey } from "./types.js";
 import { formatName, listDirectoryFromTree, mapConcurrent, parseFrontmatter, type PluginJson } from "./utils.js";
 
 export const SKILLS_REPO = "anthropics/skills";
 export const SKILLS_BRANCH = "main";
-export const PLUGINS_REPO = "anthropics/claude-plugins-official";
-export const PLUGINS_BRANCH = "main";
-export const OFFICIAL_MARKETPLACE_NAME = "claude-plugins-official";
 export const MARKETPLACE_FILE = ".claude-plugin/marketplace.json";
 export const PLUGIN_JSON = ".claude-plugin/plugin.json";
+
+export interface MarketplaceSource {
+  /** The marketplace's own `name`, which its file must confirm; also the `@<name>` of `claude plugin install`. */
+  name: string;
+  /** "owner/repo" and the branch the marketplace file is read from. */
+  repo: string;
+  branch: string;
+  /** sourceType of entries whose content lives in the marketplace repo itself; entries pointing elsewhere are always community. */
+  hostedSourceType: SourceType;
+}
+
+export const OFFICIAL_MARKETPLACE: MarketplaceSource = {
+  name: "claude-plugins-official",
+  repo: "anthropics/claude-plugins-official",
+  branch: "main",
+  hostedSourceType: "official",
+};
+
+export const KNOWLEDGE_WORK_MARKETPLACE: MarketplaceSource = {
+  name: "knowledge-work-plugins",
+  repo: "anthropics/knowledge-work-plugins",
+  branch: "main",
+  hostedSourceType: "official",
+};
+
+export const COMMUNITY_MARKETPLACE: MarketplaceSource = {
+  name: "claude-community",
+  repo: "anthropics/claude-plugins-community",
+  branch: "main",
+  hostedSourceType: "community",
+};
+
+/** In order of precedence: a slug two marketplaces list belongs to the first. */
+export const MARKETPLACES: readonly MarketplaceSource[] = [OFFICIAL_MARKETPLACE, KNOWLEDGE_WORK_MARKETPLACE, COMMUNITY_MARKETPLACE];
 
 const ITEM_CONCURRENCY = 4;
 
@@ -49,6 +83,8 @@ export interface SourceContext {
   log: (line: string) => void;
   /** Accept an upstream listing with zero entries (SYNC_ALLOW_EMPTY=1). */
   allowEmpty: boolean;
+  /** Rebuild mirror items whose pin has not moved (SYNC_REBUILD=1). */
+  rebuild: boolean;
 }
 
 export function describeError(error: unknown): string {
@@ -149,10 +185,6 @@ interface IncludedEntry {
   existing: ManifestItem | null;
 }
 
-function isLocalPath(entry: MarketplaceEntry): boolean {
-  return typeof entry.source === "string";
-}
-
 function pickAuthor(entry: MarketplaceEntry | null, pluginJson: PluginJson | null, existing: ManifestItem | null, fallback: string): Author {
   const declared = entry?.author?.name ? entry.author : pluginJson?.author?.name ? pluginJson.author : null;
   if (declared?.name) {
@@ -163,14 +195,31 @@ function pickAuthor(entry: MarketplaceEntry | null, pluginJson: PluginJson | nul
 
 export interface PluginBuildInput {
   entry: MarketplaceEntry;
-  marketplace: { name: string; repo: string; sha: string; tree: GitTreeItem[] };
+  marketplace: { name: string; repo: string; sha: string; tree: GitTreeItem[]; hostedSourceType: SourceType };
   existing: ManifestItem | null;
   /** Slug to write; differs from entry.name only while a rename is applied. */
   slug: string;
+  /** Draft a longDescription from the plugin's own files when the item has none yet. */
+  draftLongDescription?: boolean;
+}
+
+/** A first longDescription for a new marketplace item, or null with a note when its files say too little. */
+function draftFor(ctx: SourceContext, input: PluginBuildInput, pinned: PinnedSource, content: CollectedContent, pluginJson: PluginJson | null): string | null {
+  const draft = draftLongDescription({
+    name: input.entry.name,
+    marketplace: input.marketplace.name,
+    repo: pinned.repo,
+    path: pinned.path,
+    summary: input.entry.description,
+    components: resolvePluginComponents(content, { pluginJson, inlineSkills: input.entry.skills }),
+    content,
+  });
+  if (!draft) ctx.log(`    ${input.entry.name}: its files say too little for a longDescription; the description gate will ask for one`);
+  return draft;
 }
 
 /** Build one plugin item from a marketplace entry. Shared with the community source (a repo's own marketplace). */
-export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBuildInput, sourceTypeOverride?: SourceType): Promise<ManifestItem> {
+export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBuildInput): Promise<ManifestItem> {
   const { entry, marketplace, existing, slug } = input;
   const pinned: PinnedSource = await pinSource(describeSource(entry, marketplace.repo, marketplace.sha), ctx.client);
   const tree =
@@ -196,7 +245,7 @@ export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBu
   // An entry whose source points at somebody else's repository is still
   // community, which is the case this has to keep getting right: being listed
   // in the official marketplace is not the same as being published by Anthropic.
-  const sourceType: SourceType = sourceTypeOverride ?? (pinned.repo === PLUGINS_REPO ? "official" : "community");
+  const sourceType: SourceType = pinned.repo === marketplace.repo ? marketplace.hostedSourceType : "community";
   const classification = classifyPlugin(content, {
     pluginJson,
     lspServers: entry.lspServers,
@@ -205,13 +254,15 @@ export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBu
   });
   const version = entry.version ?? pluginJson?.version;
   const updatedAt = (await ctx.client.getLastCommitDate(pinned.repo, pinned.sha, pinned.path)) ?? existing?.updatedAt;
+  const longDescription = input.draftLongDescription && existing?.longDescription === undefined ? draftFor(ctx, input, pinned, content, pluginJson) : null;
 
   const item = finalizeItem(
     {
       slug,
-      name: formatName(entry.name),
+      name: entry.displayName ?? formatName(entry.name),
       type: "plugin",
       description: entry.description ?? pluginJson?.description ?? "",
+      ...(longDescription && { longDescription }),
       compatibility: storageAgents(derivePluginCompatibility(classification)),
       ...classification,
       sourceType,
@@ -239,7 +290,10 @@ export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBu
 }
 
 export async function loadMarketplace(client: GitHubClient, repo: string, sha: string): Promise<MarketplaceFile> {
-  const text = await client.getRawText(repo, sha, MARKETPLACE_FILE);
+  // From the archive, which the entries hosted in the marketplace repo read anyway; the raw host limits per file.
+  const bytes = (await client.getArchive(repo, sha)).get(MARKETPLACE_FILE);
+  if (!bytes) throw new Error(`${repo}@${sha} has no ${MARKETPLACE_FILE}`);
+  const text = bytes.toString("utf-8");
   let json: unknown;
   try {
     json = JSON.parse(text);
@@ -249,27 +303,40 @@ export async function loadMarketplace(client: GitHubClient, repo: string, sha: s
   return parseMarketplace(json, `${repo}@${sha}`);
 }
 
-export function officialPluginsOwnedByField(existing: ReadonlyMap<ItemKey, ManifestItem>): ItemKey[] {
+/** Existing plugins that say they came from this marketplace. */
+export function marketplacePluginsOwnedByField(existing: ReadonlyMap<ItemKey, ManifestItem>, marketplaceName: string): ItemKey[] {
   return [...existing.values()]
-    .filter(
-      (item) =>
-        item.type === "plugin" && (item.marketplaceRef?.name === OFFICIAL_MARKETPLACE_NAME || item.marketplace === OFFICIAL_MARKETPLACE_NAME),
-    )
+    .filter((item) => item.type === "plugin" && (item.marketplaceRef?.name === marketplaceName || item.marketplace === marketplaceName))
     .map(itemKey);
 }
 
-export async function syncOfficialPlugins(ctx: SourceContext): Promise<SourceResult> {
-  const ownedByField = officialPluginsOwnedByField(ctx.existing);
-  ctx.log(`\n=== Official marketplace (${PLUGINS_REPO}@${PLUGINS_BRANCH}) ===`);
+/**
+ * A mirror item is kept as it is when the entry still pins the commit and path it was built
+ * from: the same commit holds the same files, so rebuilding would only spend requests.
+ */
+function pinUnchanged(source: MarketplaceSource, entry: MarketplaceEntry, existing: ManifestItem, marketplaceSha: string): boolean {
+  if (existing.slug !== entry.name || existing.marketplaceRef?.name !== source.name || !existing.pluginSource) return false;
+  const declared = describeSource(entry, source.repo, marketplaceSha);
+  if (!declared.sha) return false;
+  return JSON.stringify(toPluginSource({ ...declared, sha: declared.sha })) === JSON.stringify(existing.pluginSource);
+}
+
+/**
+ * Sync one marketplace. `claimed` holds the plugin keys earlier sources own or produced this
+ * run; this marketplace neither builds nor owns them, whatever it lists.
+ */
+export async function syncMarketplace(ctx: SourceContext, source: MarketplaceSource, claimed: ReadonlySet<ItemKey>): Promise<SourceResult> {
+  const ownedByField = marketplacePluginsOwnedByField(ctx.existing, source.name).filter((key) => !claimed.has(key));
+  ctx.log(`\n=== Marketplace ${source.name} (${source.repo}@${source.branch}) ===`);
   try {
-    const { sha } = await ctx.client.getCommit(PLUGINS_REPO, PLUGINS_BRANCH);
-    const tree = await ctx.client.getTree(PLUGINS_REPO, sha);
-    const marketplace = await loadMarketplace(ctx.client, PLUGINS_REPO, sha);
-    if (marketplace.name !== OFFICIAL_MARKETPLACE_NAME) {
+    const { sha } = await ctx.client.getCommit(source.repo, source.branch);
+    const tree = await ctx.client.getTree(source.repo, sha);
+    const marketplace = await loadMarketplace(ctx.client, source.repo, sha);
+    if (marketplace.name !== source.name) {
       return {
         status: "failed",
         owned: ownedByField,
-        reason: `marketplace at ${sha} is named "${marketplace.name}", expected "${OFFICIAL_MARKETPLACE_NAME}"`,
+        reason: `marketplace at ${sha} is named "${marketplace.name}", expected "${source.name}"`,
       };
     }
     ctx.log(`  head ${sha}, ${marketplace.plugins.length} marketplace entries, ${Object.keys(marketplace.renames).length} renames`);
@@ -283,25 +350,37 @@ export async function syncOfficialPlugins(ctx: SourceContext): Promise<SourceRes
     const owned = new Set<ItemKey>(ownedByField);
 
     for (const item of ctx.existing.values()) {
-      if (item.type !== "plugin") continue;
+      if (item.type !== "plugin" || claimed.has(itemKey(item))) continue;
       const name = applyRenames(item.slug, marketplace.renames);
       const entry = entriesByName.get(name);
-      if (!entry) continue;
+      if (!entry || claimed.has(`plugin/${name}`)) continue;
       included.set(name, { entry, existing: item });
       owned.add(itemKey(item));
       if (name !== item.slug) renamed.push({ from: itemKey(item), to: `plugin/${name}` });
     }
     for (const entry of marketplace.plugins) {
-      if (isLocalPath(entry) && !included.has(entry.name)) included.set(entry.name, { entry, existing: null });
+      if (!included.has(entry.name) && !claimed.has(`plugin/${entry.name}`)) included.set(entry.name, { entry, existing: null });
     }
     ctx.log(`  inclusion set: ${included.size} entries (${[...included.values()].filter((e) => e.existing).length} existing)`);
 
     const items: ManifestItem[] = [];
     const failedItems: { key: ItemKey; reason: string }[] = [];
+    let kept = 0;
     await mapConcurrent([...included.values()], ITEM_CONCURRENCY, async ({ entry, existing }) => {
+      if (!ctx.rebuild && existing && pinUnchanged(source, entry, existing, sha)) {
+        items.push(existing);
+        kept++;
+        return;
+      }
       try {
         items.push(
-          await buildMarketplacePlugin(ctx, { entry, existing, slug: entry.name, marketplace: { name: marketplace.name, repo: PLUGINS_REPO, sha, tree } }),
+          await buildMarketplacePlugin(ctx, {
+            entry,
+            existing,
+            slug: entry.name,
+            marketplace: { name: marketplace.name, repo: source.repo, sha, tree, hostedSourceType: source.hostedSourceType },
+            draftLongDescription: true,
+          }),
         );
         ctx.log(`  ✓ ${entry.name}${existing && existing.slug !== entry.name ? ` (renamed from ${existing.slug})` : ""}`);
       } catch (error) {
@@ -309,6 +388,7 @@ export async function syncOfficialPlugins(ctx: SourceContext): Promise<SourceRes
         ctx.log(`  ✗ ${entry.name}: ${describeError(error)}`);
       }
     });
+    if (kept > 0) ctx.log(`  kept ${kept} item(s) whose pin has not moved`);
     items.sort((a, b) => a.slug.localeCompare(b.slug, "en"));
     return { status: "complete", owned: [...owned], items, failedItems, renamed };
   } catch (error) {

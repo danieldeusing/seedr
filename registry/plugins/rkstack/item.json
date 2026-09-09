@@ -1,0 +1,1795 @@
+{
+  "slug": "rkstack",
+  "name": "Rkstack",
+  "type": "plugin",
+  "description": "Complete AI development workflow — 22 skills that guide the full cycle from idea to shipped code. Brainstorm a design, write an implementation plan, execute with TDD, debug systematically, get a two-pass code review, and ship with confidence. Includes a humanizer for natural prose, a security auditor (OWASP + STRIDE), and safety hooks that block destructive commands. Detects your project stack automatically and adapts.",
+  "longDescription": "Ships **40 skills**, **2 agents** and **2 hooks**.\n\n- **Skills** (40): `benchmark` (Performance regression detection using the browse daemon), `brainstorming` (Explore ideas before implementation), `browse` (Headless browser for web QA, screenshots, and interaction), `canary` (Post-deploy canary monitoring), `careful` (Safety guardrails for destructive commands), `codex-cli-runtime` (Internal helper contract for calling the codex-companion runtime from the codex-rescue subagent), `codex-help` (User-invocable skill for when Claude is stuck mid-task), `codex-result-handling` (Internal contract for presenting Codex output back to the user), and 32 more\n- **Agents** (2): `code-reviewer` (Use this agent when a major project step has been completed and needs to be reviewed against the…), `codex-rescue` (Proactively use when Claude Code is stuck, wants a second implementation or diagnosis pass, needs a deeper root-cause…)\n- **Hooks** (2): `SessionStart`, `SessionEnd`\n\nInstalls with `claude plugin install rkstack@claude-community` from `mrkhachaturov/rkstack`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 40,
+    "agent": 2,
+    "hook": 2
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Ruben Khachaturov"
+  },
+  "externalUrl": "https://github.com/mrkhachaturov/rkstack/tree/ab3c34221f0f222db59c67b0659cf1ec097fb6c5",
+  "marketplace": "claude-community",
+  "version": "0.9.5",
+  "sourceRevision": "ab3c34221f0f222db59c67b0659cf1ec097fb6c5",
+  "contentDigest": "c87df6ccad87a0fa8c246d0079803fa2b35c873f1e669fc87593cb59ab201046",
+  "contentHash": "f93f741e4da5db5a",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/mrkhachaturov/rkstack.git",
+    "sha": "ab3c34221f0f222db59c67b0659cf1ec097fb6c5"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-18T01:50:24Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+              {
+                "name": "RKstack.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "check.yml",
+                "type": "file"
+              },
+              {
+                "name": "release.yml",
+                "type": "file"
+              },
+              {
+                "name": "update-refs.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".husky",
+        "type": "directory",
+        "children": [
+          {
+            "name": "pre-commit",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".just",
+        "type": "directory",
+        "children": [
+          {
+            "name": "setup.just",
+            "type": "file"
+          },
+          {
+            "name": "skills.just",
+            "type": "file"
+          },
+          {
+            "name": "upstream.just",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": ".gitkeep",
+            "type": "file"
+          },
+          {
+            "name": "code-reviewer.md",
+            "type": "file"
+          },
+          {
+            "name": "codex-rescue.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "bin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "commands",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "detect.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "repo-mode.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "slug.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "version.ts",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "main.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitkeep",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "browse",
+        "type": "directory",
+        "children": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "activity.ts",
+                "type": "file"
+              },
+              {
+                "name": "browser-manager.ts",
+                "type": "file"
+              },
+              {
+                "name": "buffers.ts",
+                "type": "file"
+              },
+              {
+                "name": "cli.ts",
+                "type": "file"
+              },
+              {
+                "name": "commands.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.ts",
+                "type": "file"
+              },
+              {
+                "name": "cookie-import-browser.ts",
+                "type": "file"
+              },
+              {
+                "name": "cookie-picker-routes.ts",
+                "type": "file"
+              },
+              {
+                "name": "cookie-picker-ui.ts",
+                "type": "file"
+              },
+              {
+                "name": "find-browse.ts",
+                "type": "file"
+              },
+              {
+                "name": "meta-commands.ts",
+                "type": "file"
+              },
+              {
+                "name": "platform.ts",
+                "type": "file"
+              },
+              {
+                "name": "read-commands.ts",
+                "type": "file"
+              },
+              {
+                "name": "server.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidebar-agent.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidebar-utils.ts",
+                "type": "file"
+              },
+              {
+                "name": "snapshot.ts",
+                "type": "file"
+              },
+              {
+                "name": "url-validation.ts",
+                "type": "file"
+              },
+              {
+                "name": "write-commands.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test",
+            "type": "directory",
+            "children": [
+              {
+                "name": "fixtures",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "basic.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "cursor-interactive.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "dialog.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "empty.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "forms.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "iframe.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "network-idle.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "qa-eval-checkout.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "qa-eval-spa.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "qa-eval.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "responsive.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "snapshot.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "spa.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "states.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "upload.html",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "activity.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "browser-manager-unit.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "commands.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "config.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "cookie-import-browser.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "cookie-picker-routes.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "find-browse.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "path-validation.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "platform.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "server-auth.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidebar-security.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "sidebar-unit.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "snapshot.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "state-ttl.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "test-server.ts",
+                "type": "file"
+              },
+              {
+                "name": "url-validation.test.ts",
+                "type": "file"
+              },
+              {
+                "name": "watch.test.ts",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "dev",
+        "type": "directory",
+        "children": [
+          {
+            "name": "skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "writing-rkstack-skills",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "persuasion-principles.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "SKILL.md.tmpl",
+                    "type": "file"
+                  },
+                  {
+                    "name": "testing-skills-with-subagents.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "rkstack",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plans",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-03-29-connect-chrome-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-29-detection-cache-and-setup-project-v2.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-29-setup-project-A-infrastructure.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-29-setup-project-B-skill.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-29-setup-project-C-integration.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "specs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "2026-03-29-connect-chrome-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-29-detection-cache-and-setup-project-v2-design.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "2026-03-29-setup-project-design.md",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "encrypting-docs.md",
+            "type": "file"
+          },
+          {
+            "name": "WORKFLOW.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "extension",
+        "type": "directory",
+        "children": [
+          {
+            "name": "icons",
+            "type": "directory",
+            "children": [
+              {
+                "name": "icon-128.png",
+                "type": "file"
+              },
+              {
+                "name": "icon-16.png",
+                "type": "file"
+              },
+              {
+                "name": "icon-48.png",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "background.js",
+            "type": "file"
+          },
+          {
+            "name": "content.css",
+            "type": "file"
+          },
+          {
+            "name": "content.js",
+            "type": "file"
+          },
+          {
+            "name": "manifest.json",
+            "type": "file"
+          },
+          {
+            "name": "popup.html",
+            "type": "file"
+          },
+          {
+            "name": "popup.js",
+            "type": "file"
+          },
+          {
+            "name": "sidepanel.css",
+            "type": "file"
+          },
+          {
+            "name": "sidepanel.html",
+            "type": "file"
+          },
+          {
+            "name": "sidepanel.js",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          },
+          {
+            "name": "session-start",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "worktree.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "codex",
+            "type": "directory",
+            "children": [
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "app-server-protocol.d.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "app-server.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "args.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "broker-endpoint.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "broker-lifecycle.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "fs.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "git.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "job-control.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "process.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompts.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "render.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "state.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tracked-jobs.mjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "workspace.mjs",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "app-server-broker.mjs",
+                "type": "file"
+              },
+              {
+                "name": "codex-companion.mjs",
+                "type": "file"
+              },
+              {
+                "name": "consult-schema.json",
+                "type": "file"
+              },
+              {
+                "name": "consult.mjs",
+                "type": "file"
+              },
+              {
+                "name": "LICENSE",
+                "type": "file"
+              },
+              {
+                "name": "NOTICE",
+                "type": "file"
+              },
+              {
+                "name": "review-doc.mjs",
+                "type": "file"
+              },
+              {
+                "name": "session-lifecycle-hook.mjs",
+                "type": "file"
+              },
+              {
+                "name": "stop-review-gate-hook.mjs",
+                "type": "file"
+              },
+              {
+                "name": "UPSTREAM_SHA",
+                "type": "file"
+              },
+              {
+                "name": "UPSTREAM_URL",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "resolvers",
+            "type": "directory",
+            "children": [
+              {
+                "name": "browse.ts",
+                "type": "file"
+              },
+              {
+                "name": "constants.ts",
+                "type": "file"
+              },
+              {
+                "name": "design.ts",
+                "type": "file"
+              },
+              {
+                "name": "index.ts",
+                "type": "file"
+              },
+              {
+                "name": "preamble.ts",
+                "type": "file"
+              },
+              {
+                "name": "review.ts",
+                "type": "file"
+              },
+              {
+                "name": "testing.ts",
+                "type": "file"
+              },
+              {
+                "name": "types.ts",
+                "type": "file"
+              },
+              {
+                "name": "utility.ts",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": ".gitkeep",
+            "type": "file"
+          },
+          {
+            "name": "age-textconv.sh",
+            "type": "file"
+          },
+          {
+            "name": "check-age-encryption.sh",
+            "type": "file"
+          },
+          {
+            "name": "dev-skill.ts",
+            "type": "file"
+          },
+          {
+            "name": "discover-skills.ts",
+            "type": "file"
+          },
+          {
+            "name": "gen-dev-skills.ts",
+            "type": "file"
+          },
+          {
+            "name": "gen-skill-docs.ts",
+            "type": "file"
+          },
+          {
+            "name": "setup-age-encryption.sh",
+            "type": "file"
+          },
+          {
+            "name": "skill-check.ts",
+            "type": "file"
+          },
+          {
+            "name": "upstream-check.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "benchmark",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "brainstorming",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "frame-template.html",
+                    "type": "file"
+                  },
+                  {
+                    "name": "helper.js",
+                    "type": "file"
+                  },
+                  {
+                    "name": "server.cjs",
+                    "type": "file"
+                  },
+                  {
+                    "name": "start-server.sh",
+                    "type": "file"
+                  },
+                  {
+                    "name": "stop-server.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "spec-document-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "visual-companion.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "browse",
+            "type": "directory",
+            "children": [
+              {
+                "name": "dev-server-discovery.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "canary",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "careful",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "check-careful.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-cli-runtime",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-help",
+            "type": "directory",
+            "children": [
+              {
+                "name": "codex-help-schema.json",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "codex-result-handling",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "connect-chrome",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "cso",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-consultation",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "design-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dispatching-parallel-agents",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "document-release",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "dual-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plan-review-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "review-schema.json",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "spec-review-prompt.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "executing-plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "finishing-a-development-branch",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "freeze",
+            "type": "directory",
+            "children": [
+              {
+                "name": "bin",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "check-freeze.sh",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "gpt-5-4-prompting",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "codex-prompt-antipatterns.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "codex-prompt-recipes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "prompt-blocks.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "guard",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "humanizer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "constraint-examples.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "plan-design-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "qa",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "qa-only",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "receiving-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "requesting-code-review",
+            "type": "directory",
+            "children": [
+              {
+                "name": "checklist.md",
+                "type": "file"
+              },
+              {
+                "name": "code-reviewer.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "rescue",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "retro",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setup-browser-cookies",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "setup-project",
+            "type": "directory",
+            "children": [
+              {
+                "name": "refs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "hooks-guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "permission-modes.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "permissions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sandboxing.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "security.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "settings.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "templates",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "guards",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ansible.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "baseline.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "docker.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "kubernetes.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "node.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "python.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "secrets.json",
+                        "type": "file"
+                      },
+                      {
+                        "name": "terraform.json",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "rules",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "ansible.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "context-hygiene.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "docker.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "node.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "python.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "secrets.tmpl",
+                        "type": "file"
+                      },
+                      {
+                        "name": "terraform.tmpl",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scripts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "guard-destructive.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "guard-docker.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "guard-kubernetes.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "guard-python.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "guard-secrets.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "guard-terraform.sh",
+                        "type": "file"
+                      },
+                      {
+                        "name": "post-edit.sh",
+                        "type": "file"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "subagent-driven-development",
+            "type": "directory",
+            "children": [
+              {
+                "name": "code-quality-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "implementer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "spec-reviewer-prompt.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "supabase-qa",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "systematic-debugging",
+            "type": "directory",
+            "children": [
+              {
+                "name": "defense-in-depth.md",
+                "type": "file"
+              },
+              {
+                "name": "root-cause-tracing.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "test-driven-development",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "testing-anti-patterns.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "unfreeze",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-git-worktrees",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-rkstack",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "verification-before-completion",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "writing-plans",
+            "type": "directory",
+            "children": [
+              {
+                "name": "plan-document-reviewer-prompt.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "writing-skills",
+            "type": "directory",
+            "children": [
+              {
+                "name": "refs",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "best-practices.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks-guide.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "hooks.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "memory.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "permissions.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "skills.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "sub-agents.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "persuasion-principles.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              },
+              {
+                "name": "SKILL.md.tmpl",
+                "type": "file"
+              },
+              {
+                "name": "testing-skills-with-subagents.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "test",
+        "type": "directory",
+        "children": [
+          {
+            "name": "detect.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "gen-skill-docs.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "hook-scripts.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "project-type.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "rkstack-bin.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "web-skills.test.ts",
+            "type": "file"
+          },
+          {
+            "name": "worktree.test.ts",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": ".gitmodules",
+        "type": "file"
+      },
+      {
+        "name": ".mise.toml",
+        "type": "file"
+      },
+      {
+        "name": "age-recipients.txt",
+        "type": "file"
+      },
+      {
+        "name": "AGENTS.md",
+        "type": "file"
+      },
+      {
+        "name": "ARCHITECTURE.md",
+        "type": "file"
+      },
+      {
+        "name": "BROWSER.md",
+        "type": "file"
+      },
+      {
+        "name": "bun.lock",
+        "type": "file"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "type": "file"
+      },
+      {
+        "name": "ETHOS.md",
+        "type": "file"
+      },
+      {
+        "name": "justfile",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "THIRD_PARTY_NOTICES.md",
+        "type": "file"
+      },
+      {
+        "name": "TODOS.md",
+        "type": "file"
+      },
+      {
+        "name": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "name": "VERSION",
+        "type": "file"
+      }
+    ]
+  }
+}

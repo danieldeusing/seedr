@@ -1,0 +1,372 @@
+{
+  "slug": "compounded",
+  "name": "Compounded",
+  "type": "plugin",
+  "description": "compounded turns Claude Code skills into a trust-gradient system: every skill earns its autonomy through demonstrated reliability. New skills the agent proposes start as .proposed/, get replayed on a real follow-up task by a verifier subagent (Haiku 4.5) to graduate to .verified/, build a track record to reach .trusted/, and finally graduate to .autonomous/ after 10+ uses with a clean recent run. One correction sends a skill back a tier. Three corrections in 30 days drop it to .proposed.\n\nIncludes cross-project memory (a user-global USER.md auto-injected into every session) and a portable .tar.gz archive for moving your earned skills across machines. v1.1 adds an auto-proposer hook that scores each turn (tool calls, distinct file edits, recovery from failure) and nudges the agent to save high-signal procedures — so you don't have to remember to ask.\n\nNo daemon. No cloud. No telemetry. Python stdlib only. All state in ~/.claude/compounded/ (SQLite + flat files). MIT licensed.",
+  "longDescription": "Ships **5 skills**, **1 agent**, **9 commands** and **3 hooks**.\n\n- **Skills** (5): `compounded-author` (Use this skill when you have just completed a non-trivial task (more than 3 tool calls, novel approach,…), `compounded-trust-tracker` (Use this skill when working with skills already at .verified, .trusted, or .autonomous trust levels — particularly when…), `compounded-typo-fixer` (Use this skill when the user reports a typo in their codebase or documentation and asks for it…), `compounded-verifier` (Use this skill ONLY when invoked as the skill-verifier subagent by compounded's Stop hook), `using-compounded` (Use this skill at the start of any session where compounded is installed, or whenever the user mentions…)\n- **Agents** (1): `skill-verifier` (A subagent dispatched by compounded's Stop hook to decide whether a proposed skill should graduate to .verified or…)\n- **Commands** (9): `demote` (Manually demote a skill one tier (.autonomous → .trusted → .verified → .proposed)), `export` (Export compounded state (USER.md + verified skills) to a portable .tar.gz archive), `import` (Import a compounded archive (.tar.gz produced by `/compounded:export`)), `pin` (Pin a skill at its current trust state, preventing automatic demotion), `status` (Show compounded status — USER.md size, skill counts by trust tier, recent transitions, recent rejections), `trust-status` (Show the compounded trust ladder), `trust` (Manually promote a skill (skip the trust gradient)), `unpin` (Remove a pin from a skill, allowing automatic demotion to resume), and 1 more\n- **Hooks** (3): `SessionStart`, `Stop`, `SessionEnd`\n\nInstalls with `claude plugin install compounded@claude-community` from `ankitkr3/compounded`.",
+  "compatibility": [
+    "claude"
+  ],
+  "pluginType": "package",
+  "package": {
+    "skill": 5,
+    "agent": 1,
+    "hook": 3,
+    "command": 9
+  },
+  "sourceType": "community",
+  "author": {
+    "name": "Ankit Kumar",
+    "url": "https://github.com/ankitkr3"
+  },
+  "externalUrl": "https://github.com/ankitkr3/compounded/tree/9feb7586e826028afa6492debd4ec06ecdf86f02",
+  "marketplace": "claude-community",
+  "sourceRevision": "9feb7586e826028afa6492debd4ec06ecdf86f02",
+  "contentDigest": "8c47fc0aea676089735138452a74017e6bc6cc3ab3bffe43920b65c80b8afc61",
+  "contentHash": "c70ea274320a36f2",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/ankitkr3/compounded.git",
+    "sha": "9feb7586e826028afa6492debd4ec06ecdf86f02"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-06-22T07:47:16Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": ".github",
+        "type": "directory",
+        "children": [
+          {
+            "name": "workflows",
+            "type": "directory",
+            "children": [
+              {
+                "name": "tests.yml",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "agents",
+        "type": "directory",
+        "children": [
+          {
+            "name": "skill-verifier.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "demo.gif",
+            "type": "file"
+          },
+          {
+            "name": "how-it-works.svg",
+            "type": "file"
+          },
+          {
+            "name": "logo.svg",
+            "type": "file"
+          },
+          {
+            "name": "make_demo_gif.py",
+            "type": "file"
+          },
+          {
+            "name": "trust-ladder.svg",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "commands",
+        "type": "directory",
+        "children": [
+          {
+            "name": "demote.md",
+            "type": "file"
+          },
+          {
+            "name": "export.md",
+            "type": "file"
+          },
+          {
+            "name": "import.md",
+            "type": "file"
+          },
+          {
+            "name": "pin.md",
+            "type": "file"
+          },
+          {
+            "name": "status.md",
+            "type": "file"
+          },
+          {
+            "name": "trust-status.md",
+            "type": "file"
+          },
+          {
+            "name": "trust.md",
+            "type": "file"
+          },
+          {
+            "name": "unpin.md",
+            "type": "file"
+          },
+          {
+            "name": "verify.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "docs",
+        "type": "directory",
+        "children": [
+          {
+            "name": "compared-to",
+            "type": "directory",
+            "children": [
+              {
+                "name": "claude-mem.md",
+                "type": "file"
+              },
+              {
+                "name": "native-auto-memory.md",
+                "type": "file"
+              },
+              {
+                "name": "superpowers.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "architecture.md",
+            "type": "file"
+          },
+          {
+            "name": "demo.sh",
+            "type": "file"
+          },
+          {
+            "name": "memory-guide.md",
+            "type": "file"
+          },
+          {
+            "name": "privacy.md",
+            "type": "file"
+          },
+          {
+            "name": "skill-authoring.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "hooks",
+        "type": "directory",
+        "children": [
+          {
+            "name": "hooks.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "scripts",
+        "type": "directory",
+        "children": [
+          {
+            "name": "_lib.py",
+            "type": "file"
+          },
+          {
+            "name": "archive.py",
+            "type": "file"
+          },
+          {
+            "name": "auto_propose.py",
+            "type": "file"
+          },
+          {
+            "name": "finalize_verification.py",
+            "type": "file"
+          },
+          {
+            "name": "memory_inject.py",
+            "type": "file"
+          },
+          {
+            "name": "pin_skill.py",
+            "type": "file"
+          },
+          {
+            "name": "skill_propose.py",
+            "type": "file"
+          },
+          {
+            "name": "skill_verify.py",
+            "type": "file"
+          },
+          {
+            "name": "status.py",
+            "type": "file"
+          },
+          {
+            "name": "trust_ladder.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "compounded-author",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compounded-trust-tracker",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compounded-typo-fixer",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "compounded-verifier",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "using-compounded",
+            "type": "directory",
+            "children": [
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tests",
+        "type": "directory",
+        "children": [
+          {
+            "name": "test_archive.py",
+            "type": "file"
+          },
+          {
+            "name": "test_auto_propose.py",
+            "type": "file"
+          },
+          {
+            "name": "test_finalize.py",
+            "type": "file"
+          },
+          {
+            "name": "test_memory_inject.py",
+            "type": "file"
+          },
+          {
+            "name": "test_skill_propose.py",
+            "type": "file"
+          },
+          {
+            "name": "test_skill_verify.py",
+            "type": "file"
+          },
+          {
+            "name": "test_trust_ladder.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "_config.yml",
+        "type": "file"
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "CLAUDE.md",
+        "type": "file"
+      },
+      {
+        "name": "INSTALL.md",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "MANIFESTO.md",
+        "type": "file"
+      },
+      {
+        "name": "PHILOSOPHY.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

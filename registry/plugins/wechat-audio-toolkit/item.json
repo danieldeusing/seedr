@@ -1,0 +1,193 @@
+{
+  "slug": "wechat-audio-toolkit",
+  "name": "Wechat Audio Toolkit",
+  "type": "plugin",
+  "description": "中文音频 → 公众号 Markdown 文章 / 文字稿。基于阿里云 DashScope paraformer-v2 实现语音识别 + 说话人分离，最长支持 12 小时音频。包含两个 skill：audio-to-wechat-md 自动出 6000-10000 字成品文章 + 5 个标题选项；audio-to-transcript 出原样保留的可读文字稿。适合公众号创作者整理直播回放、访谈、播客等长音频内容。\n\nChinese audio → WeChat-formatted Markdown article or readable transcript. Backed by Aliyun DashScope paraformer-v2 (ASR with diarization). Supports up to 12-hour audio files. Two skills: audio-to-wechat-md (full WeChat article + 5 title options) and audio-to-transcript (minimally-edited readable transcript). Designed for Chinese content creators handling livestream replays, interviews, podcasts.",
+  "longDescription": "Ships **2 skills**, `audio-to-transcript` (音频文件（mp3/m4a/wav/aac/flac/ogg）→ 可读的 Markdown 文字稿。自动完成语音转写 + 说话人分离（阿里云 DashScope paraformer-v2）。最少交互：用户可以选择给每个 SPEAKER_XX 起名字，也可以直接跳过用原始标签。**保留原文不做内容整理、不做错字修正、不做解读**——只做简单排版让你方便阅读。每次运行落到 `~/Downloads/audio-to-transcript/<时间戳>_<音频名>/transcript.md`。 当用户说\"帮我把这个音频/录音转成文字稿\"、\"转写一下这个 mp3/m4a\"、\"这个录音转文字\"、\"这个音频转逐字稿\"、\"帮我把这段录音转成可读文字\"、\"把这个音频转成 markdown 文字稿\"等，或者用户丢一个音频文件并提到转写/文字稿/逐字稿/转文字，立即使用此 skill。 **不要用于**：①用户说\"整理成公众号文章\"、\"发公众号的稿\"、\"出一篇稿子\"——那是 audio-to-wechat-md…), `audio-to-wechat-md` (音频文件（mp3/m4a/wav/aac/flac/ogg）→ 公众号 Markdown 成品文章。自动完成语音转写 + 说话人分离（阿里云 DashScope paraformer-v2），全程只问两个问题：①这个录音发到哪个公众号（你自己的访谈/学习型公众号）②每个 SPEAKER_XX 是谁。然后用 plugin 内打包的下游 skill（transcript-to-wechat-md 或 ai-interview-to-wechat-md）生成成品文章 + 5 个标题选项。每次运行的所有产物都落在…).\n\nInstalls with `claude plugin install wechat-audio-toolkit@claude-community` from `guoxiaowen/wechat-audio-toolkit`.",
+  "compatibility": [
+    "claude",
+    "copilot",
+    "antigravity",
+    "codex"
+  ],
+  "pluginType": "wrapper",
+  "wrapper": "skill",
+  "sourceType": "community",
+  "author": {
+    "name": "Caven Guo",
+    "url": "https://github.com/guoxiaowen"
+  },
+  "externalUrl": "https://github.com/guoxiaowen/wechat-audio-toolkit/tree/70769a1fb307e58bc72bede15618ea5e851575ab",
+  "marketplace": "claude-community",
+  "version": "0.1.0",
+  "sourceRevision": "70769a1fb307e58bc72bede15618ea5e851575ab",
+  "contentDigest": "ab9d4ad977ec194c82e4882d17400951e308626771cab0113c71e48cde4fbf82",
+  "contentHash": "72aae27fca42cb43",
+  "pluginSource": {
+    "kind": "url",
+    "url": "https://github.com/guoxiaowen/wechat-audio-toolkit.git",
+    "sha": "70769a1fb307e58bc72bede15618ea5e851575ab"
+  },
+  "marketplaceRef": {
+    "name": "claude-community",
+    "url": "https://github.com/anthropics/claude-plugins-community.git",
+    "sha": "a727be1c7bd6064419b6f60d71993a19198adc17"
+  },
+  "license": {
+    "spdx": "MIT",
+    "file": "LICENSE"
+  },
+  "updatedAt": "2026-04-27T03:30:32Z",
+  "contents": {
+    "files": [
+      {
+        "name": ".claude-plugin",
+        "type": "directory",
+        "children": [
+          {
+            "name": "plugin.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "article_skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "ai-interview-to-wechat-md",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "example.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "transcript-to-wechat-md",
+            "type": "directory",
+            "children": [
+              {
+                "name": "references",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "example.md",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "lib",
+        "type": "directory",
+        "children": [
+          {
+            "name": "__init__.py",
+            "type": "file"
+          },
+          {
+            "name": "format_transcript.py",
+            "type": "file"
+          },
+          {
+            "name": "oss_upload.py",
+            "type": "file"
+          },
+          {
+            "name": "preprocess.py",
+            "type": "file"
+          },
+          {
+            "name": "transcribe.py",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "name": "skills",
+        "type": "directory",
+        "children": [
+          {
+            "name": "audio-to-transcript",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "run.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "audio-to-wechat-md",
+            "type": "directory",
+            "children": [
+              {
+                "name": "scripts",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "run.py",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "SKILL.md",
+                "type": "file"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": ".gitignore",
+        "type": "file"
+      },
+      {
+        "name": "install.sh",
+        "type": "file"
+      },
+      {
+        "name": "LICENSE",
+        "type": "file"
+      },
+      {
+        "name": "pyproject.toml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  }
+}

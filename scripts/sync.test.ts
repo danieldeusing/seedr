@@ -296,7 +296,7 @@ describe("runSync", () => {
       const slack = readItem(world.registryDir, "plugins", "slack");
       const official = world.fake.repos["anthropics/claude-plugins-official"]!.commits[SHA_B]!;
       official.files[".claude-plugin/marketplace.json"] = officialMarketplace({ plugins: [] }); // would delete everything if it were read
-      world.fake.fail({ match: `claude-plugins-official/${SHA_B}/.claude-plugin/marketplace.json`, status: 503, times: Infinity });
+      world.fake.fail({ match: `repos/anthropics/claude-plugins-official/tarball/${SHA_B}`, status: 503, times: Infinity });
       world.fake.repos["obra/superpowers"]!.commits[SHA_F]!.date = "2026-04-01T00:00:00Z";
 
       const outcome = await sync();
@@ -312,8 +312,8 @@ describe("runSync", () => {
     it("carries a single item over when only its own metadata request fails, and never deletes it", async () => {
       await migrate();
       const codeReview = readItem(world.registryDir, "plugins", "code-review");
-      world.fake.fail({ match: `claude-plugins-official/${SHA_B}/plugins/code-review/.claude-plugin/plugin.json`, status: 500, times: Infinity });
-      const outcome = await sync({ rebuild: true }); // the pin has not moved, so only a rebuild asks for the file
+      world.fake.fail({ match: `commits?sha=${SHA_B}&path=plugins%2Fcode-review`, status: 500, times: Infinity });
+      const outcome = await sync({ rebuild: true }); // the pin has not moved, so only a rebuild asks for the date
       expect(outcome.ok).toBe(true);
       expect(outcome.failedSources).toEqual([]);
       expect(outcome.carriedOver).toEqual([{ key: "plugin/code-review", reason: expect.stringMatching(/Gave up on/) }]);

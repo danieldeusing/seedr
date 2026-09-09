@@ -93,4 +93,27 @@ describe("collectContent", () => {
 
     await expect(collectContent(client, { repo: "o/r", sha: SHA_A, path: "nope" }, tree)).rejects.toThrow(/directory "nope" does not exist/);
   });
+
+  it("reads a repository that fits the size cap from one archive, and one beyond it file by file from the raw host", async () => {
+    const fake = new FakeGitHub({
+      "o/r": { branches: { main: SHA_A }, commits: { [SHA_A]: { files: { "a/SKILL.md": "a\n", "a/ref.md": "r\n", "b/SKILL.md": "b\n" } } } },
+    });
+    vi.stubGlobal("fetch", fake.fetch);
+    const client = new GitHubClient({ env: {}, log: () => {} });
+    const tree = await client.getTree("o/r", SHA_A);
+
+    await collectContent(client, { repo: "o/r", sha: SHA_A, path: "a" }, tree);
+    await collectContent(client, { repo: "o/r", sha: SHA_A, path: "b" }, tree);
+    expect(fake.requests.filter((request) => request.includes("/tarball/"))).toEqual([`GET https://api.github.com/repos/o/r/tarball/${SHA_A}`]);
+    expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com"))).toEqual([]);
+
+    // the item fits, but the repository around it does not
+    const huge = tree.map((item) => (item.path === "b/SKILL.md" ? { ...item, size: 201 * 1024 * 1024 } : item));
+    const fromRaw = await collectContent(client, { repo: "o/r", sha: SHA_A, path: "a" }, huge);
+    expect(fromRaw.entries.map((entry) => entry.path).sort()).toEqual(["SKILL.md", "ref.md"]);
+    expect(fake.requests.filter((request) => request.includes("raw.githubusercontent.com")).sort()).toEqual([
+      `GET https://raw.githubusercontent.com/o/r/${SHA_A}/a/SKILL.md`,
+      `GET https://raw.githubusercontent.com/o/r/${SHA_A}/a/ref.md`,
+    ]);
+  });
 });

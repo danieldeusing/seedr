@@ -35,6 +35,25 @@ export interface ContentLocation {
   path: string;
 }
 
+type ReadFile = (fullPath: string, blobSha: string) => Promise<Buffer>;
+
+/**
+ * One archive download serves every file of a repository that fits the size cap; a
+ * repository beyond it (a monorepo the plugin is a corner of) is read file by file from
+ * the raw host, which costs one request per file.
+ */
+async function fileReader(client: GitHubClient, location: Pick<ContentLocation, "repo" | "sha">, repoFiles: readonly TreeFile[]): Promise<ReadFile> {
+  const { repo, sha } = location;
+  const repoBytes = repoFiles.reduce((sum, file) => sum + file.size, 0);
+  if (repoBytes > MAX_CONTENT_BYTES) return (fullPath, blobSha) => client.getRawBytes(repo, sha, fullPath, blobSha);
+  const archive = await client.getArchive(repo, sha);
+  return async (fullPath) => {
+    const bytes = archive.get(fullPath);
+    if (!bytes) throw new Error(`${fullPath} is in the tree of ${repo} at ${sha} but not in its archive`);
+    return bytes;
+  };
+}
+
 /** Look up one file's bytes among collected entries. */
 export function findEntry(content: CollectedContent, path: string): Buffer | null {
   return content.entries.find((entry) => entry.path === path)?.bytes ?? null;
@@ -52,13 +71,14 @@ export async function collectContent(client: GitHubClient, location: ContentLoca
   }
 
   const fullPath = (file: TreeFile): string => (path ? `${path}/${file.path}` : file.path);
+  const rootFiles = path === "" ? files : listTreeFiles(tree, "").files;
+  const read = await fileReader(client, { repo, sha }, rootFiles);
   const entries = await mapConcurrent(files, FILE_CONCURRENCY, async (file) => ({
     path: file.path,
-    bytes: await client.getRawBytes(repo, sha, fullPath(file), file.blobSha),
+    bytes: await read(fullPath(file), file.blobSha),
     blobSha: file.blobSha,
   }));
 
-  const rootFiles = path === "" ? files : listTreeFiles(tree, "").files;
   const licenseLocation = locateLicense(
     files.map((file) => file.path),
     rootFiles.map((file) => file.path),
@@ -71,7 +91,7 @@ export async function collectContent(client: GitHubClient, location: ContentLoca
     // Root-level license outside the item tree: it travels with the install, so it is part of the digest (§2 step 2).
     const rootFile = rootFiles.find((file) => file.path === licenseLocation.file);
     if (!rootFile) throw new Error(`license file ${licenseLocation.file} vanished from the tree of ${repo} at ${sha}`);
-    const bytes = await client.getRawBytes(repo, sha, licenseLocation.file, rootFile.blobSha);
+    const bytes = await read(licenseLocation.file, rootFile.blobSha);
     licenseText = bytes.toString("utf-8");
     if (!bytesByPath.has(licenseLocation.installAs)) {
       digestEntries.push({ path: licenseLocation.installAs, bytes });

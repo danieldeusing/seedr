@@ -34,7 +34,7 @@ describe("draftLongDescription", () => {
         "Installs with `claude plugin install acme@claude-community` from `acme/plugin` (`plugins/acme`).",
       ].join("\n\n"),
     );
-    expect(countWords(draft)).toBeGreaterThanOrEqual(30);
+    expect(countWords(draft ?? "")).toBeGreaterThanOrEqual(30);
   });
 
   it("names at most eight components of a kind and counts the rest", () => {

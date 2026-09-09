@@ -22,7 +22,6 @@ import {
   type SourceContext,
 } from "./anthropic.js";
 import { classifyPlugin, collectContent, findEntry, parseJsonEntry, withDeclaredLicense } from "./content.js";
-import { NotFoundError } from "./github.js";
 import { finalizeItem } from "./item.js";
 import { normalizeRelativePath, type MarketplaceEntry, type MarketplaceFile } from "./marketplace.js";
 import type { GitTreeItem, ManifestItem, SourceResult } from "./types.js";
@@ -62,13 +61,10 @@ async function readPluginJsonName(ctx: SourceContext, head: RepoHead, path: stri
   const pluginJsonPath = path ? `${path}/${PLUGIN_JSON}` : PLUGIN_JSON;
   const blob = head.tree.find((entry) => entry.type === "blob" && entry.path === pluginJsonPath);
   if (!blob) return null;
-  try {
-    const json = JSON.parse(await ctx.client.getRawText(head.repo, head.sha, pluginJsonPath, blob.sha)) as PluginJson;
-    return typeof json.name === "string" ? json.name : null;
-  } catch (error) {
-    if (error instanceof NotFoundError) return null;
-    throw error;
-  }
+  const bytes = (await ctx.client.getArchive(head.repo, head.sha)).get(pluginJsonPath);
+  if (!bytes) return null;
+  const json = JSON.parse(bytes.toString("utf-8")) as PluginJson;
+  return typeof json.name === "string" ? json.name : null;
 }
 
 async function refreshPlugin(ctx: SourceContext, item: ManifestItem, head: RepoHead, path: string): Promise<ManifestItem> {

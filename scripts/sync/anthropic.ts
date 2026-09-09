@@ -290,7 +290,10 @@ export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBu
 }
 
 export async function loadMarketplace(client: GitHubClient, repo: string, sha: string): Promise<MarketplaceFile> {
-  const text = await client.getRawText(repo, sha, MARKETPLACE_FILE);
+  // From the archive, which the entries hosted in the marketplace repo read anyway; the raw host limits per file.
+  const bytes = (await client.getArchive(repo, sha)).get(MARKETPLACE_FILE);
+  if (!bytes) throw new Error(`${repo}@${sha} has no ${MARKETPLACE_FILE}`);
+  const text = bytes.toString("utf-8");
   let json: unknown;
   try {
     json = JSON.parse(text);

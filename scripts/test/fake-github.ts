@@ -7,6 +7,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 import { typeDirName } from "@seedr/registry-ops";
 import type { GitTreeItem, ManifestItem } from "../sync/types.js";
 
@@ -71,6 +72,54 @@ function json(body: unknown, status = 200, headers: Record<string, string> = {})
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
 }
 
+const TAR_BLOCK = 512;
+
+function tarHeader(name: string, size: number, type: string): Buffer {
+  const header = Buffer.alloc(TAR_BLOCK);
+  header.write(name, 0, 100, "utf-8");
+  header.write("0000644\0", 100, "ascii");
+  header.write("0000000\0", 108, "ascii");
+  header.write("0000000\0", 116, "ascii");
+  header.write(`${size.toString(8).padStart(11, "0")}\0`, 124, "ascii");
+  header.write("00000000000\0", 136, "ascii");
+  header.write("        ", 148, "ascii");
+  header.write(type, 156, "ascii");
+  header.write("ustar\0", 257, "ascii");
+  header.write("00", 263, "ascii");
+  const checksum = header.reduce((sum, byte) => sum + byte, 0);
+  header.write(`${checksum.toString(8).padStart(6, "0")}\0 `, 148, "ascii");
+  return header;
+}
+
+function tarEntry(name: string, data: Buffer, type: string): Buffer[] {
+  const padding = Buffer.alloc((TAR_BLOCK - (data.length % TAR_BLOCK)) % TAR_BLOCK);
+  return [tarHeader(name, data.length, type), data, padding];
+}
+
+/** `<length> key=value\n`, the length counting itself. */
+function paxRecord(key: string, value: string): Buffer {
+  const body = ` ${key}=${value}\n`;
+  let length = Buffer.byteLength(body) + 1;
+  while (Buffer.byteLength(`${length}${body}`) !== length) length = Buffer.byteLength(`${length}${body}`);
+  return Buffer.from(`${length}${body}`, "utf-8");
+}
+
+/**
+ * A tar the way `git archive` writes one: a pax global header, every path under `prefix/`,
+ * a pax extended header before any name longer than the ustar field, symlinks as links.
+ */
+export function writeTar(files: Record<string, FakeFile>, prefix: string): Buffer {
+  const blocks: Buffer[] = tarEntry("pax_global_header", paxRecord("comment", "0".repeat(40)), "g");
+  for (const [path, file] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
+    const name = `${prefix}/${path}`;
+    if (name.length > 100) blocks.push(...tarEntry(`${prefix}/PaxHeaders/${path.slice(-40)}`, paxRecord("path", name), "x"));
+    const isSymlink = typeof file === "object" && !Buffer.isBuffer(file);
+    blocks.push(...tarEntry(name.slice(0, 100), isSymlink ? Buffer.alloc(0) : toBytes(file), isSymlink ? "2" : "0"));
+  }
+  blocks.push(Buffer.alloc(TAR_BLOCK * 2));
+  return Buffer.concat(blocks);
+}
+
 export class FakeGitHub {
   readonly requests: string[] = [];
   private readonly failures: InjectedFailure[] = [];
@@ -129,6 +178,14 @@ export class FakeGitHub {
       const commit = repo.commits[tree[1]!];
       if (!commit) return json({ message: "Not Found" }, 404);
       return json({ sha: tree[1], tree: buildTree(commit), truncated: false });
+    }
+
+    const tarball = /^tarball\/([^/]+)$/.exec(route);
+    if (tarball) {
+      const commit = repo.commits[tarball[1]!];
+      if (!commit) return json({ message: "Not Found" }, 404);
+      const [owner, name] = repoName.split("/");
+      return new Response(gzipSync(writeTar(commit.files, `${owner}-${name}-${tarball[1]!.slice(0, 7)}`)), { status: 200 });
     }
 
     return json({ message: "Not Found" }, 404);

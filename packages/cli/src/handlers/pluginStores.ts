@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { basename, isAbsolute, join } from "node:path";
+import { basename, dirname, isAbsolute, join } from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -178,25 +178,25 @@ interface SelfMarketplace {
   [key: string]: unknown;
 }
 
+/** The marketplace manifest every agent reads. Created when the tree ships none. */
+const CLAUDE_SELF_MARKETPLACE = join(".claude-plugin", "marketplace.json");
+
 /**
- * A first-party plugin has no marketplace to be filed under, so its own tree
- * becomes one: `.claude-plugin/marketplace.json` names the marketplace and
- * lists the plugin at `./` — exactly the directory that `claude plugin
- * marketplace add <dir>` and `copilot plugin marketplace add <dir>` accept, and
- * the source both record as `{"source":"directory","path":…}`.
- *
- * A marketplace file the tree already ships is kept and only aligned: its name
- * to the marketplace the plugin is installed under, because that name is the
- * key both agents file the plugin by, and its list to contain the plugin.
+ * Copilot's own marketplace manifest. It takes precedence over the Claude one
+ * where a tree ships both, so it has to be aligned too — but it is never
+ * created, because a tree that ships only the Claude manifest is read from that
+ * one and gaining a second, sparser manifest would change which keys Copilot
+ * sees (`skills`, `commands`, `hooks` live per plugin in this file).
  */
-async function ensureSelfMarketplace(contentPath: string, marketplace: string, name: string, item: RegistryItem): Promise<void> {
-  const dir = join(contentPath, ".claude-plugin");
-  const path = join(dir, "marketplace.json");
+const COPILOT_SELF_MARKETPLACE = join(".github", "plugin", "marketplace.json");
+
+/** Align one marketplace manifest: its name to `marketplace`, its list to contain `name`. */
+async function alignSelfMarketplace(path: string, marketplace: string, name: string, item: RegistryItem): Promise<void> {
   const existing = (await exists(path)) ? await readJson<SelfMarketplace>(path) : {};
   const plugins = Array.isArray(existing.plugins) ? existing.plugins : [];
   const listed = plugins.some((entry) => isRecord(entry) && entry.name === name);
   const description = item.description ? { description: item.description } : {};
-  await mkdir(dir, { recursive: true });
+  await mkdir(dirname(path), { recursive: true });
   await writeJson(path, {
     ...existing,
     name: marketplace,
@@ -204,6 +204,33 @@ async function ensureSelfMarketplace(contentPath: string, marketplace: string, n
     ...(existing.description === undefined ? description : {}),
     plugins: listed ? plugins : [...plugins, { name, source: "./", ...description }],
   });
+}
+
+/**
+ * The installed tree becomes its own marketplace: the manifest names the
+ * marketplace and lists the plugin at `./` — exactly the directory that `claude
+ * plugin marketplace add <dir>` and `copilot plugin marketplace add <dir>`
+ * accept, and the source both record as `{"source":"directory","path":…}`.
+ *
+ * A marketplace file the tree already ships is kept and only aligned: its name
+ * to the marketplace the plugin is installed under, because that name is the
+ * key both agents file the plugin by, and its list to contain the plugin.
+ *
+ * `alsoAlign` names further manifests to keep in step — aligned only where the
+ * tree already ships them, never created.
+ */
+async function ensureSelfMarketplace(
+  contentPath: string,
+  marketplace: string,
+  name: string,
+  item: RegistryItem,
+  alsoAlign: readonly string[] = []
+): Promise<void> {
+  await alignSelfMarketplace(join(contentPath, CLAUDE_SELF_MARKETPLACE), marketplace, name, item);
+  for (const relative of alsoAlign) {
+    const path = join(contentPath, relative);
+    if (await exists(path)) await alignSelfMarketplace(path, marketplace, name, item);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -445,19 +472,33 @@ const copilotStore: PluginStore = {
 
   cachePath: (marketplace, name) => resolveContained(COPILOT_PLUGINS_DIR, marketplace, name),
 
+  /**
+   * Every plugin's installed tree becomes its own marketplace here, not just a
+   * first-party one — see `ensureMarketplace` for why. Copilot's own manifest
+   * wins over the Claude one where a tree ships both, so both are aligned.
+   */
   async prepareTree(contentPath, { name, marketplace, item }) {
-    if (isFirstParty(item.sourceType)) await ensureSelfMarketplace(contentPath, marketplace, name, item);
+    await ensureSelfMarketplace(contentPath, marketplace, name, item, [COPILOT_SELF_MARKETPLACE]);
   },
 
   /**
-   * A first-party plugin's installed tree is its marketplace, recorded the way
-   * `copilot plugin marketplace add <dir>` records one: a `directory` source.
-   * Direct installs from a path exist too, but Copilot 1.0.80 announces them
-   * as deprecated in favour of `plugin@marketplace`, which this is.
+   * The installed tree is the marketplace, recorded the way `copilot plugin
+   * marketplace add <dir>` records one: a `directory` source. Direct installs
+   * from a path exist too, but Copilot 1.0.80 announces them as deprecated in
+   * favour of `plugin@marketplace`, which this is.
+   *
+   * This is not only the first-party path. Pointing Copilot at the upstream
+   * repository instead leaves the plugin uninstalled and says nothing: Copilot
+   * fetches that marketplace and validates it whole, and Anthropic's
+   * marketplaces — which every mirrored item names — fail that validation
+   * outright (object-form `source` values, descriptions past 1024 characters),
+   * so no plugin from them can be installed. The tree seedr has already
+   * downloaded and digest-verified is a marketplace of exactly one plugin at
+   * the pinned revision, which sidesteps the upstream file and is the only
+   * shape that carries the pin into Copilot at all.
    */
   async ensureMarketplace(marketplace, item, cachePath) {
-    if (isFirstParty(item.sourceType)) {
-      if (!cachePath) return [];
+    if (cachePath) {
       return [
         {
           path: COPILOT_SETTINGS_PATH,
@@ -471,6 +512,8 @@ const copilotStore: PluginStore = {
         },
       ];
     }
+    // No tree to point at (a plugin installed by reference only): the
+    // repository is all Copilot can be told about.
     const repo = marketplaceRepo(item);
     if (!repo) return [];
     const settings = await readJson<CopilotSettings>(COPILOT_SETTINGS_PATH);

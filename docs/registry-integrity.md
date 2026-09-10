@@ -73,7 +73,9 @@ list belongs to the first). A marketplace-built item's `marketplaceRef.sha` is t
 commit it was last *built* from, not the marketplace head: an entry whose pin has not moved
 keeps its item byte for byte, so a marketplace commit that bumps one plugin rewrites one
 `item.json`, not thousands. `SYNC_REBUILD=1` rebuilds them all, for a change in the sync's own
-derivation logic. A new marketplace item gets a first `longDescription` drafted from its own
+derivation logic — about three API requests per item (tree, archive, last commit), so a full
+rebuild of the whole mirror spans two hourly windows of a personal token; the second run keeps
+what the first one built and picks up the rest. A new marketplace item gets a first `longDescription` drafted from its own
 files (`scripts/sync/tldr.ts`); like `name`, it is curated afterwards and never overwritten.
 
 ## 5. Sync fail-closed rules

@@ -1,18 +1,26 @@
 import type { IFuseOptions } from "fuse.js";
 import { canonicalAgents, canonicalSourceType, typeDirName } from "@seedr/registry-ops/pure";
 import { itemsInCategory } from "../../scripts/site-meta.mjs";
-import type { RegistryManifest, RegistryItem, ComponentType, FileTreeNode } from "./types";
+import type { RegistryManifest, RegistryManifestIndex, RegistryItem, ComponentType, FileTreeNode, TypeManifest } from "./types";
 
-// Import split manifest files (bundled at build time)
-import indexData from "@registry/manifest.json";
-import skillsData from "@registry/skills/manifest.json";
-import pluginsData from "@registry/plugins/manifest.json";
-import hooksData from "@registry/hooks/manifest.json";
-import agentsData from "@registry/agents/manifest.json";
-import mcpData from "@registry/mcp/manifest.json";
-import settingsData from "@registry/settings/manifest.json";
-import commandsData from "@registry/commands/manifest.json";
-import rulesData from "@registry/rules/manifest.json";
+// The registry is fetched, not bundled: a few thousand plugin records belong in
+// cached JSON, not in the entry chunk. The build emits the index, the per-type
+// manifests and every item.json under /registry/ (vite.config.ts), dev serves the
+// same paths from the configured registry directory, and the tests answer them
+// from disk (src/test/setup.ts). The module awaits the manifests once, so every
+// export below stays synchronous for its callers.
+const REGISTRY_BASE = "/registry";
+
+async function fetchRegistryFile<T>(path: string): Promise<T> {
+  const response = await fetch(`${REGISTRY_BASE}/${path}`);
+  if (!response.ok) throw new Error(`registry: ${path} answered ${response.status}`);
+  return (await response.json()) as T;
+}
+
+export const registryIndex = await fetchRegistryFile<RegistryManifestIndex>("manifest.json");
+const typeManifests = await Promise.all(
+  Object.values(registryIndex.types).map((descriptor) => fetchRegistryFile<TypeManifest>(descriptor.file))
+);
 
 // Dev-only test item for testing media previews (served from apps/web/dev-samples
 // by the vite dev middleware; kept out of public/ so it isn't deployed)
@@ -42,25 +50,16 @@ const devTestItem: RegistryItem = {
 // Assemble all type manifests into a single RegistryManifest. Compatibility and
 // source type are canonicalised here, so a not-yet-migrated `gemini`
 // entry filters and renders as `antigravity` / `seedr` everywhere downstream.
-const allItems: RegistryItem[] = (
-  [
-    ...skillsData.items,
-    ...pluginsData.items,
-    ...hooksData.items,
-    ...agentsData.items,
-    ...mcpData.items,
-    ...settingsData.items,
-    ...commandsData.items,
-    ...rulesData.items,
-  ] as RegistryItem[]
-).map((item) => ({
-  ...item,
-  compatibility: canonicalAgents(item.compatibility),
-  sourceType: canonicalSourceType(item.sourceType) ?? item.sourceType,
-}));
+const allItems: RegistryItem[] = typeManifests
+  .flatMap((typeManifest) => typeManifest.items as RegistryItem[])
+  .map((item) => ({
+    ...item,
+    compatibility: canonicalAgents(item.compatibility),
+    sourceType: canonicalSourceType(item.sourceType) ?? item.sourceType,
+  }));
 
 const baseManifest: RegistryManifest = {
-  version: indexData.version,
+  version: registryIndex.version,
   items: allItems,
 };
 
@@ -88,38 +87,21 @@ export function getItem(slug: string, type?: ComponentType): RegistryItem | unde
   return manifest.items.find((item) => item.slug === slug);
 }
 
-// Lazy-import item.json files for longDescription lookup (stripped from manifests).
-// Each entry is an async () => module, loaded only when requested.
-const itemJsonLoaders = import.meta.glob<{ default: RegistryItem }>(
-  "@registry/*/*/item.json",
-);
+// An item's full record (longDescription, file tree) is fetched on demand from its
+// item.json, which the per-type manifests strip. The promise is what is cached, so
+// the detail page's parallel readers share one request.
+const itemJsonCache = new Map<string, Promise<RegistryItem | undefined>>();
 
-// Build a typeDir/slug → loader map for O(1) lookup (supports duplicate slugs across types)
-const loaderByKey = new Map<string, () => Promise<{ default: RegistryItem }>>();
-for (const [path, loader] of Object.entries(itemJsonLoaders)) {
-  // path: /registry/<typeDir>/<slug>/item.json → extract typeDir and slug
-  const parts = path.split("/");
-  const slug = parts[parts.length - 2];
-  const typeDir = parts[parts.length - 3];
-  if (slug && typeDir) loaderByKey.set(`${typeDir}/${slug}`, loader);
-}
-
-// Cache for item.json data (lazy-loaded)
-const itemJsonCache = new Map<string, RegistryItem>();
-
-async function loadItemJson(slug: string, type?: ComponentType): Promise<RegistryItem | undefined> {
-  const key = type ? `${typeDirName(type)}/${slug}` : slug;
-  if (itemJsonCache.has(key)) return itemJsonCache.get(key);
-
-  const loader = type
-    ? loaderByKey.get(`${typeDirName(type)}/${slug}`)
-    : [...loaderByKey.entries()].find(([k]) => k.endsWith(`/${slug}`))?.[1];
-  if (!loader) return undefined;
-
-  const mod = await loader();
-  const item = mod.default;
-  if (item) itemJsonCache.set(key, item);
-  return item;
+function loadItemJson(slug: string, type?: ComponentType): Promise<RegistryItem | undefined> {
+  const resolvedType = type ?? getItem(slug)?.type;
+  if (!resolvedType) return Promise.resolve(undefined);
+  const key = `${typeDirName(resolvedType)}/${slug}`;
+  let pending = itemJsonCache.get(key);
+  if (!pending) {
+    pending = fetch(`${REGISTRY_BASE}/${key}/item.json`).then((response) => (response.ok ? (response.json() as Promise<RegistryItem>) : undefined));
+    itemJsonCache.set(key, pending);
+  }
+  return pending;
 }
 
 export async function getLongDescription(slug: string, type?: ComponentType): Promise<string | undefined> {

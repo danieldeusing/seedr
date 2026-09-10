@@ -1,8 +1,8 @@
 import { defineConfig, type Plugin, type PreviewServer, type ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { resolve } from "path";
-import { readFileSync, existsSync, statSync } from "fs";
+import { dirname, resolve } from "path";
+import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import type { IncomingMessage, ServerResponse } from "http";
 import { parseHeadersFile, headersFor } from "./scripts/headers-file.mjs";
 // Deep-relative on purpose: Vite externalizes every bare specifier in a config
@@ -13,7 +13,7 @@ import { resolveRegistryDir } from "../../packages/registry-ops/src/fsPaths.js";
 
 // A fork keeps its items in a directory upstream does not have (named by
 // seedr.config.json at the repo root, two levels up), so `git merge upstream/main`
-// never sees them. The alias and the chunk split must name the same directory.
+// never sees them. registryDataPlugin below emits and serves that directory.
 const registryDir = resolveRegistryDir(resolve(__dirname, "../.."));
 
 type DevReq = IncomingMessage;
@@ -42,6 +42,41 @@ function serveDir(
     const ext = filePath.split(".").pop() ?? "";
     if (mimeTypes[ext]) res.setHeader("Content-Type", mimeTypes[ext]);
     res.end(binary ? readFileSync(filePath) : readFileSync(filePath, "utf-8"));
+  };
+}
+
+// The registry the app renders is fetched at runtime, not bundled: a few thousand
+// plugin records belong in cached JSON, not in the entry chunk. The build emits the
+// index, the per-type manifests and every item.json under dist/registry/; dev answers
+// the same paths from the configured registry directory (which a fork moves with
+// seedr.config.json, unlike the upstream registry the plugin below serves).
+function registryDataPlugin(): Plugin {
+  const registryFiles = (): { path: string; source: string }[] => {
+    const read = (path: string): string => readFileSync(resolve(registryDir, path), "utf-8");
+    const index = JSON.parse(read("manifest.json")) as { types: Record<string, { file: string }> };
+    const files = [{ path: "manifest.json", source: read("manifest.json") }];
+    for (const { file } of Object.values(index.types)) {
+      files.push({ path: file, source: read(file) });
+      const typeDir = dirname(file);
+      if (!existsSync(resolve(registryDir, typeDir))) continue;
+      for (const entry of readdirSync(resolve(registryDir, typeDir), { withFileTypes: true })) {
+        const itemPath = `${typeDir}/${entry.name}/item.json`;
+        if (entry.isDirectory() && existsSync(resolve(registryDir, itemPath))) files.push({ path: itemPath, source: read(itemPath) });
+      }
+    }
+    return files;
+  };
+  const data = serveDir("/registry/", registryDir, { mimeTypes: { json: "application/json" } });
+  return {
+    name: "registry-data",
+    generateBundle() {
+      for (const { path, source } of registryFiles()) this.emitFile({ type: "asset", fileName: `registry/${path}`, source });
+    },
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use((req: DevReq, res: DevRes, next: () => void) =>
+        /\/(manifest|item)\.json(\?.*)?$/.test(req.url ?? "") ? data(req, res, next) : next()
+      );
+    },
   };
 }
 
@@ -130,7 +165,7 @@ function previewPagesPlugin(): Plugin {
 }
 
 export default defineConfig(({ isPreview }) => ({
-  plugins: [react(), tailwindcss(), serveLocalFilesPlugin(), previewPagesPlugin()],
+  plugins: [react(), tailwindcss(), registryDataPlugin(), serveLocalFilesPlugin(), previewPagesPlugin()],
   // preview mimics Pages (no SPA fallback: unknown paths are real 404s); dev keeps it
   appType: isPreview ? "mpa" : "spa",
   server: {
@@ -139,11 +174,12 @@ export default defineConfig(({ isPreview }) => ({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
-      "@registry": registryDir,
     },
   },
   build: {
     outDir: "dist",
+    // src/lib/registry.ts awaits the registry at the top level of the module
+    target: "es2022",
     // never inline fonts as data: URIs — the CSP's font-src allows 'self' only
     assetsInlineLimit: (filePath) => (/\.(woff2?|ttf|otf)$/.test(filePath) ? false : undefined),
     // Budget (enforced by scripts/check-bundle-budget.mjs after every build):
@@ -153,9 +189,6 @@ export default defineConfig(({ isPreview }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // registry data changes on every sync; keep it apart from the code so one
-          // doesn't bust the other's cache
-          if (id.startsWith(`${registryDir}/`) && id.endsWith("manifest.json")) return "registry";
           if (/node_modules\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)) return "vendor-react";
           if (/node_modules\/(react-markdown|remark-[\w-]+|micromark[\w-]*|mdast-[\w-]+|unist-[\w-]+|unified|vfile[\w-]*|hast-[\w-]+|bail|trough|devlop|property-information|space-separated-tokens|comma-separated-tokens|html-url-attributes|estree-util-[\w-]+|zwitch|longest-streak|ccount|character-[\w-]+|decode-named-character-reference|markdown-table|trim-lines|style-to-[\w-]+|inline-style-parser|extend|is-plain-obj)\//.test(id)) return "vendor-markdown";
           return undefined;

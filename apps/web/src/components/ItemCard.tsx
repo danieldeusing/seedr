@@ -36,7 +36,7 @@ function PackageBadges({ counts }: { counts: Record<string, number> }) {
         return (
           <Tooltip key={item.type}>
             <TooltipTrigger asChild>
-              <span role="img" className="flex items-center gap-0.5" aria-label={`${item.count} ${item.label}`}>
+              <span role="img" className={cn(ABOVE_CARD_LINK, "flex items-center gap-0.5")} aria-label={`${item.count} ${item.label}`}>
                 <Icon className={`w-3 h-3 ${colorClass}`} aria-hidden />
                 <span className="text-[11px] text-subtext" aria-hidden>{item.count}</span>
               </span>
@@ -49,7 +49,9 @@ function PackageBadges({ counts }: { counts: Record<string, number> }) {
   );
 }
 
-const FILTER_BUTTON = "relative z-10 cursor-pointer transition-all hover:brightness-125 focus-visible:outline-2 focus-visible:outline-ring";
+// Hover and click targets sit above the item link stretched over the card (::after overlay).
+const ABOVE_CARD_LINK = "relative z-10";
+const FILTER_BUTTON = "cursor-pointer transition-all hover:brightness-125 focus-visible:outline-2 focus-visible:outline-ring";
 
 /**
  * A filter affordance on the card: a real <button> when the page can filter,
@@ -57,9 +59,10 @@ const FILTER_BUTTON = "relative z-10 cursor-pointer transition-all hover:brightn
  * it is never nested inside it.
  */
 function FilterControl({ label, onClick, className, children }: { label: string; onClick?: () => void; className?: string; children: ReactNode }) {
-  if (!onClick) return <span className={cn("inline-flex", className)}>{children}</span>;
+  const classes = cn(ABOVE_CARD_LINK, "inline-flex", onClick && FILTER_BUTTON, className);
+  if (!onClick) return <span className={classes}>{children}</span>;
   return (
-    <button type="button" aria-label={label} onClick={onClick} className={cn("inline-flex", FILTER_BUTTON, className)}>
+    <button type="button" aria-label={label} onClick={onClick} className={classes}>
       {children}
     </button>
   );
@@ -118,7 +121,7 @@ export function ItemCard({ item, browseType, onSourceClick, onScopeClick, onTool
         </div>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span role="img" className="inline-flex" aria-label={typeLabels[item.type]}>
+            <span role="img" className={cn(ABOVE_CARD_LINK, "inline-flex")} aria-label={typeLabels[item.type]}>
               <TypeIcon type={item.type} size={16} className="opacity-60" />
             </span>
           </TooltipTrigger>

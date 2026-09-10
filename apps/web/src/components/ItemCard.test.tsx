@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { ItemCard } from "./ItemCard";
@@ -32,6 +33,20 @@ function renderCard(item: RegistryItem) {
     </MemoryRouter>
   );
 }
+
+describe("ItemCard plugin type badge", () => {
+  // A wrapper plugin cross-listed on the skills page, or featured on the home
+  // page, has no filter to offer, so the badge is plain content. It still has
+  // to sit above the link stretched over the card, or hover never reaches it.
+  it("explains what a wrapper is on hover, even where the badge filters nothing", async () => {
+    renderCard(skill({ type: "plugin", pluginType: "wrapper", wrapper: "skill", sourceType: "community" }));
+    const badge = screen.getByText("Wrapper");
+    expect(badge.parentElement?.className).toContain("z-10");
+
+    await userEvent.hover(badge);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Packages a single skill as a plugin");
+  });
+});
 
 describe("ItemCard label badge", () => {
   beforeEach(() => {

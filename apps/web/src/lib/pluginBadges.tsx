@@ -1,5 +1,6 @@
 import { Package, Puzzle, Plug } from "lucide-react";
-import type { PluginType, RegistryItem } from "@/lib/types";
+import { typeLabels } from "@/lib/colors";
+import type { ComponentType, PluginType, RegistryItem } from "@/lib/types";
 
 /**
  * How a plugin's classification is presented, in one place.
@@ -20,7 +21,10 @@ export const PLUGIN_TYPE_BADGES: Record<
   wrapper: {
     text: "Wrapper",
     icon: Puzzle,
-    description: (item) => `Wraps a single ${item.wrapper} capability as a plugin`,
+    description: (item) => {
+      const capability = typeLabels[item.wrapper as ComponentType].toLowerCase();
+      return `Packages a single ${capability} as a plugin — installing it adds just that one ${capability}, nothing more.`;
+    },
   },
   integration: {
     text: "Integration",

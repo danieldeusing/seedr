@@ -29,11 +29,11 @@ export function Header() {
 
   return (
     <header className="h-12 border-b border-border bg-card">
-      {/* The bar spans the viewport - the border and background are full-bleed - but its
-          CONTENTS sit in the same centred column as the page, so the brand starts on the
-          same x as the first card. Without this the chrome stays at 16px while the column
-          centres, and the gap grows with the display: 80px at 1600, 560px at 2560. */}
-      <div className="mx-auto flex h-full w-full max-w-[var(--content-w)] items-center gap-2 px-4">
+      {/* Chrome, not content: the bar and its row both span the full viewport, edge to edge,
+          independent of the page's own max-w-[var(--content-w)] column - matching header.bar
+          on every other danieldeusing surface. Only the routed page content is capped and
+          centred; the header and footer never are. */}
+      <div className="flex h-full w-full items-center gap-2 px-4">
         {/* Left: Logo (takes remaining space) */}
         <div className="flex shrink-0 items-center sm:flex-1">
           <Link to="/" className="group flex items-center">
@@ -43,7 +43,7 @@ export function Header() {
         </div>
 
         {/* Center: breadcrumb path + history nav */}
-        <nav aria-label="Breadcrumb and history" className="flex min-w-0 flex-1 items-center gap-1 sm:w-full sm:max-w-[var(--content-w)] sm:px-4">
+        <nav aria-label="Breadcrumb and history" className="flex min-w-0 flex-1 items-center gap-1 sm:w-full sm:px-4">
             <Button
               variant="ghost"
               size="icon-xs"

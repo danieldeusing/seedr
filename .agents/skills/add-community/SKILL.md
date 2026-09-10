@@ -214,13 +214,13 @@ questions:
       - label: "antigravity"
         description: "Google Antigravity (formerly Gemini; `gemini` is a deprecated alias)"
       - label: "opencode"
-        description: "OpenCode CLI"
+        description: "OpenCode CLI — only after the check below"
       - label: "codex"
         description: "OpenAI Codex CLI"
 ```
 
 Notes:
-- If the user selects "All", expand to `["claude", "copilot", "antigravity", "opencode", "codex"]` in the compatibility array. Never write `gemini` into new items — it is only accepted as an alias of `antigravity` until the data migration (`scripts/migrate-agent-ids.ts`) removes it.
+- **Check OpenCode per [opencode-compatibility.md](../../.agents/rules/opencode-compatibility.md) before including it** — never as part of expanding "All". For a plugin, that means confirming the repo ships a `.opencode/plugins/<name>.js` entry with `package.json`'s `main` pointing at it (a subdirectory plugin can never qualify); for a skill, reading the body for Claude-specific instructions rather than assuming the format is enough. "All" for every other agent still expands to `["claude", "copilot", "antigravity", "codex"]`, plus `opencode` only once checked. Never write `gemini` into new items — it is only accepted as an alias of `antigravity` until the data migration (`scripts/migrate-agent-ids.ts`) removes it.
 - Plugins are generally Claude-only (`["claude"]`), since `.claude-plugin` is a Claude concept.
 - Skills may be multi-tool compatible.
 - Only include `targetScope` in the item if the user chose a specific scope (not "No scope").

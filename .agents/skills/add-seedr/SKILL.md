@@ -95,14 +95,14 @@ questions:
       - label: "antigravity"
         description: "Google Antigravity (formerly Gemini; `gemini` is a deprecated alias)"
       - label: "opencode"
-        description: "OpenCode CLI"
+        description: "OpenCode CLI — only after the check below"
       - label: "codex"
         description: "OpenAI Codex CLI"
 ```
 
 Notes:
-- If the user selects "All", pass `["claude", "copilot", "antigravity", "opencode", "codex"]` as the compatibility array. Pass canonical ids only; the operation itself stores the B1 vocabulary (`antigravity` is written as `gemini` until the published CLI understands it — `STORAGE_ALIASES` in `packages/registry-ops/src/agents.ts` is the one flip point, emptied when `scripts/migrate-agent-ids.ts` runs).
-- For hooks, agents, settings, and commands, default compatibility to `["claude"]` only since those types are Claude-specific. Pre-select accordingly.
+- **Check OpenCode per [opencode-compatibility.md](../../.agents/rules/opencode-compatibility.md) before including it**, the same as `/add-community`. A first-party skill, MCP server or rule is usually fine by default unless its content is Claude-specific; a first-party plugin qualifies automatically (seedr copies its own tree for OpenCode to load, no repository needed). "All" for the other four agents expands to `["claude", "copilot", "antigravity", "codex"]`, plus `opencode` only once checked. Pass canonical ids only; the operation itself stores the B1 vocabulary (`antigravity` is written as `gemini` until the published CLI understands it — `STORAGE_ALIASES` in `packages/registry-ops/src/agents.ts` is the one flip point, emptied when `scripts/migrate-agent-ids.ts` runs).
+- For hooks, agents, settings, and commands, default compatibility to `["claude"]` only since `AGENT_COMPATIBILITY` never lists OpenCode (or most other agents) for these types — there is nowhere for the CLI to install them. Pre-select accordingly.
 
 **Batch 2 — Descriptions:**
 

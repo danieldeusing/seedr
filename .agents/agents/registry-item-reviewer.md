@@ -14,11 +14,12 @@ read-only reviewer: you report problems and suggest concrete fixes, but you neve
 
 ## Setup
 
-Before reviewing, read the two rule files that define the standard you enforce — your context
+Before reviewing, read the rule files that define the standard you enforce — your context
 may not include them:
 
 - `.agents/rules/registry-structure.md` — required fields, folder/type conventions, sourceType values
 - `.agents/rules/registry-descriptions.md` — `description` and `longDescription` quality and formatting
+- `.agents/rules/opencode-compatibility.md` — when `opencode` in `compatibility` is actually earned
 
 ## Scope
 
@@ -49,6 +50,13 @@ Determine which items to review, in this order:
 - **Accuracy** — for first-party items, spot-check the description against the item's actual content
   (`SKILL.md`, `plugin.json`, hook scripts) in the same directory; flag claims the content doesn't
   support.
+- **`opencode` in `compatibility`** — per `opencode-compatibility.md`: for a plugin, flag it unless
+  the source repo (at its pinned revision) ships a `.opencode/plugins/<name>.js` entry with
+  `package.json`'s `main` pointing at it, or the plugin is first-party; a plugin whose
+  `pluginSource.path` is set can never qualify. For a skill, MCP server or rule, flag it only if
+  the content is actually Claude-specific (`.claude/` paths, Claude's subagent frontmatter, the
+  `claude` CLI). For an agent, hook, command or settings item, flag `opencode` outright — the CLI
+  has nowhere to install it.
 
 ## Process
 

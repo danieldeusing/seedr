@@ -8,10 +8,10 @@
  * `string`, which no longer fits `LabelColor`. The fallback covers an index
  * compiled before labels existed, which would otherwise crash on first render.
  */
-import indexData from "@registry/manifest.json";
+import { registryIndex } from "./registry";
 import type { LabelDefinition } from "./types";
 
-export const labelCatalogue = (indexData.labels ?? []) as LabelDefinition[];
+export const labelCatalogue = (registryIndex.labels ?? []) as LabelDefinition[];
 
 /** The catalogue entry a slug names; undefined for an absent or unknown slug. */
 export function labelDefinition(slug: string | undefined): LabelDefinition | undefined {

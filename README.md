@@ -66,6 +66,10 @@ npx @danieldeusing/seedr add code-review --dry-run         # Preview without wri
 | `-f, --force` | Overwrite existing files |
 | `-n, --dry-run` | Preview changes without writing files |
 
+A plugin installed for **Copilot** is a Live Plugin loaded straight from the directory `add`
+wrote — `copilot plugin update` doesn't manage it, since there is no marketplace to check for
+a newer version. Re-run `add` with `-f` to pick up a newer revision.
+
 ### `list` (alias: `ls`)
 
 List available content from the registry, or show what's installed locally.

@@ -38,7 +38,9 @@ test.describe("accessibility", () => {
     await cardLink.focus();
     await expect(cardLink).toBeFocused();
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/skills\/[a-z0-9-]+$/);
+    // The first card may be a single-skill plugin, which the skills page lists too and
+    // which opens under /plugins; what matters is that Enter opened the card's detail.
+    await expect(page).toHaveURL(/\/(skills|plugins)\/[a-z0-9-]+$/);
   });
 
   test("the file tree is a keyboard-operable tree", async ({ page }) => {

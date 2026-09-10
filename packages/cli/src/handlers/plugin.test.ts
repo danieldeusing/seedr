@@ -39,6 +39,7 @@ const PROJECT_SETTINGS = `${PROJECT}/.claude/settings.json`;
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const ISO_DATE = "2025-01-01T00:00:00.000Z";
 const MARKETPLACE = "marketplace";
+const CLAUDE_PLUGIN_MANIFEST = ".claude-plugin/plugin.json";
 const OFFICIAL = "claude-plugins-official";
 const COPILOT_SETTINGS = `${HOME}/.copilot/settings.json`;
 const COPILOT_PLUGINS_DIR = `${HOME}/.copilot/installed-plugins`;
@@ -106,7 +107,7 @@ async function serveDownload(pluginJson: Record<string, unknown> | string): Prom
     vol.mkdirSync(`${dest}/.claude-plugin`, { recursive: true });
     vol.writeFileSync(`${dest}/.claude-plugin/plugin.json`, typeof pluginJson === "string" ? pluginJson : JSON.stringify(pluginJson));
     vol.writeFileSync(`${dest}/README.md`, "readme");
-    return { sourceRevision: SHA, contentDigest: "f".repeat(64), files: [".claude-plugin/plugin.json", "README.md"] };
+    return { sourceRevision: SHA, contentDigest: "f".repeat(64), files: [CLAUDE_PLUGIN_MANIFEST, "README.md"] };
   });
 }
 
@@ -156,7 +157,14 @@ describe("plugin handler", () => {
       expect(vol.readFileSync(`${cachePath}/README.md`, "utf-8")).toBe("readme");
       const settings = readJsonFile(COPILOT_SETTINGS);
       expect(settings.enabledPlugins["my-plugin@marketplace"]).toBe(true);
-      expect(settings.extraKnownMarketplaces[MARKETPLACE]).toEqual({ source: { source: "github", repo: "owner/my-plugin" } });
+      // The downloaded tree is the marketplace, not the upstream repository:
+      // Copilot validates a fetched marketplace whole, and the Anthropic
+      // marketplaces every mirrored item names fail that validation, so a
+      // `github` source here installs nothing and reports nothing.
+      expect(settings.extraKnownMarketplaces[MARKETPLACE]).toEqual({ source: { source: "directory", path: cachePath } });
+      const selfMarketplace = readJsonFile(`${cachePath}/.claude-plugin/marketplace.json`);
+      expect(selfMarketplace.name).toBe(MARKETPLACE);
+      expect(selfMarketplace.plugins).toEqual([expect.objectContaining({ name: "my-plugin", source: "./" })]);
       expect(vol.existsSync(INSTALLED_PATH)).toBe(false);
       expect(vol.existsSync(CACHE_DIR)).toBe(false);
     });
@@ -613,7 +621,7 @@ describe("plugin handler", () => {
       ]);
       expect(vol.existsSync(CACHE_DIR)).toBe(false);
       expect(vol.existsSync(INSTALLED_PATH)).toBe(false);
-      expect(fetchItemFile).toHaveBeenCalledWith(pluginItem(), ".claude-plugin/plugin.json");
+      expect(fetchItemFile).toHaveBeenCalledWith(pluginItem(), CLAUDE_PLUGIN_MANIFEST);
     });
 
     it("reads plugin.json from a local checkout and reports modifications of existing files", async () => {
@@ -670,6 +678,51 @@ describe("plugin handler", () => {
         return { sourceRevision: SHA, contentDigest: "f".repeat(64), files: [extraManifest, "README.md"] };
       });
     }
+
+    // Copilot reads `.github/plugin/marketplace.json` in preference to the
+    // Claude one where a tree ships both — verified against ponytail, whose
+    // copy registered under the name in that file and not the name seedr had
+    // chosen, so `plugin@<seedr marketplace>` did not resolve at all.
+    it("aligns Copilot's own marketplace manifest when the tree ships one", async () => {
+      const { fetchItemToDestination } = await import("../config/registry.js");
+      vi.mocked(fetchItemToDestination).mockImplementation(async (_item: RegistryItem, dest: string) => {
+        vol.mkdirSync(`${dest}/.claude-plugin`, { recursive: true });
+        vol.writeFileSync(`${dest}/.claude-plugin/plugin.json`, JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+        vol.mkdirSync(`${dest}/.claude-plugin`, { recursive: true });
+        vol.writeFileSync(`${dest}/.claude-plugin/marketplace.json`, JSON.stringify({ name: "upstream", plugins: [{ name: "my-plugin", source: "./" }] }));
+        vol.mkdirSync(`${dest}/.github/plugin`, { recursive: true });
+        vol.writeFileSync(
+          `${dest}/.github/plugin/marketplace.json`,
+          JSON.stringify({ name: "upstream", plugins: [{ name: "my-plugin", source: "./", skills: "skills/", hooks: "hooks/copilot-hooks.json" }] })
+        );
+        vol.writeFileSync(`${dest}/README.md`, "readme");
+        return { sourceRevision: SHA, contentDigest: "f".repeat(64), files: [CLAUDE_PLUGIN_MANIFEST, "README.md"] };
+      });
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["copilot"], "project", "copy", true, PROJECT);
+
+      const cachePath = `${COPILOT_PLUGINS_DIR}/${MARKETPLACE}/my-plugin`;
+      const copilotManifest = readJsonFile(`${cachePath}/.github/plugin/marketplace.json`);
+      expect(copilotManifest.name).toBe(MARKETPLACE);
+      // The per-plugin keys are what tell Copilot where the skills and hooks
+      // are; aligning the name must not cost them.
+      expect(copilotManifest.plugins).toEqual([{ name: "my-plugin", source: "./", skills: "skills/", hooks: "hooks/copilot-hooks.json" }]);
+      expect(readJsonFile(`${cachePath}/.claude-plugin/marketplace.json`).name).toBe(MARKETPLACE);
+    });
+
+    it("does not invent a Copilot marketplace manifest for a tree without one", async () => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["copilot"], "project", "copy", true, PROJECT);
+
+      // Copilot falls back to the Claude manifest, and a second sparser file
+      // would change which per-plugin keys it reads.
+      const cachePath = `${COPILOT_PLUGINS_DIR}/${MARKETPLACE}/my-plugin`;
+      expect(vol.existsSync(`${cachePath}/.github/plugin/marketplace.json`)).toBe(false);
+      expect(readJsonFile(`${cachePath}/.claude-plugin/marketplace.json`).name).toBe(MARKETPLACE);
+    });
 
     it("writes Codex marketplace and plugin tables into config.toml", async () => {
       await serveDownload({ name: "my-plugin", version: "2.1.0" });

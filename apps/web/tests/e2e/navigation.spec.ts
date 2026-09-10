@@ -10,7 +10,8 @@ test.describe("unified navigation history", () => {
     await page.goto("/");
     await page.goto("/skills");
     await page.getByTestId("item-card").first().click();
-    await expect(page).toHaveURL(/\/skills\/[a-z0-9-]+$/);
+    // a single-skill plugin listed under skills opens under /plugins; either is a detail page
+    await expect(page).toHaveURL(/\/(skills|plugins)\/[a-z0-9-]+$/);
     const detailUrl = page.url();
 
     await page.goBack();

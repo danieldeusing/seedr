@@ -56,6 +56,8 @@ test.describe("network behaviour and privacy", () => {
 
   test("localStorage keys match the privacy policy's list", async ({ page }) => {
     await page.goto("/privacy");
+    // the app renders once its registry has been fetched; wait for the page's content
+    await page.locator("code").first().waitFor();
     const documented = await page.evaluate(() =>
       Array.from(document.querySelectorAll("code")).map((node) => node.textContent ?? "")
     );

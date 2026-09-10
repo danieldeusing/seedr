@@ -1,5 +1,5 @@
 import type { IFuseOptions } from "fuse.js";
-import { canonicalAgents, canonicalSourceType, typeDirName } from "@seedr/registry-ops/pure";
+import { ALL_TYPES, canonicalAgents, canonicalSourceType, typeDirName } from "@seedr/registry-ops/pure";
 import { itemsInCategory } from "../../scripts/site-meta.mjs";
 import type { RegistryManifest, RegistryManifestIndex, RegistryItem, ComponentType, FileTreeNode, TypeManifest } from "./types";
 
@@ -7,7 +7,7 @@ import type { RegistryManifest, RegistryManifestIndex, RegistryItem, ComponentTy
 // cached JSON, not in the entry chunk. The build emits the index, the per-type
 // manifests and every item.json under /registry/ (vite.config.ts), dev serves the
 // same paths from the configured registry directory, and the tests answer them
-// from disk (src/test/setup.ts). The module awaits the manifests once, so every
+// from disk (tests/registry-fetch.setup.ts). The module awaits the manifests once, so every
 // export below stays synchronous for its callers.
 const REGISTRY_BASE = "/registry";
 
@@ -17,10 +17,13 @@ async function fetchRegistryFile<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export const registryIndex = await fetchRegistryFile<RegistryManifestIndex>("manifest.json");
-const typeManifests = await Promise.all(
-  Object.values(registryIndex.types).map((descriptor) => fetchRegistryFile<TypeManifest>(descriptor.file))
-);
+// The per-type files sit at the one conventional path (typeDirName), so they are
+// requested alongside the index rather than after it: one round trip before first paint.
+const [registryIndex, ...typeManifests] = await Promise.all([
+  fetchRegistryFile<RegistryManifestIndex>("manifest.json"),
+  ...ALL_TYPES.map((type) => fetchRegistryFile<TypeManifest>(`${typeDirName(type)}/manifest.json`)),
+]);
+export { registryIndex };
 
 // Dev-only test item for testing media previews (served from apps/web/dev-samples
 // by the vite dev middleware; kept out of public/ so it isn't deployed)

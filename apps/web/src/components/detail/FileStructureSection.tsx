@@ -6,6 +6,7 @@ import {
   ChevronsUpDown,
   Code2,
   FileCode,
+  FileText,
   Folder,
   FolderOpen,
   FolderTree,
@@ -330,9 +331,17 @@ export function FileStructureSection({ files, rootName, initialHeight = 500, loa
 
   const selectedName = selectedPath?.split("/").pop() ?? "";
   const showModeToggle = result?.kind === "text" && !isLoading;
+  const isMarkdown = result?.kind === "text" && result.language === "markdown";
+  // "formatted" only means something for markdown; falling back rather than
+  // leaving it selected keeps the toggle from showing no button pressed when
+  // the reader picks a non-markdown file with "formatted" still chosen.
+  const effectiveMode: PreviewMode = mode === "formatted" && !isMarkdown ? "syntax" : mode;
 
   const modeOptions: { value: PreviewMode; icon: ReactNode; description: string }[] = [
     { value: "syntax", icon: <Code2 className="size-3" />, description: "Syntax highlighting" },
+    ...(isMarkdown
+      ? [{ value: "formatted" as const, icon: <FileText className="size-3" />, description: "Formatted" }]
+      : []),
     { value: "plain", icon: <Type className="size-3" />, description: "Plain text" },
   ];
 
@@ -355,7 +364,7 @@ export function FileStructureSection({ files, rootName, initialHeight = 500, loa
     panelBody = (
       <PreviewErrorBoundary resetKey={selectedPath}>
         <Suspense fallback={<div className="h-full bg-card" />}>
-          <FilePreview result={result} name={selectedName} mode={mode} openUrl={fileUrl(relativePathOf(selectedPath))} />
+          <FilePreview result={result} name={selectedName} mode={effectiveMode} openUrl={fileUrl(relativePathOf(selectedPath))} />
         </Suspense>
       </PreviewErrorBoundary>
     );
@@ -422,8 +431,8 @@ export function FileStructureSection({ files, rootName, initialHeight = 500, loa
                           variant="ghost"
                           size="icon-xs"
                           aria-label={option.description}
-                          aria-pressed={mode === option.value}
-                          className={cn("size-5", mode === option.value && "bg-secondary text-primary")}
+                          aria-pressed={effectiveMode === option.value}
+                          className={cn("size-5", effectiveMode === option.value && "bg-secondary text-primary")}
                           onClick={() => setMode(option.value)}
                         >
                           {option.icon}

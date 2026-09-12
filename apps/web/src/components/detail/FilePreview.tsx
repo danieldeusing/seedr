@@ -3,8 +3,10 @@ import { AlertCircle, ExternalLink, FileArchive } from "lucide-react";
 import { tokenize, type TokenType } from "@/lib/highlight";
 import { formatBytes, type PreviewResult } from "@/lib/preview";
 import { cn } from "@/lib/utils";
+import { MarkdownText } from "./MarkdownText";
+import { MARKDOWN_CLASSES } from "./RegistryDetail";
 
-export type PreviewMode = "syntax" | "plain";
+export type PreviewMode = "syntax" | "formatted" | "plain";
 
 const TOKEN_CLASSES: Record<TokenType, string> = {
   comment: "text-muted-foreground italic",
@@ -16,7 +18,19 @@ const TOKEN_CLASSES: Record<TokenType, string> = {
 };
 
 export function TextPreview({ text, language, mode }: { text: string; language: string; mode: PreviewMode }) {
-  const lines = useMemo(() => tokenize(text, mode === "syntax" ? language : "plaintext"), [text, language, mode]);
+  // Rendered markdown has no line-number gutter of its own, so it skips the
+  // tokenized <pre> below entirely rather than reusing its per-line layout.
+  const lines = useMemo(
+    () => (mode === "formatted" ? [] : tokenize(text, mode === "syntax" ? language : "plaintext")),
+    [text, language, mode]
+  );
+  if (mode === "formatted") {
+    return (
+      <div className={cn("p-3", MARKDOWN_CLASSES)}>
+        <MarkdownText>{text}</MarkdownText>
+      </div>
+    );
+  }
   const gutterWidth = `${String(lines.length).length + 1}ch`;
   return (
     <pre className="p-3 font-mono text-sm leading-relaxed text-foreground" aria-label="File contents">

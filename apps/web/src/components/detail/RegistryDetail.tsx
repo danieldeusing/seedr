@@ -33,7 +33,10 @@ function DetailLabel({ label }: { label: DetailLabelData }) {
   );
 }
 
-const MARKDOWN_CLASSES =
+// Shared with FilePreview's "formatted" mode: the estate styles plain markdown
+// output directly rather than pulling in a prose plugin, so both callers apply
+// the same element rules instead of drifting apart.
+export const MARKDOWN_CLASSES =
   "text-md text-muted-foreground leading-relaxed [&_strong]:text-foreground " +
   "[&_code]:px-1.5 [&_code]:py-0.5 [&_code]:bg-secondary [&_code]:border [&_code]:border-border [&_code]:text-foreground [&_code]:font-mono [&_code]:text-sm " +
   "[&_h1]:text-lg [&_h1]:font-semibold [&_h1]:text-foreground [&_h1]:mb-2 " +

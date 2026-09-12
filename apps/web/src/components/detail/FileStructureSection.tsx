@@ -37,6 +37,8 @@ export interface FileStructureSectionProps {
   sourceHost: string;
   /** Page for a file on its host (shown for binaries), or null when there is none. */
   fileUrl: (relativePath: string) => string | null;
+  /** Whether this item's own content is trusted enough to run script when rendered — see FilePreview's HtmlPreview. */
+  isFirstParty: boolean;
 }
 
 function nodeHasFiles(node: FileTreeNode): boolean {
@@ -232,7 +234,7 @@ function useSelectedFile(loadFile: FileStructureSectionProps["loadFile"], relati
   return { selectedPath, select, result, isLoading: selectedPath !== null && selectedPath !== loadedPath };
 }
 
-export function FileStructureSection({ files, rootName, initialHeight = 500, loadFile, sourceHost, fileUrl }: FileStructureSectionProps) {
+export function FileStructureSection({ files, rootName, initialHeight = 500, loadFile, sourceHost, fileUrl, isFirstParty }: FileStructureSectionProps) {
   const root = useMemo<FileTreeNode>(() => ({ name: rootName, type: "directory", children: files }), [files, rootName]);
   const allDirPaths = useMemo(() => collectDirPaths(root, rootName), [root, rootName]);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set(allDirPaths));
@@ -366,7 +368,13 @@ export function FileStructureSection({ files, rootName, initialHeight = 500, loa
     panelBody = (
       <PreviewErrorBoundary resetKey={selectedPath}>
         <Suspense fallback={<div className="h-full bg-card" />}>
-          <FilePreview result={result} name={selectedName} mode={effectiveMode} openUrl={fileUrl(relativePathOf(selectedPath))} />
+          <FilePreview
+            result={result}
+            name={selectedName}
+            mode={effectiveMode}
+            openUrl={fileUrl(relativePathOf(selectedPath))}
+            isFirstParty={isFirstParty}
+          />
         </Suspense>
       </PreviewErrorBoundary>
     );

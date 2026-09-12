@@ -21,7 +21,7 @@ function loadFile(relativePath: string): Promise<PreviewResult> {
   return Promise.resolve({ kind: "text", text: "echo hi", language: "shell", size: 7 });
 }
 
-function renderSection() {
+function renderSection(isFirstParty = false) {
   return render(
     <FileStructureSection
       files={files}
@@ -29,6 +29,7 @@ function renderSection() {
       loadFile={loadFile}
       sourceHost="github.com"
       fileUrl={() => null}
+      isFirstParty={isFirstParty}
     />
   );
 }
@@ -59,6 +60,20 @@ describe("FileStructureSection formatted mode", () => {
     // of what a community repository's HTML file contains.
     expect(iframe).toHaveAttribute("sandbox", "");
     expect(iframe).toHaveAttribute("srcdoc", "<h1>Docs</h1>");
+    // A stray click inside can never leave the preview stranded on whatever the
+    // iframe navigated to.
+    expect(iframe.className).toContain("pointer-events-none");
+  });
+
+  it("allows scripts (but never same-origin access) in a first-party item's HTML preview", async () => {
+    const user = userEvent.setup();
+    renderSection(true);
+
+    await user.click(screen.getByText("docs.html"));
+    await user.click(await screen.findByRole("button", { name: "Formatted" }));
+
+    const iframe = await screen.findByTitle("Rendered HTML");
+    expect(iframe).toHaveAttribute("sandbox", "allow-scripts");
   });
 
   it("does not offer Formatted for a non-markdown file", async () => {

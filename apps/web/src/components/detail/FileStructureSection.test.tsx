@@ -5,9 +5,12 @@ import { FileStructureSection } from "./FileStructureSection";
 import type { FileTreeNode } from "@/lib/types";
 import type { PreviewResult } from "@/lib/preview";
 
+const RENDERED_HTML_TITLE = "Rendered HTML";
+
 const files: FileTreeNode[] = [
   { name: "SKILL.md", type: "file" },
   { name: "docs.html", type: "file" },
+  { name: "page.html", type: "file" },
   { name: "script.sh", type: "file" },
 ];
 
@@ -17,6 +20,14 @@ function loadFile(relativePath: string): Promise<PreviewResult> {
   }
   if (relativePath === "docs.html") {
     return Promise.resolve({ kind: "text", text: "<h1>Docs</h1>", language: "html", size: 13 });
+  }
+  if (relativePath === "page.html") {
+    return Promise.resolve({
+      kind: "text",
+      text: '<html><head><meta charset="utf-8"></head><body><h1>Page</h1></body></html>',
+      language: "html",
+      size: 73,
+    });
   }
   return Promise.resolve({ kind: "text", text: "echo hi", language: "shell", size: 7 });
 }
@@ -55,14 +66,29 @@ describe("FileStructureSection formatted mode", () => {
     await user.click(screen.getByText("docs.html"));
     await user.click(await screen.findByRole("button", { name: "Formatted" }));
 
-    const iframe = await screen.findByTitle("Rendered HTML");
+    const iframe = await screen.findByTitle(RENDERED_HTML_TITLE);
     // No token at all: no scripts, no same-origin access to this page, regardless
     // of what a community repository's HTML file contains.
     expect(iframe).toHaveAttribute("sandbox", "");
-    expect(iframe).toHaveAttribute("srcdoc", "<h1>Docs</h1>");
-    // A stray click inside can never leave the preview stranded on whatever the
-    // iframe navigated to.
-    expect(iframe.className).toContain("pointer-events-none");
+    // A <base target="_blank"> is prepended so any link click tries to open a new
+    // tab rather than navigate this iframe away — and since the sandbox above
+    // never grants allow-popups, that attempt does nothing instead of stranding
+    // the preview on a blank or broken page.
+    expect(iframe).toHaveAttribute("srcdoc", '<base target="_blank"><h1>Docs</h1>');
+  });
+
+  it("inserts the blocked-navigation base tag inside an existing <head>, rather than prepending it", async () => {
+    const user = userEvent.setup();
+    renderSection();
+
+    await user.click(screen.getByText("page.html"));
+    await user.click(await screen.findByRole("button", { name: "Formatted" }));
+
+    const iframe = await screen.findByTitle(RENDERED_HTML_TITLE);
+    expect(iframe).toHaveAttribute(
+      "srcdoc",
+      '<html><head><base target="_blank"><meta charset="utf-8"></head><body><h1>Page</h1></body></html>'
+    );
   });
 
   it("allows scripts (but never same-origin access) in a first-party item's HTML preview", async () => {
@@ -72,7 +98,7 @@ describe("FileStructureSection formatted mode", () => {
     await user.click(screen.getByText("docs.html"));
     await user.click(await screen.findByRole("button", { name: "Formatted" }));
 
-    const iframe = await screen.findByTitle("Rendered HTML");
+    const iframe = await screen.findByTitle(RENDERED_HTML_TITLE);
     expect(iframe).toHaveAttribute("sandbox", "allow-scripts");
   });
 

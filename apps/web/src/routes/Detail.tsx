@@ -130,8 +130,7 @@ export function Detail() {
 
   // Where this item's files live. Nothing is requested from that host until the
   // visitor selects a file in the tree (see FileStructureSection).
-  const externalUrl = item?.externalUrl;
-  const fileSource = useMemo(() => resolveFileSource(externalUrl, import.meta.env.DEV), [externalUrl]);
+  const fileSource = useMemo(() => (item ? resolveFileSource(item) : null), [item]);
   const loadFile = useCallback(
     async (relativePath: string): Promise<PreviewResult> => {
       const rawUrl = fileSource?.rawUrl(relativePath);

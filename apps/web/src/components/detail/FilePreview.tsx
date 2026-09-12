@@ -18,16 +18,25 @@ const TOKEN_CLASSES: Record<TokenType, string> = {
 };
 
 /**
+ * Every link becomes a would-be new tab instead of a navigation of this
+ * iframe: `sandbox` below never grants `allow-popups`, so that new tab never
+ * actually opens — the click just does nothing, rather than sending the
+ * iframe itself somewhere else. That matters because React only rewrites
+ * `srcDoc` when the string prop changes, so an iframe that DID navigate away
+ * (even to a dead in-page anchor, or a relative path that resolves to
+ * nothing) would have no way back; it'd stay stranded until a different file
+ * is selected. A `<head>`-less fragment gets the tag prepended instead —
+ * still effective, since browsers hoist a stray `<base>` on parse.
+ */
+function withBlockedNavigation(html: string): string {
+  return /<head[^>]*>/i.test(html)
+    ? html.replace(/<head([^>]*)>/i, '<head$1><base target="_blank">')
+    : `<base target="_blank">${html}`;
+}
+
+/**
  * An HTML file rendered as itself, not its source — a plugin's docs page is
  * meant to be looked at, not read as markup.
- *
- * `pointer-events-none` is load-bearing, not cosmetic: this is a look, don't
- * touch preview, and the iframe has no way to recover if a click inside it
- * navigates away — React only rewrites `srcDoc` when the string prop itself
- * changes, so once a link (even one to nowhere, or a dead in-page tab) sends
- * the iframe somewhere else, it stays there, stranded, until a different file
- * is selected. Disabling every pointer interaction is what actually fixes
- * that, for content whether or not it happens to carry navigation at all.
  *
  * `sandbox` never grants `allow-same-origin`, so the document's origin is
  * opaque regardless: it can never read this site's cookies or storage, or
@@ -44,9 +53,9 @@ export function HtmlPreview({ html, isFirstParty }: { html: string; isFirstParty
   return (
     <iframe
       title="Rendered HTML"
-      srcDoc={html}
+      srcDoc={withBlockedNavigation(html)}
       sandbox={isFirstParty ? "allow-scripts" : ""}
-      className="pointer-events-none h-full min-h-[70vh] w-full border-0 bg-white"
+      className="h-full min-h-[70vh] w-full border-0 bg-white"
     />
   );
 }

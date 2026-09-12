@@ -240,6 +240,7 @@ export function Detail() {
           loadFile={loadFile}
           sourceHost={fileSource.host}
           fileUrl={fileSource.pageUrl}
+          isFirstParty={item.sourceType === "seedr"}
         />
       )}
 

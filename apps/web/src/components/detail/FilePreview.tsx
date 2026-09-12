@@ -19,24 +19,46 @@ const TOKEN_CLASSES: Record<TokenType, string> = {
 
 /**
  * An HTML file rendered as itself, not its source — a plugin's docs page is
- * meant to be looked at, not read as markup. `sandbox` carries no tokens at
- * all, so nothing in the file can run script or reach this origin: content
- * from a community repository is exactly as untrusted as any other file this
- * preview shows, this is just the one format that can otherwise LOOK inert
- * and act otherwise.
+ * meant to be looked at, not read as markup.
+ *
+ * `pointer-events-none` is load-bearing, not cosmetic: this is a look, don't
+ * touch preview, and the iframe has no way to recover if a click inside it
+ * navigates away — React only rewrites `srcDoc` when the string prop itself
+ * changes, so once a link (even one to nowhere, or a dead in-page tab) sends
+ * the iframe somewhere else, it stays there, stranded, until a different file
+ * is selected. Disabling every pointer interaction is what actually fixes
+ * that, for content whether or not it happens to carry navigation at all.
+ *
+ * `sandbox` never grants `allow-same-origin`, so the document's origin is
+ * opaque regardless: it can never read this site's cookies or storage, or
+ * reach back into this page, first-party or not. What `isFirstParty` alone
+ * decides is `allow-scripts` — a Mermaid diagram, or the pre-paint theme
+ * script a danieldeusing-design page ships, needs it to draw anything at
+ * all, and that's worth allowing for a doc Daniel or a trusted session
+ * actually wrote. It stays withheld for a community item's HTML: that
+ * content is exactly as unreviewed as everything else this preview shows,
+ * and script is the one format that can otherwise look inert and act
+ * otherwise.
  */
-export function HtmlPreview({ html }: { html: string }) {
-  return <iframe title="Rendered HTML" srcDoc={html} sandbox="" className="h-full min-h-[70vh] w-full border-0 bg-white" />;
+export function HtmlPreview({ html, isFirstParty }: { html: string; isFirstParty: boolean }) {
+  return (
+    <iframe
+      title="Rendered HTML"
+      srcDoc={html}
+      sandbox={isFirstParty ? "allow-scripts" : ""}
+      className="pointer-events-none h-full min-h-[70vh] w-full border-0 bg-white"
+    />
+  );
 }
 
-export function TextPreview({ text, language, mode }: { text: string; language: string; mode: PreviewMode }) {
+export function TextPreview({ text, language, mode, isFirstParty }: { text: string; language: string; mode: PreviewMode; isFirstParty: boolean }) {
   // Rendered markdown has no line-number gutter of its own, so it skips the
   // tokenized <pre> below entirely rather than reusing its per-line layout.
   const lines = useMemo(
     () => (mode === "formatted" ? [] : tokenize(text, mode === "syntax" ? language : "plaintext")),
     [text, language, mode]
   );
-  if (mode === "formatted" && language === "html") return <HtmlPreview html={text} />;
+  if (mode === "formatted" && language === "html") return <HtmlPreview html={text} isFirstParty={isFirstParty} />;
   if (mode === "formatted") {
     return (
       <div className={cn("p-3", MARKDOWN_CLASSES)}>
@@ -134,12 +156,14 @@ export interface FilePreviewProps {
   mode: PreviewMode;
   /** Page for this file on its host, for binaries the app never decodes. */
   openUrl: string | null;
+  /** Whether this item's own content is trusted enough to run script when rendered — see HtmlPreview. */
+  isFirstParty: boolean;
 }
 
-export function FilePreview({ result, name, mode, openUrl }: FilePreviewProps) {
+export function FilePreview({ result, name, mode, openUrl, isFirstParty }: FilePreviewProps) {
   switch (result.kind) {
     case "text":
-      return <TextPreview text={result.text} language={result.language} mode={mode} />;
+      return <TextPreview text={result.text} language={result.language} mode={mode} isFirstParty={isFirstParty} />;
     case "image":
       return <ImagePreview bytes={result.bytes} mime={result.mime} name={name} />;
     case "binary":

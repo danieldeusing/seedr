@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin, type PreviewServer, type ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { dirname, resolve } from "path";
+import { dirname, join, relative, resolve } from "path";
 import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import type { IncomingMessage, ServerResponse } from "http";
 import { parseHeadersFile, headersFor } from "./scripts/headers-file.mjs";
@@ -47,49 +47,64 @@ function serveDir(
 
 // The registry the app renders is fetched at runtime, not bundled: a few thousand
 // plugin records belong in cached JSON, not in the entry chunk. The build emits the
-// index, the per-type manifests and every item.json under dist/registry/; dev answers
-// the same paths from the configured registry directory (which a fork moves with
+// index, the per-type manifests, every item.json, and a first-party item's whole
+// content tree (its file preview reads that back, same origin, in dev and
+// production alike — see fileSource.ts) under dist/registry/; dev answers the
+// same paths from the configured registry directory (which a fork moves with
 // seedr.config.json, unlike the upstream registry the plugin below serves).
+const ITEM_MANIFEST = "item.json";
+
 function registryDataPlugin(): Plugin {
-  const registryFiles = (): { path: string; source: string }[] => {
-    const read = (path: string): string => readFileSync(resolve(registryDir, path), "utf-8");
-    const index = JSON.parse(read("manifest.json")) as { types: Record<string, { file: string }> };
+  const read = (path: string): Buffer => readFileSync(resolve(registryDir, path));
+  const readJson = <T,>(path: string): T => JSON.parse(read(path).toString("utf-8")) as T;
+
+  // Every file under `dir`, recursively, as paths relative to `registryDir`.
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory() ? walk(join(dir, entry.name)) : [relative(registryDir, join(dir, entry.name))]
+    );
+
+  // One item's contribution: its item.json alone, unless it's first-party, in
+  // which case its whole tree — the file preview reads a first-party item back
+  // from here, not from GitHub, so its bytes have to actually be here too. See
+  // fileSource.ts for why a first-party item can never rely on
+  // raw.githubusercontent.com.
+  const itemFiles = (typeDir: string, slug: string): string[] => {
+    const itemPath = `${typeDir}/${slug}/${ITEM_MANIFEST}`;
+    if (!existsSync(resolve(registryDir, itemPath))) return [];
+    const item = readJson<{ sourceType?: string }>(itemPath);
+    return item.sourceType === "seedr" ? walk(resolve(registryDir, typeDir, slug)) : [itemPath];
+  };
+
+  const registryFiles = (): { path: string; source: Buffer }[] => {
+    const index = readJson<{ types: Record<string, { file: string }> }>("manifest.json");
     const files = [{ path: "manifest.json", source: read("manifest.json") }];
     for (const { file } of Object.values(index.types)) {
       files.push({ path: file, source: read(file) });
       const typeDir = dirname(file);
       if (!existsSync(resolve(registryDir, typeDir))) continue;
       for (const entry of readdirSync(resolve(registryDir, typeDir), { withFileTypes: true })) {
-        const itemPath = `${typeDir}/${entry.name}/item.json`;
-        if (entry.isDirectory() && existsSync(resolve(registryDir, itemPath))) files.push({ path: itemPath, source: read(itemPath) });
+        if (!entry.isDirectory()) continue;
+        for (const path of itemFiles(typeDir, entry.name)) files.push({ path, source: read(path) });
       }
     }
     return files;
   };
-  const data = serveDir("/registry/", registryDir, { mimeTypes: { json: "application/json" } });
+  const data = serveDir("/registry/", registryDir, { mimeTypes: { json: "application/json", md: "text/markdown", txt: "text/plain" } });
   return {
     name: "registry-data",
     generateBundle() {
       for (const { path, source } of registryFiles()) this.emitFile({ type: "asset", fileName: `registry/${path}`, source });
     },
     configureServer(server: ViteDevServer) {
-      server.middlewares.use((req: DevReq, res: DevRes, next: () => void) =>
-        /\/(manifest|item)\.json(\?.*)?$/.test(req.url ?? "") ? data(req, res, next) : next()
-      );
+      server.middlewares.use((req: DevReq, res: DevRes, next: () => void) => data(req, res, next));
     },
   };
 }
 
-// Dev-only middleware: serve the registry and the dev-sample media (both live
-// outside public/ so they aren't shipped to production).
+// Dev-only middleware: serve the dev-sample media (lives outside public/ so it
+// isn't shipped to production). /registry/ itself is registryDataPlugin's, above.
 function serveLocalFilesPlugin(): Plugin {
-  // The URL prefix mirrors an item's externalUrl path (fileSource.ts rewrites
-  // github.com/danieldeusing/seedr/tree/main/registry/... to a same-origin URL in
-  // dev), so this stays upstream's registry/ even when seedr.config.json moves
-  // the registry the app is built from.
-  const registry = serveDir("/registry/", resolve(__dirname, "../../registry"), {
-    mimeTypes: { md: "text/markdown", json: "application/json", txt: "text/plain" },
-  });
   const devSamples = serveDir("/dev-samples/", resolve(__dirname, "./dev-samples"), {
     binary: true,
     mimeTypes: {
@@ -101,9 +116,7 @@ function serveLocalFilesPlugin(): Plugin {
   return {
     name: "serve-local-files",
     configureServer(server: ViteDevServer) {
-      server.middlewares.use((req: DevReq, res: DevRes, next: () => void) =>
-        registry(req, res, () => devSamples(req, res, next))
-      );
+      server.middlewares.use((req: DevReq, res: DevRes, next: () => void) => devSamples(req, res, next));
     },
   };
 }

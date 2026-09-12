@@ -331,15 +331,17 @@ export function FileStructureSection({ files, rootName, initialHeight = 500, loa
 
   const selectedName = selectedPath?.split("/").pop() ?? "";
   const showModeToggle = result?.kind === "text" && !isLoading;
-  const isMarkdown = result?.kind === "text" && result.language === "markdown";
-  // "formatted" only means something for markdown; falling back rather than
-  // leaving it selected keeps the toggle from showing no button pressed when
-  // the reader picks a non-markdown file with "formatted" still chosen.
-  const effectiveMode: PreviewMode = mode === "formatted" && !isMarkdown ? "syntax" : mode;
+  // "formatted" renders markdown as prose and HTML as itself, in a sandboxed
+  // iframe (see FilePreview's HtmlPreview) — nothing else has a rendered form.
+  const canFormat = result?.kind === "text" && (result.language === "markdown" || result.language === "html");
+  // Falling back rather than leaving "formatted" selected keeps the toggle
+  // from showing no button pressed when the reader opens a file with no
+  // rendered form while "formatted" is still chosen from an earlier one.
+  const effectiveMode: PreviewMode = mode === "formatted" && !canFormat ? "syntax" : mode;
 
   const modeOptions: { value: PreviewMode; icon: ReactNode; description: string }[] = [
     { value: "syntax", icon: <Code2 className="size-3" />, description: "Syntax highlighting" },
-    ...(isMarkdown
+    ...(canFormat
       ? [{ value: "formatted" as const, icon: <FileText className="size-3" />, description: "Formatted" }]
       : []),
     { value: "plain", icon: <Type className="size-3" />, description: "Plain text" },

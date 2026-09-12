@@ -7,12 +7,16 @@ import type { PreviewResult } from "@/lib/preview";
 
 const files: FileTreeNode[] = [
   { name: "SKILL.md", type: "file" },
+  { name: "docs.html", type: "file" },
   { name: "script.sh", type: "file" },
 ];
 
 function loadFile(relativePath: string): Promise<PreviewResult> {
   if (relativePath === "SKILL.md") {
     return Promise.resolve({ kind: "text", text: "# Heading\n\nBody text.", language: "markdown", size: 20 });
+  }
+  if (relativePath === "docs.html") {
+    return Promise.resolve({ kind: "text", text: "<h1>Docs</h1>", language: "html", size: 13 });
   }
   return Promise.resolve({ kind: "text", text: "echo hi", language: "shell", size: 7 });
 }
@@ -41,6 +45,20 @@ describe("FileStructureSection formatted mode", () => {
     // Rendered markdown produces a real heading element, not the literal "# Heading" line.
     expect(await screen.findByRole("heading", { name: "Heading" })).toBeInTheDocument();
     expect(screen.queryByText("# Heading")).not.toBeInTheDocument();
+  });
+
+  it("offers Formatted for an HTML file, and renders it in a script-less sandboxed iframe", async () => {
+    const user = userEvent.setup();
+    renderSection();
+
+    await user.click(screen.getByText("docs.html"));
+    await user.click(await screen.findByRole("button", { name: "Formatted" }));
+
+    const iframe = await screen.findByTitle("Rendered HTML");
+    // No token at all: no scripts, no same-origin access to this page, regardless
+    // of what a community repository's HTML file contains.
+    expect(iframe).toHaveAttribute("sandbox", "");
+    expect(iframe).toHaveAttribute("srcdoc", "<h1>Docs</h1>");
   });
 
   it("does not offer Formatted for a non-markdown file", async () => {

@@ -17,6 +17,18 @@ const TOKEN_CLASSES: Record<TokenType, string> = {
   punct: "text-muted-foreground",
 };
 
+/**
+ * An HTML file rendered as itself, not its source — a plugin's docs page is
+ * meant to be looked at, not read as markup. `sandbox` carries no tokens at
+ * all, so nothing in the file can run script or reach this origin: content
+ * from a community repository is exactly as untrusted as any other file this
+ * preview shows, this is just the one format that can otherwise LOOK inert
+ * and act otherwise.
+ */
+export function HtmlPreview({ html }: { html: string }) {
+  return <iframe title="Rendered HTML" srcDoc={html} sandbox="" className="h-full min-h-[70vh] w-full border-0 bg-white" />;
+}
+
 export function TextPreview({ text, language, mode }: { text: string; language: string; mode: PreviewMode }) {
   // Rendered markdown has no line-number gutter of its own, so it skips the
   // tokenized <pre> below entirely rather than reusing its per-line layout.
@@ -24,6 +36,7 @@ export function TextPreview({ text, language, mode }: { text: string; language: 
     () => (mode === "formatted" ? [] : tokenize(text, mode === "syntax" ? language : "plaintext")),
     [text, language, mode]
   );
+  if (mode === "formatted" && language === "html") return <HtmlPreview html={text} />;
   if (mode === "formatted") {
     return (
       <div className={cn("p-3", MARKDOWN_CLASSES)}>

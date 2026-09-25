@@ -23,4 +23,3 @@ export { update } from "./ops/update.js";
 export { remove } from "./ops/remove.js";
 export { setLabels } from "./ops/setLabels.js";
 export * from "./tx.js";
-export * from "./migrate.js";

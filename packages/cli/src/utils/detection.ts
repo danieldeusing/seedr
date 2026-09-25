@@ -51,7 +51,7 @@ export function getAgentDisplayName(agent: CodingAgent): string {
   return CODING_AGENTS[agent].name;
 }
 
-/** Resolves an id or nickname to a canonical agent; the deprecated `gemini` id becomes `antigravity`. */
+/** Resolves an id or nickname to a canonical agent. */
 export function parseAgentArg(arg: string): CanonicalCodingAgent | null {
   const normalized = arg.toLowerCase().trim();
 
@@ -63,8 +63,6 @@ export function parseAgentArg(arg: string): CanonicalCodingAgent | null {
     gh: "copilot",
     "google-antigravity": "antigravity",
     agy: "antigravity",
-    "gemini-code": "antigravity",
-    gca: "antigravity",
     "openai-codex": "codex",
     oc: "opencode",
   };
@@ -101,6 +99,6 @@ export function parseAgentsArg(agents: string, allAgents: CodingAgent[]): Coding
     .split(",")
     .map((a) => parseAgentArg(a.trim()))
     .filter((a): a is CanonicalCodingAgent => a !== null);
-  // "gemini,antigravity" names one agent twice; install it once.
+  // "agy,antigravity" names one agent twice; install it once.
   return [...new Set(parsed)];
 }

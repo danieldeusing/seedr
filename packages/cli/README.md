@@ -1,8 +1,8 @@
 # @danieldeusing/seedr
 
 Seed your coding agents with capabilities: install curated skills, agents, hooks, plugins,
-MCP servers and settings presets for Claude Code, GitHub Copilot, Gemini, OpenAI Codex and
-OpenCode with one command.
+MCP servers and settings presets for Claude Code, GitHub Copilot, Google Antigravity, OpenAI
+Codex and OpenCode with one command.
 
 ```bash
 npx @danieldeusing/seedr add            # interactive picker

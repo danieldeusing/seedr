@@ -36,9 +36,8 @@ export const RETENTION_DAYS = 90;
 export const RETENTION_DELETE_BATCH = 200;
 export const MAX_BODY_BYTES = 1024;
 
-// Tool ids are validated and canonicalised by the shared agent vocabulary:
-// deprecated ids sent by older CLIs (gemini) are stored under their canonical
-// name (antigravity), so the counts stay one series per tool.
+// Tool ids are validated by the shared agent vocabulary, so the counts stay one
+// series per tool.
 const VALID_TYPES = new Set(["skill", "plugin", "agent", "hook", "mcp", "command", "settings"]);
 const VALID_SCOPES = new Set(["project", "user", "local"]);
 const VERSION_PATTERN = /^[0-9A-Za-z.+-]{1,20}$/;

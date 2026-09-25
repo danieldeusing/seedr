@@ -1,5 +1,5 @@
 import type { ComponentType, FileTreeNode, RegistryItem } from "@seedr/shared";
-import { KNOWN_AGENTS } from "./agents.js";
+import { CANONICAL_AGENTS } from "./agents.js";
 import { CANONICAL_SOURCE_TYPES, isFirstParty } from "./sourceTypes.js";
 import { isLabelSlug } from "./labels.js";
 import { MAX_SLUG_LENGTH, SLUG_PATTERN, isComponentType, isValidSlug, typeDirName } from "./paths.js";
@@ -184,7 +184,7 @@ function checkCompatibility(item: Item, push: Push): void {
     return;
   }
   for (const agent of item.compatibility) {
-    if (!oneOf(KNOWN_AGENTS, agent)) push("compatibility", `unknown coding agent "${String(agent)}"`);
+    if (!oneOf(CANONICAL_AGENTS, agent)) push("compatibility", `unknown coding agent "${String(agent)}"`);
   }
   if (new Set(item.compatibility).size !== item.compatibility.length) {
     push("compatibility", "lists an agent twice");

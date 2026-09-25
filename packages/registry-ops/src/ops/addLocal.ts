@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
-import { canonicalAgent, storageAgents } from "../agents.js";
+import { canonicalAgent, canonicalAgents } from "../agents.js";
 import { itemDir, itemJsonPath, repoRootOf } from "../fsPaths.js";
 import { rememberLocalSource } from "../localSources.js";
 import { INITIAL_VERSION } from "../version.js";
@@ -27,8 +27,8 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
   const dir = itemDir(registryDir, op.type, op.slug);
   // Prepare the item first with a provisional file tree, so every validation
   // failure happens before the copy.
-  // Unknown ids are refused by name; aliases and duplicates normalise to the
-  // B1 storage vocabulary (STORAGE_ALIASES), which is what gets validated and written.
+  // Unknown ids are refused by name; duplicates collapse into canonical order,
+  // which is what gets validated and written.
   const unknown = op.compatibility.filter((agent) => canonicalAgent(agent) === null);
   if (unknown.length > 0) {
     throw new Error(`Item would be invalid: compatibility: unknown coding agent(s) ${unknown.join(", ")}`);
@@ -39,7 +39,7 @@ export function addLocal(registryDir: string, op: AddLocalOp): OpResult {
     type: op.type,
     description: op.description,
     longDescription: op.longDescription,
-    compatibility: storageAgents(op.compatibility),
+    compatibility: canonicalAgents(op.compatibility),
     sourceType: "seedr",
     version: INITIAL_VERSION,
     author: op.author,

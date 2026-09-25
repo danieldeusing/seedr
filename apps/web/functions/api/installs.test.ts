@@ -142,6 +142,7 @@ describe("POST /api/installs", () => {
   it("rejects invalid payloads with 400 and a reason", async () => {
     expect((await run(post({ ...VALID, tool: "vim" }))).response.status).toBe(400);
     expect((await run(post({ ...VALID, tool: "vim" }))).body.code).toBe("invalid_payload");
+    expect((await run(post({ ...VALID, tool: "gemini" }))).body.code).toBe("invalid_payload");
     expect((await run(post([1, 2, 3]))).body).toEqual({ error: "body must be a JSON object", code: "invalid_payload" });
     expect((await run(post({ ...VALID, slug: "../etc" }))).response.status).toBe(400);
     expect((await run(post({ ...VALID, scope: "global" }))).response.status).toBe(400);

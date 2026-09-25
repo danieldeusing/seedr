@@ -127,6 +127,7 @@ describe("add-local", () => {
     const registry = makeRegistry();
     expect(() => applyOp(registry, addLocalOp({ longDescription: "too short" }))).toThrow(/longDescription too short/);
     expect(() => applyOp(registry, addLocalOp({ compatibility: ["bard" as never] }))).toThrow(/unknown coding agent/);
+    expect(() => applyOp(registry, addLocalOp({ compatibility: ["gemini" as never] }))).toThrow(/unknown coding agent\(s\) gemini/);
     expect(existsSync(join(registry, "skills", "new-skill"))).toBe(false);
   });
 });
@@ -196,6 +197,7 @@ describe("update", () => {
     expect(() => applyOp(registry, updateOp(registry, { slug: "gamma", expectedHash: itemStateHash(registry, "skill", "gamma") as string }))).toThrow(/Only first-party items/);
     expect(() => applyOp(registry, updateOp(registry, { contentEdits: [{ path: "../../escape.md", content: "x" }] }))).toThrow(/escapes the item directory/);
     expect(() => applyOp(registry, updateOp(registry, { patch: { compatibility: [] } }))).toThrow(/compatibility/);
+    expect(() => applyOp(registry, updateOp(registry, { patch: { compatibility: ["gemini" as never] } }))).toThrow(/unknown coding agent "gemini"/);
     expect(readItem(registry, "skill", "alpha").description).toBe("Does alpha things.");
   });
 });
@@ -232,12 +234,11 @@ describe("remove", () => {
     writeFileSync(join(source, "real.md"), "real\n");
     symlinkSync(join(source, "real.md"), join(source, "linked.md"));
 
-    const result = applyOp(registry, addLocalOp({ slug: "deref", sourcePath: source, compatibility: ["gemini", "claude", "gemini"] }));
+    const result = applyOp(registry, addLocalOp({ slug: "deref", sourcePath: source, compatibility: ["antigravity", "claude", "antigravity"] }));
 
     const copied = join(registry, "skills", "deref", "linked.md");
     expect(lstatSync(copied).isSymbolicLink()).toBe(false);
     expect(readFileSync(copied, "utf8")).toBe("real\n");
-    // A stored `gemini` resolves on the way in; what is written is canonical.
     expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "antigravity"]);
   });
 
@@ -287,13 +288,6 @@ describe("remove", () => {
     const contents = (result.item as { contents: { files: unknown[]; triggers: unknown[] } }).contents;
     expect(contents.files).toEqual(before.contents?.files);
     expect(contents.triggers).toEqual([{ event: "PostToolUse" }]);
-  });
-
-  test("update rewrites a stored gemini to the canonical antigravity", () => {
-    const registry = makeRegistry();
-    writeFileSync(join(registry, "skills", "alpha", "item.json"), JSON.stringify({ ...readItem(registry, "skill", "alpha"), compatibility: ["gemini"] }, null, 2) + "\n");
-    const result = applyOp(registry, { v: 1, kind: "update", type: "skill", slug: "alpha", expectedHash: itemStateHash(registry, "skill", "alpha") as string, patch: { name: "Alpha 2", compatibility: ["claude", "antigravity"] } });
-    expect((result.item as { compatibility: string[] }).compatibility).toEqual(["claude", "antigravity"]);
   });
 
   test("applyOp dispatches every op kind to its implementation", () => {

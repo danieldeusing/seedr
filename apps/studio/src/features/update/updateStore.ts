@@ -123,7 +123,7 @@ const formFor = (item: StudioItem): UpdateForm => ({
   refreshMeta: true,
   description: item.item.description ?? "",
   longDescription: item.item.longDescription ?? "",
-  // a stored `gemini` shows as antigravity; saving then writes the canonical id
+  // an id outside the vocabulary is dropped here, so saving writes only known agents
   compatibility: canonicalAgents(item.item.compatibility ?? []),
   targetScope: item.item.targetScope ?? "",
   label: item.item.label ?? "",

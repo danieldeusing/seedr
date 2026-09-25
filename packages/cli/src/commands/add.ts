@@ -3,7 +3,6 @@ import chalk from "chalk";
 import type { CodingAgent, InstallScope, InstallMethod, RegistryItem } from "../types.js";
 import type { ComponentType } from "@seedr/shared";
 import { listItems, getItem, getItemsBySlug, searchItems } from "../config/registry.js";
-import { isLegacyAgent } from "@seedr/registry-ops/pure";
 import { parseAgentsArgStrict } from "../utils/detection.js";
 import * as ui from "../utils/ui.js";
 import { getHandler } from "../handlers/registry.js";
@@ -45,7 +44,7 @@ export interface AddOptions {
 // ---------------------------------------------------------------------------
 
 export type AgentResolution =
-  | { ok: true; agents: CodingAgent[]; explicit: boolean; deprecationWarning?: string }
+  | { ok: true; agents: CodingAgent[]; explicit: boolean }
   | { ok: false; error: string };
 
 /** The agents an item can be installed for: its own `compatibility`, narrowed by what the type supports. */
@@ -82,18 +81,11 @@ export function resolveRequestedAgents(
     return { ok: true, agents: [], explicit: false };
   }
 
-  const deprecationWarning = agentsArg
-    .split(",")
-    .map((raw) => raw.trim().toLowerCase())
-    .some((id) => isLegacyAgent(id))
-    ? "'gemini' is now 'antigravity' (Google Antigravity, installs to .agents/)"
-    : undefined;
-
   if (agentsArg.trim() === "all") {
     if (compatible.length === 0) {
       return { ok: false, error: `No agent supports ${item.type} "${item.slug}"` };
     }
-    return { ok: true, agents: compatible, explicit: true, deprecationWarning };
+    return { ok: true, agents: compatible, explicit: true };
   }
 
   const { agents, unknown } = parseAgentsArgStrict(agentsArg);
@@ -118,7 +110,7 @@ export function resolveRequestedAgents(
     };
   }
 
-  return { ok: true, agents, explicit: true, deprecationWarning };
+  return { ok: true, agents, explicit: true };
 }
 
 /**
@@ -285,7 +277,6 @@ async function chooseAgents(options: AddOptions, item: RegistryItem): Promise<Co
     ui.error(resolution.error);
     return null;
   }
-  if (resolution.deprecationWarning) ui.warn(resolution.deprecationWarning);
   if (resolution.agents.length > 0) return resolution.agents;
 
   const compatible = compatibleAgentsFor(item);
@@ -442,7 +433,7 @@ export const addCommand = new Command("add")
   .option("-t, --type <type>", `Content type: ${TYPE_LIST}`)
   .option(
     "-a, --agents <agents>",
-    "Comma-separated coding agents or 'all' (claude,copilot,antigravity,codex,opencode; 'gemini' is a deprecated alias of antigravity). " +
+    "Comma-separated coding agents or 'all' (claude,copilot,antigravity,codex,opencode). " +
       "Every named agent must support the item; 'all' means all compatible agents. " +
       "MCP servers: claude, codex, opencode (copilot's and antigravity's formats are unverified)"
   )

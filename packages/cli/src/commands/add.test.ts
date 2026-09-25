@@ -39,7 +39,7 @@ const SKILL: RegistryItem = {
   name: "Test Skill",
   type: "skill",
   description: "A test skill",
-  compatibility: ["claude", "copilot", "gemini"],
+  compatibility: ["claude", "copilot", "antigravity"],
   sourceType: "seedr",
 };
 
@@ -159,7 +159,7 @@ describe("resolveRequestedAgents", () => {
 
   it("refuses a mix of compatible and incompatible agents as a whole", async () => {
     const { resolveRequestedAgents } = await import("./add.js");
-    const result = resolveRequestedAgents("claude,gemini,codex", MCP);
+    const result = resolveRequestedAgents("claude,antigravity,codex", MCP);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toMatch(/for antigravity, codex\. Compatible agents: claude/);
@@ -179,22 +179,21 @@ describe("resolveRequestedAgents", () => {
 
   it("refuses agents the content type does not support", async () => {
     const { resolveRequestedAgents } = await import("./add.js");
-    const result = resolveRequestedAgents("gemini", HOOK);
+    const result = resolveRequestedAgents("antigravity", HOOK);
     expect(result).toEqual({
       ok: false,
       error: 'Cannot install hook "lint-hook" for antigravity. Compatible agents: claude. antigravity: antigravity does not support hook content',
     });
   });
 
-  it("resolves the deprecated gemini alias to antigravity with a warning", async () => {
+  it("rejects the retired gemini id and its gemini-code nickname as unknown agents", async () => {
     const { resolveRequestedAgents } = await import("./add.js");
-    const result = resolveRequestedAgents("gemini", SKILL);
-    expect(result).toEqual({
-      ok: true,
-      agents: ["antigravity"],
-      explicit: true,
-      deprecationWarning: "'gemini' is now 'antigravity' (Google Antigravity, installs to .agents/)",
-    });
+    for (const retired of ["gemini", "gemini-code"]) {
+      expect(resolveRequestedAgents(retired, SKILL)).toEqual({
+        ok: false,
+        error: `Unknown agent(s): ${retired}. Valid agents: claude, copilot, antigravity, codex, opencode or "all"`,
+      });
+    }
   });
 
   it("rejects unknown agent names instead of dropping them", async () => {

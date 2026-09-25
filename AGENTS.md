@@ -180,25 +180,24 @@ always a typo); the web app shows a label badge on the card and offers a Label f
 Scope, under the first-party source; Studio manages the catalogue in settings → labels and
 offers the picker in add and edit.
 
-### Deprecated spellings in registry data
+### Retired spellings in registry data
 
-One value in `item.json` still carries a deprecated alias:
+No value in `item.json` carries a deprecated alias any more. Two did, and both were deleted
+outright once the data, the CLI and every surface had moved:
 
-| Field | Canonical | Deprecated alias | Vocabulary | Data migrated |
-|---|---|---|---|---|
-| `compatibility` | `antigravity` | `gemini` | `packages/registry-ops/src/agents.ts` | 2026-08-25, CLI 0.1.88 |
+- `sourceType`'s pre-`seedr` spelling, **deleted on 2026-08-26** (CLI 0.1.89). The old spelling
+  appears nowhere in this repository — deliberately, down to the tests, so a grep for it
+  returns nothing. A fork that still carries it is told `unknown sourceType`.
+- `compatibility`'s `gemini`, **deleted on 2026-09-25**. Gemini CLI is no longer a supported
+  agent; Google Antigravity is, as `antigravity`. `gemini` (and the `gemini-code` nickname) is
+  now an unknown agent everywhere: `seedr add -a gemini`, an `item.json` listing it,
+  `?tool=gemini` on the web app and an install event naming it are all refused, and the tests
+  assert exactly that. The `.gemini` strings left in the code are Antigravity's own locations
+  under `~/.gemini/config`, not the retired agent.
 
-`gemini` is accepted on input and resolved on read, so an old `item.json`, an old `--agents`
-flag and a fork that never migrated all still work; nothing writes it any more.
-`scripts/migrate-agent-ids.ts` is the migration, idempotent and now a no-op.
-
-`sourceType` went the same way and finished the journey: its pre-`seedr` alias was **deleted
-outright on 2026-08-26**, once the data, the CLI (0.1.89) and every surface had moved. The old
-spelling appears nowhere in this repository — deliberately, down to the tests, so a grep for
-it returns nothing. A fork that still carries it is told `unknown sourceType`
-instead of being silently accepted, which is the point: one spelling, and a clear error for
-anything else. That is the end state a staged rename is aiming for — canonical in code, alias
-accepted while the published CLI catches up, then the alias deleted.
+One spelling, and a clear error for anything else, is the point. That is the end state a
+staged rename is aiming for — canonical in code, alias accepted while the published CLI
+catches up, then the alias deleted.
 
 ## Managing Registry Items
 

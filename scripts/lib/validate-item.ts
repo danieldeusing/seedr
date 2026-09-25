@@ -5,7 +5,7 @@
  * directly. Both come from the same rules — change them there, not here.
  */
 import {
-  KNOWN_AGENTS,
+  CANONICAL_AGENTS,
   MAX_SLUG_LENGTH,
   SLUG_PATTERN,
   findDuplicateItems,
@@ -18,7 +18,7 @@ import {
 import type { ComponentType, FileTreeNode } from "../sync/types.js";
 
 export { SLUG_PATTERN, MAX_SLUG_LENGTH, flattenFileTree, isSafeNodeName, findDuplicateItems };
-export const CODING_AGENTS = KNOWN_AGENTS;
+export const CODING_AGENTS = CANONICAL_AGENTS;
 
 export interface ValidationContext {
   /** Where the item lives (or will be written); used as the prefix of every message. */

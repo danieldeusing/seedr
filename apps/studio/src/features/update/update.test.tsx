@@ -49,17 +49,14 @@ describe("updateStore", () => {
     expect(formProblems(playwright, { ...form, compatibility: [] }).map((p) => p.field)).toEqual(["compatibility"]);
   });
 
-  test("shows a stored gemini id as antigravity and saves the canonical id", async () => {
+  test("drops a stored gemini id instead of reading it as antigravity", async () => {
     const { playwright } = await items();
-    const legacy: StudioItem = { ...playwright, item: { ...playwright.item, compatibility: ["gemini", "claude"] } };
+    const legacy: StudioItem = { ...playwright, item: { ...playwright.item, compatibility: ["gemini" as never, "claude"] } };
     host();
     await useUpdate.getState().start(legacy);
 
-    expect(useUpdate.getState().form.compatibility).toEqual(["claude", "antigravity"]);
-    expect(toPatch(legacy, useUpdate.getState().form)).toEqual({ compatibility: ["claude", "antigravity"] });
-
-    useUpdate.getState().toggleAgent("claude");
-    expect(useUpdate.getState().form.compatibility).toEqual(["antigravity"]);
+    expect(useUpdate.getState().form.compatibility).toEqual(["claude"]);
+    expect(toPatch(legacy, useUpdate.getState().form)).toEqual({ compatibility: ["claude"] });
   });
 
   test("apply reads the hash, runs the update transaction with the patch, and reports", async () => {

@@ -15,7 +15,7 @@
  * longDescription drafted from its own files (tldr.ts) — curated afterwards, like `name`.
  */
 
-import { CANONICAL_AGENTS, derivePluginCompatibility, storageAgents } from "@seedr/registry-ops/pure";
+import { CANONICAL_AGENTS, derivePluginCompatibility } from "@seedr/registry-ops/pure";
 import { validateItem } from "../lib/validate-item.js";
 import { classifyPlugin, collectContent, findEntry, parseJsonEntry, resolvePluginComponents, withDeclaredLicense, type CollectedContent } from "./content.js";
 import type { GitHubClient } from "./github.js";
@@ -125,9 +125,7 @@ async function buildOfficialSkill(ctx: SourceContext, slug: string, sha: string,
       name: formatName(frontmatter.name),
       type: "skill",
       description: frontmatter.description ?? "",
-      // B1: all agents, downgraded to the ids the published CLI understands
-      // (STORAGE_ALIASES in registry-ops is the one flip point for B2).
-      compatibility: storageAgents(CANONICAL_AGENTS),
+      compatibility: [...CANONICAL_AGENTS],
       sourceType: "official",
       author: { name: "Anthropic" },
       externalUrl: treeUrl(SKILLS_REPO, sha, path),
@@ -263,7 +261,7 @@ export async function buildMarketplacePlugin(ctx: SourceContext, input: PluginBu
       type: "plugin",
       description: entry.description ?? pluginJson?.description ?? "",
       ...(longDescription && { longDescription }),
-      compatibility: storageAgents(derivePluginCompatibility(classification)),
+      compatibility: derivePluginCompatibility(classification),
       ...classification,
       sourceType,
       author: pickAuthor(entry, pluginJson, existing, sourceType === "official" ? "Anthropic" : "Community"),

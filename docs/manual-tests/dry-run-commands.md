@@ -16,7 +16,7 @@ Skills support all AI tools with unified directory structure.
 # Single tool
 npx tsx src/cli.ts add code-smell-doctor -a claude --scope project --method copy --dry-run -y
 npx tsx src/cli.ts add code-smell-doctor -a copilot --scope project --method copy --dry-run -y
-npx tsx src/cli.ts add code-smell-doctor -a gemini --scope project --method copy --dry-run -y
+npx tsx src/cli.ts add code-smell-doctor -a antigravity --scope project --method copy --dry-run -y
 npx tsx src/cli.ts add code-smell-doctor -a codex --scope project --method copy --dry-run -y
 npx tsx src/cli.ts add code-smell-doctor -a opencode --scope project --method copy --dry-run -y
 
@@ -110,7 +110,7 @@ npx tsx src/cli.ts add superpowers -a claude --scope user --dry-run -y
 |------|-------|------|------|
 | skill | project | claude | `.claude/skills/<name>/` |
 | skill | project | copilot | `.github/skills/<name>/` |
-| skill | project | gemini | `.gemini/skills/<name>/` |
+| skill | project | antigravity | `.agents/skills/<name>/` |
 | skill | project | codex | `.codex/skills/<name>/` |
 | skill | project | opencode | `.opencode/skills/<name>/` |
 | skill | user | claude | `~/.claude/skills/<name>/` |
@@ -134,7 +134,7 @@ For skills with `--method symlink`, content is stored in a central location and 
 | Central storage | `.agents/skills/<name>/` |
 | Claude symlink | `.claude/skills/<name>/` → `.agents/skills/<name>/` |
 | Copilot symlink | `.github/skills/<name>/` → `.agents/skills/<name>/` |
-| Gemini symlink | `.gemini/skills/<name>/` → `.agents/skills/<name>/` |
+| Antigravity | none: `.agents/skills/<name>/` is its own project directory |
 | Codex symlink | `.codex/skills/<name>/` → `.agents/skills/<name>/` |
 | OpenCode symlink | `.opencode/skills/<name>/` → `.agents/skills/<name>/` |
 

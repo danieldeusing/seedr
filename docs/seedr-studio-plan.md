@@ -25,6 +25,10 @@
 >   npm matches them. **B2 is prepared, not run:** `scripts/migrate-agent-ids.ts` rewrites
 >   the 31 items that carry `gemini` (verified on a copy) and is to be run after the B1 CLI
 >   is published.
+> - §5 / B2 and B3: the data migration ran on 2026-08-25 (CLI 0.1.88). B3 followed on
+>   2026-09-25: the alias, the `gemini-code` nickname and `scripts/migrate-agent-ids.ts` are
+>   deleted, and `gemini` is an unknown agent on every surface (AGENTS.md, "Retired spellings
+>   in registry data").
 > - §6.5: the Test action runs the checkout's own CLI (`node node_modules/tsx/dist/cli.mjs
 >   packages/cli/src/cli.ts add … --agents all --scope project --method copy --yes`) in a
 >   scratch directory the host creates and removes, then compares what was written with the

@@ -7,7 +7,6 @@ import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
 import { brand } from "../utils/ui.js";
 import { getItemContent, getItemSourcePath, mainFileName } from "../config/registry.js";
-import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { getContentPath, CODING_AGENTS } from "../config/agents.js";
 import { exists, ensureDir, writeTextFile, installFile, assertOverwritable, resolveContained } from "../utils/fs.js";
 import { assertValidSlug } from "../utils/slug.js";
@@ -21,7 +20,7 @@ const SLUG_LABEL = "agent slug";
  * a plain `.md` in that directory is a different kind of file.
  */
 export function subagentFileName(agent: CodingAgent, slug: string): string {
-  return (canonicalAgent(agent) ?? agent) === "copilot" ? `${slug}.agent.md` : `${slug}.md`;
+  return agent === "copilot" ? `${slug}.agent.md` : `${slug}.md`;
 }
 
 /** `<agent agents dir>/<slug>.md`, proven contained in the scope root. */

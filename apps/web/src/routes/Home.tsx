@@ -54,7 +54,6 @@ export function Home() {
 
   // Read state from URL search params
   const query = searchParams.get("q") ?? "";
-  // an old `?tool=gemini` link still filters, as antigravity
   const toolFilter = canonicalAgent(searchParams.get("tool"));
   // Validated, not cast: an unknown `?source=Seedr` used to match nothing and
   // render "0 results" with the bogus value shown as the active filter, and

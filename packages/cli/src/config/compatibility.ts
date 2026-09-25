@@ -20,7 +20,7 @@ export {
 
 /**
  * Filter agents to only those that support the given content type.
- * The result is canonical: an alias in the input comes out as its canonical id.
+ * The result is deduplicated, in canonical order, and drops unknown ids.
  */
 export function filterCompatibleAgents(
   type: ComponentType,

@@ -62,6 +62,8 @@ For each finding, report:
 - **Severity**: Critical, High, Medium, Low, Info
 - **Action**: specific recommended fix (e.g., "upgrade lodash from 4.17.15 to 4.17.21")
 
+Close with what the caller needs to decide (or "nothing"), then summary stats. If `npm audit` cannot run, return **Blocked:** with the command and its error instead of a partial audit.
+
 ## Rules
 - Never auto-fix — report only. The user decides what to upgrade.
 - If no issues found, confirm clean audit with summary stats.
@@ -211,6 +213,8 @@ Disable a built-in: `{ "permissions": { "deny": ["Task(Explore)"] } }` in settin
 5. **Not reviewing test modifications** — Agents sometimes change assertions to match incorrect code. Always review test file changes.
 6. **Correction loops** — After 2 failed attempts, start fresh. /clear + better prompt is cheaper than noise accumulation.
 7. **Over-parallelizing** — 5 agents for a single-domain feature wastes tokens. Match parallelism to task complexity.
+8. **Asking the agent to show its reasoning in the reply** — Ask for the conclusion plus evidence (`path:line`, command output) instead. A reasoning transcript lengthens every report, and Claude Opus 5.5 can refuse it.
+9. **Letting the agent that wrote something review it** — Review is a separate agent that receives the artifact and the criteria, not the author's reasoning.
 
 ## Creation Workflow
 
@@ -220,7 +224,7 @@ Disable a built-in: `{ "permissions": { "deny": ["Task(Explore)"] } }` in settin
 4. **Set permissions** — `dontAsk` for read-only agents, `default` for writers.
 5. **Set maxTurns** — Estimate reasonable turns for the task. Add small buffer.
 6. **Write description** — Specific enough that Claude activates it for the right tasks and ignores it for others.
-7. **Write system prompt** — Structure with four sections: **Focus Areas** (what to check/do), **Process** (step-by-step workflow), **Output Format** (how to report results), **Rules** (constraints and edge cases). See the Complete Example above.
+7. **Write system prompt** — Structure with four sections: **Focus Areas** (what to check/do), **Process** (step-by-step workflow), **Output Format** (how to report results), **Rules** (constraints and edge cases). See the Complete Example above. End the Output Format with the closing report: what the caller needs to decide (or "nothing"), what the agent did, what it found with its evidence, and a **Blocked:** line naming what stopped it when it cannot finish, because an agent cannot ask its caller mid-run. Set how deeply it works with the `model` field, or an effort field where the agent format documents one, never with "think hard" in the prompt.
 8. **Add memory** (optional) — Only if agent runs repeatedly across sessions. See [references/memory-and-hooks.md](references/memory-and-hooks.md).
 9. **Add hooks** (optional) — Auto-format, auto-lint, cleanup. See [references/memory-and-hooks.md](references/memory-and-hooks.md).
 10. **Add skills** (optional) — Explicitly list any skills the agent needs.

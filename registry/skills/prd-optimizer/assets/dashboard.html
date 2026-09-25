@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="refresh" content="10">
-  <title>Skill Optimizer — {skill-name}</title>
+  <title>PRD Optimizer — {doc-name}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4e8; padding: 24px; }
@@ -31,14 +31,14 @@
     .stat { text-align: center; }
     .stat-value { font-size: 1.5rem; font-weight: 600; color: #f0f3f6; }
     .stat-label { font-size: 0.75rem; color: #8b949e; }
-    .crit-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
-    .crit-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .crit-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
+    .dim-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+    .dim-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
+    .dim-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Skill Optimizer — <span id="skillName"></span></h1>
+    <h1>PRD Optimizer — <span id="docName"></span></h1>
     <div style="text-align: right">
       <div class="score-big" id="currentScore">—</div>
       <div class="score-label">current score</div>
@@ -52,13 +52,13 @@
   </div>
   <div class="grid">
     <div class="card"><h2>Score History</h2><div class="chart" id="chart"></div></div>
-    <div class="card"><h2>Criteria (latest)</h2><div id="checks"></div></div>
+    <div class="card"><h2>Checks (latest)</h2><div id="checks"></div></div>
   </div>
-  <div class="card" style="margin-bottom: 16px;"><h2>Criterion Averages</h2><table class="crit-table"><thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead><tbody id="crits"></tbody></table></div>
+  <div class="card" style="margin-bottom: 16px;"><h2>Dimension Averages</h2><table class="dim-table"><thead><tr><th>Dimension</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead><tbody id="dims"></tbody></table></div>
   <div class="card changelog"><h2>Changelog</h2><table><thead><tr><th>Round</th><th>Score</th><th>Target</th><th>Change</th><th>Result</th></tr></thead><tbody id="log"></tbody></table></div>
   <script>
     const DATA = __OPTIMIZER_DATA__;
-    document.getElementById('skillName').textContent = DATA.skill || '';
+    document.getElementById('docName').textContent = DATA.document || '';
     const fmt = v => v != null ? Math.round(v * 100) + '%' : '—';
     document.getElementById('currentScore').textContent = fmt(DATA.currentScore);
     document.getElementById('baseline').textContent = fmt(DATA.baseline);
@@ -87,21 +87,27 @@
       div.textContent = q + ' — ' + score + '/5';
       checksEl.appendChild(div);
     });
-    const critsEl = document.getElementById('crits');
+    const dimsEl = document.getElementById('dims');
     const baselineChecks = DATA.baselineChecks || {};
     const lastKept = rounds.filter(r => r.kept).pop();
     const currentChecks = lastKept ? lastKept.checks : baselineChecks;
-    Object.entries(baselineChecks).forEach(([criterion, before]) => {
-      const now = currentChecks[criterion];
-      const delta = now != null ? now - before : null;
+    const average = (checks, names) => {
+      const scores = names.map(name => checks[name]).filter(s => s != null);
+      return scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+    };
+    const show = v => v != null ? v.toFixed(1) : '—';
+    Object.entries(DATA.dimensions || {}).forEach(([dim, names]) => {
+      const before = average(baselineChecks, names);
+      const now = average(currentChecks, names);
+      const delta = before != null && now != null ? now - before : null;
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + criterion + '</td><td>' + before + '</td><td>' + (now != null ? now : '—') + '</td><td>' + (delta != null ? (delta > 0 ? '+' : '') + delta.toFixed(1) : '—') + '</td>';
-      critsEl.appendChild(tr);
+      tr.innerHTML = '<td>' + dim + '</td><td>' + show(before) + '</td><td>' + show(now) + '</td><td>' + (delta > 0 ? '+' : '') + show(delta) + '</td>';
+      dimsEl.appendChild(tr);
     });
     const log = document.getElementById('log');
     rounds.forEach(r => {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.targetedCriterion || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + (r.kept ? 'kept' : 'reverted') + '">' + (r.kept ? 'KEPT' : 'REVERTED') + '</td>';
+      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.targetedCheck || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + (r.kept ? 'kept' : 'reverted') + '">' + (r.kept ? 'KEPT' : 'REVERTED') + '</td>';
       log.appendChild(tr);
     });
   </script>

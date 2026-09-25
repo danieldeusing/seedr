@@ -1,6 +1,6 @@
 ---
 name: architecture-optimizer
-description: Iteratively evaluate and improve architecture documents, system design docs, and technical design specifications through autonomous test-score-refine loops. Reads the architecture doc, builds a component map (components, interfaces, data flows, dependencies, deployment topology), builds a scoring harness with anchored rubrics across architecture-specific quality dimensions (component responsibility clarity, interface contract completeness, failure mode analysis, data flow consistency, scalability/capacity planning, security boundary definition), then autonomously loops — score, identify weakest area, make one targeted improvement, re-score, keep if better or revert if not. Use this skill whenever the user says "evaluate architecture", "improve architecture doc", "review system design", "architecture-optimizer", "run architecture-optimizer on [doc]", "check my design doc", "review technical design", or wants to systematically improve an architecture document or system design specification. Also trigger when users want to find missing interface contracts, undocumented failure modes, or incomplete data flows in a technical design. Do NOT use for PRDs or requirements docs (use prd-optimizer), user-facing documentation (use doc-optimizer), or code (use code-optimizer).
+description: 'Iteratively evaluate and improve architecture documents, system design docs and technical design specifications through autonomous test-score-refine loops. Reads the doc, builds a component map (components, interfaces, data flows, dependencies, topology) and a scoring harness with anchored rubrics (responsibility clarity, interface contracts, failure modes, data flow consistency, scalability, security boundaries), then loops - score, improve the weakest area, re-score, keep if better or revert. Use whenever the user says "evaluate architecture", "improve architecture doc", "review system design", "architecture-optimizer", "run architecture-optimizer on [doc]", "check my design doc", "review technical design", or wants to improve an architecture document. Also trigger for missing interface contracts, undocumented failure modes or incomplete data flows. Do NOT use for PRDs or requirements docs (use prd-optimizer), user-facing documentation (use doc-optimizer) or code (use code-optimizer).'
 ---
 
 # Architecture Optimizer
@@ -200,7 +200,7 @@ Every scoring round must produce this exact table:
 | OVERALL                |                                | 3.4   |                                              |
 ```
 
-Log the harness summary (dimension count, check count) to the user as a status update. Proceed immediately to baseline scoring. The harness CAN be adjusted before the baseline if the user passes specific criteria or dimensions as parameters, but once the baseline is scored, it's frozen for the rest of the run.
+Log the harness summary (dimension count, check count) to the user as a status update. Proceed immediately to baseline scoring. The harness CAN be adjusted before the baseline if the user passes specific criteria or dimensions as parameters, but once the baseline is scored and Phase 3 has proved each check can fail, it's frozen for the rest of the run.
 
 **Parameters** (optional, passed by user or calling automation):
 - `focus:<dimension>` — only include checks from specified dimension(s)
@@ -210,7 +210,9 @@ Log the harness summary (dimension count, check count) to the user as a status u
 
 ## Phase 3: Baseline Scoring
 
-Score every harness check against the current document using the anchored rubrics.
+**Who scores.** Score the harness checks in a fresh-context subagent, here and in every round of Phase 4. It receives only the document as it now stands, `component-map.json` and the frozen `harness.md`. It never receives your change note or hypothesis, because an agent that knows what a change was meant to fix grades it kindly. Keep or revert on its scores. Where the agent has no subagents, score in your own context and say so in the final summary.
+
+The scoring subagent scores every harness check against the current document using the anchored rubrics.
 
 **Scoring approach for large documents:** Don't re-read the entire document for each check. Use the component map to read only the relevant sections. For interface checks, read the two components being compared. For data flow checks, trace the specific path.
 
@@ -218,9 +220,18 @@ For each check, record:
 - The score (1-5) with the specific anchor level it matches
 - One-line evidence citing the section(s) and what you observed
 
+**Prove each check can fail (new harness only).** Before the harness freezes, have the scoring subagent score one deliberately weakened copy of the document, made in the working directory: the baseline with the section each check scored best on removed. Drop any check whose score does not fall, because it cannot tell better from worse, and remove it from `harness.md`.
+
 Calculate baseline: average of all check scores, normalized to percentage ((avg - 1) / 4 * 100).
 
-Update `results.json` and `dashboard.html`. Report both the structural score AND a brief overall quality note:
+Update `results.json` with `baseline`, `baselineChecks` (each check's score, in the shape of a round's `checks`) and `dimensions` (each dimension of the scoring table with the names of its checks), then `dashboard.html`:
+
+```json
+"baselineChecks": {"Service scope clarity": 4, "API contract specs": 3},
+"dimensions": {"Responsibility": ["Service scope clarity"], "Interface": ["API contract specs"]}
+```
+
+Report both the structural score AND a brief overall quality note:
 ```
 Baseline: 52% structural compliance (avg 3.1/5 across 14 checks)
 This measures architecture documentation completeness, not design quality.
@@ -234,6 +245,8 @@ Weakest dimensions:
 ## Phase 4: Improvement Loop
 
 Repeat autonomously until convergence or max rounds.
+
+Between rounds, do not stop to summarise, ask whether to continue, or offer options; the status lines under *Progress Reporting* go out with the next round, not instead of it. The loop ends only at the convergence or max-rounds stop in *Stopping Rules* (a plateau switches strategy, it does not stop). Then go to Phase 5.
 
 ### Each Round
 
@@ -255,7 +268,7 @@ The boundary: if the improvement can be inferred from what's already in the docu
 
 **3. Apply** — Before editing, copy `document.md` to `document.md.bak` (this is your revert path). Then make ONE targeted change using the Edit tool. The change should be minimal and traceable to a specific harness check.
 
-**4. Re-score** — Score ALL harness checks against the modified document. Use the component map to read only affected sections. Use the exact same anchored rubrics from the frozen harness.
+**4. Re-score** — The scoring subagent (*Who scores*, Phase 3) scores ALL harness checks against the modified document. Use the component map to read only affected sections. Use the exact same anchored rubrics from the frozen harness.
 
 **5. Keep or revert:**
 - Overall average improved (or equal, AND the targeted check improved) → Keep. Delete `.bak`.
@@ -337,6 +350,8 @@ Copy the document to `original.md` and `document.md`. Initialize `results.json`:
   "harness": "harness.md",
   "harnessBuiltAt": "ISO timestamp",
   "baseline": null,
+  "baselineChecks": null,
+  "dimensions": null,
   "currentScore": null,
   "bestScore": null,
   "consecutiveHighPasses": 0,
@@ -346,125 +361,11 @@ Copy the document to `original.md` and `document.md`. Initialize `results.json`:
 
 ## Dashboard
 
-The dashboard is a self-contained HTML file. Create it with this structure:
+`dashboard.html` in the working directory is a self-contained page that reloads every 10 seconds. It shows the current score, the baseline, the counts of rounds, kept and reverted changes, a score-history bar chart, the latest check scores, a Dimension Averages table (baseline against the last kept round) and the changelog.
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="10">
-  <title>Architecture Optimizer — {doc-name}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4e8; padding: 24px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { font-size: 1.4rem; color: #f0f3f6; }
-    .score-big { font-size: 3rem; font-weight: 700; color: #58a6ff; }
-    .score-label { font-size: 0.85rem; color: #8b949e; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
-    .card h2 { font-size: 0.95rem; color: #8b949e; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .check { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.9rem; }
-    .check.high::before { content: "●"; color: #3fb950; }
-    .check.mid::before { content: "●"; color: #d29922; }
-    .check.low::before { content: "●"; color: #f85149; }
-    .changelog { width: 100%; }
-    .changelog table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .changelog th { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .changelog td { padding: 8px; border-bottom: 1px solid #21262d; }
-    .kept { color: #3fb950; }
-    .reverted { color: #f85149; }
-    .chart { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding: 8px 0; }
-    .bar { background: #58a6ff; border-radius: 3px 3px 0 0; min-width: 24px; position: relative; transition: height 0.3s; }
-    .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: #8b949e; }
-    .stats { display: flex; gap: 24px; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 1.5rem; font-weight: 600; color: #f0f3f6; }
-    .stat-label { font-size: 0.75rem; color: #8b949e; }
-    .dim-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
-    .dim-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .dim-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Architecture Optimizer — <span id="docName"></span></h1>
-    <div style="text-align: right">
-      <div class="score-big" id="currentScore">—</div>
-      <div class="score-label">current score</div>
-    </div>
-  </div>
-  <div class="stats" style="margin-bottom: 24px;">
-    <div class="stat"><div class="stat-value" id="baseline">—</div><div class="stat-label">baseline</div></div>
-    <div class="stat"><div class="stat-value" id="rounds">0</div><div class="stat-label">rounds</div></div>
-    <div class="stat"><div class="stat-value" id="kept">0</div><div class="stat-label">kept</div></div>
-    <div class="stat"><div class="stat-value" id="reverted">0</div><div class="stat-label">reverted</div></div>
-  </div>
-  <div class="grid">
-    <div class="card"><h2>Score History</h2><div class="chart" id="chart"></div></div>
-    <div class="card"><h2>Checks (latest)</h2><div id="checks"></div></div>
-  </div>
-  <div class="card" style="margin-bottom: 16px;"><h2>Dimension Averages</h2><table class="dim-table"><thead><tr><th>Dimension</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead><tbody id="dims"></tbody></table></div>
-  <div class="card changelog"><h2>Changelog</h2><table><thead><tr><th>Round</th><th>Score</th><th>Target</th><th>Change</th><th>Result</th></tr></thead><tbody id="log"></tbody></table></div>
-  <script>
-    const DATA = __OPTIMIZER_DATA__;
-    document.getElementById('docName').textContent = DATA.document || '';
-    const fmt = v => v != null ? Math.round(v * 100) + '%' : '—';
-    document.getElementById('currentScore').textContent = fmt(DATA.currentScore);
-    document.getElementById('baseline').textContent = fmt(DATA.baseline);
-    const rounds = DATA.rounds || [];
-    document.getElementById('rounds').textContent = rounds.length;
-    document.getElementById('kept').textContent = rounds.filter(r => r.kept).length;
-    document.getElementById('reverted').textContent = rounds.filter(r => !r.kept).length;
-    const chart = document.getElementById('chart');
-    const scores = [DATA.baseline, ...rounds.map(r => r.score)].filter(s => s != null);
-    const maxH = 180;
-    scores.forEach((s, i) => {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      bar.style.height = (s * maxH) + 'px';
-      bar.style.flex = '1';
-      bar.innerHTML = '<span class="bar-label">' + fmt(s) + '</span>';
-      chart.appendChild(bar);
-    });
-    const checksEl = document.getElementById('checks');
-    const lastRound = rounds[rounds.length - 1];
-    const checksData = lastRound ? lastRound.checks : {};
-    Object.entries(checksData).forEach(([q, score]) => {
-      const div = document.createElement('div');
-      const cls = score >= 4 ? 'high' : score >= 3 ? 'mid' : 'low';
-      div.className = 'check ' + cls;
-      div.textContent = q + ' — ' + score + '/5';
-      checksEl.appendChild(div);
-    });
-    const dimsEl = document.getElementById('dims');
-    const dimNames = ['Responsibility', 'Interface', 'Failure Mode', 'Data Flow', 'Scalability', 'Security'];
-    const baselineChecks = DATA.baselineChecks || {};
-    const currentChecks = checksData;
-    dimNames.forEach(dim => {
-      const bScores = Object.entries(baselineChecks).filter(([k]) => k.startsWith(dim)).map(([,v]) => v);
-      const cScores = Object.entries(currentChecks).filter(([k]) => k.startsWith(dim)).map(([,v]) => v);
-      if (bScores.length === 0 && cScores.length === 0) return;
-      const bAvg = bScores.length ? (bScores.reduce((a,b) => a+b, 0) / bScores.length).toFixed(1) : '—';
-      const cAvg = cScores.length ? (cScores.reduce((a,b) => a+b, 0) / cScores.length).toFixed(1) : '—';
-      const delta = (bScores.length && cScores.length) ? (parseFloat(cAvg) - parseFloat(bAvg)).toFixed(1) : '—';
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + dim + '</td><td>' + bAvg + '</td><td>' + cAvg + '</td><td>' + (delta > 0 ? '+' : '') + delta + '</td>';
-      dimsEl.appendChild(tr);
-    });
-    const log = document.getElementById('log');
-    rounds.forEach(r => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.targetedCheck || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + (r.kept ? 'kept' : 'reverted') + '">' + (r.kept ? 'KEPT' : 'REVERTED') + '</td>';
-      log.appendChild(tr);
-    });
-  </script>
-</body>
-</html>
-```
+It reads these `results.json` fields: `document`, `baseline`, `currentScore`, `baselineChecks`, `dimensions`, and per round `score`, `kept`, `checks`, `targetedCheck` and `change`. The Dimension Averages table averages, per entry in `dimensions`, the scores of the checks it lists.
 
-Each round, replace `__OPTIMIZER_DATA__` with the current `results.json` content and rewrite the file.
+Copy this skill's `assets/dashboard.html` (next to this SKILL.md) into the working directory, unchanged. Each round, rewrite `dashboard.html` from that asset with `{doc-name}` in the `<title>` replaced by the document name and `__OPTIMIZER_DATA__` replaced by the current `results.json` content.
 
 ## Modes
 

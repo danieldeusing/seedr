@@ -3,7 +3,7 @@
 # Project PreToolUse Security Guard
 # ──────────────────────────────────────────────────────────────
 # Project-level security hook. Complements the global hook at
-# ~/.claude/hooks/security-guard.sh which runs FIRST and handles
+# ~/.claude/hooks/universal-security-guard.sh which runs FIRST and handles
 # universal threats (reverse shells, /dev/tcp, privilege escalation
 # via sudo/doas, mkfs/fdisk, download-and-execute, encoding bypass,
 # LD_PRELOAD injection, git config abuse, credential file reads, etc.)

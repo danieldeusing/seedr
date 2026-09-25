@@ -126,8 +126,11 @@ if [[ "$tool_name" == "Bash" ]]; then
   if grep -qE 'systemctl\s+(enable|daemon-reload)\b' <<< "$cmd"; then
     deny_with "BLOCKED: systemd service enable/reload"
   fi
-  # at/batch scheduling
-  if grep -qE '(^|[;&|]\s*)\bat\s+\S|batch\b' <<< "$cmd"; then
+  # at/batch scheduling: the command word in command position, with quoted text removed
+  # first so an argument like "at a glance" never matches. A double-quoted span holding
+  # $ or a backtick stays in, because a command substitution inside it still runs.
+  cmd_outside_quotes=$(tr '\n' ';' <<< "$cmd" | sed -E "s/'[^']*'|\"[^\"\$\`]*\"//g")
+  if grep -qE '(^|[;&|`]|\$\()\s*((sudo|env)\s+)*(\S*/)?(at|batch)(\s|[<;&|)`]|$)' <<< "$cmd_outside_quotes"; then
     deny_with "BLOCKED: Job scheduling via at/batch"
   fi
 

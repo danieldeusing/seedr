@@ -1,7 +1,7 @@
 ---
 name: refactoring-techniques
 description: |
-  Comprehensive reference for 66 classic refactoring techniques.
+  Reference for 66 classic refactoring techniques.
   Use when asked to refactor code, improve code structure, simplify methods, reorganize classes,
   clean up conditionals, or improve method signatures. Triggers on: "refactor this", "simplify",
   "extract method", "move field", "inline", "encapsulate", "consolidate", "decompose",

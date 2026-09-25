@@ -42,7 +42,7 @@ Work with whatever context you have — full history or post-compact summary. Sc
 | Test failures | Unexpected test failures requiring debugging | What assumption was wrong |
 | Overlooked context | Missed existing code, conventions, or constraints | Where the agent should have looked |
 
-**Communication and ambiguity patterns deserve special attention.** These are often the highest-value learnings because they compound across projects. When a misunderstanding or ambiguity caused wasted work, always consider whether the pattern is project-specific (save to project memory) or a general communication habit (save to home memory as its own dedicated entry — don't fold it into a technical learning).
+**Communication and ambiguity patterns deserve special attention.** These are often the highest-value learnings because they compound across projects. When a misunderstanding or ambiguity caused wasted work, always consider whether the pattern is project-specific (save to project memory) or a general communication habit (propose it as a global rule, as its own dedicated entry — don't fold it into a technical learning).
 
 ### Positives (reinforce good patterns)
 
@@ -79,16 +79,16 @@ Each learning goes to one of two places based on scope:
 - Types: `feedback` (approach corrections for this project), `project` (decisions, context, bugs)
 - Example: "manufaktur's orchard crate wraps a flaky API — add retries"
 
-**Home memory** — learnings that apply to ANY project with this user
-- Path: `~/.claude/memory/` (create if it doesn't exist)
+**Proposed global rule** — learnings that apply to ANY project with this user
+- Propose it to the user as one line for their global instructions (`~/.claude/rules/` in Claude Code), with the incident it would have prevented. Write it only when they agree. In autonomous mode, save it to project memory with the note `candidate for a global rule`. Never write it to `~/.claude/memory/`: no agent loads that directory, so nothing written there is read again.
 - Types: `user` (working style, preferences), `feedback` (communication patterns)
 - Example: "Daniel prefers terse responses — skip trailing summaries"
 
-**Routing rule:** Would this learning change your behavior in a completely different project? → home memory. Only relevant to this codebase? → project memory.
+**Routing rule:** Would this learning change your behavior in a completely different project? → propose a global rule. Only relevant to this codebase? → project memory.
 
 ## Step 4: Write memories
 
-For each learning, create a markdown file:
+For each learning that goes to project memory (including autonomous-mode candidates for a global rule), create a markdown file:
 
 ```markdown
 ---
@@ -130,7 +130,7 @@ Keep MEMORY.md under 200 lines. No frontmatter in MEMORY.md — it's a plain ind
 
 ### Problems identified
 - **[Bug→Fix]** description → saves as `feedback` to project memory
-- **[Misunderstanding]** description → saves as `feedback` to home memory
+- **[Misunderstanding]** description → proposed global rule
 
 ### Positive patterns
 - **[First-try success]** description → saves as `project` to project memory
@@ -148,7 +148,7 @@ Wait for user confirmation. Apply their changes before writing.
 ```
 📝 Reflection: saved N memories
 - [feedback] description (→ project)
-- [user] description (→ home)
+- [user] description (→ proposed global rule, kept in project memory)
 ```
 
 ## Quality bar

@@ -3,7 +3,7 @@
   "name": "Code Optimizer",
   "type": "skill",
   "description": "Iteratively improve code quality through autonomous test-score-refine loops combining deterministic verifiers with LLM-judged criteria.",
-  "longDescription": "Combines **deterministic verifiers** (test runner, linter, type-checker, formatter) with **LLM-judged criteria** (naming clarity, function complexity, error handling, duplication, module structure) in a unified scoring harness.\n\nAuto-detects project tooling (`eslint`, `pytest`, `tsc`, `cargo clippy`, etc.) and establishes baselines. Deterministic checks act as **hard constraints** — any change that breaks passing tests or increases lint errors is auto-reverted regardless of LLM score improvements.\n\nEach round: run all verifiers, score LLM criteria, pick weakest area, make one fix, re-score, keep or revert. Includes live `dashboard.html` with score chart and changelog. Supports full, audit-only, focused, and re-score modes.",
+  "longDescription": "Combines **deterministic verifiers** (test runner, linter, type-checker, formatter, build) with **LLM-judged criteria** (naming clarity, function complexity, error handling, duplication, testability/structure) in a unified scoring harness.\n\nAuto-detects project tooling (`eslint`, `pytest`, `tsc`, `cargo clippy`, etc.) and establishes baselines. Deterministic checks act as **hard constraints** — any change that breaks passing tests or increases lint errors is auto-reverted regardless of LLM score improvements. A fresh-context subagent scores the LLM criteria, and each criterion must fall on a weakened copy before the harness freezes.\n\nEach round: run all verifiers, score LLM criteria, pick weakest area, make one fix, re-score, keep or revert. Includes live `dashboard.html` with score chart, baseline-vs-current verifier and criteria tables, and changelog. Supports full, audit-only, deterministic-only, focused, and re-score modes.",
   "compatibility": [
     "claude",
     "copilot",
@@ -23,6 +23,16 @@
       {
         "name": "SKILL.md",
         "type": "file"
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "dashboard.html",
+            "type": "file"
+          }
+        ]
       }
     ]
   }

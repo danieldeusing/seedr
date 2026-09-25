@@ -77,6 +77,8 @@ Copy all target files to both `original/` and `working/`, preserving directory s
     "typeChecker": "tsc --noEmit"
   },
   "baseline": null,
+  "baselineDeterministic": null,
+  "baselineLlmChecks": null,
   "currentScore": null,
   "bestScore": null,
   "consecutiveHighPasses": 0,
@@ -288,7 +290,7 @@ Every scoring round must produce:
 ## Composite: 74% (was 68%) — KEEP
 ```
 
-Log the harness summary (verifier count, criterion count) as a status update. Proceed immediately to baseline scoring. The harness CAN be adjusted before the baseline if the user passes specific criteria or constraints as parameters, but once the baseline is scored, it's frozen for the rest of the run.
+Log the harness summary (verifier count, criterion count) as a status update. Proceed immediately to baseline scoring. The harness CAN be adjusted before the baseline if the user passes specific criteria or constraints as parameters, but once the baseline is scored and Phase 3 has proved each criterion can fail, it's frozen for the rest of the run.
 
 **Parameters** (optional, passed by user or calling automation):
 - `focus:<criterion>` — only include specified LLM criteria
@@ -298,6 +300,8 @@ Log the harness summary (verifier count, criterion count) as a status update. Pr
 - `performance` — include timing-based deterministic checks
 
 ## Phase 3: Baseline Scoring
+
+**Who scores.** Score the LLM-judged criteria in a fresh-context subagent, here and in every round of Phase 4. It receives only the target files as they now stand and the frozen `harness.md`, and may read the rest of the project for context. It never receives your change note or hypothesis, because an agent that knows what a change was meant to fix grades it kindly. Keep or revert on its scores. Deterministic verifiers run in your own context. Where the agent has no subagents, score in your own context and say so in the final report.
 
 ### 1. Run Deterministic Verifiers
 
@@ -313,9 +317,11 @@ These are the hard constraint baselines. Record them in `results.json`.
 
 ### 2. Score LLM Criteria
 
-Read the target code files. Score each criterion using the anchored rubrics. For each, record:
+The scoring subagent reads the target code files and scores each criterion using the anchored rubrics. For each, record:
 - The score (1-5) with the specific anchor level it matches
 - One-line evidence citing the function/section and what you observed
+
+**Prove each criterion can fail (new harness only).** Before the harness freezes, have the scoring subagent score one deliberately weakened copy of the target, made in the working directory and never in the project files: the baseline with the part each criterion scored best on removed. Drop any criterion whose score does not fall, because it cannot tell better from worse, and remove it from `harness.md` before you calculate the baseline.
 
 ### 3. Calculate Composite Baseline
 
@@ -338,11 +344,20 @@ LLM criteria (avg 3.5/5):
 Weakest area: Function complexity (2/5)
 ```
 
-Update `results.json` and `dashboard.html`.
+Update `results.json`: `baseline`, plus the step 1 results as `baselineDeterministic` and the step 2 scores as `baselineLlmChecks`, in the shape a round records `deterministic` and `llmChecks`:
+
+```json
+"baselineDeterministic": {"tests": {"pass": 42, "fail": 0}, "linter": {"errors": 5, "warnings": 12}, "typeChecker": {"errors": 0}},
+"baselineLlmChecks": {"Naming clarity": 4, "Function complexity": 2, "Error handling": 4, "Duplication": 3}
+```
+
+Then update `dashboard.html`.
 
 ## Phase 4: Improvement Loop
 
 Repeat autonomously until convergence or max rounds.
+
+Between rounds, do not stop to summarise, ask whether to continue, or offer options; the one-line round report goes out with the next round, not instead of it. The loop ends only at the convergence, max-rounds or plateau stop in *Loop Rules*, or at a deterministic check you cannot restore. Then go to Phase 5.
 
 ### Each Round
 
@@ -369,7 +384,7 @@ Repeat autonomously until convergence or max rounds.
    - Any hard constraint violated? → Auto-revert immediately. Copy `backup/` back. Log as `REVERTED (hard constraint: {which one})`. Skip LLM scoring.
    - All hard constraints pass? → Continue to LLM scoring.
 
-**5. Score LLM criteria** — Re-read the modified code. Score all criteria using the frozen harness rubrics.
+**5. Score LLM criteria** — The scoring subagent (*Who scores*, Phase 3) re-reads the modified code and scores all criteria using the frozen harness rubrics.
 
 **6. Calculate composite** — Compare to previous best:
    - Improved → Keep. Update `working/` from current project state. Delete `backup/`. Log as KEPT.
@@ -456,144 +471,11 @@ Round 1: 68% (was 62%) [KEPT] — extracted validateToken() from handleAuth() [l
 
 ## Dashboard
 
-The dashboard is a self-contained HTML file:
+`dashboard.html` in the working directory is a self-contained page that reloads every 10 seconds. It shows the composite score, the baseline, the counts of rounds, kept and reverted changes, a score-history bar chart, a Deterministic Verifiers table and a Criteria Trajectory table (both baseline against the last kept round), the latest LLM criterion scores and the changelog, where a hard revert names its constraint.
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="10">
-  <title>Code Optimizer — {target-name}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4e8; padding: 24px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { font-size: 1.4rem; color: #f0f3f6; }
-    .score-big { font-size: 3rem; font-weight: 700; color: #58a6ff; }
-    .score-label { font-size: 0.85rem; color: #8b949e; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
-    .card h2 { font-size: 0.95rem; color: #8b949e; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .check { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.9rem; }
-    .check.high::before { content: "●"; color: #3fb950; }
-    .check.mid::before { content: "●"; color: #d29922; }
-    .check.low::before { content: "●"; color: #f85149; }
-    .det-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
-    .det-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .det-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
-    .improved { color: #3fb950; }
-    .unchanged { color: #8b949e; }
-    .degraded { color: #f85149; }
-    .changelog { width: 100%; }
-    .changelog table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .changelog th { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .changelog td { padding: 8px; border-bottom: 1px solid #21262d; }
-    .kept { color: #3fb950; }
-    .reverted { color: #f85149; }
-    .chart { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding: 8px 0; }
-    .bar { background: #58a6ff; border-radius: 3px 3px 0 0; min-width: 24px; position: relative; transition: height 0.3s; }
-    .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: #8b949e; }
-    .stats { display: flex; gap: 24px; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 1.5rem; font-weight: 600; color: #f0f3f6; }
-    .stat-label { font-size: 0.75rem; color: #8b949e; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Code Optimizer — <span id="targetName"></span></h1>
-    <div style="text-align: right">
-      <div class="score-big" id="currentScore">—</div>
-      <div class="score-label">composite score</div>
-    </div>
-  </div>
-  <div class="stats" style="margin-bottom: 24px;">
-    <div class="stat"><div class="stat-value" id="baseline">—</div><div class="stat-label">baseline</div></div>
-    <div class="stat"><div class="stat-value" id="rounds">0</div><div class="stat-label">rounds</div></div>
-    <div class="stat"><div class="stat-value" id="kept">0</div><div class="stat-label">kept</div></div>
-    <div class="stat"><div class="stat-value" id="reverted">0</div><div class="stat-label">reverted</div></div>
-  </div>
-  <div class="grid">
-    <div class="card">
-      <h2>Score History</h2>
-      <div class="chart" id="chart"></div>
-    </div>
-    <div class="card">
-      <h2>Deterministic Verifiers</h2>
-      <table class="det-table">
-        <thead><tr><th>Verifier</th><th>Baseline</th><th>Current</th><th>Status</th></tr></thead>
-        <tbody id="detVerifiers"></tbody>
-      </table>
-    </div>
-  </div>
-  <div class="grid">
-    <div class="card">
-      <h2>LLM Criteria (latest)</h2>
-      <div id="checks"></div>
-    </div>
-    <div class="card">
-      <h2>Criteria Trajectory</h2>
-      <table class="det-table">
-        <thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead>
-        <tbody id="crits"></tbody>
-      </table>
-    </div>
-  </div>
-  <div class="card changelog">
-    <h2>Changelog</h2>
-    <table>
-      <thead><tr><th>Round</th><th>Score</th><th>Target</th><th>Change</th><th>Result</th></tr></thead>
-      <tbody id="log"></tbody>
-    </table>
-  </div>
-  <script>
-    const DATA = __OPTIMIZER_DATA__;
-    document.getElementById('targetName').textContent = DATA.target || '';
-    const fmt = v => v != null ? Math.round(v * 100) + '%' : '—';
-    document.getElementById('currentScore').textContent = fmt(DATA.currentScore);
-    document.getElementById('baseline').textContent = fmt(DATA.baseline);
-    const rounds = DATA.rounds || [];
-    document.getElementById('rounds').textContent = rounds.length;
-    document.getElementById('kept').textContent = rounds.filter(r => r.kept).length;
-    document.getElementById('reverted').textContent = rounds.filter(r => !r.kept).length;
-    const chart = document.getElementById('chart');
-    const scores = [DATA.baseline, ...rounds.map(r => r.score)].filter(s => s != null);
-    const maxH = 180;
-    scores.forEach(s => {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      bar.style.height = (s * maxH) + 'px';
-      bar.style.flex = '1';
-      bar.innerHTML = '<span class="bar-label">' + fmt(s) + '</span>';
-      chart.appendChild(bar);
-    });
-    const checksEl = document.getElementById('checks');
-    const lastRound = rounds[rounds.length - 1];
-    const checksData = lastRound ? lastRound.llmChecks : {};
-    Object.entries(checksData).forEach(([q, score]) => {
-      const div = document.createElement('div');
-      const cls = score >= 4 ? 'high' : score >= 3 ? 'mid' : 'low';
-      div.className = 'check ' + cls;
-      div.textContent = q + ' — ' + score + '/5';
-      checksEl.appendChild(div);
-    });
-    const log = document.getElementById('log');
-    rounds.forEach(r => {
-      const tr = document.createElement('tr');
-      const result = r.hardConstraintViolation
-        ? 'REVERTED (hard: ' + r.hardConstraintViolation + ')'
-        : (r.kept ? 'KEPT' : 'REVERTED');
-      const cls = r.kept ? 'kept' : 'reverted';
-      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.targetedArea || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + cls + '">' + result + '</td>';
-      log.appendChild(tr);
-    });
-  </script>
-</body>
-</html>
-```
+It reads these `results.json` fields: `target`, `baseline`, `currentScore`, `baselineDeterministic`, `baselineLlmChecks`, and per round `score`, `kept`, `deterministic`, `llmChecks`, `targetedArea`, `change` and `hardConstraintViolation`.
 
-Each round, replace `__OPTIMIZER_DATA__` with the current `results.json` content and rewrite the file.
+Copy this skill's `assets/dashboard.html` (next to this SKILL.md) into the working directory, unchanged. Each round, rewrite `dashboard.html` from that asset with `{target-name}` in the `<title>` replaced by the target name and `__OPTIMIZER_DATA__` replaced by the current `results.json` content.
 
 ## Modes
 

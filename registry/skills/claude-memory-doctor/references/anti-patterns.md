@@ -268,6 +268,45 @@ TODO: Add deployment instructions
 
 ---
 
+## 14. Thinking Boilerplate
+
+**Bad:**
+```markdown
+- Think step by step and carefully reflect before answering
+- Think hard about edge cases
+- Take a deep breath before starting
+```
+
+**Good:** (Delete the line and set depth with the effort setting in the agent's configuration)
+
+Or, if the line hides a real check, keep only the check:
+```markdown
+- Before trusting a check, confirm it can fail
+```
+
+**Why it's bad:** On current Claude models the effort setting controls how much the model thinks; a line asking for more thinking only delays the answer.
+
+---
+
+## 15. Reasoning Requested in the Output
+
+**Bad:**
+```markdown
+- Explain your reasoning step by step in your answer
+- Show your chain of thought before the verdict
+```
+
+**Good:**
+```markdown
+- Give the verdict, then the evidence for it as `path:line` references
+```
+
+Or ask for a rationale of at most three sentences.
+
+**Why it's bad:** A reasoning transcript makes every reply longer, and Claude Opus 5.5 can refuse a request to write out its reasoning.
+
+---
+
 ## Detection Heuristics
 
 | Anti-Pattern | Detection |
@@ -280,3 +319,5 @@ TODO: Add deployment instructions
 | Template copy-paste | Generic structure that doesn't match actual project |
 | Emphasis overuse | >3 IMPORTANT/NEVER/ALWAYS in one file |
 | Duplication | Same content in CLAUDE.md and rules |
+| Thinking boilerplate | Case-insensitive match for `think (carefully\|hard\|harder\|step[- ]by[- ]step\|through)\|carefully (reflect\|consider\|think)\|reflect carefully\|deep breath\|ultrathink` |
+| Reasoning in the output | Case-insensitive match for `show (your\|the) reasoning\|chain[- ]of[- ]thought\|thought process\|explain your reasoning` |

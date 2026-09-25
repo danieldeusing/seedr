@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="refresh" content="10">
-  <title>Skill Optimizer — {skill-name}</title>
+  <title>Code Optimizer — {target-name}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4e8; padding: 24px; }
@@ -18,6 +18,12 @@
     .check.high::before { content: "●"; color: #3fb950; }
     .check.mid::before { content: "●"; color: #d29922; }
     .check.low::before { content: "●"; color: #f85149; }
+    .det-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+    .det-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
+    .det-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
+    .improved { color: #3fb950; }
+    .unchanged { color: #8b949e; }
+    .degraded { color: #f85149; }
     .changelog { width: 100%; }
     .changelog table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .changelog th { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
@@ -31,17 +37,14 @@
     .stat { text-align: center; }
     .stat-value { font-size: 1.5rem; font-weight: 600; color: #f0f3f6; }
     .stat-label { font-size: 0.75rem; color: #8b949e; }
-    .crit-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
-    .crit-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .crit-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Skill Optimizer — <span id="skillName"></span></h1>
+    <h1>Code Optimizer — <span id="targetName"></span></h1>
     <div style="text-align: right">
       <div class="score-big" id="currentScore">—</div>
-      <div class="score-label">current score</div>
+      <div class="score-label">composite score</div>
     </div>
   </div>
   <div class="stats" style="margin-bottom: 24px;">
@@ -51,14 +54,41 @@
     <div class="stat"><div class="stat-value" id="reverted">0</div><div class="stat-label">reverted</div></div>
   </div>
   <div class="grid">
-    <div class="card"><h2>Score History</h2><div class="chart" id="chart"></div></div>
-    <div class="card"><h2>Criteria (latest)</h2><div id="checks"></div></div>
+    <div class="card">
+      <h2>Score History</h2>
+      <div class="chart" id="chart"></div>
+    </div>
+    <div class="card">
+      <h2>Deterministic Verifiers</h2>
+      <table class="det-table">
+        <thead><tr><th>Verifier</th><th>Baseline</th><th>Current</th><th>Status</th></tr></thead>
+        <tbody id="detVerifiers"></tbody>
+      </table>
+    </div>
   </div>
-  <div class="card" style="margin-bottom: 16px;"><h2>Criterion Averages</h2><table class="crit-table"><thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead><tbody id="crits"></tbody></table></div>
-  <div class="card changelog"><h2>Changelog</h2><table><thead><tr><th>Round</th><th>Score</th><th>Target</th><th>Change</th><th>Result</th></tr></thead><tbody id="log"></tbody></table></div>
+  <div class="grid">
+    <div class="card">
+      <h2>LLM Criteria (latest)</h2>
+      <div id="checks"></div>
+    </div>
+    <div class="card">
+      <h2>Criteria Trajectory</h2>
+      <table class="det-table">
+        <thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead>
+        <tbody id="crits"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card changelog">
+    <h2>Changelog</h2>
+    <table>
+      <thead><tr><th>Round</th><th>Score</th><th>Target</th><th>Change</th><th>Result</th></tr></thead>
+      <tbody id="log"></tbody>
+    </table>
+  </div>
   <script>
     const DATA = __OPTIMIZER_DATA__;
-    document.getElementById('skillName').textContent = DATA.skill || '';
+    document.getElementById('targetName').textContent = DATA.target || '';
     const fmt = v => v != null ? Math.round(v * 100) + '%' : '—';
     document.getElementById('currentScore').textContent = fmt(DATA.currentScore);
     document.getElementById('baseline').textContent = fmt(DATA.baseline);
@@ -69,7 +99,7 @@
     const chart = document.getElementById('chart');
     const scores = [DATA.baseline, ...rounds.map(r => r.score)].filter(s => s != null);
     const maxH = 180;
-    scores.forEach((s, i) => {
+    scores.forEach(s => {
       const bar = document.createElement('div');
       bar.className = 'bar';
       bar.style.height = (s * maxH) + 'px';
@@ -79,7 +109,7 @@
     });
     const checksEl = document.getElementById('checks');
     const lastRound = rounds[rounds.length - 1];
-    const checksData = lastRound ? lastRound.checks : {};
+    const checksData = (lastRound && lastRound.llmChecks) || {};
     Object.entries(checksData).forEach(([q, score]) => {
       const div = document.createElement('div');
       const cls = score >= 4 ? 'high' : score >= 3 ? 'mid' : 'low';
@@ -87,10 +117,21 @@
       div.textContent = q + ' — ' + score + '/5';
       checksEl.appendChild(div);
     });
-    const critsEl = document.getElementById('crits');
-    const baselineChecks = DATA.baselineChecks || {};
     const lastKept = rounds.filter(r => r.kept).pop();
-    const currentChecks = lastKept ? lastKept.checks : baselineChecks;
+    const detEl = document.getElementById('detVerifiers');
+    const baselineDet = DATA.baselineDeterministic || {};
+    const currentDet = lastKept ? lastKept.deterministic : baselineDet;
+    const describe = v => v ? Object.entries(v).map(([k, n]) => n + ' ' + k).join(', ') : '—';
+    Object.keys({ ...baselineDet, ...currentDet }).forEach(verifier => {
+      const before = describe(baselineDet[verifier]);
+      const now = describe(currentDet[verifier]);
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + verifier + '</td><td>' + before + '</td><td>' + now + '</td><td class="' + (before === now ? 'unchanged' : '') + '">' + (before === now ? 'OK' : 'changed') + '</td>';
+      detEl.appendChild(tr);
+    });
+    const critsEl = document.getElementById('crits');
+    const baselineChecks = DATA.baselineLlmChecks || {};
+    const currentChecks = lastKept ? lastKept.llmChecks : baselineChecks;
     Object.entries(baselineChecks).forEach(([criterion, before]) => {
       const now = currentChecks[criterion];
       const delta = now != null ? now - before : null;
@@ -101,7 +142,11 @@
     const log = document.getElementById('log');
     rounds.forEach(r => {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.targetedCriterion || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + (r.kept ? 'kept' : 'reverted') + '">' + (r.kept ? 'KEPT' : 'REVERTED') + '</td>';
+      const result = r.hardConstraintViolation
+        ? 'REVERTED (hard: ' + r.hardConstraintViolation + ')'
+        : (r.kept ? 'KEPT' : 'REVERTED');
+      const cls = r.kept ? 'kept' : 'reverted';
+      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.targetedArea || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + cls + '">' + result + '</td>';
       log.appendChild(tr);
     });
   </script>

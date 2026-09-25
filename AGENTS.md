@@ -202,44 +202,30 @@ accepted while the published CLI catches up, then the alias deleted.
 
 ## Managing Registry Items
 
-Skills for adding and removing items from `registry/manifest.json`:
+The maintainer skills in `.agents/skills/` change the registry. Each skill's `SKILL.md` holds its
+full procedure; use the one that fits:
 
-### `/add-seedr <path>` — Add local first-party items
-
-For first-party content maintained in this repo. Copies files into `registry/` and adds a manifest entry with the first-party source type.
-
-```bash
-# Example: add a hook from a local path
-/add-seedr /Users/daniel/project/.claude/hooks/pre-commit-lint
-```
-
-- Auto-detects content type from path segments (`/skills/`, `/hooks/`, `/agents/`, etc.)
-- Asks for name, scope, compatibility, and description via interactive prompts
-- Copies content to `registry/<type>s/<slug>/`
-- First-party items are preserved across syncs
-- A plugin folder (one carrying `.claude-plugin/plugin.json`) is accepted as a first-party plugin; the CLI installs it as a marketplace built around its own copy (`docs/verification.md`, "plugin (first-party)")
-
-### `/add-community <github-url>` — Add community GitHub repos
-
-For third-party content hosted on GitHub. Metadata-only in the manifest (no local file copy) — the CLI fetches content from `externalUrl` at install time.
-
-```bash
-# Example: add a community plugin
-/add-community https://github.com/obra/superpowers
-```
-
-- Detects type via GitHub API (checks `plugin.json` then `SKILL.md`)
-- Extracts metadata, pins the revision and digests the content (`registry-op.ts pin`), asks clarifying questions
-- Adds manifest entry with `sourceType: "community"`
-- Community items are re-synced from their GitHub repos on `pnpm sync`
-- A repository that one of Anthropic's marketplaces lists is already mirrored by the sync; the skill stops and points at the synced item instead of adding a second one
-
-### `/update-item <type> <slug> <instruction>` — Update a first-party item
-
-Patches an existing first-party item — metadata, descriptions or content files — without a
-remove-and-add. Drafts the change, shows it, and applies it through the operations CLI with the
-item's current state hash, so a stale draft is refused. Synced items are refused outright: the
-next sync would overwrite them.
+- `/add-seedr <path>` — add first-party content maintained in this repo; it copies the files
+  into `registry/<type>s/<slug>/`, and first-party items are preserved across syncs. A plugin
+  folder (one carrying `.claude-plugin/plugin.json`) is accepted as a first-party plugin; the
+  CLI installs it as a marketplace built around its own copy (`docs/verification.md`,
+  "plugin (first-party)").
+- `/add-community <github-url>` — add third-party content hosted on GitHub as a metadata-only
+  item (`sourceType: "community"`): the CLI fetches it from `externalUrl` at install time, and
+  `pnpm sync` re-syncs it from its repository. A repository that one of Anthropic's marketplaces
+  lists is already mirrored by the sync, so the skill stops and points at the synced item.
+- `/update-item <type> <slug> <instruction>` — patch a first-party item's metadata,
+  descriptions or content files without a remove-and-add; a stale draft is refused by the
+  item's state hash, and a synced item is refused because the next sync would overwrite it.
+- `/remove-seedr <slug>` — remove a first-party item and its local files, after the user
+  confirms.
+- `/remove-community <slug>` — remove a community item, which is metadata only, after the user
+  confirms.
+- `registry-item-reviewer` agent (`.agents/agents/registry-item-reviewer.md`) — reviews
+  `item.json` files for required fields, field consistency, and `description`/`longDescription`
+  quality against `.agents/rules/`. Read-only: it reports findings and suggested fixes, never
+  edits. Auto-spawns when adding/editing a registry item; invoke it explicitly before committing
+  registry changes ("use the registry-item-reviewer agent").
 
 ### How the skills mutate the registry
 
@@ -252,125 +238,16 @@ rather than from a constant — a fork attributes its items to its own owner.
 
 ### Seedr Studio (`apps/studio`)
 
-A desktop capability manager for a seedr checkout, wearing the estate look on configr's
-structure: an overlay title bar (the strip IS the macOS title bar), and a searchable
-explorer with collapsible type groups whose rows show ownership (pencil = first-party/editable,
-eye = synced/read-only) and the supported agents' brand marks — a footer dropdown flips the
-rows to the text form (`rw-` · `cgaxo`), next to the theme dropdown. The explorer header's
-refresh button checks every synced capability against its source through `registry-op.ts
-upstream-status` — the daily sync's question, asked by hand — and marks the ones the next
-sync would change. Each item's detail
-pairs a resizable, collapsible metadata pane (stacking on narrow panes) — whose two dates are kept apart, `lastUpdated` being this checkout's last commit touching the item and `sourceUpdated` the source's last change of the content, with how far the source has moved on once the up-to-date check has found it behind — with a Monaco file
-preview (self-hosted, read-only) offering syntax, formatted-markdown and plain views; a
-file's right-click menu carries "open with default app" and the view modes. Everything
-else — add capability, edit, test install, git, settings — opens as a dialog over the
-workspace, `data-tip` hovers replace inline notes (every form label explains its own
-vocabulary), and every external link (markdown links included) goes through a confirmation
-dialog, scheme-gated in both the webview and the host's `open_external`. Run from source —
-there are no installers:
-
-```bash
-pnpm --filter @seedr/studio tauri:dev                  # needs Rust (cargo) on the machine
-SEEDR_STUDIO_REPO=/path/to/seedr pnpm --filter @seedr/studio tauri:dev   # skip the folder picker
-pnpm --filter @seedr/studio test                       # vitest + jsdom; coverage thresholds are a gate
-cd apps/studio/src-tauri && cargo test                 # the host's path-scoping tests
-```
-
-**Add capability** (the Author screen) takes one of three routes, chosen by the `from` field.
-*A local folder* is the deterministic one: you supply what the model must not guess (type,
-slug, name, agents, scope, author — prefilled from `registry-op.ts identity`), "draft
-descriptions with Claude" sends a size-capped digest of the source to `claude -p
---output-format json --json-schema … --tools "" --max-turns 1` — one turn, no tools, answer
-validated by the same validator the commit gate uses, rejected twice means failure, never a
-hand-repaired JSON — and "add to registry" runs the `add-local` operation through
-`scripts/registry-op.ts` as a transaction (clean worktree required, rollback on any failure).
-*A git repository* and *the agent writes it* are agent jobs instead: Studio composes the
-prompt (this repo's own `/add-community` or `/add-seedr` skill, the type's pre-prompt, every
-filled field as a hint the agent honours and every empty one for it to derive) and streams
-`claude -p --output-format stream-json --verbose --allowedTools …` line by line. A job names what it may do — read, edit, search, skills, web, shell — and each
-adapter spells that in its own CLI's tool names, because they do not agree
-(Claude's `Read` is Copilot's `view`). Authoring runs the maintainer's own
-tooling, so its shell is open; `git` is denied alongside it, so a job still
-cannot commit, push or rewrite history — and it must end with `ADDED
-<type>/<slug>`, which is how the explorer knows what to open. Each description says who
-writes it, you or the agent. Claude Code is probed at startup (`--version`, `--help` flags)
-and disabled with a diagnostic rather than degraded.
-
-**Update** (the edit button on a first-party item's detail) patches name, descriptions, agents and
-scope — optionally redrafted by Claude from the item's own files — as a hash-guarded `update`
-transaction; synced items are read-only with the reason. **Remove** is a two-step button on
-the detail header, hash-guarded too; official items are refused because the daily sync would
-restore them. **Test install** (first-party items only) has the host run the checkout's own
-CLI — `node node_modules/tsx/dist/cli.mjs packages/cli/src/cli.ts add <slug> --type <type>
---agents all --scope project --method copy --yes` — in a scratch directory it creates and
-removes, then shows every file written and, for a skill, checks each of the item's files
-arrived byte for byte; synced items are not offered because they install from their
-upstream repository. **git** has two views: *status* shows branch, head, the changed paths
-and each one's diff; *publish* picks the target branches, takes a commit message and notes,
-and hands the job to the agent with `Bash(git:*)` and file edits allowed and nothing else —
-the prompt restates this repo's rules (no `--no-verify`, no cherry-pick between branches, no
-amending what is pushed, pull first, stop on a conflict) and asks for `PUBLISHED <branches>`
-or `STOPPED <why>` back. Studio reads `.github/workflows` to mark the branches whose push
-starts a workflow, so choosing `prod` says out loud that it deploys and publishes; the run
-takes a second, explicit confirmation of the exact targets.
-
-**Settings** holds two pages. *Coding agents* probes each canonical agent's CLI
-(`claude`, `copilot`, `agy`, `codex`, `opencode`) with `--version` and lets a binary a GUI
-launch cannot see on PATH be pointed at directly — the host validates the path, keeps it per
-machine and applies it wherever a run names the bare program; `npx` and `git` are deliberately
-not overridable. *Pre-prompts* holds the standing context per capability type, once for adds
-and once for edits, which the add and edit dialogs prefill into their prompt field.
-
-Architecture, deliberately small: the Rust host (`src-tauri/src/lib.rs`) is a read-only,
-root-scoped filesystem bridge plus a registry watcher — every path crosses the IPC boundary
-relative to the chosen repo and is refused if it escapes it — and a bounded process executor
-(`executor.rs`: the task id is the cancel key, the whole tree is killed via a Unix process
-group or a Windows Job Object, both streams are drained concurrently, output is capped,
-a watchdog enforces the timeout, prompts travel on stdin, the login shell's PATH is merged in
-so a GUI launch finds `claude` and `npx`; every child gets `SEEDR_NO_TELEMETRY=1`). Source
-folders for drafts are readable only after the native picker returned them in this session. Registry semantics live in
-TypeScript: the webview imports `@seedr/registry-ops/pure` (paths, the validator, the operation
-types), so Studio, `compile`, the commit gate and the skills all share one definition of an
-item. Mutations go through `scripts/registry-op.ts` transactions. Two kinds of agent run, kept
-apart on purpose: the *drafting adapter* gets no tools and one turn, while an *agent job*
-(add from a repository or a prompt, publish) names the tools it allows and Claude Code denies
-the rest — in `-p` there is nobody to ask, so a tool outside the list fails visibly. `src/core/lib/tauriInvoke.ts` is the only importer of Tauri's IPC, and
-the test harness (`src/test/mockIpc.ts`) rejects unknown commands instead of resolving
-`undefined`.
-
-### `/remove-seedr <slug>` — Remove local first-party items
-
-Removes a first-party item by slug. Deletes local files from `registry/<type>s/<slug>/` and removes the manifest entry.
-
-```bash
-# Example: remove a hook
-/remove-seedr pre-commit-lint
-```
-
-- Looks up the item by slug among the first-party ones
-- Confirms with user before deleting
-- Deletes local directory and manifest entry
-
-### `/remove-community <slug>` — Remove community items
-
-Removes a community-sourced item by slug. Removes the manifest entry only (no local files to clean up).
-
-```bash
-# Example: remove a community plugin
-/remove-community superpowers
-```
-
-- Looks up item by slug with `sourceType: "community"`
-- Confirms with user before removing
-- Removes manifest entry only (metadata-only items)
-
-### `registry-item-reviewer` agent — Review item quality
-
-A subagent (`.agents/agents/registry-item-reviewer.md`) that reviews `item.json` files for required fields, field consistency, and `description`/`longDescription` quality against `.agents/rules/`. Read-only — it reports findings and suggested fixes, never edits. Auto-spawns when adding/editing a registry item; invoke explicitly before committing registry changes ("use the registry-item-reviewer agent").
+Before running, using or changing Seedr Studio, the desktop capability manager for a seedr
+checkout, read `.agents/rules/studio.md`.
 
 ### Auto-compile hook
 
-A `PostToolUse` hook (`.agents/hooks/compile-on-item-edit.mjs`, wired in `.claude/settings.json`) runs `pnpm compile` whenever an `item.json` is edited, so the generated manifests never go stale from a manual edit.
+A `PostToolUse` hook (`.agents/hooks/compile-on-item-edit.mjs`, wired in `.claude/settings.json`)
+runs `pnpm compile` whenever Claude Code's Edit, Write or MultiEdit tool writes an `item.json`.
+It does not fire for a content file (`SKILL.md`, `references/`, a hook script) or for anything a
+shell command writes, and a content edit changes the item's compiled digest too, so run
+`pnpm compile` yourself after those.
 
 ### Agent-neutral tooling layout
 
@@ -399,14 +276,12 @@ npx tsc --noEmit
 
 ## CI / CD
 
-GitHub Actions workflows in `.github/workflows/`:
-
-| Workflow | Trigger | Does |
-|----------|---------|------|
-| `ci.yml` | push to `main`, any PR | Main job: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm check-descriptions`. Matrix job (ubuntu/windows/macos): registry-ops tests, script tests, `cargo test` for the Studio host |
-| `deploy.yml` | push to `prod` | Deploy web to Cloudflare Pages + publish CLI to npm |
-| `sync.yml` | schedule / manual | Mirror Anthropic's three plugin marketplaces (official, knowledge-work, community — about 2,600 plugins) and the official skills, and re-sync the remaining community items from their GitHub repos |
-| `test-email.yml` | manual | Smoke-test the SMTP sync-notification setup |
+Before changing a workflow in `.github/workflows/`, or how the CLI is published to npm as
+`@danieldeusing/seedr`, read `.agents/rules/ci-cd.md`: what each workflow does, the npm
+Trusted Publisher (OIDC) setup and the GitHub secrets. `ci.yml` checks every push to `main` and
+every PR: `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm check-descriptions`, plus the
+registry-ops tests, the script tests and the Studio host's `cargo test` on ubuntu, windows and
+macos.
 
 **Work on `main`; promote to `prod` by merge — and only in that direction.** The branches
 diverge by design after every release, so `prod` sitting ahead of `main` is normal, and
@@ -415,24 +290,6 @@ and what the sync and deploy automation own are in `.agents/rules/git-workflow.m
 before committing, and check `git branch --show-current` first: a checkout left on `prod` is how
 code goes missing from `main`. And judge a deploy by what is being served, not by the job going
 green — the web job spent months uploading to a preview URL and reporting success.
-
-## npm Publishing
-
-The CLI is published to npm as `@danieldeusing/seedr`. Push to `prod` branch triggers `.github/workflows/deploy.yml` (publish-cli job).
-
-### How CI auth works
-
-Publishing uses **npm Trusted Publishers (OIDC)** — no npm tokens needed. Requirements:
-
-1. `packages/cli/package.json` must have a `repository` field matching the GitHub repo
-2. The workflow must have `id-token: write` permission
-3. **On npmjs.com**: the package must have a Trusted Publisher configured (package Settings → Trusted Publisher → add repo + workflow filename)
-
-### GitHub secrets needed
-
-- `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` — Cloudflare Pages deploys (deploy-web job)
-- Version bump commits and registry sync pushes use the default `GITHUB_TOKEN` (no extra secrets)
-- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` — sync notification emails
 
 ## Web Design System
 

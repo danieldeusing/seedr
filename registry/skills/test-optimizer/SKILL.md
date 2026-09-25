@@ -1,6 +1,6 @@
 ---
 name: test-optimizer
-description: Iteratively evaluate and improve test suites through autonomous test-score-refine loops. Reads target test files, detects project tooling (test runner, coverage tool, mutation tester), builds a frozen evaluation harness combining deterministic verifiers (coverage %, mutation score, test pass rate, execution time) with LLM-judged criteria (naming clarity, assertion quality, edge case coverage, isolation, DRY-ness), then autonomously loops — score, identify weakest area, make one targeted improvement, re-score, keep if better or revert if not. Pairs with code-optimizer: run test-optimizer first to strengthen the safety net, then code-optimizer to improve the code. Use this skill whenever the user says "optimize tests", "improve tests", "strengthen tests", "test-optimizer", "run test-optimizer on [file/module]", "improve test coverage", "improve test quality", "make these tests better", "harden the test suite", or wants to systematically improve test quality through automated iteration. Also trigger when users want to increase coverage, add edge case tests, improve assertion quality, reduce test duplication, or improve test naming, even if they don't use the word "optimize".
+description: 'Iteratively evaluate and improve test suites through autonomous test-score-refine loops. Reads target test files, detects project tooling (test runner, coverage tool, mutation tester), builds a frozen evaluation harness combining deterministic verifiers (coverage, mutation score, pass rate, execution time) with LLM-judged criteria (naming clarity, assertion quality, edge case coverage, isolation, DRY-ness), then loops - score, improve the weakest area, re-score, keep if better or revert. Pairs with code-optimizer - run test-optimizer first to strengthen the safety net, then code-optimizer. Use whenever the user says "optimize tests", "improve tests", "strengthen tests", "test-optimizer", "run test-optimizer on [file/module]", "improve test coverage", "improve test quality", "make these tests better", "harden the test suite", or wants to improve test quality. Also trigger to increase coverage, add edge case tests, improve assertions, reduce duplication or improve test naming.'
 ---
 
 # Test Optimizer
@@ -60,7 +60,7 @@ Copy target test files to both `original/` and `working/`. Initialize `results.j
   "harness": "harness.md",
   "harnessBuiltAt": "ISO timestamp",
   "tooling": {"testRunner": "npm test", "coverage": "npm test -- --coverage", "mutationTester": null},
-  "baseline": null, "currentScore": null, "bestScore": null,
+  "baseline": null, "baselineLlmChecks": null, "currentScore": null, "bestScore": null,
   "consecutiveHighPasses": 0, "rounds": []
 }
 ```
@@ -166,14 +166,19 @@ Every scoring round produces a deterministic results table (verifier, result, ba
 
 ## Phase 3: Baseline Scoring
 
+**Who scores.** Score the LLM-judged criteria in a fresh-context subagent, here and in every round of Phase 4. It receives only the target test files as they now stand, the production code they exercise and the frozen `harness.md`. It never receives your change note or hypothesis, because an agent that knows what a change was meant to fix grades it kindly. Keep or revert on its scores. Deterministic verifiers run in your own context. Where the agent has no subagents, score in your own context and say so in the final report.
+
 1. Run all deterministic verifiers. Record baselines in `results.json`.
-2. Read all target test files. Score each LLM criterion with anchored rubrics. Record score + one-line evidence.
+2. The scoring subagent reads all target test files and scores each LLM criterion with anchored rubrics. Record score + one-line evidence.
+   - **Prove each criterion can fail (new harness only).** Before the harness freezes, have the scoring subagent score one deliberately weakened copy of the tests, made in the working directory and never in the project files: the baseline with the tests each criterion scored best on removed. Drop any criterion whose score does not fall, because it cannot tell better from worse, and remove it from `harness.md`.
 3. Calculate composite baseline. Report baseline %, deterministic metrics, per-criterion scores, and weakest area.
-4. Update `results.json` and `dashboard.html`.
+4. Update `results.json` with `baseline` and `baselineLlmChecks`, the step 2 scores in the shape of a round's `llmChecks`, e.g. `{"Test naming clarity": 3, "Assertion quality": 2}`. Then update `dashboard.html`.
 
 ## Phase 4: Improvement Loop
 
 Repeat autonomously until convergence or max rounds.
+
+Between rounds, do not stop to summarise, ask whether to continue, or offer options; the one-line round report goes out with the next round, not instead of it. The loop ends only at the convergence, max-rounds or plateau stop in *Loop Rules*, or at a deterministic check you cannot restore. Then go to Phase 5.
 
 ### Each Round
 
@@ -192,7 +197,7 @@ Repeat autonomously until convergence or max rounds.
 
 **4. Run deterministic verifiers** — hard constraint violated? Auto-revert from `backup/`, log `REVERTED (hard constraint: {which})`, skip LLM scoring. All pass? Continue.
 
-**5. Score LLM criteria** — re-read modified tests, score all criteria against frozen harness.
+**5. Score LLM criteria** — the scoring subagent (*Who scores*, Phase 3) re-reads the modified tests and scores all criteria against the frozen harness.
 
 **6. Calculate composite** — improved? Keep, update `working/`, log KEPT. Same or worse? Revert from `backup/`, log REVERTED.
 
@@ -229,137 +234,11 @@ Repeat autonomously until convergence or max rounds.
 
 ## Dashboard
 
-Self-contained HTML file. Each round, replace `__OPTIMIZER_DATA__` with current `results.json` and rewrite.
+`dashboard.html` in the working directory is a self-contained page that reloads every 10 seconds. It shows the composite score, the baseline, the counts of rounds, kept and reverted changes, a score-history bar chart, a Deterministic Verifiers table (first round against latest round: tests, line coverage, branch coverage, mutation score, execution time), the latest LLM criterion scores, a Criteria Trajectory table (baseline against the last kept round) and the changelog, where a hard revert names its constraint.
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="10">
-  <title>Test Optimizer — {target-name}</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,sans-serif;background:#0f1117;color:#e1e4e8;padding:24px}
-    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-    h1{font-size:1.4rem;color:#f0f3f6}
-    .score-big{font-size:3rem;font-weight:700;color:#58a6ff}
-    .score-label{font-size:.85rem;color:#8b949e}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-    .card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
-    .card h2{font-size:.95rem;color:#8b949e;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
-    .check{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.9rem}
-    .check.high::before{content:"●";color:#3fb950}
-    .check.mid::before{content:"●";color:#d29922}
-    .check.low::before{content:"●";color:#f85149}
-    .det-table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:8px}
-    .det-table th{text-align:left;padding:6px 8px;border-bottom:1px solid #30363d;color:#8b949e}
-    .det-table td{padding:6px 8px;border-bottom:1px solid #21262d}
-    .improved{color:#3fb950}.unchanged{color:#8b949e}.degraded{color:#f85149}
-    .changelog{width:100%}
-    .changelog table{width:100%;border-collapse:collapse;font-size:.85rem}
-    .changelog th{text-align:left;padding:8px;border-bottom:1px solid #30363d;color:#8b949e}
-    .changelog td{padding:8px;border-bottom:1px solid #21262d}
-    .kept{color:#3fb950}.reverted{color:#f85149}
-    .chart{height:200px;display:flex;align-items:flex-end;gap:4px;padding:8px 0}
-    .bar{background:#58a6ff;border-radius:3px 3px 0 0;min-width:24px;position:relative;transition:height .3s}
-    .bar-label{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:.7rem;color:#8b949e}
-    .stats{display:flex;gap:24px}
-    .stat{text-align:center}
-    .stat-value{font-size:1.5rem;font-weight:600;color:#f0f3f6}
-    .stat-label{font-size:.75rem;color:#8b949e}
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Test Optimizer — <span id="targetName"></span></h1>
-    <div style="text-align:right">
-      <div class="score-big" id="currentScore">—</div>
-      <div class="score-label">composite score</div>
-    </div>
-  </div>
-  <div class="stats" style="margin-bottom:24px">
-    <div class="stat"><div class="stat-value" id="baseline">—</div><div class="stat-label">baseline</div></div>
-    <div class="stat"><div class="stat-value" id="rounds">0</div><div class="stat-label">rounds</div></div>
-    <div class="stat"><div class="stat-value" id="kept">0</div><div class="stat-label">kept</div></div>
-    <div class="stat"><div class="stat-value" id="reverted">0</div><div class="stat-label">reverted</div></div>
-  </div>
-  <div class="grid">
-    <div class="card"><h2>Score History</h2><div class="chart" id="chart"></div></div>
-    <div class="card">
-      <h2>Deterministic Verifiers</h2>
-      <table class="det-table">
-        <thead><tr><th>Verifier</th><th>Baseline</th><th>Current</th><th>Status</th></tr></thead>
-        <tbody id="detVerifiers"></tbody>
-      </table>
-    </div>
-  </div>
-  <div class="grid">
-    <div class="card"><h2>LLM Criteria (latest)</h2><div id="checks"></div></div>
-    <div class="card">
-      <h2>Criteria Trajectory</h2>
-      <table class="det-table">
-        <thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead>
-        <tbody id="crits"></tbody>
-      </table>
-    </div>
-  </div>
-  <div class="card changelog">
-    <h2>Changelog</h2>
-    <table>
-      <thead><tr><th>Round</th><th>Score</th><th>Target</th><th>Change</th><th>Result</th></tr></thead>
-      <tbody id="log"></tbody>
-    </table>
-  </div>
-  <script>
-    const DATA = __OPTIMIZER_DATA__;
-    const $ = id => document.getElementById(id);
-    const fmt = v => v != null ? Math.round(v * 100) + '%' : '—';
-    $('targetName').textContent = DATA.target || '';
-    $('currentScore').textContent = fmt(DATA.currentScore);
-    $('baseline').textContent = fmt(DATA.baseline);
-    const rounds = DATA.rounds || [];
-    $('rounds').textContent = rounds.length;
-    $('kept').textContent = rounds.filter(r => r.kept).length;
-    $('reverted').textContent = rounds.filter(r => !r.kept).length;
-    const scores = [DATA.baseline, ...rounds.map(r => r.score)].filter(s => s != null);
-    scores.forEach(s => {
-      const bar = document.createElement('div');
-      bar.className = 'bar'; bar.style.height = (s * 180) + 'px'; bar.style.flex = '1';
-      bar.innerHTML = '<span class="bar-label">' + fmt(s) + '</span>';
-      $('chart').appendChild(bar);
-    });
-    const det = rounds.length ? rounds[rounds.length - 1].deterministic : {};
-    const detB = rounds.length ? rounds[0].deterministic : det;
-    [['Tests', 'tests', d => d && d.pass != null ? d.pass + ' pass, ' + d.fail + ' fail' : '—'],
-     ['Line coverage', 'lineCoverage', d => d != null ? d + '%' : '—'],
-     ['Branch coverage', 'branchCoverage', d => d != null ? d + '%' : '—'],
-     ['Mutation score', 'mutationScore', d => d != null ? d + '%' : '—'],
-     ['Execution time', 'executionTime', d => d != null ? d + 's' : '—']
-    ].forEach(([name, key, f]) => {
-      const tr = document.createElement('tr');
-      const cur = key === 'tests' ? f(det[key]) : f(det[key]);
-      const base = key === 'tests' ? f(detB[key]) : f(detB[key]);
-      tr.innerHTML = '<td>' + name + '</td><td>' + base + '</td><td>' + cur + '</td><td>' + (cur === base ? 'OK' : 'changed') + '</td>';
-      $('detVerifiers').appendChild(tr);
-    });
-    const lastRound = rounds[rounds.length - 1];
-    Object.entries(lastRound ? lastRound.llmChecks : {}).forEach(([q, score]) => {
-      const div = document.createElement('div');
-      div.className = 'check ' + (score >= 4 ? 'high' : score >= 3 ? 'mid' : 'low');
-      div.textContent = q + ' — ' + score + '/5';
-      $('checks').appendChild(div);
-    });
-    rounds.forEach(r => {
-      const tr = document.createElement('tr');
-      const result = r.hardConstraintViolation ? 'REVERTED (hard: ' + r.hardConstraintViolation + ')' : (r.kept ? 'KEPT' : 'REVERTED');
-      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.targetedArea || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + (r.kept ? 'kept' : 'reverted') + '">' + result + '</td>';
-      $('log').appendChild(tr);
-    });
-  </script>
-</body>
-</html>
-```
+It reads these `results.json` fields: `target`, `baseline`, `currentScore`, `baselineLlmChecks`, and per round `score`, `kept`, `deterministic` (`tests.pass`, `tests.fail`, `lineCoverage`, `branchCoverage`, `mutationScore`, `executionTime`), `llmChecks`, `targetedArea`, `change` and `hardConstraintViolation`.
+
+Copy this skill's `assets/dashboard.html` (next to this SKILL.md) into the working directory, unchanged. Each round, rewrite `dashboard.html` from that asset with `{target-name}` in the `<title>` replaced by the target name and `__OPTIMIZER_DATA__` replaced by the current `results.json` content.
 
 ## Modes
 

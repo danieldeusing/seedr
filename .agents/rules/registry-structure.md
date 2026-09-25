@@ -20,8 +20,11 @@ Each item's editable source of truth is a single `item.json` file. Running `pnpm
 manifests. The `manifest.json` files are **generated** — never hand-edit them.
 
 A `PostToolUse` hook (`.agents/hooks/compile-on-item-edit.mjs`, wired in `.claude/settings.json`)
-runs `pnpm compile` automatically whenever an `item.json` is edited, so the manifests never go
-stale from a manual edit. You still run `pnpm compile` yourself in non-Claude workflows.
+runs `pnpm compile` automatically whenever Claude Code's Edit, Write or MultiEdit tool writes an
+`item.json`, so the manifests never go stale from a manual `item.json` edit. It does not fire for
+a content file (`SKILL.md`, `references/`, a hook script), whose edit changes the compiled digest
+too, or for anything a shell command writes. You still run `pnpm compile` yourself after those,
+and in non-Claude workflows.
 
 ## Directory Layout
 

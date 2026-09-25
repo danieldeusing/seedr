@@ -10,6 +10,7 @@ import { ALL_AGENTS, CODING_AGENTS } from "../config/agents.js";
 import { parseAgentsArgStrict } from "../utils/detection.js";
 import { getHandler } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
+import { recordRemoval } from "../utils/ledger.js";
 import { isValidSlug, MAX_SLUG_LENGTH, SLUG_PATTERN } from "../utils/slug.js";
 import { validateScope, validateType, TYPE_LIST } from "../utils/validate-options.js";
 import { isTypeSupported, describeIncompatibility } from "../config/compatibility.js";
@@ -54,6 +55,7 @@ async function removeFromAgents(
   if (!handler) return 0;
 
   let successCount = 0;
+  const removedFrom: CodingAgent[] = [];
   for (const agent of agents) {
     // "Not found" and "could never have been there" are different answers, and
     // reporting the second as the first sends people looking for an install
@@ -71,9 +73,19 @@ async function removeFromAgents(
     const removed = await handler.uninstall(slug, agent, scope, cwd);
     if (removed) {
       spinner.succeed(brand(`Removed from ${CODING_AGENTS[agent].name}`));
+      removedFrom.push(agent);
       successCount++;
     } else {
       spinner.info(chalk.gray(`Not found in ${CODING_AGENTS[agent].name}`));
+    }
+  }
+  // The ledger follows what actually happened; a record kept for an agent the
+  // item is no longer on would report a version nothing is running.
+  if (removedFrom.length > 0) {
+    try {
+      await recordRemoval(type, slug, removedFrom);
+    } catch {
+      // The removal succeeded. A stale record is not worth failing it.
     }
   }
   return successCount;

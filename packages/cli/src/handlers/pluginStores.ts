@@ -459,6 +459,34 @@ const claudeStore: PluginStore = {
 const COPILOT_DIR = copilotUserRoot();
 export const COPILOT_SETTINGS_PATH = join(COPILOT_DIR, "settings.json");
 export const COPILOT_PLUGINS_DIR = join(COPILOT_DIR, "installed-plugins");
+export const COPILOT_HOOKS_DIR = join(COPILOT_DIR, "hooks");
+
+/**
+ * Copilot does not run a plugin's own hooks (github/copilot-cli#2540): a
+ * plugin can ship them and nothing ever fires. The workaround every plugin
+ * author reaches for is to copy them to the one place Copilot does read,
+ * `~/.copilot/hooks/<name>/hooks.json`, which until now meant a setup script
+ * of the plugin's own doing that work after every install.
+ *
+ * So seedr does it, for any plugin that ships `hooks/hooks-copilot.json`
+ * already in Copilot's schema. The only edit is `${PLUGIN_ROOT}`, which the
+ * file cannot resolve for itself: the tree's location is not known until it
+ * is installed. A plugin that ships no such file gets nothing written.
+ */
+const COPILOT_PLUGIN_HOOKS = join("hooks", "hooks-copilot.json");
+
+export function copilotHooksPath(name: string): Promise<string> {
+  return resolveContained(COPILOT_HOOKS_DIR, name, "hooks.json");
+}
+
+async function writeCopilotHooks(cachePath: string, name: string): Promise<void> {
+  const source = join(cachePath, COPILOT_PLUGIN_HOOKS);
+  if (!(await exists(source))) return;
+  const destination = await copilotHooksPath(name);
+  const hooks = (await readFile(source, "utf8")).replaceAll("${PLUGIN_ROOT}", cachePath);
+  await mkdir(dirname(destination), { recursive: true });
+  await writeFile(destination, hooks);
+}
 
 interface CopilotSettings extends EnabledPluginsFile {
   extraKnownMarketplaces?: Record<string, { source: { source: string; repo?: string; url?: string; path?: string } }>;
@@ -538,6 +566,15 @@ const copilotStore: PluginStore = {
       detail: `enabledPlugins["${context.pluginId}"] = true`,
       apply: () => enableInJsonSettings(COPILOT_SETTINGS_PATH, context.pluginId),
     },
+    ...(context.cachePath
+      ? [
+          {
+            path: join(COPILOT_HOOKS_DIR, context.name, "hooks.json"),
+            detail: `${COPILOT_PLUGIN_HOOKS} with \${PLUGIN_ROOT} resolved — only when the plugin ships one`,
+            apply: () => writeCopilotHooks(context.cachePath!, context.name),
+          },
+        ]
+      : []),
   ],
 
   async listInstalled() {
@@ -552,6 +589,9 @@ const copilotStore: PluginStore = {
     if (!disabled) return false;
     const split = splitPluginId(pluginId);
     if (split) {
+      // The hooks copy is ours and points into the tree about to go, so it
+      // goes first: a hooks.json left behind runs a script that is not there.
+      await removePathEntry(dirname(await copilotHooksPath(split.name)));
       let tree: string;
       try {
         tree = await resolveContained(COPILOT_PLUGINS_DIR, split.marketplace, split.name);

@@ -8,6 +8,7 @@ import { getHandler, getRegisteredTypes } from "../handlers/registry.js";
 import { handleCommandError } from "../utils/errors.js";
 import { parseAgentsArgStrict } from "../utils/detection.js";
 import { validateScope, validateType, TYPE_LIST } from "../utils/validate-options.js";
+import { readLedger, ledgerKey, type Ledger } from "../utils/ledger.js";
 
 // Ensure handlers are registered
 import "../handlers/index.js";
@@ -174,6 +175,53 @@ async function listAvailable(type?: ComponentType, label?: string): Promise<numb
   return 0;
 }
 
+/**
+ * The version each item was installed at, and whether the registry has moved on.
+ *
+ * The agents' own config does not carry the version: Copilot records only that a
+ * plugin is enabled, so `list --installed` could name an item and never say which
+ * release was on the machine — which is how a workstation sits several versions
+ * behind the registry with nothing on screen to say so.
+ *
+ * Drift is measured on the CONTENT DIGEST, not the version, because the two
+ * versions in play are not the same number. A plugin's version comes from its own
+ * manifest (vu3-agent-kit 0.16.2) and the registry item carries a separate one for
+ * the catalogue entry (1.0.20); comparing them reports drift on every listing,
+ * forever. The digest is what seedr already verifies on download and is the thing
+ * that actually changes when the content does.
+ *
+ * Both halves are optional. An item installed before the ledger existed gets no
+ * annotation rather than a wrong one, and an unreachable registry costs the drift
+ * marker and nothing else — a listing must still work offline.
+ */
+async function installedVersionAnnotator(): Promise<(type: ComponentType, slug: string) => string> {
+  let ledger: Ledger;
+  try {
+    ledger = await readLedger();
+  } catch {
+    return () => "";
+  }
+
+  let current: Map<string, string>;
+  try {
+    const items = await listItems();
+    current = new Map(
+      items.filter((item) => item.contentDigest).map((item) => [ledgerKey(item.type, item.slug), item.contentDigest!])
+    );
+  } catch {
+    current = new Map();
+  }
+
+  return (type, slug) => {
+    const key = ledgerKey(type, slug);
+    const entry = ledger.items[key];
+    if (!entry?.version) return "";
+    const available = current.get(key);
+    const stale = entry.contentDigest && available && available !== entry.contentDigest;
+    return chalk.gray(` ${entry.version}`) + (stale ? chalk.yellow(" → update available") : "");
+  };
+}
+
 async function listInstalled(params: {
   types?: ComponentType[];
   agents: CodingAgent[];
@@ -183,6 +231,7 @@ async function listInstalled(params: {
   console.log(brand(`\nInstalled items (${params.scope} scope):\n`));
 
   const groups = await collectInstalledItems(params);
+  const annotate = await installedVersionAnnotator();
   let total = 0;
   let currentType: ComponentType | null = null;
 
@@ -194,7 +243,7 @@ async function listInstalled(params: {
     }
     console.log(chalk.blue(`  ${CODING_AGENTS[group.agent].name}`));
     for (const slug of group.slugs) {
-      console.log(`    ${chalk.white(slug)}`);
+      console.log(`    ${chalk.white(slug)}${annotate(group.type, slug)}`);
       total++;
     }
     console.log("");

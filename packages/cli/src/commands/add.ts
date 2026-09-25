@@ -12,6 +12,7 @@ import { handleCommandError } from "../utils/errors.js";
 import { validateScope, validateMethod, validateType, TYPE_LIST } from "../utils/validate-options.js";
 import { trackInstalls, TELEMETRY_HELP_TEXT } from "../utils/analytics.js";
 import { ALL_AGENTS, CODING_AGENTS } from "../config/agents.js";
+import { recordInstall } from "../utils/ledger.js";
 import { describeIncompatibility, filterCompatibleAgents, isTypeSupported } from "../config/compatibility.js";
 import { getAgentsPath } from "../utils/fs.js";
 
@@ -175,6 +176,30 @@ export function formatPlan(changes: PlannedChange[]): string[] {
 }
 
 /** Exit code for a batch of results: 1 when any agent failed. */
+/**
+ * Write what was installed to seedr's own ledger, so `list --installed` can say
+ * which version is on this machine. Never fatal: the install already happened,
+ * and a record that could not be written is worth a warning, not a failure.
+ */
+async function noteInstall(item: RegistryItem, results: InstallResult[], scope: InstallScope): Promise<void> {
+  const succeeded = results.filter((r) => r.success);
+  const installed = succeeded.map((r) => r.agent);
+  if (installed.length === 0) return;
+  try {
+    await recordInstall({
+      type: item.type,
+      slug: item.slug,
+      version: succeeded.find((r) => r.version)?.version ?? item.version,
+      contentDigest: item.contentDigest,
+      agents: installed,
+      scope,
+      installedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    ui.warn(`Installed, but the install record could not be written: ${(error as Error).message}`);
+  }
+}
+
 export function summarizeResults(results: InstallResult[]): { successful: InstallResult[]; failed: InstallResult[]; exitCode: number } {
   const successful = results.filter((r) => r.success);
   const failed = results.filter((r) => !r.success);
@@ -405,6 +430,7 @@ export async function runAdd(name: string | undefined, options: AddOptions, cwd:
   console.log();
   const results = await handler.install(item, agents, scope, method, decideForce(options), cwd);
   void trackInstalls(item.slug, item.type, results, scope);
+  await noteInstall(item, results, scope);
   const exitCode = printInstallSummary(results);
   if (exitCode === 0) ui.outro("Installation complete");
   return exitCode;

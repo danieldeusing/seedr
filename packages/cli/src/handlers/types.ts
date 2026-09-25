@@ -6,6 +6,13 @@ export interface InstallResult {
   success: boolean;
   path: string;
   error?: string;
+  /**
+   * The version that landed, when it differs from the registry item's own.
+   * A plugin carries its version in its manifest and the registry item carries
+   * a separate one for the catalogue entry — recording the item's would say
+   * "1.0.20" for a plugin every agent knows as 0.16.2.
+   */
+  version?: string;
 }
 
 /** One filesystem effect an install would have, as reported by `plan()`. */

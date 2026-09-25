@@ -268,7 +268,7 @@ async function installPluginForAgent(
       ]);
 
       spinner.succeed(brand(`Installed ${item.name} for ${CODING_AGENTS[agent].name}`));
-      return { agent, success: true, path: cachePath ?? "" };
+      return { agent, success: true, path: cachePath ?? "", version };
     } finally {
       if (staging) await rm(staging, { recursive: true, force: true });
     }

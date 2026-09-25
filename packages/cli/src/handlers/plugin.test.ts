@@ -43,6 +43,7 @@ const CLAUDE_PLUGIN_MANIFEST = ".claude-plugin/plugin.json";
 const OFFICIAL = "claude-plugins-official";
 const COPILOT_SETTINGS = `${HOME}/.copilot/settings.json`;
 const COPILOT_PLUGINS_DIR = `${HOME}/.copilot/installed-plugins`;
+const COPILOT_HOOKS = `${HOME}/.copilot/hooks/my-plugin/hooks.json`;
 const CODEX_CONFIG = `${HOME}/.codex/config.toml`;
 const CODEX_CACHE_DIR = `${HOME}/.codex/plugins/cache`;
 const OPENCODE_PROJECT_CONFIG = `${PROJECT}/opencode.json`;
@@ -111,6 +112,28 @@ async function serveDownload(pluginJson: Record<string, unknown> | string): Prom
   });
 }
 
+/**
+ * Like `serveDownload`, plus the `hooks/hooks-copilot.json` a plugin ships for
+ * the Copilot hooks Copilot will not run from a plugin (copilot-cli#2540).
+ */
+async function serveDownloadWithCopilotHooks(): Promise<void> {
+  const { fetchItemToDestination } = await import("../config/registry.js");
+  vi.mocked(fetchItemToDestination).mockImplementation(async (_item: RegistryItem, dest: string) => {
+    vol.mkdirSync(`${dest}/.claude-plugin`, { recursive: true });
+    vol.writeFileSync(`${dest}/.claude-plugin/plugin.json`, JSON.stringify({ name: "my-plugin", version: "2.1.0" }));
+    vol.mkdirSync(`${dest}/hooks`, { recursive: true });
+    vol.writeFileSync(
+      `${dest}/hooks/hooks-copilot.json`,
+      JSON.stringify({
+        version: 1,
+        hooks: { preToolUse: [{ type: "command", bash: 'python3 "${PLUGIN_ROOT}/hooks/guard.py" copilot', timeoutSec: 10 }] },
+      })
+    );
+    vol.writeFileSync(`${dest}/README.md`, "readme");
+    return { sourceRevision: SHA, contentDigest: "f".repeat(64), files: [CLAUDE_PLUGIN_MANIFEST, "README.md"] };
+  });
+}
+
 function cacheTempEntries(): string[] {
   const tmp = `${CACHE_DIR}/.tmp`;
   return vol.existsSync(tmp) ? (vol.readdirSync(tmp) as string[]) : [];
@@ -136,7 +159,7 @@ describe("plugin handler", () => {
       const results = await installPlugin(pluginItem(), ["claude"], "project", "copy", true, PROJECT);
 
       const cachePath = `${CACHE_DIR}/${MARKETPLACE}/my-plugin/2.1.0`;
-      expect(results[0]).toEqual({ agent: "claude", success: true, path: cachePath });
+      expect(results[0]).toEqual({ agent: "claude", success: true, path: cachePath, version: "2.1.0" });
       expect(vol.readFileSync(`${cachePath}/README.md`, "utf-8")).toBe("readme");
       const registry = readJsonFile(INSTALLED_PATH);
       expect(registry.version).toBe(2);
@@ -153,7 +176,7 @@ describe("plugin handler", () => {
       const results = await installPlugin(pluginItem(), ["copilot"], "project", "copy", true, PROJECT);
 
       const cachePath = `${COPILOT_PLUGINS_DIR}/${MARKETPLACE}/my-plugin`;
-      expect(results[0]).toEqual({ agent: "copilot", success: true, path: cachePath });
+      expect(results[0]).toEqual({ agent: "copilot", success: true, path: cachePath, version: "2.1.0" });
       expect(vol.readFileSync(`${cachePath}/README.md`, "utf-8")).toBe("readme");
       const settings = readJsonFile(COPILOT_SETTINGS);
       expect(settings.enabledPlugins["my-plugin@marketplace"]).toBe(true);
@@ -167,6 +190,54 @@ describe("plugin handler", () => {
       expect(selfMarketplace.plugins).toEqual([expect.objectContaining({ name: "my-plugin", source: "./" })]);
       expect(vol.existsSync(INSTALLED_PATH)).toBe(false);
       expect(vol.existsSync(CACHE_DIR)).toBe(false);
+    });
+
+    // Copilot does not run a plugin's own hooks (copilot-cli#2540), so a plugin
+    // that ships them in Copilot's schema gets them copied to the one place
+    // Copilot does read. `${PLUGIN_ROOT}` is resolved here because the file
+    // cannot know where it will land.
+    it("plants a plugin's Copilot hooks with ${PLUGIN_ROOT} resolved", async () => {
+      await serveDownloadWithCopilotHooks();
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["copilot"], "project", "copy", true, PROJECT);
+
+      const cachePath = `${COPILOT_PLUGINS_DIR}/${MARKETPLACE}/my-plugin`;
+      const planted = readJsonFile(COPILOT_HOOKS);
+      expect(planted.version).toBe(1);
+      expect(planted.hooks.preToolUse[0].bash).toBe(`python3 "${cachePath}/hooks/guard.py" copilot`);
+      expect(JSON.stringify(planted)).not.toContain("PLUGIN_ROOT");
+    });
+
+    it("plants nothing when the plugin ships no Copilot hooks", async () => {
+      await serveDownload({ name: "my-plugin", version: "2.1.0" });
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["copilot"], "project", "copy", true, PROJECT);
+
+      expect(vol.existsSync(COPILOT_HOOKS)).toBe(false);
+    });
+
+    it("is Copilot's alone — a Claude install plants no Copilot hooks", async () => {
+      await serveDownloadWithCopilotHooks();
+      const { installPlugin } = await import("./plugin.js");
+
+      await installPlugin(pluginItem(), ["claude"], "project", "copy", true, PROJECT);
+
+      expect(vol.existsSync(COPILOT_HOOKS)).toBe(false);
+    });
+
+    // A hooks.json outliving its tree runs a script that is no longer there,
+    // and Copilot reports a failing preToolUse as a denial of every tool call.
+    it("takes the hooks away with the plugin", async () => {
+      await serveDownloadWithCopilotHooks();
+      const { installPlugin, uninstallPlugin } = await import("./plugin.js");
+      await installPlugin(pluginItem(), ["copilot"], "project", "copy", true, PROJECT);
+      expect(vol.existsSync(COPILOT_HOOKS)).toBe(true);
+
+      expect(await uninstallPlugin("my-plugin", "copilot", "project", PROJECT)).toBe(true);
+
+      expect(vol.existsSync(COPILOT_HOOKS)).toBe(false);
     });
 
     it.each([
@@ -749,7 +820,7 @@ describe("plugin handler", () => {
 
       const results = await installPlugin(pluginItem(), ["opencode"], "project", "copy", true, PROJECT);
 
-      expect(results[0]).toEqual({ agent: "opencode", success: true, path: "" });
+      expect(results[0]).toEqual({ agent: "opencode", success: true, path: "", version: "2.1.0" });
       const config = readJsonFile(OPENCODE_PROJECT_CONFIG);
       // The plugin's OWN repository, pinned — not the marketplace it is indexed in.
       expect(config.plugin).toEqual([`my-plugin@git+https://github.com/owner/my-plugin.git#${SHA}`]);
@@ -1006,7 +1077,7 @@ describe("plugin handler", () => {
       const results = await installPlugin(firstPartyItem(), ["claude"], "user", "copy", true, PROJECT);
 
       const cachePath = `${CACHE_DIR}/my-plugin/my-plugin/2.0.0`;
-      expect(results[0]).toEqual({ agent: "claude", success: true, path: cachePath });
+      expect(results[0]).toEqual({ agent: "claude", success: true, path: cachePath, version: "2.0.0" });
       expect(execFileMock).not.toHaveBeenCalled();
       expect(readJsonFile(KNOWN_MARKETPLACES_PATH)["my-plugin"]).toEqual({
         source: { source: "directory", path: cachePath },
@@ -1084,7 +1155,7 @@ describe("plugin handler", () => {
       const results = await installPlugin(firstPartyItem(), ["copilot"], "user", "copy", true, PROJECT);
 
       const cachePath = `${COPILOT_PLUGINS_DIR}/my-plugin/my-plugin`;
-      expect(results[0]).toEqual({ agent: "copilot", success: true, path: cachePath });
+      expect(results[0]).toEqual({ agent: "copilot", success: true, path: cachePath, version: "2.0.0" });
       const settings = readJsonFile(COPILOT_SETTINGS);
       expect(settings.extraKnownMarketplaces["my-plugin"]).toEqual({ source: { source: "directory", path: cachePath } });
       expect(settings.enabledPlugins["my-plugin@my-plugin"]).toBe(true);
@@ -1102,7 +1173,7 @@ describe("plugin handler", () => {
       const results = await installPlugin(firstPartyItem(), ["opencode"], "project", "copy", true, PROJECT);
 
       const tree = `${OPENCODE_PLUGINS_DIR}/my-plugin`;
-      expect(results[0]).toEqual({ agent: "opencode", success: true, path: tree });
+      expect(results[0]).toEqual({ agent: "opencode", success: true, path: tree, version: "2.0.0" });
       expect(vol.readFileSync(`${tree}/skills/one/SKILL.md`, "utf-8")).toContain("name: one");
       expect(readJsonFile(OPENCODE_PROJECT_CONFIG).plugin).toEqual([tree]);
       expect(await getInstalledPlugins("opencode", "project", PROJECT)).toEqual(["my-plugin"]);

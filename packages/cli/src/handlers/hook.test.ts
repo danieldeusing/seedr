@@ -585,7 +585,7 @@ describe("hook handler", () => {
 
     it("rejects non-claude agents and hooks without a script", async () => {
       const { planHook } = await import("./hook.js");
-      await expect(planHook(hookItem("x"), ["gemini"], "project", "copy", PROJECT)).rejects.toThrow(/only supported for Claude Code/);
+      await expect(planHook(hookItem("x"), ["antigravity"], "project", "copy", PROJECT)).rejects.toThrow(/only supported for Claude Code/);
       await expect(planHook(hookItem("x", [{ event: PRE_COMMIT }], { contents: { files: [] } }), ["claude"], "project", "copy", PROJECT)).rejects.toThrow(/No script file/);
     });
   });

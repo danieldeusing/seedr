@@ -52,6 +52,7 @@ Initialize `results.json`:
   "harnessBuiltAt": "ISO timestamp",
   "testInputs": ["input1"],
   "baseline": null,
+  "baselineChecks": null,
   "currentScore": null,
   "bestScore": null,
   "consecutiveHighPasses": 0,
@@ -181,7 +182,7 @@ Every scoring round must produce this exact table:
 | AVG   |                        | 3.8   |                                            |
 ```
 
-Log the harness summary (criterion count, test input count) as a status update. Proceed immediately to baseline scoring. The harness CAN be adjusted before the baseline if the user passes specific criteria or pain points as parameters, but once the baseline is scored, it's frozen for the rest of the run.
+Log the harness summary (criterion count, test input count) as a status update. Proceed immediately to baseline scoring. The harness CAN be adjusted before the baseline if the user passes specific criteria or pain points as parameters, but once the baseline is scored and Phase 3 has proved each criterion can fail, it's frozen for the rest of the run.
 
 **Parameters** (optional, passed by user or calling automation):
 - `pain:<issue1>,<issue2>` — specific failure modes to target
@@ -191,11 +192,14 @@ Log the harness summary (criterion count, test input count) as a status update. 
 
 ## Phase 3: Baseline
 
+**Who produces and who scores.** Here and in every round of Phase 4, the outputs and the scores come from fresh-context subagents, never from the context that edits `skill.md`. The output subagent receives only `skill.md` as it now stands and one test input. The scoring subagent receives `skill.md` as it now stands, the test inputs, their outputs and the frozen `harness.md`, never your change note or hypothesis. Keep or revert on its scores. The split keeps the harness out of the outputs (see *Important* below) and your hypothesis out of the grading. Where the agent has no subagents, do both in your own context and say so in the final report.
+
 1. Read `skill.md`
-2. For each test input: follow the skill's instructions as if you were a fresh Claude instance with this skill loaded, producing the output the skill is designed to create
-3. Score each output against every harness criterion using the anchored rubrics
+2. For each test input: the output subagent follows the skill's instructions with this skill loaded, producing the output the skill is designed to create
+3. The scoring subagent scores each output against every harness criterion using the anchored rubrics
+   - New harness only: before it freezes, prove each criterion can fail. Run one deliberately weakened variant through both subagents: `skill.md` with the instruction behind each criterion's best score removed. Where no single instruction carries a criterion, compare the worst test input's output against the best one instead. Drop any criterion whose score does not fall, because it cannot tell better from worse, and remove it from `harness.md`.
 4. Calculate baseline: average of all scores, normalized to percentage ((avg - 1) / 4 * 100)
-5. Update `results.json` with the baseline score
+5. Update `results.json` with the baseline score and `baselineChecks`: each criterion's average across the test inputs, in the shape of a round's `checks`, e.g. `{"Headline specificity": 2.5, "Buzzword avoidance": 5.0, "CTA verb phrase": 3.0}`
 6. Update `dashboard.html` — replace `__OPTIMIZER_DATA__` with current `results.json`
 7. Report:
    ```
@@ -212,6 +216,8 @@ Important: when producing output, genuinely follow the skill instructions. Don't
 
 Repeat autonomously until stopped or convergence reached.
 
+Between rounds, do not stop to summarise, ask whether to continue, or offer options; the one-line round report goes out with the next round, not instead of it. The loop ends only at the convergence, max-rounds or plateau stop in *Loop Rules*. Then go to Phase 5.
+
 ### Each Round
 
 **1. Analyze** — Look at the harness scores from the previous round. Which criterion has the lowest average score across all test inputs? Focus on that one.
@@ -222,10 +228,12 @@ Repeat autonomously until stopped or convergence reached.
 - Add a worked example showing the desired pattern
 - Clarify an ambiguous instruction
 - Reorder instructions to give more prominence to important rules
+- Remove a line that only asks for more thinking ("think carefully", "think step by step"): the agent's effort setting controls depth, and the line only delays the answer
+- Replace a request for reasoning in the output ("explain your reasoning", "show your chain of thought") with conclusion plus evidence, or a rationale of at most three sentences: Claude Opus 5.5 can refuse a request for its reasoning transcript
 
 **3. Apply** — Copy `skill.md` to `skill.md.bak`. Make the single change to `skill.md`.
 
-**4. Test** — Read the modified `skill.md`. Follow its instructions with ALL test inputs. Score each output against the full harness. Calculate the new average score.
+**4. Test** — Run ALL test inputs through the modified `skill.md` with the output subagent, and have the scoring subagent score each output against the full harness (*Who produces and who scores*, Phase 3). Calculate the new average score.
 
 **5. Evaluate** — Compare to previous best score:
 - **Improved**: Keep the change. Delete `.bak`. Log as KEPT.
@@ -275,107 +283,8 @@ Update `currentScore`, `bestScore`, and `consecutiveHighPasses`.
 
 ## Dashboard
 
-The dashboard (`dashboard.html`) is a self-contained HTML file:
+`dashboard.html` in the working directory is a self-contained page that reloads every 10 seconds. It shows the current score, the baseline, the counts of rounds, kept and reverted changes, a score-history bar chart, the latest criterion scores, a Criterion Averages table (baseline against the last kept round) and the changelog.
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="10">
-  <title>Skill Optimizer — {skill-name}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4e8; padding: 24px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { font-size: 1.4rem; color: #f0f3f6; }
-    .score-big { font-size: 3rem; font-weight: 700; color: #58a6ff; }
-    .score-label { font-size: 0.85rem; color: #8b949e; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
-    .card h2 { font-size: 0.95rem; color: #8b949e; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .check { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.9rem; }
-    .check.high::before { content: "●"; color: #3fb950; }
-    .check.mid::before { content: "●"; color: #d29922; }
-    .check.low::before { content: "●"; color: #f85149; }
-    .changelog { width: 100%; }
-    .changelog table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .changelog th { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .changelog td { padding: 8px; border-bottom: 1px solid #21262d; }
-    .kept { color: #3fb950; }
-    .reverted { color: #f85149; }
-    .chart { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding: 8px 0; }
-    .bar { background: #58a6ff; border-radius: 3px 3px 0 0; min-width: 24px; position: relative; transition: height 0.3s; }
-    .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: #8b949e; }
-    .stats { display: flex; gap: 24px; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 1.5rem; font-weight: 600; color: #f0f3f6; }
-    .stat-label { font-size: 0.75rem; color: #8b949e; }
-    .crit-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
-    .crit-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .crit-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Skill Optimizer — <span id="skillName"></span></h1>
-    <div style="text-align: right">
-      <div class="score-big" id="currentScore">—</div>
-      <div class="score-label">current score</div>
-    </div>
-  </div>
-  <div class="stats" style="margin-bottom: 24px;">
-    <div class="stat"><div class="stat-value" id="baseline">—</div><div class="stat-label">baseline</div></div>
-    <div class="stat"><div class="stat-value" id="rounds">0</div><div class="stat-label">rounds</div></div>
-    <div class="stat"><div class="stat-value" id="kept">0</div><div class="stat-label">kept</div></div>
-    <div class="stat"><div class="stat-value" id="reverted">0</div><div class="stat-label">reverted</div></div>
-  </div>
-  <div class="grid">
-    <div class="card"><h2>Score History</h2><div class="chart" id="chart"></div></div>
-    <div class="card"><h2>Criteria (latest)</h2><div id="checks"></div></div>
-  </div>
-  <div class="card" style="margin-bottom: 16px;"><h2>Criterion Averages</h2><table class="crit-table"><thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead><tbody id="crits"></tbody></table></div>
-  <div class="card changelog"><h2>Changelog</h2><table><thead><tr><th>Round</th><th>Score</th><th>Target</th><th>Change</th><th>Result</th></tr></thead><tbody id="log"></tbody></table></div>
-  <script>
-    const DATA = __OPTIMIZER_DATA__;
-    document.getElementById('skillName').textContent = DATA.skill || '';
-    const fmt = v => v != null ? Math.round(v * 100) + '%' : '—';
-    document.getElementById('currentScore').textContent = fmt(DATA.currentScore);
-    document.getElementById('baseline').textContent = fmt(DATA.baseline);
-    const rounds = DATA.rounds || [];
-    document.getElementById('rounds').textContent = rounds.length;
-    document.getElementById('kept').textContent = rounds.filter(r => r.kept).length;
-    document.getElementById('reverted').textContent = rounds.filter(r => !r.kept).length;
-    const chart = document.getElementById('chart');
-    const scores = [DATA.baseline, ...rounds.map(r => r.score)].filter(s => s != null);
-    const maxH = 180;
-    scores.forEach((s, i) => {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      bar.style.height = (s * maxH) + 'px';
-      bar.style.flex = '1';
-      bar.innerHTML = '<span class="bar-label">' + fmt(s) + '</span>';
-      chart.appendChild(bar);
-    });
-    const checksEl = document.getElementById('checks');
-    const lastRound = rounds[rounds.length - 1];
-    const checksData = lastRound ? lastRound.checks : {};
-    Object.entries(checksData).forEach(([q, score]) => {
-      const div = document.createElement('div');
-      const cls = score >= 4 ? 'high' : score >= 3 ? 'mid' : 'low';
-      div.className = 'check ' + cls;
-      div.textContent = q + ' — ' + score + '/5';
-      checksEl.appendChild(div);
-    });
-    const log = document.getElementById('log');
-    rounds.forEach(r => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.targetedCriterion || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + (r.kept ? 'kept' : 'reverted') + '">' + (r.kept ? 'KEPT' : 'REVERTED') + '</td>';
-      log.appendChild(tr);
-    });
-  </script>
-</body>
-</html>
-```
+It reads these `results.json` fields: `skill`, `baseline`, `currentScore`, `baselineChecks`, and per round `score`, `kept`, `checks`, `targetedCriterion` and `change`.
 
-Each round, replace `__OPTIMIZER_DATA__` with the current `results.json` content and rewrite the file.
+Copy this skill's `assets/dashboard.html` (next to this SKILL.md) into the working directory, unchanged. Each round, rewrite `dashboard.html` from that asset with `{skill-name}` in the `<title>` replaced by the skill name and `__OPTIMIZER_DATA__` replaced by the current `results.json` content.

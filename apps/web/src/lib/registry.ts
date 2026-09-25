@@ -51,8 +51,8 @@ const devTestItem: RegistryItem = {
 };
 
 // Assemble all type manifests into a single RegistryManifest. Compatibility and
-// source type are canonicalised here, so a not-yet-migrated `gemini`
-// entry filters and renders as `antigravity` / `seedr` everywhere downstream.
+// source type are canonicalised here, so an id outside the vocabulary never
+// reaches a filter or a badge downstream.
 const allItems: RegistryItem[] = typeManifests
   .flatMap((typeManifest) => typeManifest.items as RegistryItem[])
   .map((item) => ({

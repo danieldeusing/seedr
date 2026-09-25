@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 import type { RegistryItem } from "@seedr/shared";
-import { storageAgents } from "../agents.js";
+import { canonicalAgents } from "../agents.js";
 import { isFirstParty } from "../sourceTypes.js";
 import { contentDigestOfDir, itemStateHash } from "../hash.js";
 import { itemDir, itemJsonPath } from "../fsPaths.js";
@@ -79,11 +79,9 @@ export function update(registryDir: string, op: UpdateOp): OpResult {
   // description leaves it alone. An explicit version in the patch wins: that is
   // someone deciding this is a minor or a major, which no rule can infer.
   if (op.patch.version === undefined && contentDigestOfDir(dir) !== digestBefore) next.version = bumpPatch(current.version);
-  // Written in the B1 storage vocabulary (STORAGE_ALIASES): deduplicated with
-  // aliases resolved, but `antigravity` stays stored as `gemini` until the
-  // published CLI understands it. The raw list was validated above, so an
-  // unknown id still names itself.
-  next.compatibility = storageAgents(next.compatibility);
+  // Written deduplicated and in canonical order. The raw list was validated
+  // above, so an unknown id still names itself.
+  next.compatibility = canonicalAgents(next.compatibility);
   const item: RegistryItem = edits.length > 0 ? { ...next, contents: { ...next.contents, files: fileTree(dir) } } : next;
   writeFileSync(itemJsonPath(registryDir, op.type, op.slug), JSON.stringify(item, null, 2) + "\n");
   return { kind: op.kind, type: op.type, slug: op.slug, item };

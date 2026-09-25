@@ -175,6 +175,8 @@ Then Read both image files. You are a multimodal model — you can see images. U
 3. **Mentally composite** — determine which UI element each drawn shape targets.
 4. **Cross-reference** with the annotation data: the visual identification tells you the ACTUAL target; the `nearSelector`/`html`/`childHints` tell you WHERE in the DOM that target is (or its parent is).
 
+**Small targets**: when an annotation points at a small element (an icon, a single word, a thin border), crop the page screenshot to that region at full resolution (for example with PIL into `/tmp/redline-crop.png`) and read the crop before naming the target. A full screenshot is downscaled when it is read, which blurs neighbouring small elements together. The annotation's `position`, or the `to` point of an arrow, marks the region.
+
 **Example**: An arrow with comment "Change icon color to yellow" has `nearSelector` pointing to `<a href="/skills">` (a card wrapper). The screenshot shows the arrow tip pointing at the SVG icon inside that card. The `childHints` confirm `<svg>` is the first child. → Target is the SVG icon component inside the Skills card, not the card wrapper itself.
 
 **Example**: A freehand with `nearSelector` pointing to `#main-content` (the entire page body). This is useless alone. The screenshot shows freehand strokes circling a specific table row. → Target is that table row, identifiable by cross-referencing the position with the page layout.

@@ -217,7 +217,7 @@ describe("agent handler", () => {
       expect(await planAgent(agentItem({ sourceType: "official" }), ["claude"], "project", "copy", PROJECT)).toEqual([
         { agent: "claude", kind: "modify", path: AGENT_FILE, detail: "agent definition file" },
       ]);
-      await expect(planAgent(agentItem(), ["gemini"], "project", "copy", PROJECT)).rejects.toThrow(/does not support agents/);
+      await expect(planAgent(agentItem(), ["antigravity"], "project", "copy", PROJECT)).rejects.toThrow(/does not support agents/);
     });
   });
 

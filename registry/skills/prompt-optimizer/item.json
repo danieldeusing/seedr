@@ -3,7 +3,7 @@
   "name": "Prompt Optimizer",
   "type": "skill",
   "description": "Iteratively improve prompts embedded in application source code through autonomous test-score-refine loops.",
-  "longDescription": "Finds prompts in source code (Python strings, TypeScript/JavaScript, YAML configs, JSON files), extracts them, and optimizes in-place. Combines **deterministic verifiers** (source file syntax, template variable preservation, token count, format compliance, regression tests) with **4 LLM-judged criteria**: output quality on test cases, instruction clarity, robustness against edge cases, and conciseness.\n\nAuto-detects template variables (`{{user_input}}`, `{context}`) and preserves them across edits. Each round: run the prompt against test inputs, score outputs, make one targeted change in the source file, re-score, keep or revert. Includes live `dashboard.html`. Supports full, audit-only, focused, and re-score modes.",
+  "longDescription": "Finds prompts in source code (Python strings, TypeScript/JavaScript, YAML configs, JSON files), extracts them, and optimizes in-place. Combines **deterministic verifiers** (source file syntax, template variable preservation, token count, format compliance, regression tests) with **4 LLM-judged criteria**: output quality on test cases, instruction clarity, robustness against edge cases, and conciseness.\n\nAuto-detects template variables (`{{user_input}}`, `{context}`) and preserves them across edits. Each round: fresh-context subagents run the prompt against test inputs and score the outputs, one targeted change goes into the source file, then keep or revert. For prompts sent to Claude Opus 5.5 it reports, without editing, API code that breaks there (`thinking` disabled, `content[0].text` read unchecked, no `refusal` stop-reason check). Includes live `dashboard.html` with tokens per round. Supports `mode:audit` and a `max-tokens` hard constraint.",
   "compatibility": [
     "claude",
     "copilot",
@@ -23,6 +23,16 @@
       {
         "name": "SKILL.md",
         "type": "file"
+      },
+      {
+        "name": "assets",
+        "type": "directory",
+        "children": [
+          {
+            "name": "dashboard.html",
+            "type": "file"
+          }
+        ]
       }
     ]
   }

@@ -29,7 +29,6 @@ vi.mock("node:os", () => ({
 const PROJECT = "/my/project";
 const CLAUDE_PROJECT_FILE = "/my/project/.mcp.json";
 const CODEX_PROJECT_FILE = "/my/project/.codex/config.toml";
-const GEMINI_PROJECT_FILE = "/my/project/.gemini/settings.json";
 const OPENCODE_PROJECT_FILE = "/my/project/opencode.json";
 const NPX = "npx";
 
@@ -48,7 +47,7 @@ const REMOTE_HTTP = {
 };
 
 function mcpItem(slug = GITHUB_SLUG): RegistryItem {
-  return { slug, name: "GitHub MCP Server", type: "mcp", description: "MCP server for GitHub", compatibility: ["claude", "codex", "gemini", "opencode"] };
+  return { slug, name: "GitHub MCP Server", type: "mcp", description: "MCP server for GitHub", compatibility: ["claude", "codex", "antigravity", "opencode"] };
 }
 
 async function serveDefinition(definition: unknown): Promise<void> {
@@ -211,16 +210,15 @@ describe("mcp handler", () => {
     });
   });
 
-  describe("retired gemini adapter", () => {
-    it("refuses the gemini alias because Antigravity's MCP format is unverified", async () => {
+  describe("antigravity", () => {
+    it("refuses antigravity because its MCP format is unverified", async () => {
       await serveDefinition(GITHUB_STDIO);
       const { installMcp } = await import("./mcp.js");
 
-      const results = await installMcp(mcpItem(), ["gemini"], "project", "copy", true, PROJECT);
+      const results = await installMcp(mcpItem(), ["antigravity"], "project", "copy", true, PROJECT);
 
       expect(results[0]?.success).toBe(false);
       expect(results[0]?.error).toMatch(/MCP servers are not supported for Google Antigravity/);
-      expect(vol.existsSync(GEMINI_PROJECT_FILE)).toBe(false);
     });
 
     it("refuses antigravity the same way at user scope", async () => {
@@ -230,9 +228,9 @@ describe("mcp handler", () => {
       const results = await installMcp(mcpItem(), ["antigravity"], "user", "copy", true, PROJECT);
 
       expect(results[0]?.success).toBe(false);
-      expect(vol.existsSync("/home/testuser/.gemini/settings.json")).toBe(false);
+      expect(vol.existsSync("/home/testuser/.gemini/config/mcp_config.json")).toBe(false);
       // list scans every agent, so unsupported ones report empty instead of throwing
-      expect(await getInstalledMcpServers("gemini", "user", PROJECT)).toEqual([]);
+      expect(await getInstalledMcpServers("antigravity", "user", PROJECT)).toEqual([]);
     });
   });
 
@@ -440,7 +438,7 @@ describe("mcp handler", () => {
       ]);
       expect(vol.existsSync(CODEX_PROJECT_FILE)).toBe(false);
       expect(readJsonFile(CLAUDE_PROJECT_FILE).mcpServers.github.command).toBe("old");
-      await expect(planMcp(mcpItem(), ["gemini"], "project", "copy", PROJECT)).rejects.toThrow(/not supported for Google Antigravity/);
+      await expect(planMcp(mcpItem(), ["antigravity"], "project", "copy", PROJECT)).rejects.toThrow(/not supported for Google Antigravity/);
     });
   });
 

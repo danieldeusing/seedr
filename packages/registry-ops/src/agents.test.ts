@@ -1,33 +1,23 @@
 import { describe, expect, test } from "vitest";
-import { canonicalAgent, canonicalAgents, isLegacyAgent, storageAgents, AGENT_COMPATIBILITY, derivePluginCompatibility, unclaimedAgents, type PluginBundle } from "./agents.js";
+import { canonicalAgent, canonicalAgents, AGENT_COMPATIBILITY, derivePluginCompatibility, unclaimedAgents, type PluginBundle } from "./agents.js";
 import { ALL_TYPES } from "./paths.js";
 
 describe("agent vocabulary", () => {
-  test("canonicalAgent resolves the alias, keeps canonical ids, refuses the rest", () => {
-    expect(canonicalAgent("gemini")).toBe("antigravity");
+  test("canonicalAgent keeps canonical ids and refuses the rest, the retired gemini id included", () => {
     expect(canonicalAgent("antigravity")).toBe("antigravity");
+    expect(canonicalAgent("gemini")).toBeNull();
     expect(canonicalAgent("cursor")).toBeNull();
     expect(canonicalAgent(42)).toBeNull();
   });
 
-  test("storageAgents writes canonical ids, and still reads the old ones", () => {
-    // The downgrade table is empty now that the published CLI understands
-    // antigravity, so a stored `gemini` resolves on the way in and never on the
-    // way out.
-    expect(storageAgents(["antigravity", "claude", "gemini"])).toEqual(["claude", "antigravity"]);
-    expect(storageAgents(["claude", "cursor"])).toEqual(["claude"]);
-    expect(storageAgents([])).toEqual([]);
-  });
-
   test("Object.prototype keys are not agents", () => {
     for (const key of ["toString", "constructor", "hasOwnProperty", "__proto__"]) {
-      expect(isLegacyAgent(key)).toBe(false);
       expect(canonicalAgent(key)).toBeNull();
     }
   });
 
-  test("canonicalAgents dedupes into canonical order", () => {
-    expect(canonicalAgents(["gemini", "claude", "antigravity", "nope"])).toEqual(["claude", "antigravity"]);
+  test("canonicalAgents dedupes into canonical order and drops unknown ids", () => {
+    expect(canonicalAgents(["antigravity", "claude", "antigravity", "gemini", "nope"])).toEqual(["claude", "antigravity"]);
   });
 });
 
@@ -68,8 +58,8 @@ describe("reconciling item declarations with the capability table", () => {
     expect(unclaimedAgents({ type: "skill", compatibility: ["claude"] })).toEqual(["copilot", "antigravity", "codex", "opencode"]);
   });
 
-  test("resolves aliases before comparing", () => {
-    expect(unclaimedAgents(plugin(["claude", "gemini"]))).not.toContain("antigravity");
+  test("the retired gemini id claims nothing, antigravity included", () => {
+    expect(unclaimedAgents(plugin(["claude", "gemini"]))).toContain("antigravity");
   });
 
   test("every type the registry knows about has a compatibility row", () => {

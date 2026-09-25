@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { CANONICAL_AGENTS, KNOWN_AGENTS } from "@seedr/registry-ops/pure";
+import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import {
   CODING_AGENTS,
   ALL_AGENTS,
@@ -21,8 +21,9 @@ vi.mock("node:os", () => ({
 
 describe("agents", () => {
   describe("CODING_AGENTS", () => {
-    it("has a layout for every known agent id, aliases included", () => {
-      expect(Object.keys(CODING_AGENTS).sort()).toEqual([...KNOWN_AGENTS].sort());
+    it("has a layout for every agent id and nothing else, the retired gemini id included", () => {
+      expect(Object.keys(CODING_AGENTS).sort()).toEqual([...CANONICAL_AGENTS].sort());
+      expect(CODING_AGENTS).not.toHaveProperty("gemini");
     });
 
     it("expands 'all' to the canonical agents only", () => {
@@ -41,11 +42,6 @@ describe("agents", () => {
       expect(antigravity.userRoot).toBe("/home/testuser/.gemini/config");
       expect(antigravity.userRoot).not.toBe("/home/testuser/.agents");
       expect(Object.keys(antigravity.contentTypes)).toEqual(["skill"]);
-    });
-
-    it("treats the deprecated gemini id as Antigravity", () => {
-      expect(CODING_AGENTS.gemini).toBe(CODING_AGENTS.antigravity);
-      expect(getAgentConfig("gemini").shortName).toBe("antigravity");
     });
 
     it("should have correct structure for claude", () => {
@@ -118,7 +114,6 @@ describe("agents", () => {
     it("should use correct project root for each agent", () => {
       expect(getAgentRoot("copilot", "project", "/project")).toBe("/project/.github");
       expect(getAgentRoot("antigravity", "project", "/project")).toBe("/project/.agents");
-      expect(getAgentRoot("gemini", "project", "/project")).toBe("/project/.agents");
       expect(getAgentRoot("codex", "project", "/project")).toBe("/project/.codex");
       expect(getAgentRoot("opencode", "project", "/project")).toBe("/project/.opencode");
     });

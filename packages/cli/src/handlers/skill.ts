@@ -6,7 +6,6 @@ import chalk from "chalk";
 import ora from "ora";
 import type { CodingAgent, InstallScope, InstallMethod } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
-import { canonicalAgent } from "@seedr/registry-ops/pure";
 import { brand } from "../utils/ui.js";
 import {
   getItemSourcePath,
@@ -39,9 +38,8 @@ const SLUG_LABEL = "skill slug";
  * OpenCode read the shared tree at both scopes.
  */
 function readsCentralDir(agent: CodingAgent, scope: InstallScope): boolean {
-  const canonical = canonicalAgent(agent) ?? agent;
-  if (canonical === "antigravity") return scope !== "user";
-  return canonical === "codex" || canonical === "opencode";
+  if (agent === "antigravity") return scope !== "user";
+  return agent === "codex" || agent === "opencode";
 }
 
 /**
@@ -93,7 +91,7 @@ async function dropOwner(
   const owners = await readOwners(scope, cwd);
   const recorded = owners[slug];
   if (!recorded) return [];
-  const remaining = recorded.filter((owner) => owner !== (canonicalAgent(agent) ?? agent));
+  const remaining = recorded.filter((owner) => owner !== agent);
   if (remaining.length > 0) owners[slug] = remaining;
   else delete owners[slug];
   await writeOwners(owners, scope, cwd);
@@ -329,7 +327,6 @@ export async function getInstalledSkills(
   // though the directory is still on disk for the others.
   const owners = await readOwners(scope, cwd);
   const centralDir = centralSkillsDir(scope, cwd);
-  const canonical = canonicalAgent(agent) ?? agent;
 
   /**
    * Slugs never start with a dot, so hidden entries (a leftover staging
@@ -342,7 +339,7 @@ export async function getInstalledSkills(
     if (entry.name.startsWith(".")) return false;
     if (!entry.isDirectory() && !entry.isSymbolicLink()) return false;
     const recorded = dir === centralDir ? owners[entry.name] : undefined;
-    return !recorded || recorded.includes(canonical);
+    return !recorded || recorded.includes(agent);
   };
 
   const slugs = new Set<string>();

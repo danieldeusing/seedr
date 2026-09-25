@@ -105,7 +105,6 @@ export function parseBrowseParams(params: URLSearchParams, context: BrowseContex
   };
 
   const query = params.get("q") ?? "";
-  // canonicalised first, so an old `?tool=gemini` link still filters (as antigravity)
   const tool = read<CodingAgent>("tool", agentOptions, true, "", (raw) => canonicalAgent(raw) ?? raw);
   const source = read<SourceType>("source", sourceOptions, true, "", (raw) => canonicalSourceType(raw) ?? raw);
   const scope = read<ScopeType>("scope", scopeOptions, source === "seedr", "scope only applies to Seedr-sourced items");

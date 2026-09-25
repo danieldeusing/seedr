@@ -127,11 +127,7 @@ export const sourceToBadgeColor: Record<SourceType, BadgeColor> = {
 
 export const sourceLabels: Record<SourceType, string> = SOURCE_TYPE_LABELS;
 
-export const agentLabels: Record<CodingAgent, string> = {
-  ...AGENT_LABELS,
-  // deprecated id; items are canonicalised on load, so it never reaches the UI
-  gemini: AGENT_LABELS.antigravity,
-};
+export const agentLabels: Record<CodingAgent, string> = AGENT_LABELS;
 
 // Scope to badge color mapping (matches configr)
 export const scopeToBadgeColor: Record<ScopeType, BadgeColor> = {

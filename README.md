@@ -59,7 +59,7 @@ npx @danieldeusing/seedr add code-review --dry-run         # Preview without wri
 | Option | Description |
 |--------|-------------|
 | `-t, --type <type>` | Content type: `skill`, `agent`, `hook`, `plugin`, `mcp`, `settings` |
-| `-a, --agents <tools>` | Target AI tools: `claude`, `copilot`, `antigravity`, `codex`, `opencode`, or `all` (`gemini` still works as a deprecated alias of `antigravity`) |
+| `-a, --agents <tools>` | Target AI tools: `claude`, `copilot`, `antigravity`, `codex`, `opencode`, or `all` |
 | `-s, --scope <scope>` | Installation scope: `project`, `user`, or `local` |
 | `-m, --method <method>` | Installation method: `symlink` or `copy` |
 | `-y, --yes` | Skip confirmation prompts |

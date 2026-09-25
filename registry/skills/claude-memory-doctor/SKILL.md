@@ -1,7 +1,7 @@
 ---
 name: claude-memory-doctor
 description: >
-  Comprehensive health check for Claude Code configurations — audits CLAUDE.md files,
+  Health check for Claude Code configurations — audits CLAUDE.md files,
   .claude/rules/, memory files, settings.json, hooks, plugins, and agent configs to find
   contradictions, redundancies, anti-patterns, bloat, staleness, and broken infrastructure.
   Use this skill whenever the user says "memory doctor", "detox", "clean up my rules", "audit

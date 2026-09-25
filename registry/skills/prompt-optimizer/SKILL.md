@@ -1,6 +1,6 @@
 ---
 name: prompt-optimizer
-description: Iteratively evaluate and improve prompts and system prompts embedded in application source code through autonomous test-score-refine loops. Finds the prompt in source code (Python strings, YAML configs, JSON files, template files, TypeScript/JavaScript), extracts it, builds a frozen evaluation harness with anchored rubrics, then autonomously loops — run the prompt against test inputs, score output quality, make one targeted change to the prompt in-place, re-score, keep if better or revert if not. Use this skill whenever the user says "optimize prompt", "improve this prompt", "refine this system prompt", "prompt-optimizer", "run prompt-optimizer on [file]", "make this prompt better", "tune this prompt", "improve my LLM prompt", or wants to systematically improve any prompt embedded in application code through automated iteration. Also trigger when users want to reduce hallucinations, improve output format compliance, tighten instructions, or make a prompt more robust against edge cases. Do NOT use for SKILL.md files (use skill-optimizer) or standalone prompt files that aren't part of an application.
+description: 'Iteratively evaluate and improve prompts and system prompts embedded in application source code through autonomous test-score-refine loops. Finds the prompt in source code (Python strings, YAML configs, JSON files, templates, TypeScript/JavaScript), extracts it, builds a frozen evaluation harness with anchored rubrics, then loops - run the prompt against test inputs, score output quality, make one targeted in-place change, re-score, keep if better or revert. Use whenever the user says "optimize prompt", "improve this prompt", "refine this system prompt", "prompt-optimizer", "run prompt-optimizer on [file]", "make this prompt better", "tune this prompt", "improve my LLM prompt", or wants to improve a prompt embedded in application code. Also trigger to reduce hallucinations, improve output format compliance, tighten instructions or harden a prompt against edge cases. Do NOT use for SKILL.md files (use skill-optimizer) or standalone prompt files that are not part of an application.'
 ---
 
 # Prompt Optimizer
@@ -27,6 +27,7 @@ Locate the prompt in the source code. The user will point at a file or variable.
 - Identify the surrounding code context (how the prompt is used, what API it's sent to)
 - Detect template variables (`{{user_input}}`, `{context}`, `${query}`, etc.) — these are part of the application interface and must be preserved exactly
 - Identify the target model if inferrable from surrounding code (model parameter, API endpoint, client configuration)
+- If the prompt goes to Claude Opus 5.5 through the Messages API, note these for the final report and leave them alone, since they are code, not prompt: `thinking: {type: "disabled"}` (Opus 5.5 does not accept it), a reply read as `content[0].text` without checking the block type (a thinking block can come first), and no check for `stop_reason: "refusal"` (a decline arrives as a normal response)
 - Determine if it's a system prompt, user prompt, or part of a multi-turn conversation
 
 ### 2. Define Test Inputs
@@ -72,6 +73,7 @@ Initialize `results.json`:
   "harnessBuiltAt": "ISO timestamp",
   "testInputs": ["input1", "input2"],
   "baseline": null,
+  "baselineChecks": null,
   "currentScore": null,
   "bestScore": null,
   "consecutiveHighPasses": 0,
@@ -182,16 +184,19 @@ Every scoring round must produce:
 | AVG   |                     | 3.8   |                                                  |
 ```
 
-Log the harness summary (verifier count, criterion count, test input count). Proceed immediately to baseline scoring. The harness CAN be adjusted before the baseline, but once the baseline is scored, it's frozen for the rest of the run.
+Log the harness summary (verifier count, criterion count, test input count). Proceed immediately to baseline scoring. The harness CAN be adjusted before the baseline, but once the baseline is scored and Phase 3 has proved each criterion can fail, it's frozen for the rest of the run.
 
 ## Phase 3: Baseline
 
+**Who produces and who scores.** Here and in every round of Phase 4, the outputs and the scores come from fresh-context subagents, never from the context that edits the prompt. The output subagent receives only the prompt as it now stands and one test input. The scoring subagent receives the prompt as it now stands, the test inputs, their outputs and the frozen `harness.md`, never your change note or hypothesis. Keep or revert on its scores. The split keeps the harness out of the outputs (see *Important* below) and your hypothesis out of the grading. Deterministic verifiers run in your own context. Where the agent has no subagents, do both in your own context and say so in the final report.
+
 1. Read the prompt from its source file
-2. For each test input: simulate sending the prompt (with template variables filled from the test input) to the target model, producing the output the prompt is designed to elicit
+2. For each test input: the output subagent simulates sending the prompt (with template variables filled from the test input) to the target model, producing the output the prompt is designed to elicit
 3. Run deterministic verifiers on the current state
-4. Score each output against every harness criterion using the anchored rubrics
+4. The scoring subagent scores each output against every harness criterion using the anchored rubrics
+   - New harness only: before it freezes, prove each criterion can fail. Run one deliberately weakened variant through both subagents: the prompt with the instruction behind each criterion's best score removed. Where no single instruction carries a criterion, compare the worst test input's output against the best one instead. Drop any criterion whose score does not fall, because it cannot tell better from worse, and remove it from `harness.md`.
 5. Calculate baseline: average of all LLM scores, normalized to percentage `(avg - 1) / 4 * 100`
-6. Update `results.json` with the baseline score and token count
+6. Update `results.json` with the baseline score, the token count and `baselineChecks`: each criterion's average across the test inputs, in the shape of a round's `checks`, e.g. `{"Output quality": 3.5, "Instruction clarity": 2.5, "Robustness": 3.0, "Conciseness": 4.0}`
 7. Update `dashboard.html` — replace `__OPTIMIZER_DATA__` with current `results.json`
 8. Report:
    ```
@@ -209,6 +214,8 @@ Important: when producing output, genuinely simulate how a model would respond t
 
 Repeat autonomously until stopped or convergence reached.
 
+Between rounds, do not stop to summarise, ask whether to continue, or offer options; the one-line round report goes out with the next round, not instead of it. The loop ends only at the convergence, max-rounds or plateau stop in *Loop Rules*, or at a deterministic check you cannot restore. Then go to Phase 5.
+
 ### Each Round
 
 **1. Analyze** — Look at harness scores from the previous round. Which criterion has the lowest average across all test inputs? Focus on that.
@@ -222,6 +229,9 @@ Repeat autonomously until stopped or convergence reached.
 - Add output format specification (JSON schema, markdown template)
 - Replace hedging language ("try to", "if possible") with direct instructions
 - Add a constraint that was implicit but caused failures
+- Remove a line that only asks the model to think more ("think carefully", "think step by step"): on current Claude models the effort or thinking setting controls depth, and the line only delays the answer
+- Replace a request for reasoning in the output ("explain your reasoning", "show your chain of thought") with conclusion plus evidence, or a rationale of at most three sentences: Claude Opus 5.5 can refuse a request for its reasoning transcript
+- Replace a vague "avoid generic X" with an explicit list of the patterns to avoid, because a vague ban swaps one default for another
 
 **3. Apply** — Edit the prompt in-place in its source file. The surrounding code must not break. Preserve all template variables exactly.
 
@@ -229,7 +239,7 @@ Repeat autonomously until stopped or convergence reached.
 - Source file still parses? Template vars preserved? Token count acceptable?
 - Any hard constraint violated? -> Auto-revert immediately. Log as `REVERTED (hard constraint: {which one})`. Skip LLM scoring.
 
-**5. Test** — For each test input, simulate the prompt producing output. Score against the full harness.
+**5. Test** — For each test input, the output subagent simulates the prompt producing output, and the scoring subagent scores the outputs against the full harness (*Who produces and who scores*, Phase 3).
 
 **6. Evaluate** — Compare to previous best score:
 - **Improved**: Keep the change. Log as KEPT.
@@ -326,155 +336,8 @@ Update `currentScore`, `bestScore`, and `consecutiveHighPasses`.
 
 ## Dashboard
 
-The dashboard (`dashboard.html`) is a self-contained HTML file:
+`dashboard.html` in the working directory is a self-contained page that reloads every 10 seconds. It shows the current score, the baseline, the counts of rounds, kept and reverted changes, the token count, a score-history bar chart, the latest round's deterministic results, the latest LLM criterion scores, a Criteria Trajectory table (baseline against the last kept round) and the changelog with tokens per round, where a hard revert names its constraint.
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="10">
-  <title>Prompt Optimizer — {prompt-name}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4e8; padding: 24px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { font-size: 1.4rem; color: #f0f3f6; }
-    .score-big { font-size: 3rem; font-weight: 700; color: #58a6ff; }
-    .score-label { font-size: 0.85rem; color: #8b949e; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
-    .card h2 { font-size: 0.95rem; color: #8b949e; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .check { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.9rem; }
-    .check.high::before { content: "●"; color: #3fb950; }
-    .check.mid::before { content: "●"; color: #d29922; }
-    .check.low::before { content: "●"; color: #f85149; }
-    .det-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
-    .det-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .det-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
-    .token-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-    .token-ok { background: #1b3a2d; color: #3fb950; }
-    .token-warn { background: #3d2e00; color: #d29922; }
-    .token-over { background: #3d1418; color: #f85149; }
-    .changelog { width: 100%; }
-    .changelog table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .changelog th { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
-    .changelog td { padding: 8px; border-bottom: 1px solid #21262d; }
-    .kept { color: #3fb950; }
-    .reverted { color: #f85149; }
-    .chart { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding: 8px 0; }
-    .bar { background: #58a6ff; border-radius: 3px 3px 0 0; min-width: 24px; position: relative; transition: height 0.3s; }
-    .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: #8b949e; }
-    .stats { display: flex; gap: 24px; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 1.5rem; font-weight: 600; color: #f0f3f6; }
-    .stat-label { font-size: 0.75rem; color: #8b949e; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Prompt Optimizer — <span id="promptName"></span></h1>
-    <div style="text-align: right">
-      <div class="score-big" id="currentScore">—</div>
-      <div class="score-label">current score</div>
-    </div>
-  </div>
-  <div class="stats" style="margin-bottom: 24px;">
-    <div class="stat"><div class="stat-value" id="baseline">—</div><div class="stat-label">baseline</div></div>
-    <div class="stat"><div class="stat-value" id="rounds">0</div><div class="stat-label">rounds</div></div>
-    <div class="stat"><div class="stat-value" id="kept">0</div><div class="stat-label">kept</div></div>
-    <div class="stat"><div class="stat-value" id="reverted">0</div><div class="stat-label">reverted</div></div>
-    <div class="stat"><div class="stat-value" id="tokens">—</div><div class="stat-label">tokens</div></div>
-  </div>
-  <div class="grid">
-    <div class="card">
-      <h2>Score History</h2>
-      <div class="chart" id="chart"></div>
-    </div>
-    <div class="card">
-      <h2>Deterministic Verifiers</h2>
-      <table class="det-table">
-        <thead><tr><th>Verifier</th><th>Result</th><th>Status</th></tr></thead>
-        <tbody id="detVerifiers"></tbody>
-      </table>
-    </div>
-  </div>
-  <div class="grid">
-    <div class="card">
-      <h2>LLM Criteria (latest)</h2>
-      <div id="checks"></div>
-    </div>
-    <div class="card">
-      <h2>Criteria Trajectory</h2>
-      <table class="det-table">
-        <thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead>
-        <tbody id="crits"></tbody>
-      </table>
-    </div>
-  </div>
-  <div class="card changelog">
-    <h2>Changelog</h2>
-    <table>
-      <thead><tr><th>Round</th><th>Score</th><th>Tokens</th><th>Target</th><th>Change</th><th>Result</th></tr></thead>
-      <tbody id="log"></tbody>
-    </table>
-  </div>
-  <script>
-    const DATA = __OPTIMIZER_DATA__;
-    document.getElementById('promptName').textContent = DATA.prompt || '';
-    const fmt = v => v != null ? Math.round(v * 100) + '%' : '—';
-    document.getElementById('currentScore').textContent = fmt(DATA.currentScore);
-    document.getElementById('baseline').textContent = fmt(DATA.baseline);
-    const rounds = DATA.rounds || [];
-    document.getElementById('rounds').textContent = rounds.length;
-    document.getElementById('kept').textContent = rounds.filter(r => r.kept).length;
-    document.getElementById('reverted').textContent = rounds.filter(r => !r.kept).length;
-    const lastRound = rounds[rounds.length - 1];
-    const tokenCount = lastRound ? lastRound.tokenCount : DATA.tokenCount;
-    document.getElementById('tokens').textContent = tokenCount != null ? tokenCount : '—';
-    const chart = document.getElementById('chart');
-    const scores = [DATA.baseline, ...rounds.map(r => r.score)].filter(s => s != null);
-    const maxH = 180;
-    scores.forEach(s => {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      bar.style.height = (s * maxH) + 'px';
-      bar.style.flex = '1';
-      bar.innerHTML = '<span class="bar-label">' + fmt(s) + '</span>';
-      chart.appendChild(bar);
-    });
-    const checksEl = document.getElementById('checks');
-    const checksData = lastRound ? lastRound.checks : {};
-    Object.entries(checksData).forEach(([q, score]) => {
-      const div = document.createElement('div');
-      const cls = score >= 4 ? 'high' : score >= 3 ? 'mid' : 'low';
-      div.className = 'check ' + cls;
-      div.textContent = q + ' — ' + score + '/5';
-      checksEl.appendChild(div);
-    });
-    const detEl = document.getElementById('detVerifiers');
-    if (lastRound && lastRound.deterministic) {
-      const det = lastRound.deterministic;
-      Object.entries(det).forEach(([k, v]) => {
-        const tr = document.createElement('tr');
-        const status = (v === true || v === 'OK') ? 'OK' : (typeof v === 'number' ? v : String(v));
-        tr.innerHTML = '<td>' + k + '</td><td>' + status + '</td><td>' + ((v === true || v === 'OK') ? '✓' : status) + '</td>';
-        detEl.appendChild(tr);
-      });
-    }
-    const log = document.getElementById('log');
-    rounds.forEach(r => {
-      const tr = document.createElement('tr');
-      const result = r.hardConstraintViolation
-        ? 'REVERTED (hard: ' + r.hardConstraintViolation + ')'
-        : (r.kept ? 'KEPT' : 'REVERTED');
-      const cls = r.kept ? 'kept' : 'reverted';
-      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.tokenCount || '—') + '</td><td>' + (r.targetedCriterion || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + cls + '">' + result + '</td>';
-      log.appendChild(tr);
-    });
-  </script>
-</body>
-</html>
-```
+It reads these `results.json` fields: `prompt`, `baseline`, `currentScore`, `tokenCount` (used until a round exists), `baselineChecks`, and per round `score`, `kept`, `tokenCount`, `deterministic`, `checks`, `targetedCriterion`, `change` and `hardConstraintViolation`.
 
-Each round, replace `__OPTIMIZER_DATA__` with the current `results.json` content and rewrite the file.
+Copy this skill's `assets/dashboard.html` (next to this SKILL.md) into the working directory, unchanged. Each round, rewrite `dashboard.html` from that asset with `{prompt-name}` in the `<title>` replaced by the prompt name and `__OPTIMIZER_DATA__` replaced by the current `results.json` content.

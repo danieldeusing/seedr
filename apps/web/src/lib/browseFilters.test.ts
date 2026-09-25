@@ -33,7 +33,7 @@ const item = (overrides: Partial<RegistryItem>): RegistryItem => ({
 });
 
 const ITEMS: RegistryItem[] = [
-  item({ slug: "alpha", name: "Alpha", type: "skill", sourceType: "seedr", targetScope: "user", label: "project-x", compatibility: ["claude", "gemini"], updatedAt: "2026-01-01" }),
+  item({ slug: "alpha", name: "Alpha", type: "skill", sourceType: "seedr", targetScope: "user", label: "project-x", compatibility: ["claude", "antigravity"], updatedAt: "2026-01-01" }),
   item({ slug: "beta", name: "Beta", type: "skill", sourceType: "community", compatibility: ["copilot"], updatedAt: "2026-03-01" }),
   item({ slug: "wrap", name: "Wrap", type: "plugin", pluginType: "wrapper", wrapper: "skill", sourceType: "official", updatedAt: "2026-02-01" }),
   item({ slug: "pack", name: "Pack", type: "plugin", pluginType: "package", package: { skill: 2, hook: 1 }, sourceType: "official" }),
@@ -65,6 +65,12 @@ describe("parseBrowseParams", () => {
     expect(filters.sortField).toBe("name");
     expect(filters.sortAsc).toBe(true);
     expect(dropped.map((d) => d.key)).toEqual(["tool", "source", "sortField", "sortAsc"]);
+  });
+
+  it("drops the retired ?tool=gemini like any unknown agent", () => {
+    const { filters, dropped } = parseBrowseParams(params("tool=gemini"), skills);
+    expect(filters.tool).toBeNull();
+    expect(dropped).toEqual([{ key: "tool", value: "gemini", reason: '"gemini" is not a known tool' }]);
   });
 
   it("drops scope unless the source is seedr", () => {
@@ -134,7 +140,7 @@ describe("filterItems", () => {
   const base = parseBrowseParams(params(""), skills).filters;
 
   it("filters by agent, source and scope", () => {
-    expect(filterItems(ITEMS, { ...base, tool: "gemini" }, skills, search).map((i) => i.slug)).toEqual(["alpha"]);
+    expect(filterItems(ITEMS, { ...base, tool: "antigravity" }, skills, search).map((i) => i.slug)).toEqual(["alpha"]);
     expect(filterItems(ITEMS, { ...base, source: "community" }, skills, search).map((i) => i.slug)).toEqual(["beta", "integ"]);
     expect(filterItems(ITEMS, { ...base, source: "seedr", scope: "user" }, skills, search).map((i) => i.slug)).toEqual(["alpha"]);
   });

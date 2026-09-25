@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { CANONICAL_AGENTS, canonicalAgent } from "@seedr/registry-ops/pure";
+import { CANONICAL_AGENTS } from "@seedr/registry-ops/pure";
 import type { CodingAgentConfig, InstallScope, ContentTypeConfig } from "../types.js";
 import type { CodingAgent, ComponentType } from "@seedr/shared";
 
@@ -76,10 +76,7 @@ const ANTIGRAVITY: CodingAgentConfig = {
   contentTypes: { skill: SKILL_DIRECTORY },
 };
 
-/**
- * Where each agent keeps what. The deprecated `gemini` id shares Antigravity's
- * layout, so an old flag or an unmigrated item still installs to the right place.
- */
+/** Where each agent keeps what. */
 export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
   claude: {
     name: "Claude Code",
@@ -122,7 +119,6 @@ export const CODING_AGENTS: Record<CodingAgent, CodingAgentConfig> = {
     contentTypes: { skill: SKILL_DIRECTORY, agent: { path: "agents" } },
   },
   antigravity: ANTIGRAVITY,
-  gemini: ANTIGRAVITY,
   codex: {
     name: "OpenAI Codex CLI",
     shortName: "codex",
@@ -235,8 +231,7 @@ export function getMcpPath(
  * Antigravity is still not listed. Its file name is documented
  * (`~/.gemini/config/mcp_config.json`) but the shipped manual omits the
  * workspace path, and the file is empty on every machine checked, so the
- * schema has never been observed. The deprecated `gemini` id resolves to
- * antigravity before it ever reaches this table.
+ * schema has never been observed.
  */
 export function getMcpConfigPath(
   agent: CodingAgent,
@@ -244,7 +239,7 @@ export function getMcpConfigPath(
   cwd: string = process.cwd()
 ): string {
   const isUser = scope === "user";
-  switch (canonicalAgent(agent) ?? agent) {
+  switch (agent) {
     case "claude":
       return isUser ? claudeUserJsonPath() : join(cwd, ".mcp.json");
     case "codex":

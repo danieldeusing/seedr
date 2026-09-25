@@ -1,6 +1,6 @@
 ---
 name: doc-optimizer
-description: Iteratively evaluate and improve technical documentation through autonomous test-score-refine loops with deterministic codebase verification. Reads target docs (API docs, guides, READMEs, tutorials, reference docs), builds a frozen evaluation harness combining deterministic verifiers (code examples compile, import paths exist, API references match, links resolve, symbols exist) with LLM-judged criteria (accuracy, completeness, sequencing, example quality, audience appropriateness), then autonomously loops — score, identify weakest area, make one targeted improvement, re-score, keep if better or revert if not. Use this skill whenever the user says "optimize docs", "improve documentation", "review these docs", "doc-optimizer", "run doc-optimizer on [file]", "check my API docs", "verify documentation", or wants to systematically improve technical documentation through automated iteration. Also trigger when users want to find stale code references, broken examples, missing API docs, or inaccurate documentation. Do NOT use for PRDs or requirements documents (use prd-optimizer), architecture docs (use architecture-optimizer), or code (use code-optimizer).
+description: 'Iteratively evaluate and improve technical documentation through autonomous test-score-refine loops with deterministic codebase verification. Reads target docs (API docs, guides, READMEs, tutorials, reference docs), builds a frozen evaluation harness combining deterministic verifiers (examples compile, import paths exist, API references match, links resolve) with LLM-judged criteria (accuracy, completeness, sequencing, example quality, audience fit), then loops - score, improve the weakest area, re-score, keep if better or revert. Use whenever the user says "optimize docs", "improve documentation", "review these docs", "doc-optimizer", "run doc-optimizer on [file]", "check my API docs", "verify documentation", or wants to improve technical documentation. Also trigger for stale code references, broken examples, missing API docs or inaccurate documentation. Do NOT use for PRDs or requirements documents (use prd-optimizer), architecture docs (use architecture-optimizer) or code (use code-optimizer).'
 ---
 
 # Doc Optimizer
@@ -42,7 +42,7 @@ Copy target files to `original/` and `working/`. Initialize `results.json`:
 {
   "document": "doc-name", "files": [], "codebasePath": "",
   "startedAt": "", "harness": "harness.md", "harnessBuiltAt": "",
-  "baseline": null, "currentScore": null, "bestScore": null,
+  "baseline": null, "baselineLlmChecks": null, "currentScore": null, "bestScore": null,
   "consecutiveHighPasses": 0, "rounds": []
 }
 ```
@@ -153,11 +153,19 @@ Hard constraints: runnable examples must stay runnable, resolved links must stay
 
 ## Phase 3: Baseline Scoring
 
-Run all deterministic verifiers and record results. Score all LLM criteria with anchored rubrics — record score + one-line evidence per criterion. Calculate composite baseline. Report deterministic results, LLM scores, and weakest area. Update `results.json` and `dashboard.html`.
+**Who scores.** Score the LLM-judged criteria in a fresh-context subagent, here and in every round of Phase 4. It receives only the target doc files as they now stand, the codebase path and the frozen `harness.md`. It never receives your change note or hypothesis, because an agent that knows what a change was meant to fix grades it kindly. Keep or revert on its scores. Deterministic verifiers run in your own context. Where the agent has no subagents, score in your own context and say so in the final report.
+
+Run all deterministic verifiers and record results. The scoring subagent scores all LLM criteria with anchored rubrics — record score + one-line evidence per criterion.
+
+**Prove each criterion can fail (new harness only).** Before the harness freezes, have the scoring subagent score one deliberately weakened copy of the docs, made in the working directory and never in the project files: the baseline with the section each criterion scored best on removed. Drop any criterion whose score does not fall, because it cannot tell better from worse, and remove it from `harness.md`.
+
+Calculate composite baseline. Report deterministic results, LLM scores, and weakest area. Update `results.json` with `baseline` and `baselineLlmChecks`, the LLM scores in the shape of a round's `llmChecks`, e.g. `{"Accuracy against codebase": 3, "Completeness": 4}`. Then update `dashboard.html`.
 
 ## Phase 4: Improvement Loop
 
 Repeat autonomously until convergence or max rounds.
+
+Between rounds, do not stop to summarise, ask whether to continue, or offer options; the one-line round report goes out with the next round, not instead of it. The loop ends only at the convergence, max-rounds or plateau stop in *Stopping Rules*, or at a deterministic check you cannot restore. Then go to Phase 5.
 
 **1. Pick target** — Weakest area. Priority: deterministic failures first (broken examples > stale refs > broken links), then lowest LLM criterion. Ties: pick most impactful.
 
@@ -178,7 +186,7 @@ Repeat autonomously until convergence or max rounds.
 
 **4. Run deterministic verifiers** — Hard constraint violated? Auto-revert from `backup/`. Log as `REVERTED (hard constraint: {which})`. Skip LLM scoring.
 
-**5. Score LLM criteria** — Re-read modified docs. Score all criteria with frozen rubrics.
+**5. Score LLM criteria** — The scoring subagent (*Who scores*, Phase 3) re-reads the modified docs and scores all criteria with the frozen rubrics.
 
 **6. Compare** — Improved: keep, update `working/`, delete `backup/`. Same or worse: revert from `backup/`.
 
@@ -202,90 +210,11 @@ Repeat autonomously until convergence or max rounds.
 
 ## Dashboard
 
-Self-contained HTML file. Each round, replace `__OPTIMIZER_DATA__` with current `results.json` content.
+`dashboard.html` in the working directory is a self-contained page that reloads every 10 seconds. It shows the composite score, the baseline, the counts of rounds, kept and reverted changes, a score-history bar chart, a Deterministic Verifiers table (first round against latest round), the latest LLM criterion scores, a Criteria Trajectory table (baseline against the last kept round) and the changelog, where a hard revert names its constraint.
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"><meta http-equiv="refresh" content="10">
-<title>Doc Optimizer — {doc-name}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,-apple-system,sans-serif;background:#0f1117;color:#e1e4e8;padding:24px}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-h1{font-size:1.4rem;color:#f0f3f6}
-.score-big{font-size:3rem;font-weight:700;color:#58a6ff}
-.score-label{font-size:.85rem;color:#8b949e}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
-.card h2{font-size:.95rem;color:#8b949e;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
-.check{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.9rem}
-.check.high::before{content:"●";color:#3fb950}
-.check.mid::before{content:"●";color:#d29922}
-.check.low::before{content:"●";color:#f85149}
-.det-table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:8px}
-.det-table th{text-align:left;padding:6px 8px;border-bottom:1px solid #30363d;color:#8b949e}
-.det-table td{padding:6px 8px;border-bottom:1px solid #21262d}
-.improved{color:#3fb950}.unchanged{color:#8b949e}.degraded{color:#f85149}
-.changelog{width:100%}.changelog table{width:100%;border-collapse:collapse;font-size:.85rem}
-.changelog th{text-align:left;padding:8px;border-bottom:1px solid #30363d;color:#8b949e}
-.changelog td{padding:8px;border-bottom:1px solid #21262d}
-.kept{color:#3fb950}.reverted{color:#f85149}
-.chart{height:200px;display:flex;align-items:flex-end;gap:4px;padding:8px 0}
-.bar{background:#58a6ff;border-radius:3px 3px 0 0;min-width:24px;position:relative;transition:height .3s}
-.bar-label{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:.7rem;color:#8b949e}
-.stats{display:flex;gap:24px}
-.stat{text-align:center}.stat-value{font-size:1.5rem;font-weight:600;color:#f0f3f6}
-.stat-label{font-size:.75rem;color:#8b949e}
-</style>
-</head>
-<body>
-<div class="header">
-  <h1>Doc Optimizer — <span id="docName"></span></h1>
-  <div style="text-align:right"><div class="score-big" id="currentScore">—</div><div class="score-label">composite score</div></div>
-</div>
-<div class="stats" style="margin-bottom:24px">
-  <div class="stat"><div class="stat-value" id="baseline">—</div><div class="stat-label">baseline</div></div>
-  <div class="stat"><div class="stat-value" id="rounds">0</div><div class="stat-label">rounds</div></div>
-  <div class="stat"><div class="stat-value" id="kept">0</div><div class="stat-label">kept</div></div>
-  <div class="stat"><div class="stat-value" id="reverted">0</div><div class="stat-label">reverted</div></div>
-</div>
-<div class="grid">
-  <div class="card"><h2>Score History</h2><div class="chart" id="chart"></div></div>
-  <div class="card"><h2>Deterministic Verifiers</h2>
-    <table class="det-table"><thead><tr><th>Verifier</th><th>Baseline</th><th>Current</th><th>Status</th></tr></thead><tbody id="detVerifiers"></tbody></table>
-  </div>
-</div>
-<div class="grid">
-  <div class="card"><h2>LLM Criteria (latest)</h2><div id="checks"></div></div>
-  <div class="card"><h2>Criteria Trajectory</h2>
-    <table class="det-table"><thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead><tbody id="crits"></tbody></table>
-  </div>
-</div>
-<div class="card changelog"><h2>Changelog</h2>
-  <table><thead><tr><th>Round</th><th>Score</th><th>Target</th><th>Change</th><th>Result</th></tr></thead><tbody id="log"></tbody></table>
-</div>
-<script>
-const D=__OPTIMIZER_DATA__,fmt=v=>v!=null?Math.round(v*100)+'%':'—';
-document.getElementById('docName').textContent=D.document||'';
-document.getElementById('currentScore').textContent=fmt(D.currentScore);
-document.getElementById('baseline').textContent=fmt(D.baseline);
-const R=D.rounds||[];
-document.getElementById('rounds').textContent=R.length;
-document.getElementById('kept').textContent=R.filter(r=>r.kept).length;
-document.getElementById('reverted').textContent=R.filter(r=>!r.kept).length;
-const ch=document.getElementById('chart'),sc=[D.baseline,...R.map(r=>r.score)].filter(s=>s!=null);
-sc.forEach(s=>{const b=document.createElement('div');b.className='bar';b.style.height=(s*180)+'px';b.style.flex='1';b.innerHTML='<span class="bar-label">'+fmt(s)+'</span>';ch.appendChild(b)});
-const det=R.length>0?R[R.length-1].deterministic:{},bDet=R.length>0&&R[0].deterministic?R[0].deterministic:det;
-Object.entries(det).forEach(([k,v])=>{const tr=document.createElement('tr'),c=v.valid||v.runnable||v.matched||v.found||v.resolved||0,t=v.total||0,bs=bDet[k]||v,bc=bs.valid||bs.runnable||bs.matched||bs.found||bs.resolved||0,d=c-bc,cl=d>0?'improved':d<0?'degraded':'unchanged';tr.innerHTML='<td>'+k+'</td><td>'+bc+'/'+(bs.total||t)+'</td><td>'+c+'/'+t+'</td><td class="'+cl+'">'+(d>0?'+'+d:d===0?'OK':d)+'</td>';document.getElementById('detVerifiers').appendChild(tr)});
-const lR=R[R.length-1],ck=lR?lR.llmChecks:{};
-Object.entries(ck).forEach(([q,s])=>{const d=document.createElement('div');d.className='check '+(s>=4?'high':s>=3?'mid':'low');d.textContent=q+' — '+s+'/5';document.getElementById('checks').appendChild(d)});
-R.forEach(r=>{const tr=document.createElement('tr'),res=r.hardConstraintViolation?'REVERTED (hard: '+r.hardConstraintViolation+')':(r.kept?'KEPT':'REVERTED'),cl=r.kept?'kept':'reverted';tr.innerHTML='<td>'+r.round+'</td><td>'+fmt(r.score)+'</td><td>'+(r.targetedArea||'—')+'</td><td>'+(r.change||'')+'</td><td class="'+cl+'">'+res+'</td>';document.getElementById('log').appendChild(tr)});
-</script>
-</body>
-</html>
-```
+It reads these `results.json` fields: `document`, `baseline`, `currentScore`, `baselineLlmChecks`, and per round `score`, `kept`, `deterministic`, `llmChecks`, `targetedArea`, `change` and `hardConstraintViolation`. Write `deterministic` as one object per verifier type, each with `total` and a count field named `valid`, `runnable`, `matched`, `found` or `resolved`, because the table reads the first of those it finds.
+
+Copy this skill's `assets/dashboard.html` (next to this SKILL.md) into the working directory, unchanged. Each round, rewrite `dashboard.html` from that asset with `{doc-name}` in the `<title>` replaced by the document name and `__OPTIMIZER_DATA__` replaced by the current `results.json` content.
 
 ## Modes
 

@@ -47,8 +47,8 @@ const COPILOT_HOOKS = `${HOME}/.copilot/hooks/my-plugin/hooks.json`;
 const CODEX_CONFIG = `${HOME}/.codex/config.toml`;
 const CODEX_CACHE_DIR = `${HOME}/.codex/plugins/cache`;
 const OPENCODE_PROJECT_CONFIG = `${PROJECT}/opencode.json`;
-const GEMINI_MANIFEST = `${HOME}/.gemini/config/import_manifest.json`;
-const GEMINI_PLUGINS_DIR = `${HOME}/.gemini/config/plugins`;
+const ANTIGRAVITY_MANIFEST = `${HOME}/.gemini/config/import_manifest.json`;
+const ANTIGRAVITY_PLUGINS_DIR = `${HOME}/.gemini/config/plugins`;
 /** Where a local registry checkout keeps the fixture plugin's own copy. */
 const LOCAL_SOURCE = "/registry/plugins/my-plugin";
 
@@ -873,9 +873,9 @@ describe("plugin handler", () => {
 
       const results = await installPlugin(pluginItem(), ["antigravity"], "project", "copy", true, PROJECT);
 
-      expect(results[0]?.path).toBe(`${GEMINI_PLUGINS_DIR}/my-plugin`);
-      expect(vol.readFileSync(`${GEMINI_PLUGINS_DIR}/my-plugin/README.md`, "utf-8")).toBe("readme");
-      const manifest = readJsonFile(GEMINI_MANIFEST);
+      expect(results[0]?.path).toBe(`${ANTIGRAVITY_PLUGINS_DIR}/my-plugin`);
+      expect(vol.readFileSync(`${ANTIGRAVITY_PLUGINS_DIR}/my-plugin/README.md`, "utf-8")).toBe("readme");
+      const manifest = readJsonFile(ANTIGRAVITY_MANIFEST);
       expect(manifest.imports).toHaveLength(1);
       expect(manifest.imports[0]).toMatchObject({ name: "my-plugin", source: "seedr" });
     });
@@ -891,7 +891,7 @@ describe("plugin handler", () => {
 
       await installPlugin(pluginItem(), ["antigravity"], "project", "copy", true, PROJECT);
 
-      const manifest = readJsonFile(`${GEMINI_PLUGINS_DIR}/my-plugin/plugin.json`);
+      const manifest = readJsonFile(`${ANTIGRAVITY_PLUGINS_DIR}/my-plugin/plugin.json`);
       expect(manifest.name).toBe("my-plugin");
       expect(manifest.version).toBe("2.1.0");
     });
@@ -908,7 +908,7 @@ describe("plugin handler", () => {
 
       await installPlugin(pluginItem(), ["antigravity"], "project", "copy", true, PROJECT);
 
-      expect(readJsonFile(`${GEMINI_PLUGINS_DIR}/my-plugin/plugin.json`).ours).toBe(true);
+      expect(readJsonFile(`${ANTIGRAVITY_PLUGINS_DIR}/my-plugin/plugin.json`).ours).toBe(true);
     });
 
     // Only Antigravity needs the marker; nothing else should gain a file its
@@ -963,7 +963,7 @@ describe("plugin handler", () => {
     // the wrong thing.
     it.each([
       ["codex", CODEX_CACHE_DIR] as const,
-      ["antigravity", GEMINI_PLUGINS_DIR] as const,
+      ["antigravity", ANTIGRAVITY_PLUGINS_DIR] as const,
     ])("round-trips install, list and remove for %s", async (agent, cacheRoot) => {
       await serveDownload({ name: "my-plugin", version: "2.1.0" });
       const { installPlugin, getInstalledPlugins, uninstallPlugin } = await import("./plugin.js");

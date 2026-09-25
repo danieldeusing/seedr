@@ -5,7 +5,7 @@
 export const SITE_ORIGIN = "https://seedr.danieldeusing.de";
 export const SITE_NAME = "Seedr";
 export const DEFAULT_DESCRIPTION =
-  "Seed your Coding Agents with capabilities - skills, hooks, agents, and plugins for Claude Code, Copilot, Gemini, and more";
+  "Seed your Coding Agents with capabilities - skills, hooks, agents, and plugins for Claude Code, Copilot, Antigravity, and more";
 
 export const TYPE_PATHS = {
   skill: "skills",
@@ -85,7 +85,7 @@ export function categoryMeta(type, count) {
   return {
     path: `/${TYPE_PATHS[type]}`,
     title: `${plural} — ${SITE_NAME}`,
-    description: clip(`Browse ${count} ${plural.toLowerCase()} for Claude Code, GitHub Copilot, Gemini, Codex and OpenCode, ready to install with the seedr CLI.`),
+    description: clip(`Browse ${count} ${plural.toLowerCase()} for Claude Code, GitHub Copilot, Google Antigravity, Codex and OpenCode, ready to install with the seedr CLI.`),
     index: true,
   };
 }

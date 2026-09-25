@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="10">
+  <title>Prompt Optimizer — {prompt-name}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4e8; padding: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { font-size: 1.4rem; color: #f0f3f6; }
+    .score-big { font-size: 3rem; font-weight: 700; color: #58a6ff; }
+    .score-label { font-size: 0.85rem; color: #8b949e; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+    .card h2 { font-size: 0.95rem; color: #8b949e; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .check { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.9rem; }
+    .check.high::before { content: "●"; color: #3fb950; }
+    .check.mid::before { content: "●"; color: #d29922; }
+    .check.low::before { content: "●"; color: #f85149; }
+    .det-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+    .det-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
+    .det-table td { padding: 6px 8px; border-bottom: 1px solid #21262d; }
+    .token-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+    .token-ok { background: #1b3a2d; color: #3fb950; }
+    .token-warn { background: #3d2e00; color: #d29922; }
+    .token-over { background: #3d1418; color: #f85149; }
+    .changelog { width: 100%; }
+    .changelog table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .changelog th { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; color: #8b949e; }
+    .changelog td { padding: 8px; border-bottom: 1px solid #21262d; }
+    .kept { color: #3fb950; }
+    .reverted { color: #f85149; }
+    .chart { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding: 8px 0; }
+    .bar { background: #58a6ff; border-radius: 3px 3px 0 0; min-width: 24px; position: relative; transition: height 0.3s; }
+    .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: #8b949e; }
+    .stats { display: flex; gap: 24px; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 600; color: #f0f3f6; }
+    .stat-label { font-size: 0.75rem; color: #8b949e; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Prompt Optimizer — <span id="promptName"></span></h1>
+    <div style="text-align: right">
+      <div class="score-big" id="currentScore">—</div>
+      <div class="score-label">current score</div>
+    </div>
+  </div>
+  <div class="stats" style="margin-bottom: 24px;">
+    <div class="stat"><div class="stat-value" id="baseline">—</div><div class="stat-label">baseline</div></div>
+    <div class="stat"><div class="stat-value" id="rounds">0</div><div class="stat-label">rounds</div></div>
+    <div class="stat"><div class="stat-value" id="kept">0</div><div class="stat-label">kept</div></div>
+    <div class="stat"><div class="stat-value" id="reverted">0</div><div class="stat-label">reverted</div></div>
+    <div class="stat"><div class="stat-value" id="tokens">—</div><div class="stat-label">tokens</div></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>Score History</h2>
+      <div class="chart" id="chart"></div>
+    </div>
+    <div class="card">
+      <h2>Deterministic Verifiers</h2>
+      <table class="det-table">
+        <thead><tr><th>Verifier</th><th>Result</th><th>Status</th></tr></thead>
+        <tbody id="detVerifiers"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>LLM Criteria (latest)</h2>
+      <div id="checks"></div>
+    </div>
+    <div class="card">
+      <h2>Criteria Trajectory</h2>
+      <table class="det-table">
+        <thead><tr><th>Criterion</th><th>Baseline</th><th>Current</th><th>Delta</th></tr></thead>
+        <tbody id="crits"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card changelog">
+    <h2>Changelog</h2>
+    <table>
+      <thead><tr><th>Round</th><th>Score</th><th>Tokens</th><th>Target</th><th>Change</th><th>Result</th></tr></thead>
+      <tbody id="log"></tbody>
+    </table>
+  </div>
+  <script>
+    const DATA = __OPTIMIZER_DATA__;
+    document.getElementById('promptName').textContent = DATA.prompt || '';
+    const fmt = v => v != null ? Math.round(v * 100) + '%' : '—';
+    document.getElementById('currentScore').textContent = fmt(DATA.currentScore);
+    document.getElementById('baseline').textContent = fmt(DATA.baseline);
+    const rounds = DATA.rounds || [];
+    document.getElementById('rounds').textContent = rounds.length;
+    document.getElementById('kept').textContent = rounds.filter(r => r.kept).length;
+    document.getElementById('reverted').textContent = rounds.filter(r => !r.kept).length;
+    const lastRound = rounds[rounds.length - 1];
+    const tokenCount = lastRound ? lastRound.tokenCount : DATA.tokenCount;
+    document.getElementById('tokens').textContent = tokenCount != null ? tokenCount : '—';
+    const chart = document.getElementById('chart');
+    const scores = [DATA.baseline, ...rounds.map(r => r.score)].filter(s => s != null);
+    const maxH = 180;
+    scores.forEach(s => {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = (s * maxH) + 'px';
+      bar.style.flex = '1';
+      bar.innerHTML = '<span class="bar-label">' + fmt(s) + '</span>';
+      chart.appendChild(bar);
+    });
+    const checksEl = document.getElementById('checks');
+    const checksData = (lastRound && lastRound.checks) || {};
+    Object.entries(checksData).forEach(([q, score]) => {
+      const div = document.createElement('div');
+      const cls = score >= 4 ? 'high' : score >= 3 ? 'mid' : 'low';
+      div.className = 'check ' + cls;
+      div.textContent = q + ' — ' + score + '/5';
+      checksEl.appendChild(div);
+    });
+    const critsEl = document.getElementById('crits');
+    const baselineChecks = DATA.baselineChecks || {};
+    const lastKept = rounds.filter(r => r.kept).pop();
+    const currentChecks = lastKept ? lastKept.checks : baselineChecks;
+    Object.entries(baselineChecks).forEach(([criterion, before]) => {
+      const now = currentChecks[criterion];
+      const delta = now != null ? now - before : null;
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + criterion + '</td><td>' + before + '</td><td>' + (now != null ? now : '—') + '</td><td>' + (delta != null ? (delta > 0 ? '+' : '') + delta.toFixed(1) : '—') + '</td>';
+      critsEl.appendChild(tr);
+    });
+    const detEl = document.getElementById('detVerifiers');
+    if (lastRound && lastRound.deterministic) {
+      const det = lastRound.deterministic;
+      Object.entries(det).forEach(([k, v]) => {
+        const tr = document.createElement('tr');
+        const status = (v === true || v === 'OK') ? 'OK' : (typeof v === 'number' ? v : String(v));
+        tr.innerHTML = '<td>' + k + '</td><td>' + status + '</td><td>' + ((v === true || v === 'OK') ? '✓' : status) + '</td>';
+        detEl.appendChild(tr);
+      });
+    }
+    const log = document.getElementById('log');
+    rounds.forEach(r => {
+      const tr = document.createElement('tr');
+      const result = r.hardConstraintViolation
+        ? 'REVERTED (hard: ' + r.hardConstraintViolation + ')'
+        : (r.kept ? 'KEPT' : 'REVERTED');
+      const cls = r.kept ? 'kept' : 'reverted';
+      tr.innerHTML = '<td>' + r.round + '</td><td>' + fmt(r.score) + '</td><td>' + (r.tokenCount || '—') + '</td><td>' + (r.targetedCriterion || '—') + '</td><td>' + (r.change || '') + '</td><td class="' + cls + '">' + result + '</td>';
+      log.appendChild(tr);
+    });
+  </script>
+</body>
+</html>

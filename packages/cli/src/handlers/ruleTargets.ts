@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { CodingAgent, InstallScope } from "../types.js";
-import { canonicalAgent } from "@seedr/registry-ops/pure";
 import {
   claudeUserRoot,
   codexUserRoot,
@@ -108,14 +107,13 @@ const openCodeTarget: RuleTarget = {
 const TARGETS: Partial<Record<CodingAgent, RuleTarget>> = {
   claude: claudeTarget,
   antigravity: antigravityTarget,
-  gemini: antigravityTarget,
   copilot: copilotTarget,
   codex: codexTarget,
   opencode: openCodeTarget,
 };
 
 export function ruleTargetFor(agent: CodingAgent): RuleTarget {
-  const target = TARGETS[canonicalAgent(agent) ?? agent];
+  const target = TARGETS[agent];
   if (!target || !isTypeSupported("rule", agent)) {
     // `CODING_AGENTS[agent]` is undefined for an id outside the vocabulary, so
     // naming it directly crashed the guard while it was building its own message.

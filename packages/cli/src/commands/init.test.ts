@@ -67,7 +67,7 @@ describe("runInit", () => {
     const { runInit } = await import("./init.js");
     promptConfirmMock.mockResolvedValue(false);
 
-    expect(await runInit({ agents: "claude,gemini" }, PROJECT)).toBe(0);
+    expect(await runInit({ agents: "claude,antigravity" }, PROJECT)).toBe(0);
 
     expect(promptConfirmMock).toHaveBeenCalledWith("Proceed?");
     expect(vol.existsSync(PROJECT)).toBe(false);
@@ -75,8 +75,8 @@ describe("runInit", () => {
 
   it("initializeAgent reports whether it created the directory", async () => {
     const { initializeAgent, readmeFor } = await import("./init.js");
-    expect(await initializeAgent("gemini", PROJECT)).toBe(true);
-    expect(await initializeAgent("gemini", PROJECT)).toBe(false);
+    expect(await initializeAgent("antigravity", PROJECT)).toBe(true);
+    expect(await initializeAgent("antigravity", PROJECT)).toBe(false);
     expect(readmeFor("opencode")).toContain("OpenCode");
   });
 });

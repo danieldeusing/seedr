@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { CodingAgent, InstallScope } from "../types.js";
 import type { RegistryItem } from "@seedr/shared";
-import { canonicalAgent, isFirstParty } from "@seedr/registry-ops/pure";
+import { isFirstParty } from "@seedr/registry-ops/pure";
 import {
   claudeUserRoot,
   codexUserRoot,
@@ -839,9 +839,9 @@ const openCodeStore: PluginStore = {
 // Google Antigravity — ~/.gemini/config
 // ---------------------------------------------------------------------------
 
-export const GEMINI_CONFIG_DIR = join(home, ".gemini", "config");
-export const GEMINI_PLUGINS_DIR = join(GEMINI_CONFIG_DIR, "plugins");
-export const GEMINI_IMPORT_MANIFEST_PATH = join(GEMINI_CONFIG_DIR, "import_manifest.json");
+export const ANTIGRAVITY_CONFIG_DIR = join(home, ".gemini", "config");
+export const ANTIGRAVITY_PLUGINS_DIR = join(ANTIGRAVITY_CONFIG_DIR, "plugins");
+export const ANTIGRAVITY_IMPORT_MANIFEST_PATH = join(ANTIGRAVITY_CONFIG_DIR, "import_manifest.json");
 
 interface ImportManifest {
   imports?: Array<{ name: string; source: string; importedAt: string; components: string[] }>;
@@ -852,10 +852,10 @@ const antigravityStore: PluginStore = {
   userGlobal: true,
   // Filed by name from a tree, so a first-party copy is as good as any other.
   firstParty: true,
-  cacheRoot: GEMINI_PLUGINS_DIR,
+  cacheRoot: ANTIGRAVITY_PLUGINS_DIR,
 
   // Antigravity files plugins by name only — it has no marketplace dimension.
-  cachePath: (_marketplace, name) => resolveContained(GEMINI_PLUGINS_DIR, name),
+  cachePath: (_marketplace, name) => resolveContained(ANTIGRAVITY_PLUGINS_DIR, name),
 
   /**
    * Antigravity discovers a plugin by a `plugin.json` at the tree ROOT, and
@@ -881,10 +881,10 @@ const antigravityStore: PluginStore = {
 
   mutations: (context) => [
     {
-      path: GEMINI_IMPORT_MANIFEST_PATH,
+      path: ANTIGRAVITY_IMPORT_MANIFEST_PATH,
       detail: `imports[] += "${context.name}"`,
       apply: async () => {
-        const manifest = await readJson<ImportManifest>(GEMINI_IMPORT_MANIFEST_PATH);
+        const manifest = await readJson<ImportManifest>(ANTIGRAVITY_IMPORT_MANIFEST_PATH);
         const imports = manifest.imports || [];
         manifest.imports = [
           ...imports.filter((entry) => entry.name !== context.name),
@@ -895,26 +895,26 @@ const antigravityStore: PluginStore = {
             components: ["skills", "hooks"],
           },
         ];
-        await writeJson(GEMINI_IMPORT_MANIFEST_PATH, manifest);
+        await writeJson(ANTIGRAVITY_IMPORT_MANIFEST_PATH, manifest);
       },
     },
   ],
 
   async listInstalled() {
-    const manifest = await readJson<ImportManifest>(GEMINI_IMPORT_MANIFEST_PATH);
+    const manifest = await readJson<ImportManifest>(ANTIGRAVITY_IMPORT_MANIFEST_PATH);
     return (manifest.imports || []).map((entry) => entry.name);
   },
 
   async remove(pluginId) {
     const name = splitPluginId(pluginId)?.name ?? pluginId;
-    const manifest = await readJson<ImportManifest>(GEMINI_IMPORT_MANIFEST_PATH);
+    const manifest = await readJson<ImportManifest>(ANTIGRAVITY_IMPORT_MANIFEST_PATH);
     const imports = manifest.imports || [];
     const remaining = imports.filter((entry) => entry.name !== name);
     if (remaining.length === imports.length) return false;
     manifest.imports = remaining;
-    await writeJson(GEMINI_IMPORT_MANIFEST_PATH, manifest);
+    await writeJson(ANTIGRAVITY_IMPORT_MANIFEST_PATH, manifest);
     try {
-      await removePathEntry(await resolveContained(GEMINI_PLUGINS_DIR, name));
+      await removePathEntry(await resolveContained(ANTIGRAVITY_PLUGINS_DIR, name));
     } catch {
       // Outside the store: not ours to delete.
     }
@@ -948,11 +948,10 @@ const STORES: Partial<Record<CodingAgent, PluginStore>> = {
   codex: codexStore,
   opencode: openCodeStore,
   antigravity: antigravityStore,
-  gemini: antigravityStore,
 };
 
 export function pluginStoreFor(agent: CodingAgent): PluginStore {
-  const store = STORES[canonicalAgent(agent) ?? agent];
+  const store = STORES[agent];
   if (!store || !isTypeSupported("plugin", agent)) {
     // `CODING_AGENTS[agent]` is undefined for an id outside the vocabulary, so
     // naming it directly crashed the guard while it was building its own message.

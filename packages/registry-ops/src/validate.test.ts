@@ -39,6 +39,12 @@ describe("validateItem", () => {
     expect(fields(validateItem({ ...seedrSkill, compatibility: [] }))).toEqual(["compatibility"]);
   });
 
+  test("the retired gemini id is an unknown agent", () => {
+    expect(validateItem({ ...seedrSkill, compatibility: ["claude", "gemini"] })).toEqual([
+      expect.objectContaining({ field: "compatibility", message: 'unknown coding agent "gemini"' }),
+    ]);
+  });
+
   test("checks the item against the directory it lives in", () => {
     const errors = validateItem(seedrSkill, { expectedType: "plugin", expectedSlug: "other" });
     expect(errors.map((e) => e.message)).toEqual([

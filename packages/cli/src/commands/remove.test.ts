@@ -145,7 +145,7 @@ describe("runRemove", () => {
     const { runRemove } = await import("./remove.js");
     vol.fromJSON({ [`${SKILL_DIR}/SKILL.md`]: "x", "/my/project/.github/skills/test-skill/SKILL.md": "x" });
 
-    expect(await runRemove(TEST_SKILL, { type: "skill", yes: true, agents: "claude,gemini" }, PROJECT)).toBe(0);
+    expect(await runRemove(TEST_SKILL, { type: "skill", yes: true, agents: "claude,antigravity" }, PROJECT)).toBe(0);
 
     expect(vol.existsSync(SKILL_DIR)).toBe(false);
     expect(vol.existsSync("/my/project/.github/skills/test-skill/SKILL.md")).toBe(true);

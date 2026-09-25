@@ -13,7 +13,7 @@ import { theme, type } from '../theme'
 const PATHS = [
   '.claude/skills/',
   '.github/skills/',
-  '.gemini/skills/',
+  '.agents/skills/',
   '.codex/skills/',
   '.opencode/skills/',
   '.claude/hooks/',

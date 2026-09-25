@@ -31,8 +31,6 @@ describe("agent argument parsing", () => {
     ["cc", "claude"],
     ["github-copilot", "copilot"],
     ["gh", "copilot"],
-    ["gemini-code", "antigravity"],
-    ["gca", "antigravity"],
     ["openai-codex", "codex"],
     ["oc", "opencode"],
     [" opencode ", "opencode"],
@@ -113,10 +111,9 @@ describe("parseAgentArg", () => {
     expect(parseAgentArg("oc")).toBe("opencode");
   });
 
-  it("maps the deprecated gemini id and its old nicknames to antigravity", () => {
-    expect(parseAgentArg("gemini")).toBe("antigravity");
-    expect(parseAgentArg("gemini-code")).toBe("antigravity");
-    expect(parseAgentArg("gca")).toBe("antigravity");
+  it("rejects the retired gemini id and its gemini-code nickname", () => {
+    expect(parseAgentArg("gemini")).toBeNull();
+    expect(parseAgentArg("gemini-code")).toBeNull();
   });
 
   it("rejects unknown ids", () => {
@@ -133,12 +130,11 @@ describe("parseAgentsArg", () => {
   it("parses a comma-separated list, dropping unknown entries", () => {
     expect(parseAgentsArg("claude, gemini,nope,oc", [...CANONICAL_AGENTS])).toEqual([
       "claude",
-      "antigravity",
       "opencode",
     ]);
   });
 
   it("names an agent once when an alias repeats it", () => {
-    expect(parseAgentsArg("gemini,agy,antigravity", [...CANONICAL_AGENTS])).toEqual(["antigravity"]);
+    expect(parseAgentsArg("google-antigravity,agy,antigravity", [...CANONICAL_AGENTS])).toEqual(["antigravity"]);
   });
 });

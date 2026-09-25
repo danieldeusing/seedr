@@ -40,7 +40,8 @@ Calls `validate.yml` on the pushed commit. No side effects.
    unless it passes.
 2. `deploy-web` (environment `production`): builds and deploys to Cloudflare Pages.
 3. `publish-cli` (environment `production`): decides whether a CLI release is due (manual
-   version bump ahead of npm, or CLI/registry/shared changes since the last version commit).
+   version bump ahead of npm, or CLI/registry/shared changes since the `cli-v<version>` tag of
+   the version npm has; without that tag, since the last commit to `packages/cli/package.json`).
    If a bump is needed it **commits the bump, tags `cli-v<version>` and pushes both to
    `prod` before publishing** — a rejected push fails the job and nothing is published. It
    then builds the committed tree and runs `npm publish --provenance`. The provenance

@@ -140,7 +140,10 @@ jobs:
             exit 0
           fi
 
-          LAST_VERSION_COMMIT=$(git log -1 --format="%H" -- packages/cli/package.json)
+          # The release npm has, by its tag. The last commit touching package.json is not a
+          # release: a keyword edit there once hid a whole CLI change from this check.
+          LAST_VERSION_COMMIT=$(git rev-parse -q --verify "refs/tags/cli-v$NPM_VERSION_PUBLISHED^{commit}" \
+            || git log -1 --format="%H" -- packages/cli/package.json)
           CHANGED_FILES=$(git diff --name-only "$LAST_VERSION_COMMIT" HEAD -- packages/cli/ registry/ packages/shared/ 2>/dev/null || echo "")
 
           if [ -n "$CHANGED_FILES" ]; then

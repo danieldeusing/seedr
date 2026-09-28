@@ -72,14 +72,16 @@ describe("playground scripts never build markup from strings", () => {
     }
   });
 
-  it.each(PLAYGROUNDS)("%s.html has no inline script, inline handler or inline style", (name) => {
+  it.each([...PLAYGROUNDS, "index"])("%s.html has no inline script, inline handler or inline style", (name) => {
     const html = readFileSync(join(playgroundsDir, `${name}.html`), "utf8");
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
     expect(html).not.toMatch(/\son[a-z]+\s*=/i);
     expect(html).not.toMatch(/\sstyle\s*=/i);
     expect(html).not.toMatch(/<style\b/i);
     expect(html).not.toContain("cdn.jsdelivr.net");
-    expect(html).toContain('href="vendor/tokens.css"');
+    expect(html).toContain('href="vendor/danieldeusing-design.min.css"');
+    // the design runtime, without which a <select> opens the operating system's list
+    expect(html).toContain('<script type="module" src="design-init.js"></script>');
   });
 
   it("every playground asset is local (no CDN anywhere under public/playgrounds)", () => {

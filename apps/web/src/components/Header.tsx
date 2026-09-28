@@ -29,13 +29,12 @@ export function Header() {
 
   return (
     <header className="h-12 border-b border-border bg-card">
-      {/* Chrome, not content: the bar and its row both span the full viewport, edge to edge,
-          independent of the page's own max-w-[var(--content-w)] column - matching header.bar
-          on every other danieldeusing surface. Only the routed page content is capped and
-          centred; the header and footer never are. */}
-      <div className="flex h-full w-full items-center gap-2 px-4">
+      {/* Full-bleed chrome like header.bar elsewhere: brand and links sit in the edge gutters,
+          while the middle track mirrors the page's max-w-[var(--content-w)] column, so the nav
+          starts where the content does wherever the gutter is wide enough to hold the brand. */}
+      <div className="grid h-full grid-cols-[1fr_minmax(0,var(--content-w))_1fr] items-center gap-2 px-4">
         {/* Left: Logo (takes remaining space) */}
-        <div className="flex shrink-0 items-center sm:flex-1">
+        <div className="flex items-center">
           <Link to="/" className="group flex items-center">
             <span className="text-xl font-bold tracking-tight glow">Seedr</span>
             <span className="cursor-block" aria-hidden />
@@ -43,7 +42,7 @@ export function Header() {
         </div>
 
         {/* Center: breadcrumb path + history nav */}
-        <nav aria-label="Breadcrumb and history" className="flex min-w-0 flex-1 items-center gap-1 sm:w-full sm:px-4">
+        <nav aria-label="Breadcrumb and history" className="flex min-w-0 items-center gap-1 sm:px-4">
             <Button
               variant="ghost"
               size="icon-xs"
@@ -118,7 +117,7 @@ export function Header() {
           </nav>
 
         {/* Right: External links (takes remaining space) */}
-        <div className="flex shrink-0 items-center justify-end gap-2 sm:flex-1">
+        <div className="flex items-center justify-end gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon-sm" asChild>

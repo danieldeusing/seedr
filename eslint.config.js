@@ -8,7 +8,8 @@ import { reactRefresh } from "eslint-plugin-react-refresh";
 export default tseslint.config(
   // Global ignores
   {
-    ignores: ["**/dist/", "**/node_modules/", "**/coverage/", "**/*.d.ts"],
+    // apps/web/public/playgrounds/vendor/ is the design system's published runtime, fetched at build time
+    ignores: ["**/dist/", "**/node_modules/", "**/coverage/", "**/*.d.ts", "apps/web/public/playgrounds/vendor/"],
   },
 
   // Base config for all TS/JS files

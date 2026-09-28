@@ -72,3 +72,22 @@ for (const viewport of VIEWPORTS) {
     });
   });
 }
+
+// The bar stays full-bleed with the brand on the edge; only the nav lines up with the content.
+for (const width of [1920, 2560, 3840]) {
+  test.describe(`at ${width}px wide`, () => {
+    test.use({ viewport: { width, height: 1000 } });
+
+    test("header nav starts on the content column, brand stays on the viewport edge", async ({ page }) => {
+      await disableAnimations(page);
+      await page.goto("/skills");
+      const back = await page.getByRole("button", { name: "Back" }).boundingBox();
+      const firstCard = await page.getByTestId("item-card").first().boundingBox();
+      const brand = await page.locator("header").getByRole("link", { name: "Seedr", exact: true }).boundingBox();
+      if (!back || !firstCard || !brand) throw new Error("header or first card not rendered");
+
+      expect(Math.abs(back.x - firstCard.x), "nav's left edge vs the content's").toBeLessThanOrEqual(1);
+      expect(brand.x, "brand sits on the viewport's left edge").toBeLessThanOrEqual(32);
+    });
+  });
+}

@@ -56,13 +56,14 @@ const FAKE_CURL = `#!/bin/sh
 exit "$(cat "$FAKE_DATA/curl.status" 2>/dev/null || echo 0)"
 `;
 
-// Loaded with -r before the script: logs every program it starts, and can make the last copy into vendor/ fail.
+// Loaded with -r before the script: logs every program it starts, can make curl missing, and can make the last copy into vendor/ fail.
 const SPY = `const cp = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const execFileSync = cp.execFileSync;
 cp.execFileSync = (file, args, options) => {
   fs.appendFileSync(process.env.CALLS, JSON.stringify({ file, args, timeout: options && options.timeout }) + "\\n");
+  if (file === "curl" && process.env.NO_CURL) throw Object.assign(new Error("spawnSync curl ENOENT"), { code: "ENOENT", errno: -2, syscall: "spawnSync curl" });
   return execFileSync(file, args, options);
 };
 const copyFileSync = fs.copyFileSync;
@@ -108,6 +109,7 @@ interface Scenario {
   crash?: string; // npm dies with this on stderr and no JSON body
   curlFails?: number; // the HTTP status the attestation URL answers with
   failManifestCopy?: boolean;
+  noCurl?: boolean; // there is no curl on PATH
 }
 
 interface Slot {
@@ -143,6 +145,7 @@ function makeHarness() {
   writeFileSync(join(root, "spy.cjs"), SPY);
   let answered = false;
   let failManifestCopy = false;
+  let noCurl = false;
 
   /** A `package/` tree tarred the way `npm pack` hands it out. */
   function tarball(name: string, files: Record<string, string>): string {
@@ -213,6 +216,7 @@ function makeHarness() {
     for (const name of faults.crash ? NPM_SLOTS : []) slot(name, { err: faults.crash, status: 1 });
     if (faults.curlFails) slot("curl", { err: `curl: (22) The requested URL returned error: ${faults.curlFails}\n`, status: 22 });
     failManifestCopy = Boolean(faults.failManifestCopy);
+    noCurl = Boolean(faults.noCurl);
     answered = true;
   }
 
@@ -229,6 +233,7 @@ function makeHarness() {
           FAKE_DATA: data,
           CALLS: callsFile,
           FAIL_MANIFEST_COPY: failManifestCopy ? "1" : undefined,
+          NO_CURL: noCurl ? "1" : undefined,
           ...env,
         },
       });
@@ -410,6 +415,15 @@ describe.concurrent("a release is vendored only if the release workflow built th
     expect(extracted(h)).toEqual([]);
   });
 
+  check("says curl is required when there is none, without advising to reconnect", async (h) => {
+    h.answer({ noCurl: true });
+    const run = await h.vendor();
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("curl is required");
+    expect(run.stderr).not.toContain("Reconnect");
+    expect(extracted(h)).toEqual([]);
+  });
+
   check("does not advise reconnecting when the registry answers 404 for the attestation it listed", async (h) => {
     h.answer({ curlFails: 404 });
     const run = await h.vendor();
@@ -577,6 +591,7 @@ describe.concurrent("--keep-previous, which is what pnpm dev passes", () => {
     ["a release with no provenance", () => ({ attestations: null })],
     ["a release another repository built", () => ({ attested: { repository: OTHER_REPOSITORY } })],
     ["an attestation the registry answers 404 for", () => ({ curlFails: 404 })],
+    ["a machine without curl", () => ({ noCurl: true })],
     ["a stylesheet that fetches from another origin", (h) => ({ design: h.designRelease({ css: "a{background:url(HTTPS://cdn.example.test/x.png)}" }) })],
     ["a package without its runtime", (h) => ({ design: h.designRelease({ runtime: [] }) })],
     ["a package whose runtime lacks index.js", (h) => ({ design: h.designRelease({ runtime: ["select.js"] }) })],

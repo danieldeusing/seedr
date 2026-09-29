@@ -138,6 +138,8 @@ function attestationsAt(url, spec) {
   try {
     return run("curl", ["--silent", "--show-error", "--fail", "--proto", "=https", ...BUDGET.curl, "--url", url]);
   } catch (error) {
+    // Not the registry's fault, so never forgiven: there is no curl to ask with.
+    if (error.code === "ENOENT") throw new Error(`curl is required to read the attestation of ${spec}, and it is not on PATH`, { cause: error });
     const { reason } = failure(error);
     const message = `could not read the attestation of ${spec} at ${url}: ${reason}`;
     // curl exits 22 for any HTTP error. A 4xx is the registry answering "no", like npm's E404; only no answer or a 5xx is unreachable.

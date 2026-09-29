@@ -78,10 +78,10 @@ const UNREACHABLE = /^(ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENE
 /** The registry could not be reached: the one failure `--keep-previous` forgives. */
 class Unreachable extends Error {}
 
-function run(program, args) {
+function run(program, args, env = {}) {
   // stderr is piped, not inherited: a failed npm prints a block of its own, and the one message below replaces it.
   // ponytail: no shell, so Windows (npm.cmd) cannot spawn this; the web app is built on macOS and Linux.
-  return execFileSync(program, args, { encoding: "utf8", timeout: BUDGET.timeoutMs, stdio: ["ignore", "pipe", "pipe"] });
+  return execFileSync(program, args, { encoding: "utf8", timeout: BUDGET.timeoutMs, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
 }
 
 const parse = (text) => {
@@ -135,22 +135,26 @@ function unpack({ file }) {
   return join(dir, "package");
 }
 
-/** curl reads HTTPS_PROXY but not npm's own proxy settings (.npmrc, npm_config_*), so hand it npm's, unless HTTPS_PROXY is set. */
-function proxyArgs() {
-  if (process.env.HTTPS_PROXY || process.env.https_proxy) return [];
+/**
+ * curl reads HTTPS_PROXY but not npm's own proxy settings (.npmrc, npm_config_*), so hand it npm's, unless HTTPS_PROXY is set.
+ * Through curl's environment and not --proxy: an argument shows in `ps` with any credentials in the URL, and curl
+ * applies NO_PROXY to an environment proxy.
+ */
+function proxyEnv() {
+  if (process.env.HTTPS_PROXY || process.env.https_proxy) return {};
   try {
     const config = parse(npm(["config", "list"]));
     const proxy = config?.["https-proxy"] || config?.proxy;
-    return typeof proxy === "string" && proxy ? ["--proxy", proxy] : [];
+    return typeof proxy === "string" && proxy ? { HTTPS_PROXY: proxy } : {};
   } catch {
-    return []; // no proxy is a guess, and curl says so loudly if the guess was wrong
+    return {}; // no proxy is a guess, and curl says so loudly if the guess was wrong
   }
 }
 
 /** The attestation bundles the registry serves at `url`. curl, because npm has no command that prints them. */
 function attestationsAt(url, spec) {
   try {
-    return run("curl", ["--silent", "--show-error", "--fail", "--globoff", "--proto", "=https", ...proxyArgs(), ...BUDGET.curl, "--url", url]);
+    return run("curl", ["--silent", "--show-error", "--fail", "--globoff", "--proto", "=https", ...BUDGET.curl, "--url", url], proxyEnv());
   } catch (error) {
     // Not the registry's fault, so never forgiven: there is no curl to ask with.
     if (error.code === "ENOENT") throw new Error(`curl is required to read the attestation of ${spec}, and it is not on PATH`, { cause: error });

@@ -52,6 +52,7 @@ exit "$(cat "$FAKE_DATA/$slot.status" 2>/dev/null || echo 0)"
 `;
 
 const FAKE_CURL = `#!/bin/sh
+printf 'HTTPS_PROXY=%s\\nNO_PROXY=%s\\n' "$HTTPS_PROXY" "$NO_PROXY" > "$FAKE_DATA/curl.env"
 [ -f "$FAKE_DATA/curl.err" ] && cat "$FAKE_DATA/curl.err" >&2
 [ -f "$FAKE_DATA/curl.out" ] && cat "$FAKE_DATA/curl.out"
 exit "$(cat "$FAKE_DATA/curl.status" 2>/dev/null || echo 0)"
@@ -235,6 +236,7 @@ function makeHarness() {
           CI: undefined, // a person at a terminal, even when the suite itself runs on CI
           HTTPS_PROXY: undefined,
           https_proxy: undefined,
+          NO_PROXY: undefined,
           TMPDIR: join(root, "tmp"),
           PATH: `${fakeBin}${delimiter}${process.env.PATH}`,
           FAKE_DATA: data,
@@ -441,29 +443,45 @@ describe.concurrent("a release is vendored only if the release workflow built th
   });
 });
 
-describe.concurrent("the proxy curl is given", () => {
+describe.concurrent("the proxy curl is given, through its environment", () => {
   const curlArgs = (h: Harness) => h.started().find((call) => call.file === "curl")!.args;
-  const proxies: [string, Record<string, string>, string[]][] = [
-    ["npm's https-proxy", { "https-proxy": PROXY }, ["--proxy", PROXY]],
-    ["npm's proxy when there is no https-proxy", { proxy: PLAIN_PROXY }, ["--proxy", PLAIN_PROXY]],
-    ["npm's https-proxy before its proxy", { proxy: PLAIN_PROXY, "https-proxy": PROXY }, ["--proxy", PROXY]],
-    ["no proxy when npm has none", {}, []],
+  /** What the stand-in curl found in its environment. */
+  const curlEnv = (h: Harness) => Object.fromEntries(readFileSync(join(h.root, "data", "curl.env"), "utf8").trim().split("\n").map((line) => line.split(/=(.*)/s).slice(0, 2)));
+  const proxies: [string, Record<string, string>, string][] = [
+    ["npm's https-proxy", { "https-proxy": PROXY }, PROXY],
+    ["npm's proxy when there is no https-proxy", { proxy: PLAIN_PROXY }, PLAIN_PROXY],
+    ["npm's https-proxy before its proxy", { proxy: PLAIN_PROXY, "https-proxy": PROXY }, PROXY],
+    ["no proxy when npm has none", {}, ""],
   ];
   for (const [name, npmConfig, expected] of proxies) {
     check(`is ${name}`, async (h) => {
       h.answer({ npmConfig });
       const run = await h.vendor();
       expect(run.status, run.stderr).toBe(0);
-      const args = curlArgs(h);
-      expect(args.includes("--proxy") ? args.slice(args.indexOf("--proxy"), args.indexOf("--proxy") + 2) : []).toEqual(expected);
+      expect(curlEnv(h).HTTPS_PROXY).toBe(expected);
     });
   }
+
+  check("never puts the proxy in an argument, where ps shows it with its credentials", async (h) => {
+    h.answer({ npmConfig: { "https-proxy": "http://user:secret@proxy.test:3128" } });
+    const run = await h.vendor();
+    expect(run.status, run.stderr).toBe(0);
+    expect(curlEnv(h).HTTPS_PROXY).toBe("http://user:secret@proxy.test:3128");
+    expect(h.started().every((call) => !call.args.some((arg) => arg.includes("proxy.test") || arg === "--proxy"))).toBe(true);
+  });
+
+  check("passes NO_PROXY through untouched, for curl to apply", async (h) => {
+    h.answer({ npmConfig: { "https-proxy": PROXY } });
+    const run = await h.vendorWith({ NO_PROXY: "registry.example.test,.internal" });
+    expect(run.status, run.stderr).toBe(0);
+    expect(curlEnv(h).NO_PROXY).toBe("registry.example.test,.internal");
+  });
 
   check("is left to curl when HTTPS_PROXY is set: npm is not asked", async (h) => {
     h.answer({ npmConfig: { "https-proxy": PROXY } });
     const run = await h.vendorWith({ https_proxy: "http://env.test:3128" });
     expect(run.status, run.stderr).toBe(0);
-    expect(curlArgs(h)).not.toContain("--proxy");
+    expect(curlEnv(h).HTTPS_PROXY).toBe("");
     expect(h.started().some((call) => call.file === "npm" && call.args[0] === "config")).toBe(false);
   });
 
@@ -471,6 +489,7 @@ describe.concurrent("the proxy curl is given", () => {
     h.answer({ npmConfig: null });
     const run = await h.vendor();
     expect(run.status, run.stderr).toBe(0);
+    expect(curlEnv(h).HTTPS_PROXY).toBe("");
     expect(curlArgs(h)).not.toContain("--proxy");
   });
 });

@@ -451,7 +451,7 @@ describe.concurrent("the retry budget", () => {
     for (const call of programs.filter((each) => each.file === "npm")) {
       expect(call.args).toEqual(expect.arrayContaining(["--fetch-retries=1", "--fetch-retry-mintimeout=1000", "--fetch-retry-maxtimeout=1000"]));
     }
-    expect(programs.find((call) => call.file === "curl")!.args.join(" ")).toContain("--retry 1 --retry-delay 1");
+    expect(programs.find((call) => call.file === "curl")!.args.join(" ")).toContain("--connect-timeout 5 --max-time 10 --retry 1 --retry-delay 1");
   });
 
   check("gives CI npm's own retries, curl the same patience, and a bound too long to cut them short", async (h) => {
@@ -463,7 +463,7 @@ describe.concurrent("the retry budget", () => {
     for (const call of programs.filter((each) => each.file === "npm")) {
       expect(call.args.filter((arg) => arg.startsWith("--fetch-retr"))).toEqual([]);
     }
-    expect(programs.find((call) => call.file === "curl")!.args.join(" ")).toContain("--retry 2 --retry-delay 30");
+    expect(programs.find((call) => call.file === "curl")!.args.join(" ")).toContain("--connect-timeout 10 --max-time 30 --retry 2 --retry-delay 30");
   });
 
   for (const value of ["false", "0", ""]) {

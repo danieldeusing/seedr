@@ -62,11 +62,13 @@ const work = mkdtempSync(join(tmpdir(), "seedr-vendor-"));
 // npm's default is two retries, after 10 s and then 60 s: an unreachable registry took 70 s to fail a build, which
 // is right for CI and too long for a person. So a terminal gets one retry after a second and a bound of 30 s, which
 // also stops a connection that hangs instead of failing. CI keeps npm's retries, curl gets the same amount of
-// patience, and the bound is long enough not to cut them short (two 503s in a row cost npm 72 s).
+// patience, and the bound is long enough not to cut them short (two 503s in a row cost npm 72 s). curl also gets a time
+// limit per attempt, or a stalled connection would hold it until the bound and --retry would never apply: it must be
+// well under the bound, times its attempts.
 const CI = !["", "0", "false"].includes(process.env.CI ?? "");
 const BUDGET = CI
-  ? { timeoutMs: 300_000, npm: [], curl: ["--retry", "2", "--retry-delay", "30"] }
-  : { timeoutMs: 30_000, npm: ["--fetch-retries=1", "--fetch-retry-mintimeout=1000", "--fetch-retry-maxtimeout=1000"], curl: ["--retry", "1", "--retry-delay", "1"] };
+  ? { timeoutMs: 300_000, npm: [], curl: ["--connect-timeout", "10", "--max-time", "30", "--retry", "2", "--retry-delay", "30"] }
+  : { timeoutMs: 30_000, npm: ["--fetch-retries=1", "--fetch-retry-mintimeout=1000", "--fetch-retry-maxtimeout=1000"], curl: ["--connect-timeout", "5", "--max-time", "10", "--retry", "1", "--retry-delay", "1"] };
 // An empty cache also holds no "last update check", so npm would advertise its own upgrade on every build.
 const NPM_FLAGS = ["--json", "--no-update-notifier", ...BUDGET.npm];
 // What npm's JSON error body calls a registry that did not answer, as opposed to one that answered "no". A 408 or 429 is

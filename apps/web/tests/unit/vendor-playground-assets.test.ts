@@ -552,6 +552,17 @@ describe.concurrent("--keep-previous, which is what pnpm dev passes", () => {
     expect(h.kept()).toBe("kept");
   });
 
+  for (const code of ["E429", "E503"]) {
+    check(`keeps it when npm answers ${code}, which is the registry being unavailable`, async (h) => {
+      h.previousCopy("0.58.0");
+      h.answer({ packError: { code, summary: `${code.slice(1)} from the registry` } });
+      const run = await h.vendor(KEEP_PREVIOUS);
+      expect(run.status, run.stderr).toBe(0);
+      expect(run.stderr).toContain(`${DESIGN_PACKAGE}@0.58.0`);
+      expect(run.stderr).toContain("Reconnect");
+    });
+  }
+
   for (const status of [503, 429]) {
     check(`keeps it when the attestation URL answers ${status}, which is the registry being unavailable`, async (h) => {
       h.previousCopy("0.58.0");

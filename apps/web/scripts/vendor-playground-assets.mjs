@@ -69,8 +69,9 @@ const BUDGET = CI
   : { timeoutMs: 30_000, npm: ["--fetch-retries=1", "--fetch-retry-mintimeout=1000", "--fetch-retry-maxtimeout=1000"], curl: ["--retry", "1", "--retry-delay", "1"] };
 // An empty cache also holds no "last update check", so npm would advertise its own upgrade on every build.
 const NPM_FLAGS = ["--json", "--no-update-notifier", ...BUDGET.npm];
-// What npm's JSON error body calls a registry that did not answer, as opposed to one that answered "no".
-const UNREACHABLE = /^(ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|E5\d\d)$/;
+// What npm's JSON error body calls a registry that did not answer, as opposed to one that answered "no". A 408 or 429 is
+// the registry asking to be tried later, so it counts as not answering, as it does for curl below.
+const UNREACHABLE = /^(ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|E408|E429|E5\d\d)$/;
 
 /** The registry could not be reached: the one failure `--keep-previous` forgives. */
 class Unreachable extends Error {}

@@ -67,6 +67,9 @@ test.describe("accessibility", () => {
 
   test("keyboard-only walk of the browse page reaches search, filters and cards", async ({ page }) => {
     await page.goto("/skills");
+    // the app renders once its registry has been fetched, after "load": Tab presses
+    // before that walk an empty shell and spend the budget below on nothing
+    await expect(page.getByTestId("item-card").first()).toBeVisible();
     await page.keyboard.press("Tab");
     const reached = new Set<string>();
     for (let presses = 0; presses < 60; presses++) {

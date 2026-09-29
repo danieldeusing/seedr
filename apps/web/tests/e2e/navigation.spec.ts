@@ -32,6 +32,31 @@ test.describe("unified navigation history", () => {
     await expect(page).toHaveURL(detailUrl);
   });
 
+  test("a Back pressed before the detail page renders still leaves Seedr's Forward usable", async ({ page }) => {
+    await page.goto("/skills");
+    const card = page.getByTestId("item-card").first();
+    await card.waitFor();
+    // Back the instant the URL changes, from inside the page, on a slowed renderer: the detail
+    // page cannot render before the Back arrives. A navigation that never renders is never
+    // recorded, so this fails whenever router updates are transitions (App.tsx).
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 20 });
+    await page.evaluate(() => {
+      const push = history.pushState.bind(history);
+      history.pushState = (...args: Parameters<History["pushState"]>) => {
+        push(...args);
+        history.pushState = push;
+        history.back();
+      };
+    });
+    await card.click();
+    const forward = page.getByRole("navigation", { name: "Breadcrumb and history" }).getByLabel("Forward");
+    await expect(forward).toBeEnabled();
+    await expect(page).toHaveURL(/\/skills$/);
+    await forward.click();
+    await expect(page).toHaveURL(/\/(skills|plugins)\/[a-z0-9-]+$/);
+  });
+
   test("query-only changes replace instead of stacking forward entries", async ({ page }) => {
     await page.goto("/skills");
     const search = page.getByRole("searchbox").or(page.getByPlaceholder(/search/i)).first();

@@ -357,7 +357,7 @@
     return el(
       "div",
       { className: cx("consumer-card", colorClass(color)) },
-      el("div", { className: "consumer-title" }, el("div", { className: "dot" }), title),
+      el("div", { className: "consumer-title" }, el("div", { className: "pg-dot" }), title),
       el("div", { className: "consumer-summary", text: summary }),
       ...steps.map((s, i) =>
         el(

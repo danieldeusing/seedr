@@ -56,7 +56,7 @@
   // stylesheet — `.color-0 { --item-color: #f472b6; --item-tint: #f472b618; }` — and an
   // element picks its colour by carrying that class; registry-architecture.css reads
   // --item-color / --item-tint. The 18-alpha tint exists only for literal hex colours (the
-  // chip and badge backgrounds); token colours such as var(--accent) never need one.
+  // chip and badge backgrounds); token colours such as var(--primary) never need one.
   const colorRules = new CSSStyleSheet();
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, colorRules];
   const colorClasses = new Map();
@@ -325,15 +325,15 @@
     const steps = [
       { title: "Source of Truth", path: `registry/${typeDirName(t)}/example-${t}/item.json`, desc: "Individual item files, plus registry/labels.json — the only things you edit directly", color },
       null, // arrow
-      { title: "Compile Step", path: "pnpm compile", desc: "Reads every item.json, strips longDescription into the type manifests, copies labels.json into the root index", color: "var(--warning)", isAction: true },
+      { title: "Compile Step", path: "pnpm compile", desc: "Reads every item.json, strips longDescription into the type manifests, copies labels.json into the root index", color: "var(--primary)", isAction: true },
       null,
       { title: "Type Manifest", path: `registry/${typeDirName(t)}/manifest.json`, desc: `All ${td.count} ${td.label.toLowerCase()} item${td.count === 1 ? "" : "s"} in one file, each keeping its optional label`, color },
       null,
-      { title: "Root Index", path: "registry/manifest.json", desc: "Lightweight index — version + type descriptors with counts and file paths + the label catalogue", color: "var(--accent)" },
+      { title: "Root Index", path: "registry/manifest.json", desc: "Lightweight index — version + type descriptors with counts and file paths + the label catalogue", color: "var(--primary)" },
       null,
       "split",
       { title: "CLI Consumer", path: "loadManifest() → loadTypeItems() → getItem()", desc: "Loads on demand: tries the local registry directory first, falls back to the registry URL. Caches results.", color: "var(--success)", side: "cli" },
-      { title: "Web Consumer", path: `import ${typeDirName(t)}Data from "@registry/${typeDirName(t)}/manifest.json"`, desc: "Imports all type manifests at build time via Vite. Lazy-loads full item.json only for detail views.", color: "var(--accent)", side: "web" },
+      { title: "Web Consumer", path: `import ${typeDirName(t)}Data from "@registry/${typeDirName(t)}/manifest.json"`, desc: "Imports all type manifests at build time via Vite. Lazy-loads full item.json only for detail views.", color: "var(--primary)", side: "web" },
     ];
 
     const container = el("div", { className: "flow-container" });
@@ -419,7 +419,7 @@
     ];
 
     const cliCard = consumerCard("var(--success)", "CLI Consumer", "Loads on demand at runtime. Local-first with a remote registry URL as fallback. Cached per session.", cliSteps);
-    const webCard = consumerCard("var(--accent)", "Web Consumer", "Imports manifests at build time via Vite. Lazy-loads full item.json only for detail views.", webSteps);
+    const webCard = consumerCard("var(--primary)", "Web Consumer", "Imports manifests at build time via Vite. Lazy-loads full item.json only for detail views.", webSteps);
     if (state.detail) {
       cliCard.append(cliJson(td));
       webCard.append(webJson());

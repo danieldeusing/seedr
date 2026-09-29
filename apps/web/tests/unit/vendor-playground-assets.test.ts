@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import https from "node:https";
 import { basename, delimiter, dirname, join, resolve } from "node:path";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -35,7 +36,7 @@ const NO_SUCH_HOST = "request to https://registry.npmjs.org/ failed, reason: get
 const FAKE_NPM = `#!/bin/sh
 case "$1" in
   view) slot=view ;;
-  config) slot=config ;;
+  config) slot="config-$3" ;;
   pack) case "$2" in @danieldeusing/design@*) slot=pack-design ;; *) slot=pack-font ;; esac ;;
   *) exit 2 ;;
 esac
@@ -54,7 +55,15 @@ exit "$(cat "$FAKE_DATA/$slot.status" 2>/dev/null || echo 0)"
 const FAKE_CURL = `#!/bin/sh
 printf 'HTTPS_PROXY=%s\\nNO_PROXY=%s\\n' "$HTTPS_PROXY" "$NO_PROXY" > "$FAKE_DATA/curl.env"
 [ -f "$FAKE_DATA/curl.err" ] && cat "$FAKE_DATA/curl.err" >&2
-[ -f "$FAKE_DATA/curl.out" ] && cat "$FAKE_DATA/curl.out"
+out=""
+prev=""
+for arg in "$@"; do
+  [ "$prev" = "--output" ] && out="$arg"
+  prev="$arg"
+done
+if [ -f "$FAKE_DATA/curl.out" ]; then
+  if [ -n "$out" ]; then cat "$FAKE_DATA/curl.out" > "$out"; else cat "$FAKE_DATA/curl.out"; fi
+fi
 exit "$(cat "$FAKE_DATA/curl.status" 2>/dev/null || echo 0)"
 `;
 
@@ -82,7 +91,13 @@ require("node:module").syncBuiltinESMExports();
 // which is most of a case's time when each case writes its own. What a case answers is in its own $FAKE_DATA.
 const fakeBin = mkdtempSync(join(tmpdir(), "seedr-vendor-fakes-"));
 for (const [name, body] of Object.entries({ npm: FAKE_NPM, curl: FAKE_CURL })) writeFileSync(join(fakeBin, name), body, { mode: 0o755 });
-afterAll(() => rmSync(fakeBin, { recursive: true, force: true }));
+// The same without curl, for the one case that runs the real one.
+const npmOnlyBin = mkdtempSync(join(tmpdir(), "seedr-vendor-npm-only-"));
+writeFileSync(join(npmOnlyBin, "npm"), FAKE_NPM, { mode: 0o755 });
+afterAll(() => {
+  rmSync(fakeBin, { recursive: true, force: true });
+  rmSync(npmOnlyBin, { recursive: true, force: true });
+});
 
 interface Release {
   tarball: string;
@@ -108,7 +123,8 @@ interface Scenario {
   offline?: boolean; // every npm call fails: no such host
   fontOffline?: boolean; // only the font package cannot be reached
   packError?: { code: string; summary: string }; // the design package cannot be packed, for a reason that is not the network
-  npmConfig?: Record<string, string> | null; // what `npm config list` prints; null: it fails
+  npmConfig?: Record<string, string> | null; // what `npm config get` prints per key (https-proxy, proxy, noproxy); null: it fails
+  protectedProxy?: string; // the key npm will not print, because it may carry credentials
   crash?: string; // npm dies with this on stderr and no JSON body
   curlFails?: number; // the HTTP status the attestation URL answers with
   failManifestCopy?: boolean;
@@ -136,8 +152,18 @@ interface Run {
 
 const PROXY = "http://proxy.test:3128";
 const PLAIN_PROXY = "http://plain.test:3128";
+const CONFIG_CALLS = Array<string>(3).fill("npm config"); // https-proxy, proxy, noproxy
+const CREDENTIALED = "http://user:secret@proxy.test:3128";
+const INTERNAL = "registry.example.test,.internal";
 const NPM_SLOTS = ["view", DESIGN_SLOT, "pack-font"];
 const npmError = (code: string, summary: string) => `${JSON.stringify({ error: { code, summary } })}\n`;
+
+/** What `npm config get <key>` prints: the value, nothing when unset, or a refusal or a failure. */
+function configAnswer(key: string, { npmConfig, protectedProxy }: Scenario): Slot {
+  if (npmConfig === null) return { out: npmError("ECONFIG", "no config"), status: 1 };
+  if (protectedProxy === key) return { out: `${JSON.stringify({ error: { summary: `The ${key} option is protected, and cannot be retrieved in this way`, detail: "" } })}\n`, status: 1 };
+  return { out: `${npmConfig?.[key] ?? (key === "noproxy" ? "" : "null")}\n` };
+}
 
 /** One scratch copy of apps/web with the stand-in registry beside it. */
 function makeHarness() {
@@ -214,7 +240,7 @@ function makeHarness() {
     slot("view", { out: attestations ? `${JSON.stringify(attestations, null, 2)}\n` : undefined });
     slot(DESIGN_SLOT, { out: packed(design), tarball: design.tarball });
     slot("pack-font", font ? { out: packed(font), tarball: font.tarball } : { out: npmError("E404", `404 Not Found - GET https://registry.npmjs.org/${FONT_PACKAGE}`), status: 1 });
-    slot("config", faults.npmConfig === null ? { out: npmError("ECONFIG", "no config"), status: 1 } : { out: `${JSON.stringify(faults.npmConfig ?? {})}\n` });
+    for (const key of ["https-proxy", "proxy", "noproxy"]) slot(`config-${key}`, configAnswer(key, faults));
     slot("curl", { out: typeof bundle === "string" ? bundle : JSON.stringify(bundle ?? bundleFor(sha512, attested)) });
     if (faults.fontOffline) slot("pack-font", { out: npmError("ENOTFOUND", NO_SUCH_HOST), status: 1 });
     if (faults.packError) slot(DESIGN_SLOT, { out: npmError(faults.packError.code, faults.packError.summary), status: 1 });
@@ -407,7 +433,7 @@ describe.concurrent("a release is vendored only if the release workflow built th
     const run = await h.vendor();
     expect(run.status, run.stderr).toBe(0);
     const order = h.started().map((call) => (call.file === "npm" ? `npm ${call.args[0]}` : call.file));
-    expect(order).toEqual(["npm pack", "npm view", "npm config", "curl", "tar", "npm pack", "tar"]);
+    expect(order).toEqual(["npm pack", "npm view", ...CONFIG_CALLS, "curl", "tar", "npm pack", "tar"]);
     const curl = h.started().find((call) => call.file === "curl")!;
     expect(curl.args.slice(-2)).toEqual(["--url", LISTED.url]);
     expect(curl.args.join(" ")).toContain("--proto =https");
@@ -443,8 +469,42 @@ describe.concurrent("a release is vendored only if the release workflow built th
   });
 });
 
+describe.concurrent("the attestation is read whole, with the real curl", () => {
+  check("when a retry follows a stall part-way through the body, the retry's body does not join the partial one", async (h) => {
+    // A TLS server on this machine, trusted through CURL_CA_BUNDLE, that answers the first request with half of the body
+    // and then says nothing, and the second whole. curl gives up on the first at --max-time, and retries.
+    execFileSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "2", "-subj", "/CN=localhost", "-addext", "subjectAltName=IP:127.0.0.1", "-keyout", join(h.root, "key.pem"), "-out", join(h.root, "cert.pem")], { stdio: "ignore" });
+    let body = "";
+    let requests = 0;
+    const server = https.createServer({ key: readFileSync(join(h.root, "key.pem")), cert: readFileSync(join(h.root, "cert.pem")) }, (_request, response) => {
+      requests += 1;
+      response.writeHead(200, { "content-length": Buffer.byteLength(body) });
+      if (requests === 1) response.write(body.slice(0, body.length / 2));
+      else response.end(body);
+    });
+    await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+    try {
+      const url = `https://127.0.0.1:${(server.address() as { port: number }).port}/attestation`;
+      h.answer({ attestations: { url, provenance: { predicateType: SLSA } } });
+      body = readFileSync(join(h.root, "data", "curl.out"), "utf8");
+      const run = await h.vendorWith({ PATH: `${npmOnlyBin}${delimiter}${process.env.PATH}`, CURL_CA_BUNDLE: join(h.root, "cert.pem") });
+      expect(run.status, run.stderr).toBe(0);
+      expect(requests).toBe(2);
+      const curl = h.started().find((call) => call.file === "curl")!;
+      const output = curl.args[curl.args.indexOf("--output") + 1]!;
+      expect(dirname(output)).toBe(h.scratch());
+      expect(existsSync(output)).toBe(false);
+    } finally {
+      server.closeAllConnections();
+      server.close();
+    }
+  });
+});
+
 describe.concurrent("the proxy curl is given, through its environment", () => {
   const curlArgs = (h: Harness) => h.started().find((call) => call.file === "curl")!.args;
+  /** The npm settings the run asked for. */
+  const asked = (h: Harness) => h.started().filter((call) => call.file === "npm" && call.args[0] === "config").map((call) => call.args[2]);
   /** What the stand-in curl found in its environment. */
   const curlEnv = (h: Harness) => Object.fromEntries(readFileSync(join(h.root, "data", "curl.env"), "utf8").trim().split("\n").map((line) => line.split(/=(.*)/s).slice(0, 2)));
   const proxies: [string, Record<string, string>, string][] = [
@@ -463,27 +523,61 @@ describe.concurrent("the proxy curl is given, through its environment", () => {
   }
 
   check("never puts the proxy in an argument, where ps shows it with its credentials", async (h) => {
-    h.answer({ npmConfig: { "https-proxy": "http://user:secret@proxy.test:3128" } });
+    h.answer({ npmConfig: { "https-proxy": CREDENTIALED } });
     const run = await h.vendor();
     expect(run.status, run.stderr).toBe(0);
-    expect(curlEnv(h).HTTPS_PROXY).toBe("http://user:secret@proxy.test:3128");
+    expect(curlEnv(h).HTTPS_PROXY).toBe(CREDENTIALED);
     expect(h.started().every((call) => !call.args.some((arg) => arg.includes("proxy.test") || arg === "--proxy"))).toBe(true);
   });
 
   check("passes NO_PROXY through untouched, for curl to apply", async (h) => {
     h.answer({ npmConfig: { "https-proxy": PROXY } });
-    const run = await h.vendorWith({ NO_PROXY: "registry.example.test,.internal" });
+    const run = await h.vendorWith({ NO_PROXY: INTERNAL });
     expect(run.status, run.stderr).toBe(0);
-    expect(curlEnv(h).NO_PROXY).toBe("registry.example.test,.internal");
+    expect(curlEnv(h).NO_PROXY).toBe(INTERNAL);
   });
 
-  check("is left to curl when HTTPS_PROXY is set: npm is not asked", async (h) => {
+  check("is left to curl when HTTPS_PROXY is set: npm is not asked for a proxy", async (h) => {
     h.answer({ npmConfig: { "https-proxy": PROXY } });
     const run = await h.vendorWith({ https_proxy: "http://env.test:3128" });
     expect(run.status, run.stderr).toBe(0);
     expect(curlEnv(h).HTTPS_PROXY).toBe("");
-    expect(h.started().some((call) => call.file === "npm" && call.args[0] === "config")).toBe(false);
+    expect(asked(h)).toEqual(["noproxy"]);
   });
+
+  for (const key of ["https-proxy", "proxy"]) {
+    check(`says so, and goes direct, when npm holds back a credentialed ${key}`, async (h) => {
+      h.answer({ protectedProxy: key, npmConfig: { [key]: CREDENTIALED } });
+      const run = await h.vendor();
+      expect(run.status, run.stderr).toBe(0);
+      expect(run.stderr).toContain("npm has a credentialed proxy that it will not reveal to other programs; set HTTPS_PROXY in the environment so curl can use it");
+      expect(run.stderr + run.stdout).not.toMatch(/secret|proxy\.test/);
+      expect(curlEnv(h).HTTPS_PROXY).toBe("");
+    });
+  }
+
+  check("says nothing about a proxy when there is none", async (h) => {
+    const run = await h.vendor();
+    expect(run.status, run.stderr).toBe(0);
+    expect(run.stderr).not.toContain("credentialed");
+  });
+
+  check("forwards npm's noproxy as NO_PROXY", async (h) => {
+    h.answer({ npmConfig: { noproxy: INTERNAL } });
+    const run = await h.vendor();
+    expect(run.status, run.stderr).toBe(0);
+    expect(curlEnv(h).NO_PROXY).toBe(INTERNAL);
+  });
+
+  for (const name of ["NO_PROXY", "no_proxy"]) {
+    check(`leaves ${name} in the environment alone, and does not ask npm for noproxy`, async (h) => {
+      h.answer({ npmConfig: { noproxy: "from.npm.test" } });
+      const run = await h.vendorWith({ [name]: "from.env.test" });
+      expect(run.status, run.stderr).toBe(0);
+      expect(curlEnv(h).NO_PROXY).toBe(name === "NO_PROXY" ? "from.env.test" : "");
+      expect(asked(h)).not.toContain("noproxy");
+    });
+  }
 
   check("is none, and the run goes on, when npm cannot list its config", async (h) => {
     h.answer({ npmConfig: null });
@@ -506,7 +600,7 @@ describe.concurrent("the retry budget", () => {
     const run = await h.vendor();
     expect(run.status, run.stderr).toBe(0);
     const programs = h.started();
-    expect(programs.map((call) => call.file).sort()).toEqual(["curl", "npm", "npm", "npm", "npm", "tar", "tar"]);
+    expect(programs.map((call) => call.file).sort()).toEqual(["curl", "npm", "npm", "npm", "npm", "npm", "npm", "tar", "tar"]);
     for (const call of programs) expect(call.timeout, call.file).toBe(30_000);
     for (const call of programs.filter((each) => each.file === "npm")) {
       expect(call.args).toEqual(expect.arrayContaining(["--fetch-retries=1", "--fetch-retry-mintimeout=1000", "--fetch-retry-maxtimeout=1000"]));
@@ -518,7 +612,7 @@ describe.concurrent("the retry budget", () => {
     const run = await h.vendorInCI();
     expect(run.status, run.stderr).toBe(0);
     const programs = h.started();
-    expect(programs).toHaveLength(7);
+    expect(programs).toHaveLength(9);
     for (const call of programs) expect(call.timeout, call.file).toBe(300_000);
     for (const call of programs.filter((each) => each.file === "npm")) {
       expect(call.args.filter((arg) => arg.startsWith("--fetch-retr"))).toEqual([]);
@@ -626,7 +720,7 @@ describe.concurrent("--keep-previous, which is what pnpm dev passes", () => {
     expect(h.kept()).toBe("kept");
   });
 
-  for (const code of ["E429", "E503"]) {
+  for (const code of ["E408", "E429", "E503"]) {
     check(`keeps it when npm answers ${code}, which is the registry being unavailable`, async (h) => {
       h.previousCopy("0.58.0");
       h.answer({ packError: { code, summary: `${code.slice(1)} from the registry` } });
@@ -637,7 +731,7 @@ describe.concurrent("--keep-previous, which is what pnpm dev passes", () => {
     });
   }
 
-  for (const status of [503, 429]) {
+  for (const status of [503, 429, 408]) {
     check(`keeps it when the attestation URL answers ${status}, which is the registry being unavailable`, async (h) => {
       h.previousCopy("0.58.0");
       h.answer({ curlFails: status });

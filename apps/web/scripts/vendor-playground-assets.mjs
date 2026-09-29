@@ -41,6 +41,11 @@
 // naming the release it kept. That covers an unreachable registry and nothing
 // else: a refusal, a stylesheet that fetches from another origin or a package
 // without its runtime fails dev as it fails build.
+//
+// A proxy. npm and curl read different settings, so curl is handed npm's https-proxy (else proxy) and noproxy in its
+// environment as HTTPS_PROXY and NO_PROXY, whichever the environment itself leaves unset. npm will not print a proxy
+// that carries credentials ("protected"), so for that one the run goes direct with a warning, and HTTPS_PROXY in the
+// environment is how curl gets it. The value is never printed, and never an argument, where `ps` would show it.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -135,26 +140,51 @@ function unpack({ file }) {
   return join(dir, "package");
 }
 
+/** One npm setting as text; undefined when unset, PROTECTED when npm holds it back because it may carry credentials. */
+const PROTECTED = Symbol("protected");
+function npmSetting(key) {
+  try {
+    const value = npm(["config", "get", key]).trim();
+    return ["", "null", "undefined"].includes(value) ? undefined : value;
+  } catch (error) {
+    return /protected/.test(error.message) ? PROTECTED : undefined;
+  }
+}
+
 /**
- * curl reads HTTPS_PROXY but not npm's own proxy settings (.npmrc, npm_config_*), so hand it npm's, unless HTTPS_PROXY is set.
- * Through curl's environment and not --proxy: an argument shows in `ps` with any credentials in the URL, and curl
- * applies NO_PROXY to an environment proxy.
+ * curl reads HTTPS_PROXY and NO_PROXY but not npm's own settings (.npmrc, npm_config_*), so hand it npm's, for each one
+ * the environment does not set. Through curl's environment and not --proxy: an argument shows in `ps` with any
+ * credentials in the URL, and curl applies NO_PROXY to an environment proxy.
  */
 function proxyEnv() {
-  if (process.env.HTTPS_PROXY || process.env.https_proxy) return {};
-  try {
-    const config = parse(npm(["config", "list"]));
-    const proxy = config?.["https-proxy"] || config?.proxy;
-    return typeof proxy === "string" && proxy ? { HTTPS_PROXY: proxy } : {};
-  } catch {
-    return {}; // no proxy is a guess, and curl says so loudly if the guess was wrong
+  const env = {};
+  if (!process.env.HTTPS_PROXY && !process.env.https_proxy) {
+    for (const key of ["https-proxy", "proxy"]) {
+      const value = npmSetting(key);
+      if (value === PROTECTED) {
+        // npm will not print a proxy with credentials in it, so the run goes direct, and says so. The value is never printed.
+        console.warn("vendor-playground-assets: npm has a credentialed proxy that it will not reveal to other programs; set HTTPS_PROXY in the environment so curl can use it");
+        break;
+      }
+      if (value) {
+        env.HTTPS_PROXY = value;
+        break;
+      }
+    }
   }
+  const noProxy = process.env.NO_PROXY || process.env.no_proxy ? undefined : npmSetting("noproxy");
+  if (typeof noProxy === "string") env.NO_PROXY = noProxy;
+  return env;
 }
 
 /** The attestation bundles the registry serves at `url`. curl, because npm has no command that prints them. */
 function attestationsAt(url, spec) {
+  // To a file in the scratch directory, which goes when the run ends: a retry after a stall part-way through the body
+  // starts the file again, where on stdout it would append its whole body to the partial one.
+  const bundle = join(work, "attestation.json");
   try {
-    return run("curl", ["--silent", "--show-error", "--fail", "--globoff", "--proto", "=https", ...BUDGET.curl, "--url", url], proxyEnv());
+    run("curl", ["--silent", "--show-error", "--fail", "--globoff", "--proto", "=https", ...BUDGET.curl, "--output", bundle, "--url", url], proxyEnv());
+    return readFileSync(bundle, "utf8");
   } catch (error) {
     // Not the registry's fault, so never forgiven: there is no curl to ask with.
     if (error.code === "ENOENT") throw new Error(`curl is required to read the attestation of ${spec}, and it is not on PATH`, { cause: error });

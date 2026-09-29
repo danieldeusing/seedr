@@ -97,8 +97,10 @@
   const span = (className, text) => el("span", { className, text });
   const blank = () => el("div", { className: "term-blank" });
 
-  function sectionLabel(text, hint) {
-    const label = el("div", { className: "section-label", text });
+  // With `forId`, the text is a real <label for> of that select, and the design runtime names the trigger it
+  // builds from it. The flag hint stays outside the label, so it is not read out as part of the name.
+  function sectionLabel(text, hint, forId) {
+    const label = el("div", { className: "section-label" }, forId ? el("label", { text, attrs: { for: forId } }) : text);
     if (hint) label.append(" ", span("section-hint", hint));
     return label;
   }
@@ -147,12 +149,13 @@
     bindEvents();
   }
 
-  function typeSelect(id, current, includeAll) {
+  /** The type dropdown with its label: the <label for> is what names the select for a screen reader. */
+  function typeGroup(id, text, current, includeAll) {
     const select = el("select", { attrs: { id } });
     if (includeAll) select.append(el("option", { text: "All types", attrs: { value: "" } }));
     for (const [key, type] of Object.entries(TYPES)) select.append(el("option", { text: type.label, attrs: { value: key } }));
     select.value = current;
-    return select;
+    return el("div", { className: "control-group" }, sectionLabel(text, "(-t, --type)", id), select);
   }
 
   /** Agent checkboxes for whichever command's panel is on screen; only one is rendered at a time. */
@@ -180,7 +183,7 @@
     nameInput.value = s.name;
     const groups = [
       el("div", { className: "control-group" }, sectionLabel("Item Name"), nameInput),
-      el("div", { className: "control-group" }, sectionLabel("Type", "(-t, --type)"), typeSelect("addType", s.type, false)),
+      typeGroup("addType", "Type", s.type, false),
       el("div", { className: "control-group" }, sectionLabel("Target Tools", "(-a, --agents)"), toolChecks(s.agents, s.type)),
       el("div", { className: "control-group" }, sectionLabel("Scope", "(-s, --scope)"), radioGroup(["project", "user", "local"], s.scope, "set-add-scope")),
     ];
@@ -203,7 +206,7 @@
   function renderListOptions() {
     const s = state.list;
     const groups = [
-      el("div", { className: "control-group" }, sectionLabel("Type Filter", "(-t, --type)"), typeSelect("listType", s.type, true)),
+      typeGroup("listType", "Type Filter", s.type, true),
       el("div", { className: "control-group" }, sectionLabel("Mode"), toggleRow("--installed", s.installed, "toggle-list", "installed")),
     ];
     // --label filters the registry listing; --agents and --scope only narrow the installed check.
@@ -226,7 +229,7 @@
     nameInput.value = s.name;
     return [
       el("div", { className: "control-group" }, sectionLabel("Item Name"), nameInput),
-      el("div", { className: "control-group" }, sectionLabel("Type", "(-t, --type)"), typeSelect("removeType", s.type, false)),
+      typeGroup("removeType", "Type", s.type, false),
       el("div", { className: "control-group" }, sectionLabel("Target Tools", "(-a, --agents)"), toolChecks(s.agents, s.type)),
       el("div", { className: "control-group" }, sectionLabel("Scope", "(--scope)"), radioGroup(["project", "user", "local"], s.scope, "set-remove-scope")),
       el("div", { className: "control-group" }, sectionLabel("Flags"), toggleRow("--yes", s.yes, "toggle-remove", "yes")),

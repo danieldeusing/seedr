@@ -26,8 +26,16 @@ peerDependencyRules:
 # Exempted from pnpm's minimum-release-age gate, which otherwise refuses a package published
 # within the last few days — the window in which a compromised release is usually caught and
 # pulled. @danieldeusing/design is OURS: same author, same machine, published shortly before it is
-# consumed here, so the gate is measuring a risk that does not apply. Pinned to an EXACT version
-# deliberately — this exempts THAT release, not the package forever, so the list is appended to as
-# new ones are consumed. Same convention and same wording as apps/pagr.
+# consumed here, so the gate is measuring a risk that does not apply. Two things consume it, and
+# only one of them is pinned:
+#  - The React app's dependency (apps/web/package.json) is exempted per EXACT version, below. Each
+#    entry exempts THAT release, not the package forever, so the list is appended to as new ones
+#    are consumed. Same convention and same wording as apps/pagr.
+#  - The playground pages are NOT pinned. apps/web/scripts/vendor-playground-assets.mjs vendors the
+#    LATEST published release on every build, with the window lifted for that one package
+#    (`npm pack --min-release-age=0`), so a release published minutes ago runs on the site's own
+#    origin. Nothing in this file bounds that; it is the owner's decision (2026-09-28). What guards
+#    it instead: the script refuses a release the npm registry lists no provenance attestation for,
+#    and records the release and its tarball integrity in vendor/manifest.json.
 minimumReleaseAgeExclude:
   - '@danieldeusing/design@0.52.0 || 0.53.0 || 0.54.0 || 0.55.0 || 0.56.0'

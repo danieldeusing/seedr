@@ -3,7 +3,10 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const playgroundsDir = join(__dirname, "..", "..", "public", "playgrounds");
-const PLAYGROUNDS = ["agent-jobs", "cli-explorer", "compatibility-matrix", "install-paths", "registry-architecture"];
+// Read from disk, not listed by hand: a page or script added later is held to the checks below too.
+const onDisk = (extension: string) => readdirSync(playgroundsDir).filter((file) => file.endsWith(extension));
+const PAGES = onDisk(".html").map((file) => file.slice(0, -".html".length));
+const SCRIPTS = onDisk(".js");
 
 const PAYLOADS = [
   '<img src=x onerror="window.__pwned = 1">',
@@ -65,14 +68,14 @@ function forbiddenElements() {
 }
 
 describe("playground scripts never build markup from strings", () => {
-  it.each(PLAYGROUNDS)("%s.js contains no innerHTML/outerHTML/insertAdjacentHTML/document.write/eval", (name) => {
-    const source = readFileSync(join(playgroundsDir, `${name}.js`), "utf8");
+  it.each(SCRIPTS)("%s contains no innerHTML/outerHTML/insertAdjacentHTML/document.write/eval", (file) => {
+    const source = readFileSync(join(playgroundsDir, file), "utf8");
     for (const forbidden of ["innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(", "new Function", "javascript:"]) {
-      expect(source, `${name}.js uses ${forbidden}`).not.toContain(forbidden);
+      expect(source, `${file} uses ${forbidden}`).not.toContain(forbidden);
     }
   });
 
-  it.each([...PLAYGROUNDS, "index"])("%s.html has no inline script, inline handler or inline style", (name) => {
+  it.each(PAGES)("%s.html has no inline script, inline handler or inline style", (name) => {
     const html = readFileSync(join(playgroundsDir, `${name}.html`), "utf8");
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
     expect(html).not.toMatch(/\son[a-z]+\s*=/i);
@@ -135,6 +138,21 @@ describe("CLI explorer treats typed names as text, never as HTML", () => {
     expect(document.querySelector("#cmdText")?.textContent).toBe("$ npx seedr add project-security-guard --type hook");
     expect(forbiddenElements()).toBe(0);
     expect(window.__pwned).toBeUndefined();
+  });
+});
+
+describe("CLI explorer names its selects", () => {
+  // The design runtime builds the trigger a reader tabs to and takes its name from the select's
+  // <label for>. A select with none is announced by its value alone.
+  it.each([
+    ["add", "addType"],
+    ["list", "listType"],
+    ["remove", "removeType"],
+  ])("%s: #%s has a label", async (command, id) => {
+    await mount("cli-explorer");
+    document.querySelector<HTMLButtonElement>(`[data-action="select-command"][data-value="${command}"]`)!.click();
+    expect(document.getElementById(id)?.tagName).toBe("SELECT");
+    expect(document.querySelector(`label[for="${id}"]`)?.textContent?.trim(), `#${id} has no <label for>`).toBeTruthy();
   });
 });
 

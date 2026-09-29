@@ -135,10 +135,22 @@ function unpack({ file }) {
   return join(dir, "package");
 }
 
+/** curl reads HTTPS_PROXY but not npm's own proxy settings (.npmrc, npm_config_*), so hand it npm's, unless HTTPS_PROXY is set. */
+function proxyArgs() {
+  if (process.env.HTTPS_PROXY || process.env.https_proxy) return [];
+  try {
+    const config = parse(npm(["config", "list"]));
+    const proxy = config?.["https-proxy"] || config?.proxy;
+    return typeof proxy === "string" && proxy ? ["--proxy", proxy] : [];
+  } catch {
+    return []; // no proxy is a guess, and curl says so loudly if the guess was wrong
+  }
+}
+
 /** The attestation bundles the registry serves at `url`. curl, because npm has no command that prints them. */
 function attestationsAt(url, spec) {
   try {
-    return run("curl", ["--silent", "--show-error", "--fail", "--proto", "=https", ...BUDGET.curl, "--url", url]);
+    return run("curl", ["--silent", "--show-error", "--fail", "--globoff", "--proto", "=https", ...proxyArgs(), ...BUDGET.curl, "--url", url]);
   } catch (error) {
     // Not the registry's fault, so never forgiven: there is no curl to ask with.
     if (error.code === "ENOENT") throw new Error(`curl is required to read the attestation of ${spec}, and it is not on PATH`, { cause: error });

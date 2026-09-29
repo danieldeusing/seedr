@@ -35,6 +35,7 @@ const NO_SUCH_HOST = "request to https://registry.npmjs.org/ failed, reason: get
 const FAKE_NPM = `#!/bin/sh
 case "$1" in
   view) slot=view ;;
+  config) slot=config ;;
   pack) case "$2" in @danieldeusing/design@*) slot=pack-design ;; *) slot=pack-font ;; esac ;;
   *) exit 2 ;;
 esac
@@ -106,6 +107,7 @@ interface Scenario {
   offline?: boolean; // every npm call fails: no such host
   fontOffline?: boolean; // only the font package cannot be reached
   packError?: { code: string; summary: string }; // the design package cannot be packed, for a reason that is not the network
+  npmConfig?: Record<string, string> | null; // what `npm config list` prints; null: it fails
   crash?: string; // npm dies with this on stderr and no JSON body
   curlFails?: number; // the HTTP status the attestation URL answers with
   failManifestCopy?: boolean;
@@ -131,6 +133,8 @@ interface Run {
   stderr: string;
 }
 
+const PROXY = "http://proxy.test:3128";
+const PLAIN_PROXY = "http://plain.test:3128";
 const NPM_SLOTS = ["view", DESIGN_SLOT, "pack-font"];
 const npmError = (code: string, summary: string) => `${JSON.stringify({ error: { code, summary } })}\n`;
 
@@ -209,6 +213,7 @@ function makeHarness() {
     slot("view", { out: attestations ? `${JSON.stringify(attestations, null, 2)}\n` : undefined });
     slot(DESIGN_SLOT, { out: packed(design), tarball: design.tarball });
     slot("pack-font", font ? { out: packed(font), tarball: font.tarball } : { out: npmError("E404", `404 Not Found - GET https://registry.npmjs.org/${FONT_PACKAGE}`), status: 1 });
+    slot("config", faults.npmConfig === null ? { out: npmError("ECONFIG", "no config"), status: 1 } : { out: `${JSON.stringify(faults.npmConfig ?? {})}\n` });
     slot("curl", { out: typeof bundle === "string" ? bundle : JSON.stringify(bundle ?? bundleFor(sha512, attested)) });
     if (faults.fontOffline) slot("pack-font", { out: npmError("ENOTFOUND", NO_SUCH_HOST), status: 1 });
     if (faults.packError) slot(DESIGN_SLOT, { out: npmError(faults.packError.code, faults.packError.summary), status: 1 });
@@ -228,6 +233,8 @@ function makeHarness() {
         env: {
           ...process.env,
           CI: undefined, // a person at a terminal, even when the suite itself runs on CI
+          HTTPS_PROXY: undefined,
+          https_proxy: undefined,
           TMPDIR: join(root, "tmp"),
           PATH: `${fakeBin}${delimiter}${process.env.PATH}`,
           FAKE_DATA: data,
@@ -398,11 +405,11 @@ describe.concurrent("a release is vendored only if the release workflow built th
     const run = await h.vendor();
     expect(run.status, run.stderr).toBe(0);
     const order = h.started().map((call) => (call.file === "npm" ? `npm ${call.args[0]}` : call.file));
-    expect(order).toEqual(["npm pack", "npm view", "curl", "tar", "npm pack", "tar"]);
+    expect(order).toEqual(["npm pack", "npm view", "npm config", "curl", "tar", "npm pack", "tar"]);
     const curl = h.started().find((call) => call.file === "curl")!;
     expect(curl.args.slice(-2)).toEqual(["--url", LISTED.url]);
     expect(curl.args.join(" ")).toContain("--proto =https");
-    expect(curl.args).toEqual(expect.arrayContaining(["--fail", "--silent", "--show-error"]));
+    expect(curl.args).toEqual(expect.arrayContaining(["--fail", "--silent", "--show-error", "--globoff"]));
   });
 
   check("fails when the attestation cannot be fetched, without extracting anything", async (h) => {
@@ -434,6 +441,40 @@ describe.concurrent("a release is vendored only if the release workflow built th
   });
 });
 
+describe.concurrent("the proxy curl is given", () => {
+  const curlArgs = (h: Harness) => h.started().find((call) => call.file === "curl")!.args;
+  const proxies: [string, Record<string, string>, string[]][] = [
+    ["npm's https-proxy", { "https-proxy": PROXY }, ["--proxy", PROXY]],
+    ["npm's proxy when there is no https-proxy", { proxy: PLAIN_PROXY }, ["--proxy", PLAIN_PROXY]],
+    ["npm's https-proxy before its proxy", { proxy: PLAIN_PROXY, "https-proxy": PROXY }, ["--proxy", PROXY]],
+    ["no proxy when npm has none", {}, []],
+  ];
+  for (const [name, npmConfig, expected] of proxies) {
+    check(`is ${name}`, async (h) => {
+      h.answer({ npmConfig });
+      const run = await h.vendor();
+      expect(run.status, run.stderr).toBe(0);
+      const args = curlArgs(h);
+      expect(args.includes("--proxy") ? args.slice(args.indexOf("--proxy"), args.indexOf("--proxy") + 2) : []).toEqual(expected);
+    });
+  }
+
+  check("is left to curl when HTTPS_PROXY is set: npm is not asked", async (h) => {
+    h.answer({ npmConfig: { "https-proxy": PROXY } });
+    const run = await h.vendorWith({ https_proxy: "http://env.test:3128" });
+    expect(run.status, run.stderr).toBe(0);
+    expect(curlArgs(h)).not.toContain("--proxy");
+    expect(h.started().some((call) => call.file === "npm" && call.args[0] === "config")).toBe(false);
+  });
+
+  check("is none, and the run goes on, when npm cannot list its config", async (h) => {
+    h.answer({ npmConfig: null });
+    const run = await h.vendor();
+    expect(run.status, run.stderr).toBe(0);
+    expect(curlArgs(h)).not.toContain("--proxy");
+  });
+});
+
 describe.concurrent("the retry budget", () => {
   check("lifts npm's release-age window for the design system's own release and its attestation, and for nothing else", async (h) => {
     const run = await h.vendor();
@@ -446,7 +487,7 @@ describe.concurrent("the retry budget", () => {
     const run = await h.vendor();
     expect(run.status, run.stderr).toBe(0);
     const programs = h.started();
-    expect(programs.map((call) => call.file).sort()).toEqual(["curl", "npm", "npm", "npm", "tar", "tar"]);
+    expect(programs.map((call) => call.file).sort()).toEqual(["curl", "npm", "npm", "npm", "npm", "tar", "tar"]);
     for (const call of programs) expect(call.timeout, call.file).toBe(30_000);
     for (const call of programs.filter((each) => each.file === "npm")) {
       expect(call.args).toEqual(expect.arrayContaining(["--fetch-retries=1", "--fetch-retry-mintimeout=1000", "--fetch-retry-maxtimeout=1000"]));
@@ -458,7 +499,7 @@ describe.concurrent("the retry budget", () => {
     const run = await h.vendorInCI();
     expect(run.status, run.stderr).toBe(0);
     const programs = h.started();
-    expect(programs).toHaveLength(6);
+    expect(programs).toHaveLength(7);
     for (const call of programs) expect(call.timeout, call.file).toBe(300_000);
     for (const call of programs.filter((each) => each.file === "npm")) {
       expect(call.args.filter((arg) => arg.startsWith("--fetch-retr"))).toEqual([]);

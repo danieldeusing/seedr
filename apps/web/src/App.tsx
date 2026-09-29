@@ -16,7 +16,11 @@ const isEmbed = new URLSearchParams(window.location.search).has("embed");
 
 export function App() {
   return (
-    <BrowserRouter>
+    // No transitions: NavigationProvider records each history entry from the location React
+    // renders, and React merges transition renders. A card click followed at once by the
+    // browser's Back rendered only the Back, so the detail entry was never recorded and
+    // Seedr's Forward stayed disabled while the browser's worked.
+    <BrowserRouter useTransitions={false}>
       <NavigationProvider>
         <div className="flex min-h-screen flex-col pb-16 sm:pb-8">
           {!isEmbed && <Header />}

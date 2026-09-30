@@ -83,35 +83,77 @@ function definedEntries<T extends object>(object: T): Partial<T> {
 // Translations into each agent's schema
 // ---------------------------------------------------------------------------
 
+/**
+ * Registry definitions name secrets as `${VAR}`, which Claude and Copilot expand.
+ * OpenCode spells the same thing `{env:VAR}`; Codex expands nothing and instead
+ * names the variable (`env_vars`, `bearer_token_env_var`, `env_http_headers`).
+ */
+const PLACEHOLDER = /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+const WHOLE_PLACEHOLDER = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
+const BEARER_PLACEHOLDER = /^Bearer \$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
+
+const toOpenCodeRef = (value: string): string => value.replace(PLACEHOLDER, "{env:$1}");
+
+function mapValues(record: Record<string, string> | undefined, map: (value: string) => string): Record<string, string> | undefined {
+  return record && Object.fromEntries(Object.entries(record).map(([key, value]) => [key, map(value)]));
+}
+
 /** OpenCode `opencode.json` → `mcp.<name>`: `local` with a command array, or `remote`. */
 export function toOpenCodeServer(config: McpServerConfig): Record<string, unknown> {
   if (transportOf(config) === "stdio") {
     if (!config.command) throw new Error(NO_COMMAND_ERROR);
     return definedEntries({
       type: "local",
-      command: [config.command, ...(config.args ?? [])],
-      environment: config.env,
+      command: [config.command, ...(config.args ?? [])].map(toOpenCodeRef),
+      environment: mapValues(config.env, toOpenCodeRef),
       enabled: true,
     });
   }
   if (!config.url) throw new Error(NO_URL_ERROR);
-  return definedEntries({ type: "remote", url: config.url, headers: config.headers, enabled: true });
+  return definedEntries({ type: "remote", url: toOpenCodeRef(config.url), headers: mapValues(config.headers, toOpenCodeRef), enabled: true });
+}
+
+/**
+ * Split a definition's env and headers into what Codex passes through by name
+ * and what it writes literally. Only a value that is exactly `${NAME}` (or
+ * `Bearer ${NAME}` for Authorization) can be expressed; anything else stays
+ * verbatim, because Codex has no in-string expansion.
+ */
+function codexPassthrough(config: McpServerConfig) {
+  const env: Record<string, string> = {};
+  const envVars: string[] = [];
+  for (const [key, value] of Object.entries(config.env ?? {})) {
+    if (WHOLE_PLACEHOLDER.exec(value)?.[1] === key) envVars.push(key);
+    else env[key] = value;
+  }
+  const headers: Record<string, string> = {};
+  const envHeaders: Record<string, string> = {};
+  let bearer = config.bearer_token_env_var || undefined;
+  for (const [key, value] of Object.entries(config.headers ?? {})) {
+    const bearerVar = key.toLowerCase() === "authorization" ? BEARER_PLACEHOLDER.exec(value)?.[1] : undefined;
+    const wholeVar = WHOLE_PLACEHOLDER.exec(value)?.[1];
+    if (bearerVar && !bearer) bearer = bearerVar;
+    else if (wholeVar) envHeaders[key] = wholeVar;
+    else headers[key] = value;
+  }
+  return { env, envVars, headers, envHeaders, bearer };
 }
 
 /** The scalar entries of a Codex `[mcp_servers.<name>]` table. */
-function codexMainEntries(config: McpServerConfig): Record<string, TomlValue> {
+function codexMainEntries(config: McpServerConfig, passthrough: ReturnType<typeof codexPassthrough>): Record<string, TomlValue> {
   if (transportOf(config) === "stdio") {
     if (!config.command) throw new Error(NO_COMMAND_ERROR);
     return definedEntries({
       command: config.command,
       args: config.args && config.args.length > 0 ? config.args : undefined,
       cwd: config.cwd || undefined,
+      env_vars: passthrough.envVars.length > 0 ? passthrough.envVars : undefined,
     }) as Record<string, TomlValue>;
   }
   if (!config.url) throw new Error(NO_URL_ERROR);
   return definedEntries({
     url: config.url,
-    bearer_token_env_var: config.bearer_token_env_var || undefined,
+    bearer_token_env_var: passthrough.bearer,
   }) as Record<string, TomlValue>;
 }
 
@@ -122,12 +164,16 @@ function hasEntries(record: Record<string, string> | undefined): record is Recor
 /** Codex `config.toml` → `[mcp_servers.<name>]` plus `.env` / `.http_headers` sub-tables. */
 export function toCodexTables(name: string, config: McpServerConfig): TomlTableSpec[] {
   const base = [CODEX_TABLE, name];
-  const tables: TomlTableSpec[] = [{ keyPath: base, entries: codexMainEntries(config) }];
-  if (hasEntries(config.env)) {
-    tables.push({ keyPath: [...base, "env"], entries: { ...config.env } });
+  const passthrough = codexPassthrough(config);
+  const tables: TomlTableSpec[] = [{ keyPath: base, entries: codexMainEntries(config, passthrough) }];
+  if (hasEntries(passthrough.env)) {
+    tables.push({ keyPath: [...base, "env"], entries: passthrough.env });
   }
-  if (hasEntries(config.headers)) {
-    tables.push({ keyPath: [...base, "http_headers"], entries: { ...config.headers } });
+  if (hasEntries(passthrough.headers)) {
+    tables.push({ keyPath: [...base, "http_headers"], entries: passthrough.headers });
+  }
+  if (hasEntries(passthrough.envHeaders)) {
+    tables.push({ keyPath: [...base, "env_http_headers"], entries: passthrough.envHeaders });
   }
   return tables;
 }

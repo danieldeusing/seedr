@@ -155,6 +155,64 @@ describe("rule handler", () => {
       expect(agentsMd).toContain("Use strict mode.");
     });
 
+    it("keeps a rule's path scope in each agent's own key, and as prose in a section", async () => {
+      await serveRule('---\napplyTo: "src/**/*.ts, test/**"\ndescription: TS rule\n---\n\nUse strict mode.');
+      const { installRule } = await import("./rule.js");
+
+      await installRule(ruleItem(), ["claude", "copilot", "antigravity", "codex"], "project", "copy", true, PROJECT);
+
+      const claude = read(`${PROJECT}/.claude/rules/${SLUG}.md`);
+      expect(claude).toBe('---\ndescription: TS rule\npaths:\n  - "src/**/*.ts"\n  - "test/**"\n---\n\nUse strict mode.');
+      expect(read(`${PROJECT}/.github/instructions/${SLUG}.instructions.md`)).toBe(
+        '---\napplyTo: "src/**/*.ts, test/**"\ndescription: TS rule\n---\n\nUse strict mode.'
+      );
+      expect(read(`${PROJECT}/.agents/rules/${SLUG}.md`)).toBe('---\ndescription: TS rule\nglob: "src/**/*.ts, test/**"\n---\n\nUse strict mode.');
+      expect(read(`${PROJECT}/AGENTS.md`)).toContain(
+        `<!-- seedr:rule:${SLUG} -->\nApplies to files matching \`src/**/*.ts\`, \`test/**\`.\n\nUse strict mode.`
+      );
+    });
+
+    it("reads Claude's paths list as the scope too", async () => {
+      await serveRule('---\npaths:\n  - "docs/**"\n  - src/*.md\n---\nWrite plainly.');
+      const { installRule } = await import("./rule.js");
+
+      await installRule(ruleItem(), ["copilot", "opencode"], "project", "copy", true, PROJECT);
+
+      expect(read(`${PROJECT}/.github/instructions/${SLUG}.instructions.md`)).toBe('---\napplyTo: "docs/**, src/*.md"\n---\nWrite plainly.');
+      expect(read(`${PROJECT}/AGENTS.md`)).toContain("Applies to files matching `docs/**`, `src/*.md`.\n\nWrite plainly.");
+    });
+
+    it.each([
+      ["inline applyTo", '---\napplyTo: "**/*.{ts,tsx}"\n---\nUse strict mode.'],
+      ["inline paths", '---\npaths: "**/*.{ts,tsx}"\n---\nUse strict mode.'],
+      ["flow-list paths", '---\npaths: ["**/*.{ts,tsx}"]\n---\nUse strict mode.'],
+    ])("keeps a brace glob whole from %s", async (_label, source) => {
+      await serveRule(source);
+      const { installRule } = await import("./rule.js");
+
+      await installRule(ruleItem(), ["claude", "copilot", "codex"], "project", "copy", true, PROJECT);
+
+      expect(read(`${PROJECT}/.claude/rules/${SLUG}.md`)).toBe(
+        source.includes("paths:") ? source : '---\npaths:\n  - "**/*.{ts,tsx}"\n---\nUse strict mode.'
+      );
+      expect(read(`${PROJECT}/.github/instructions/${SLUG}.instructions.md`)).toBe(
+        source.includes("applyTo:") ? source : '---\napplyTo: "**/*.{ts,tsx}"\n---\nUse strict mode.'
+      );
+      expect(read(`${PROJECT}/AGENTS.md`)).toContain("Applies to files matching `**/*.{ts,tsx}`.\n\nUse strict mode.");
+    });
+
+    it("splits a flow list on commas outside braces", async () => {
+      await serveRule("---\npaths: [\"src/**/*.{ts,tsx}\", 'docs/**']\n---\nBody.");
+      const { installRule } = await import("./rule.js");
+
+      await installRule(ruleItem(), ["copilot", "codex"], "project", "copy", true, PROJECT);
+
+      expect(read(`${PROJECT}/.github/instructions/${SLUG}.instructions.md`)).toBe(
+        '---\napplyTo: "src/**/*.{ts,tsx}, docs/**"\n---\nBody.'
+      );
+      expect(read(`${PROJECT}/AGENTS.md`)).toContain("Applies to files matching `src/**/*.{ts,tsx}`, `docs/**`.");
+    });
+
     it("removes only its own section, leaving the file and other rules intact", async () => {
       await serveRule();
       vol.writeFileSync(`${PROJECT}/AGENTS.md`, "# My project\n\nHand-written guidance.\n");
@@ -272,6 +330,29 @@ describe("rule handler", () => {
       // A plan writes nothing.
       expect(vol.existsSync(`${PROJECT}/.claude/rules/${SLUG}.md`)).toBe(false);
       expect(vol.existsSync(`${PROJECT}/AGENTS.md`)).toBe(false);
+    });
+
+    it("does not read the rule to plan agents that each get a rule file", async () => {
+      await serveRule('---\napplyTo: "**/*.ts"\n---\nUse strict mode.');
+      const { fetchItemFile } = await import("../config/registry.js");
+      const { planRule } = await import("./rule.js");
+
+      await planRule(ruleItem(), ["claude", "copilot"], "project", "copy", PROJECT);
+
+      expect(fetchItemFile).not.toHaveBeenCalled();
+    });
+
+    it("names the agents for which a scoped rule is only advisory", async () => {
+      await serveRule('---\napplyTo: "**/*.ts"\n---\nUse strict mode.');
+      const { planRule } = await import("./rule.js");
+
+      const plan = await planRule(ruleItem(), ["claude", "codex", "opencode"], "project", "copy", PROJECT);
+
+      expect(plan.map((change) => change.detail)).toEqual([
+        "rule file",
+        `merged section <!-- seedr:rule:${SLUG} --> (the rest of the file is untouched); OpenAI Codex CLI has no path scope, so \`**/*.ts\` is advisory prose`,
+        `merged section <!-- seedr:rule:${SLUG} --> (the rest of the file is untouched); OpenCode has no path scope, so \`**/*.ts\` is advisory prose`,
+      ]);
     });
   });
 });

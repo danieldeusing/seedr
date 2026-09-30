@@ -158,7 +158,7 @@ describe("mcp handler", () => {
       expect(results[0]).toEqual({ agent: "codex", success: true, path: CODEX_PROJECT_FILE });
       const text = vol.readFileSync(CODEX_PROJECT_FILE, "utf-8") as string;
       expect(text).toBe(
-        `model = "o3"\n\n[profiles.fast]\nmodel = "o4-mini"\n\n[mcp_servers.github]\ncommand = "npx"\nargs = ["-y", "${GITHUB_PACKAGE}"]\n\n[mcp_servers.github.env]\nGITHUB_TOKEN = "${GITHUB_TOKEN_REF}"\n`
+        `model = "o3"\n\n[profiles.fast]\nmodel = "o4-mini"\n\n[mcp_servers.github]\ncommand = "npx"\nargs = ["-y", "${GITHUB_PACKAGE}"]\nenv_vars = ["GITHUB_TOKEN"]\n`
       );
     });
 
@@ -292,7 +292,7 @@ describe("mcp handler", () => {
       expect(config.mcp.github).toEqual({
         type: "local",
         command: [NPX, "-y", GITHUB_PACKAGE],
-        environment: { GITHUB_TOKEN: GITHUB_TOKEN_REF },
+        environment: { GITHUB_TOKEN: "{env:GITHUB_TOKEN}" },
         enabled: true,
       });
     });
@@ -323,6 +323,36 @@ describe("mcp handler", () => {
       expect(await getInstalledMcpServers("opencode", "project", PROJECT)).toEqual(["github"]);
       expect(await uninstallMcp("github", "opencode", "project", PROJECT)).toBe(true);
       expect(await getInstalledMcpServers("opencode", "project", PROJECT)).toEqual([]);
+    });
+
+    it("rewrites ${VAR} placeholders into each agent's own spelling", async () => {
+      const { toOpenCodeServer, toCodexTables } = await import("./mcp.js");
+      const remote = {
+        type: "http" as const,
+        url: "https://${MCP_HOST}/mcp",
+        headers: { Authorization: "Bearer ${MCP_TOKEN}", "X-Team": "${TEAM_ID}", "X-Static": "v" },
+      };
+      expect(toOpenCodeServer(remote)).toEqual({
+        type: "remote",
+        url: "https://{env:MCP_HOST}/mcp",
+        headers: { Authorization: "Bearer {env:MCP_TOKEN}", "X-Team": "{env:TEAM_ID}", "X-Static": "v" },
+        enabled: true,
+      });
+      expect(toCodexTables("remote", remote)).toEqual([
+        { keyPath: ["mcp_servers", "remote"], entries: { url: "https://${MCP_HOST}/mcp", bearer_token_env_var: "MCP_TOKEN" } },
+        { keyPath: ["mcp_servers", "remote", "http_headers"], entries: { "X-Static": "v" } },
+        { keyPath: ["mcp_servers", "remote", "env_http_headers"], entries: { "X-Team": "TEAM_ID" } },
+      ]);
+
+      const local = { command: "${TOOL_BIN}", args: ["--dir", "${HOME}/x"], env: { API_KEY: "${API_KEY}", MODE: "fast", ALIAS: "${OTHER}" } };
+      expect(toOpenCodeServer(local)).toMatchObject({
+        command: ["{env:TOOL_BIN}", "--dir", "{env:HOME}/x"],
+        environment: { API_KEY: "{env:API_KEY}", MODE: "fast", ALIAS: "{env:OTHER}" },
+      });
+      expect(toCodexTables("local", local)).toEqual([
+        { keyPath: ["mcp_servers", "local"], entries: { command: "${TOOL_BIN}", args: ["--dir", "${HOME}/x"], env_vars: ["API_KEY"] } },
+        { keyPath: ["mcp_servers", "local", "env"], entries: { MODE: "fast", ALIAS: "${OTHER}" } },
+      ]);
     });
 
     it("translation requires a command or url", async () => {

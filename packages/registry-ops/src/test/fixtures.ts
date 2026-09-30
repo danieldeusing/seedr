@@ -86,7 +86,7 @@ export function writeItem(registryDir: string, typeDir: string, item: RegistryIt
 export function makeRegistry(): string {
   const registryDir = join(makeTempDir("seedr-registry-ops-"), "registry");
   mkdirSync(registryDir);
-  writeItem(registryDir, "skills", seedrSkill, { "SKILL.md": "# Alpha\n", "references/notes.md": "notes\n" });
+  writeItem(registryDir, "skills", seedrSkill, { "SKILL.md": "---\nname: alpha\ndescription: Does alpha things.\n---\n# Alpha\n", "references/notes.md": "notes\n" });
   writeItem(registryDir, "plugins", communityPlugin);
   writeItem(registryDir, "skills", officialSkill);
   writeItem(registryDir, "mcp", seedrMcp, { "mcp.md": "config\n" });

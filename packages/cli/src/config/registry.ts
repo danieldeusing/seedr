@@ -1,9 +1,9 @@
 import { readFile, readdir, writeFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { basename, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isFirstParty, mainFileName, resolveRegistryDir, typeDirName } from "@seedr/registry-ops";
+import { DEFAULT_REGISTRY_DIR, isFirstParty, mainFileName, resolveRegistryDir, typeDirName } from "@seedr/registry-ops";
 export { typeDirName };
 import type {
   RegistryManifest,
@@ -75,6 +75,17 @@ const DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/danieldeusing/se
 // A fork or self-hosted registry points the published CLI elsewhere with
 // SEEDR_REGISTRY_URL instead of a code change (see docs/self-hosting.md).
 const REGISTRY_URL = (process.env.SEEDR_REGISTRY_URL || DEFAULT_REGISTRY_URL).replace(/\/+$/, "");
+
+/**
+ * Whether items come from seedr's own public registry: no `SEEDR_REGISTRY_DIR`,
+ * no other `SEEDR_REGISTRY_URL`, and — run from a checkout — the checkout's
+ * `registry/` rather than a fork's own directory. Install telemetry is sent only
+ * then, so a private registry's item names never reach the public endpoint.
+ */
+export const USES_DEFAULT_REGISTRY =
+  !process.env.SEEDR_REGISTRY_DIR &&
+  REGISTRY_URL === DEFAULT_REGISTRY_URL &&
+  (REGISTRY_PATH === null || basename(REGISTRY_PATH) === DEFAULT_REGISTRY_DIR);
 
 // First-party licenses at the registry repository root: the registry URL minus
 // its conventional trailing /registry segment.

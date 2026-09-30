@@ -13,8 +13,10 @@ import {
   listSections,
   removeSection,
   ruleTargetFor,
+  ruleScope,
   stripFrontmatter,
   upsertSection,
+  withScopeKey,
   type RuleTarget,
 } from "./ruleTargets.js";
 import type { ContentHandler, InstallResult, PlannedChange } from "./types.js";
@@ -73,7 +75,7 @@ async function installRuleForAgent(
       await assertOverwritable(destination, force);
       await writeFile(
         destination,
-        target.keepsFrontmatter ? content : stripFrontmatter(content),
+        target.keepsFrontmatter ? withScopeKey(content, target.scopeKey) : stripFrontmatter(content),
         "utf-8"
       );
     } else {
@@ -171,6 +173,8 @@ export async function planRule(
 ): Promise<PlannedChange[]> {
   assertValidSlug(item.slug, SLUG_LABEL);
   const changes: PlannedChange[] = [];
+  const merges = agents.some((agent) => ruleTargetFor(agent).kind === "section");
+  const globs = merges ? ruleScope(await readRuleContent(item)) : [];
 
   for (const agent of agents) {
     const target = ruleTargetFor(agent);
@@ -184,7 +188,10 @@ export async function planRule(
       detail:
         target.kind === "file"
           ? "rule file"
-          : `merged section <!-- seedr:rule:${item.slug} --> (the rest of the file is untouched)`,
+          : `merged section <!-- seedr:rule:${item.slug} --> (the rest of the file is untouched)` +
+            (globs.length > 0
+              ? `; ${CODING_AGENTS[agent].name} has no path scope, so ${globs.map((glob) => `\`${glob}\``).join(", ")} is advisory prose`
+              : ""),
     });
   }
 

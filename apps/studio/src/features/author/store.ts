@@ -142,7 +142,7 @@ export const ADD_JOB_CAPABILITIES: JobCapability[] = ["read", "edit", "search", 
 const ADDED_LINE = /^ADDED\s+([a-z]+)\/([A-Za-z0-9._-]+)$/m;
 
 /** Where an item's own file must be, for a claim of having added it to mean anything. */
-const itemJsonPath = (type: ComponentType, slug: string): string => `registry/${typeDirName(type)}/${slug}/item.json`;
+const itemJsonPath = (registryDir: string, type: ComponentType, slug: string): string => `${registryDir}/${typeDirName(type)}/${slug}/item.json`;
 
 /**
  * What is wrong with what the agent claims to have added, or null when nothing
@@ -152,8 +152,8 @@ const itemJsonPath = (type: ComponentType, slug: string): string => `registry/${
  * did exactly that, following a stale skill, and wrote a `sourceType` this
  * registry does not accept.
  */
-async function faultInAdded(type: ComponentType, slug: string): Promise<string | null> {
-  const path = itemJsonPath(type, slug);
+async function faultInAdded(registryDir: string, type: ComponentType, slug: string): Promise<string | null> {
+  const path = itemJsonPath(registryDir, type, slug);
   if (!(await fs.pathExists(path).catch(() => false))) {
     return `The agent reported adding ${type}/${slug}, but there is no item at ${path}. Nothing was written — read the log and try again.`;
   }
@@ -590,7 +590,7 @@ export const useAuthor = create<AuthorState>((set, get) => ({
       // done somewhere else. So the claim is checked against this checkout, and
       // against the validator, before the explorer is told to open anything.
       const added = parseAdded(outcome.text);
-      const fault = added ? await faultInAdded(added.type, added.slug) : null;
+      const fault = added ? await faultInAdded(useStudio.getState().repo?.registryDir ?? "registry", added.type, added.slug) : null;
       if (fault) {
         set({ phase: "idle", error: fault });
         return;

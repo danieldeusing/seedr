@@ -56,6 +56,11 @@ export interface ValidateOptions {
   diskFiles?: readonly string[];
   /** Require `sourceRevision`/`contentDigest` (and `pluginSource` for plugins) on synced items. Default true. */
   requireProvenance?: boolean;
+  /**
+   * A first-party skill's root `SKILL.md` as read from disk, `null` when it is not there.
+   * When given, its frontmatter must name the slug and carry a description.
+   */
+  skillMd?: string | null;
 }
 
 type Item = Record<string, unknown>;
@@ -378,6 +383,55 @@ function checkFirstPartyPlugin(item: Item, push: Push): void {
   }
 }
 
+const SKILL_FILE = "SKILL.md";
+
+/**
+ * Read scalar fields from a YAML frontmatter block. Handles `key: value`, quoted values,
+ * block scalars (`|`, `>`) and plain scalars continued on indented lines, which is all
+ * SKILL.md files use. Returns null without frontmatter.
+ */
+export function parseFrontmatter(markdown: string): Record<string, string> | null {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(markdown);
+  if (!match) return null;
+  const lines = (match[1] as string).split(/\r?\n/);
+  const fields: Record<string, string> = {};
+  for (let i = 0; i < lines.length; i++) {
+    const field = /^([A-Za-z0-9_-]+):(.*)$/.exec(lines[i] as string);
+    if (!field) continue;
+    let value = (field[2] as string).trim();
+    const block = /^[|>]-?$/.test(value);
+    const continuation: string[] = [];
+    while (i + 1 < lines.length && (/^\s+\S/.test(lines[i + 1] as string) || (block && lines[i + 1] === ""))) {
+      continuation.push((lines[++i] as string).trim());
+    }
+    if (block) value = continuation.join(value.startsWith(">") ? " " : "\n").trim();
+    else if (continuation.length > 0) value = [value, ...continuation].filter(Boolean).join(" ");
+    else if (/^(["']).*\1$/.test(value)) value = value.slice(1, -1);
+    fields[field[1] as string] = value;
+  }
+  return fields;
+}
+
+/**
+ * Every agent loads a skill by its root `SKILL.md`, and Copilot and Antigravity
+ * also need its frontmatter `name` and `description` (Codex the description). A
+ * first-party skill is served exactly as its tree lists it, so a tree without
+ * that file installs a folder no agent reads. Checked where the caller read the
+ * item directory from disk (compile, and so every transaction and the commit gate).
+ */
+function checkFirstPartySkill(item: Item, options: ValidateOptions, push: Push): void {
+  if (item.type !== "skill" || options.skillMd === undefined) return;
+  if (options.skillMd === null) {
+    push(SKILL_FILE, "is missing from the item directory — it is the file every agent loads");
+    return;
+  }
+  const { name, description } = parseFrontmatter(options.skillMd) ?? {};
+  if (name !== item.slug) {
+    push(SKILL_FILE, `frontmatter "name" must equal the slug "${String(item.slug)}"${name ? ` (found "${name}")` : ""}`);
+  }
+  if (!isNonEmptyString(description)) push(SKILL_FILE, 'frontmatter "description" must be non-empty');
+}
+
 function checkProvenance(item: Item, options: ValidateOptions, push: Push): void {
   const requireProvenance = options.requireProvenance ?? true;
   const synced = !isFirstParty(item.sourceType);
@@ -396,6 +450,7 @@ function checkProvenance(item: Item, options: ValidateOptions, push: Push): void
       if (item[key] !== undefined) push(key, "is only allowed on synced (official/community) items");
     }
     checkFirstPartyPlugin(item, push);
+    checkFirstPartySkill(item, options, push);
   } else if (requireProvenance) {
     if (item.sourceRevision === undefined) push("sourceRevision", 'synced items must carry "sourceRevision"');
     if (item.contentDigest === undefined) push("contentDigest", 'synced items must carry "contentDigest"');

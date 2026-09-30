@@ -239,7 +239,7 @@ npx --registry https://your-registry-url @yourorg/seedr add ${item.slug}
 
 **Hardcoded URLs** — Search for `seedr.danieldeusing.de` and replace with your instance URL in:
 - `packages/cli/src/utils/ui.ts` — CLI banner
-- `packages/cli/src/utils/analytics.ts` — analytics endpoint
+- `packages/cli/src/utils/analytics.ts` — seedr's public analytics endpoint. You do not have to change it: the CLI sends install events there only for installs from seedr's own registry. An install from your registry (`SEEDR_REGISTRY_URL`, `SEEDR_REGISTRY_DIR`, or a fork's own registry directory) sends nothing, unless `SEEDR_ANALYTICS_URL` names your endpoint
 - `packages/cli/src/commands/init.ts` — init command output
 - `packages/cli/package.json` — `homepage` field
 
@@ -458,6 +458,13 @@ The web app can track install counts using Cloudflare D1.
    wrangler d1 execute my-seedr-analytics --file=apps/web/schema.sql
    ```
 
+4. Point the CLI at it. Installs from your registry send no events by default, so
+   set the endpoint wherever the CLI runs:
+
+   ```bash
+   SEEDR_ANALYTICS_URL=https://my-seedr.pages.dev/api/installs npx @your-scope/seedr add <item>
+   ```
+
 ### Custom domain
 
 1. Go to your Cloudflare dashboard > Pages > your project > Custom domains.
@@ -636,6 +643,8 @@ The web app is fully static — any standard web auth approach works.
 |----------|-------|---------|
 | `SEEDR_REGISTRY_DIR` | CLI environment | Local registry directory to read first; wins over the directory the CLI resolves on its own |
 | `SEEDR_REGISTRY_URL` | CLI environment | Remote registry URL; the fallback when the local directory has no answer |
+| `SEEDR_ANALYTICS_URL` | CLI environment | Endpoint for install events. Without it, events go to seedr's public endpoint for installs from seedr's own registry and nowhere for any other registry |
+| `SEEDR_NO_TELEMETRY` | CLI environment | Any value turns install events off entirely |
 | `DEFAULT_REGISTRY_URL` | `packages/cli/src/config/registry.ts` | The fork's built-in remote registry URL (a constant, not an env var) |
 | `CLOUDFLARE_API_TOKEN` | CI secrets | Cloudflare Pages deployment |
 | `CLOUDFLARE_ACCOUNT_ID` | CI secrets | Cloudflare Pages deployment |

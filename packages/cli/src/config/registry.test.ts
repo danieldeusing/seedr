@@ -464,6 +464,32 @@ describe("registry location", () => {
     ]);
   });
 
+  it("knows whether it serves the default registry", async () => {
+    expect((await freshLocationRegistry()).USES_DEFAULT_REGISTRY).toBe(true);
+
+    process.env.SEEDR_REGISTRY_URL = "https://raw.githubusercontent.com/danieldeusing/seedr/main/registry/";
+    expect((await freshLocationRegistry()).USES_DEFAULT_REGISTRY).toBe(true);
+
+    process.env.SEEDR_REGISTRY_URL = "https://seedr.internal.example/registry";
+    expect((await freshLocationRegistry()).USES_DEFAULT_REGISTRY).toBe(false);
+
+    delete process.env.SEEDR_REGISTRY_URL;
+    process.env.SEEDR_REGISTRY_DIR = LOCAL_DIR;
+    expect((await freshLocationRegistry()).USES_DEFAULT_REGISTRY).toBe(false);
+  });
+
+  it("treats a fork's own registry directory, run from source, as another registry", async () => {
+    const cliRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+    vol.fromJSON({ [join(cliRoot, "package.json")]: "{}" });
+    expect((await freshLocationRegistry()).USES_DEFAULT_REGISTRY).toBe(true);
+
+    vol.fromJSON({
+      [join(cliRoot, "package.json")]: "{}",
+      [join(cliRoot, "..", "..", "seedr.config.json")]: JSON.stringify({ registryDir: "registry-internal" }),
+    });
+    expect((await freshLocationRegistry()).USES_DEFAULT_REGISTRY).toBe(false);
+  });
+
   it("refuses slugs that are not a single lowercase path segment", async () => {
     process.env.SEEDR_REGISTRY_DIR = LOCAL_DIR;
     const registry = await freshLocationRegistry();

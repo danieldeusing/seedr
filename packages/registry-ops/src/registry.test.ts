@@ -135,7 +135,7 @@ describe("compile", () => {
 
     const oldLayout = makeRegistry();
     writeItem(oldLayout, "skills", { ...seedrSkill, slug: "old", contents: { files: [{ name: "old.md", type: "file" }] } }, { "old.md": "---\nname: old\ndescription: d\n---\n" });
-    expect(() => compileRegistry(oldLayout)).toThrow(/skills\/old\/item\.json: SKILL\.md: is missing from the item directory/);
+    expect(() => compileRegistry(oldLayout)).toThrow(/skills[\\/]old[\\/]item\.json: SKILL\.md: is missing from the item directory/);
   });
 
   test("reproduces the committed manifests of the real registry byte for byte", () => {

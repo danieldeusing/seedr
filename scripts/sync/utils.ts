@@ -112,40 +112,7 @@ export function formatName(slug: string): string {
     .join(" ");
 }
 
-/**
- * Read scalar fields from a YAML frontmatter block. Handles `key: value`, quoted values,
- * block scalars (`|`, `>`) and plain scalars continued on indented lines, which is all
- * SKILL.md files use. Returns null without frontmatter.
- */
-export function parseFrontmatter(markdown: string): Record<string, string> | null {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(markdown);
-  if (!match) return null;
-  const lines = match[1]!.split(/\r?\n/);
-  const fields: Record<string, string> = {};
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
-    const field = /^([A-Za-z0-9_-]+):(.*)$/.exec(line);
-    if (!field) continue;
-    const key = field[1]!;
-    let value = field[2]!.trim();
-    const isBlockScalar = value === "|" || value === ">" || value === "|-" || value === ">-";
-    const continuation: string[] = [];
-    while (i + 1 < lines.length && (/^\s+\S/.test(lines[i + 1]!) || (isBlockScalar && lines[i + 1] === ""))) {
-      continuation.push(lines[i + 1]!.trim());
-      i++;
-    }
-    if (isBlockScalar) {
-      value = continuation.join(value.startsWith(">") ? " " : "\n").trim();
-    } else if (continuation.length > 0) {
-      // plain scalar continued on indented lines: YAML folds the line breaks into spaces
-      value = [value, ...continuation].filter((part) => part.length > 0).join(" ");
-    } else if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    }
-    fields[key] = value;
-  }
-  return fields;
-}
+export { parseFrontmatter } from "@seedr/registry-ops/pure";
 
 export interface GitHubRepoRef {
   /** "owner/repo" */

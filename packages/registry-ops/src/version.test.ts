@@ -1,12 +1,21 @@
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { applyOp } from "./ops/apply.js";
 import { itemStateHash } from "./hash.js";
 import { readItem } from "./read.js";
 import { LONG, makeRegistry } from "./test/fixtures.js";
+import { makeTempDir } from "./test/tempDir.js";
 import { bumpPatch } from "./version.js";
 import type { AddLocalOp } from "./ops/types.js";
 
 const hash = (registry: string, slug = "versioned") => itemStateHash(registry, "skill", slug) as string;
+
+function skillSource(): string {
+  const dir = makeTempDir("seedr-version-source-");
+  writeFileSync(join(dir, "SKILL.md"), "---\nname: versioned\ndescription: Counts up.\n---\n# Versioned\n");
+  return dir;
+}
 
 function added(registry: string, sourcePath: string): void {
   applyOp(registry, {
@@ -29,13 +38,13 @@ describe("bumpPatch", () => {
 describe("the version an item carries", () => {
   test("a new first-party item starts at 1.0.0", () => {
     const registry = makeRegistry();
-    added(registry, makeRegistry());
+    added(registry, skillSource());
     expect(readItem(registry, "skill", "versioned").version).toBe("1.0.0");
   });
 
   test("changing the content counts up", () => {
     const registry = makeRegistry();
-    added(registry, makeRegistry());
+    added(registry, skillSource());
 
     applyOp(registry, {
       v: 1, kind: "update", type: "skill", slug: "versioned", expectedHash: hash(registry),
@@ -47,7 +56,7 @@ describe("the version an item carries", () => {
 
   test("renaming it does not, because nothing an install writes has changed", () => {
     const registry = makeRegistry();
-    added(registry, makeRegistry());
+    added(registry, skillSource());
 
     applyOp(registry, { v: 1, kind: "update", type: "skill", slug: "versioned", expectedHash: hash(registry), patch: { name: "Renamed" } });
 
@@ -58,7 +67,7 @@ describe("the version an item carries", () => {
 
   test("an explicit version wins, since a minor or a major is a decision", () => {
     const registry = makeRegistry();
-    added(registry, makeRegistry());
+    added(registry, skillSource());
 
     applyOp(registry, {
       v: 1, kind: "update", type: "skill", slug: "versioned", expectedHash: hash(registry),

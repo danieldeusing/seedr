@@ -68,6 +68,7 @@ vi.mock("../config/registry.js", () => ({
   getItemContent: vi.fn(async () => JSON.stringify({ name: "playwright", config: { command: "npx", args: ["-y", "@playwright/mcp@latest"] } })),
   fetchItemToDestination: vi.fn(),
   fetchItemFile: vi.fn(),
+  USES_DEFAULT_REGISTRY: true,
 }));
 
 const fetchMock = vi.fn().mockResolvedValue(new Response("ok"));

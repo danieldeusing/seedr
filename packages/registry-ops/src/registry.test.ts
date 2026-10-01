@@ -128,6 +128,16 @@ describe("compile", () => {
     expect(existsSync(indexManifestPath(registry))).toBe(false);
   });
 
+  test("refuses a first-party skill whose SKILL.md does not name it, or that has none", () => {
+    const registry = makeRegistry();
+    writeFileSync(join(registry, "skills", "alpha", "SKILL.md"), "---\nname: other\ndescription: Does alpha things.\n---\n");
+    expect(() => compileRegistry(registry)).toThrow(/SKILL\.md: frontmatter "name" must equal the slug "alpha" \(found "other"\)/);
+
+    const oldLayout = makeRegistry();
+    writeItem(oldLayout, "skills", { ...seedrSkill, slug: "old", contents: { files: [{ name: "old.md", type: "file" }] } }, { "old.md": "---\nname: old\ndescription: d\n---\n" });
+    expect(() => compileRegistry(oldLayout)).toThrow(/skills[\\/]old[\\/]item\.json: SKILL\.md: is missing from the item directory/);
+  });
+
   test("reproduces the committed manifests of the real registry byte for byte", () => {
     const realRegistry = resolve(import.meta.dirname, "../../../registry");
     // Compiled into a copy so the test never writes into the repo.

@@ -24,7 +24,7 @@ function writeLabels(registryDir: string, labels: readonly LabelDefinition[]): v
 
 function makeSource(): string {
   const dir = makeTempDir("seedr-label-source-");
-  writeFileSync(join(dir, "SKILL.md"), "# Labelled\n");
+  writeFileSync(join(dir, "SKILL.md"), "---\nname: new-skill\ndescription: A labelled skill.\n---\n# Labelled\n");
   return dir;
 }
 

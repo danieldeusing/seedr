@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import type { RunRequest } from "@/api/agent";
 import { emit, invoke, onCommand } from "@/test/mockIpc";
 import { emptyPrePrompts, usePrePrompts } from "@/features/settings/prePrompts";
+import { useStudio } from "@/features/explorer/store";
 import { DENIED_SHELL } from "./adapters";
 import { ADD_JOB_CAPABILITIES, emptyForm, formProblems, githubProblem, jobPrompt, parseAdded, toOp, useAuthor } from "./store";
 
@@ -27,6 +28,7 @@ const draftEnvelope = JSON.stringify({ type: "result", is_error: false, result: 
 
 beforeEach(() => {
   useAuthor.getState().reset();
+  useStudio.setState({ repo: null });
   onCommand("cancel_process", () => true);
 });
 
@@ -475,5 +477,17 @@ describe("what an agent says it did", () => {
 
     expect(useAuthor.getState().phase).toBe("done");
     expect(useAuthor.getState().result).toMatchObject({ kind: "job", added: { type: "skill", slug: "real" } });
+  });
+  test("is looked for in the registry the open checkout names, not in registry/", async () => {
+    useStudio.setState({ repo: { root: "/fork", name: "seedr-internal", isDefault: false, hasOps: true, registryDir: "registry-internal" } });
+    useAuthor.setState({ form: { ...emptyForm(), sourceKind: "agent", prompt: "a skill" }, probe: PROBE_OK });
+    jobHost("All done.\nADDED skill/real");
+    onCommand("path_exists", (args) => String(args?.rel) === "registry-internal/skills/real/item.json");
+    onCommand("read_text", () => JSON.stringify(VALID_FIRST_PARTY));
+
+    await useAuthor.getState().apply();
+
+    expect(useAuthor.getState().error).toBeNull();
+    expect(useAuthor.getState().phase).toBe("done");
   });
 });

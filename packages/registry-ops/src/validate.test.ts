@@ -99,3 +99,29 @@ describe("externalUrl", () => {
     }
   });
 });
+
+describe("a first-party skill", () => {
+  const SKILL_MD = "---\nname: alpha\ndescription: Does alpha things.\n---\n# Alpha\n";
+
+  test("passes when SKILL.md names the slug and carries a description", () => {
+    expect(validateItem(seedrSkill, { skillMd: SKILL_MD })).toEqual([]);
+    expect(validateItem(seedrSkill, { skillMd: "---\nname: 'alpha'\ndescription: >\n  Folded\n  over lines.\n---\n" })).toEqual([]);
+  });
+
+  test("is refused when SKILL.md is missing on disk, has no frontmatter, or names another slug", () => {
+    expect(fields(validateItem(seedrSkill, { skillMd: null }))).toEqual(["SKILL.md"]);
+    expect(validateItem(seedrSkill, { skillMd: "# Alpha\n" }).map((e) => e.message)).toEqual([
+      'frontmatter "name" must equal the slug "alpha"',
+      'frontmatter "description" must be non-empty',
+    ]);
+    expect(validateItem(seedrSkill, { skillMd: "---\nname: beta\ndescription: \"\"\n---\n" }).map((e) => e.message)).toEqual([
+      'frontmatter "name" must equal the slug "alpha" (found "beta")',
+      'frontmatter "description" must be non-empty',
+    ]);
+  });
+
+  test("synced skills are not held to it", () => {
+    const official = { ...seedrSkill, sourceType: "official", externalUrl: "https://github.com/a/b/tree/main/x", sourceRevision: "a".repeat(40), contentDigest: "b".repeat(64), contents: { files: [{ name: "x.md", type: "file" }] } };
+    expect(validateItem(official, { skillMd: null })).toEqual([]);
+  });
+});

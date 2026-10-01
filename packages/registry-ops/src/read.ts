@@ -67,6 +67,7 @@ export function listItemsChecked(registryDir: string): { items: LocatedItem[]; v
           expectedType: type,
           expectedSlug: entry.name,
           ...(firstParty ? { diskFiles: contentFilePaths(location) } : {}),
+          ...(firstParty && type === "skill" ? { skillMd: readTextOrNull(join(location, "SKILL.md")) } : {}),
         })
       );
       if (errors.length > 0) {
@@ -78,6 +79,8 @@ export function listItemsChecked(registryDir: string): { items: LocatedItem[]; v
   }
   return { items, violations };
 }
+
+const readTextOrNull = (path: string): string | null => (existsSync(path) ? readFileSync(path, "utf8") : null);
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);

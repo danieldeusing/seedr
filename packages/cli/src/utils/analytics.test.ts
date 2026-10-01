@@ -3,6 +3,9 @@ import type { InstallResult } from "../handlers/types.js";
 import type { InstallEvent } from "./analytics.js";
 
 const fetchMock = vi.fn();
+const registry = vi.hoisted(() => ({ USES_DEFAULT_REGISTRY: true }));
+
+vi.mock("../config/registry.js", () => registry);
 
 vi.stubGlobal("fetch", fetchMock);
 vi.stubGlobal("CLI_VERSION", "0.1.44");
@@ -20,6 +23,8 @@ beforeEach(async () => {
   fetchMock.mockReset();
   fetchMock.mockResolvedValue(new Response("ok"));
   delete process.env.SEEDR_NO_TELEMETRY;
+  delete process.env.SEEDR_ANALYTICS_URL;
+  registry.USES_DEFAULT_REGISTRY = true;
   const mod = await import("./analytics.js");
   trackInstalls = mod.trackInstalls;
   isTelemetryDisabled = mod.isTelemetryDisabled;
@@ -29,6 +34,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   delete process.env.SEEDR_NO_TELEMETRY;
+  delete process.env.SEEDR_ANALYTICS_URL;
 });
 
 describe("trackInstalls", () => {
@@ -99,9 +105,23 @@ describe("trackInstalls", () => {
     await expect(trackInstalls("pdf", "skill", [SUCCESS_CLAUDE], "project")).resolves.toBeUndefined();
   });
 
+  it("sends nothing for an install from another registry", async () => {
+    registry.USES_DEFAULT_REGISTRY = false;
+    await trackInstalls("vu3-agent-kit", "plugin", [SUCCESS_CLAUDE], "user");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends to SEEDR_ANALYTICS_URL when it names an endpoint, whatever the registry", async () => {
+    registry.USES_DEFAULT_REGISTRY = false;
+    process.env.SEEDR_ANALYTICS_URL = "https://seedr.internal.example/api/installs";
+    await trackInstalls("vu3-agent-kit", "plugin", [SUCCESS_CLAUDE], "user");
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(["https://seedr.internal.example/api/installs"]);
+  });
+
   it("documents the counting semantics and the opt-out in the help text", () => {
     expect(TELEMETRY_HELP_TEXT).toBe(
-      "Sends one anonymous install event per successful agent target to https://seedr.danieldeusing.de/api/installs; set SEEDR_NO_TELEMETRY=1 to disable"
+      "Sends one anonymous install event per successful agent target to https://seedr.danieldeusing.de/api/installs " +
+        "(installs from another registry send nothing unless SEEDR_ANALYTICS_URL names an endpoint); set SEEDR_NO_TELEMETRY=1 to disable"
     );
   });
 });

@@ -37,13 +37,13 @@ describe("compileManifest", () => {
         author: { name: "Daniel" },
         contents: { files: [{ name: "SKILL.md", type: "file" }, { name: "references", type: "directory", children: [{ name: "a.md", type: "file" }] }] },
       },
-      { "SKILL.md": "hello\n", "references/a.md": "ref\n" },
+      { "SKILL.md": "---\nname: hello\ndescription: Say hello.\n---\n", "references/a.md": "ref\n" },
     );
     const manifest = compileManifest({ registryDir });
     const item = manifest.items[0]!;
     expect(item.contentDigest).toBe(
       computeContentDigest([
-        { path: "SKILL.md", bytes: Buffer.from("hello\n") },
+        { path: "SKILL.md", bytes: Buffer.from("---\nname: hello\ndescription: Say hello.\n---\n") },
         { path: "references/a.md", bytes: Buffer.from("ref\n") },
       ]),
     );

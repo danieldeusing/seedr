@@ -34,6 +34,10 @@ paths, no IP stored (the server keeps only the country it derives from the reque
 Events are deleted after 90 days. Nothing is sent for failed installs or `--dry-run`, and a
 failing endpoint never affects an installation.
 
+Only installs from seedr's own registry are counted. With `SEEDR_REGISTRY_URL` or
+`SEEDR_REGISTRY_DIR` pointing at another registry nothing is sent, unless
+`SEEDR_ANALYTICS_URL` names that registry's own endpoint.
+
 Opt out by setting the variable to any value:
 
 ```bash

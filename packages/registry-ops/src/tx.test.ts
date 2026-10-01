@@ -9,7 +9,7 @@ import type { AddLocalOp, RemoveOp } from "./ops/types.js";
 
 function makeSource(): string {
   const dir = makeTempDir("seedr-tx-source-");
-  writeFileSync(join(dir, "SKILL.md"), "# Tx skill\n");
+  writeFileSync(join(dir, "SKILL.md"), "---\nname: tx-skill\ndescription: A transaction test skill.\n---\n# Tx skill\n");
   return dir;
 }
 

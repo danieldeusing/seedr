@@ -67,12 +67,14 @@ or `STOPPED <why>` back. Studio reads `.github/workflows` to mark the branches w
 starts a workflow, so choosing `prod` says out loud that it deploys and publishes; the run
 takes a second, explicit confirmation of the exact targets.
 
-**Settings** holds two pages. *Coding agents* probes each canonical agent's CLI
+**Settings** holds five pages (`SettingsPanel.tsx`). *Coding agents* probes each canonical agent's CLI
 (`claude`, `copilot`, `agy`, `codex`, `opencode`) with `--version` and lets a binary a GUI
 launch cannot see on PATH be pointed at directly — the host validates the path, keeps it per
 machine and applies it wherever a run names the bare program; `npx` and `git` are deliberately
 not overridable. *Pre-prompts* holds the standing context per capability type, once for adds
 and once for edits, which the add and edit dialogs prefill into their prompt field.
+*Author* says who the items added are credited to; *Labels* says what an item is for when one
+registry serves several projects; *Checkout* picks which registry Studio treats as home.
 
 Architecture, deliberately small: the Rust host (`src-tauri/src/lib.rs`) is a read-only,
 root-scoped filesystem bridge plus a registry watcher — every path crosses the IPC boundary

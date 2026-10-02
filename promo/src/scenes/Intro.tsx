@@ -10,11 +10,13 @@ const AGENTS = ['Claude Code', 'GitHub Copilot', 'Google Antigravity', 'OpenAI C
 export const Intro: React.FC<{
   durationInFrames: number
   command?: string
+  prefix?: string
   tagline?: string
   items?: string[]
 }> = ({
   durationInFrames,
   command = 'seedr',
+  prefix,
   tagline = 'Seed your coding agents with capabilities.',
   items = AGENTS,
 }) => (
@@ -26,7 +28,7 @@ export const Intro: React.FC<{
         gap: 44,
       }}
     >
-      <Prompt command={command} size={type.hero} />
+      <Prompt command={command} prefix={prefix} size={type.hero} />
 
       <Reveal at={30}>
         <div style={{ fontSize: type.section, color: theme.ink, lineHeight: 1.45 }}>{tagline}</div>

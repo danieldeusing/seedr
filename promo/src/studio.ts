@@ -1,37 +1,28 @@
 import type { ShotSlot } from './shots'
 
-/** The Studio tour's shots: crops in `promo/assets/` (docs/promo-video.md §2). */
+/** The Studio tour's shots: captures and crops in `promo/assets/` (docs/promo-video.md §2). */
 export const STUDIO_SLOTS: ShotSlot[] = [
   {
-    file: 'studio-01-explorer.png',
+    file: 'studio-01-detail.png',
     index: '01',
-    title: 'the explorer',
+    title: 'browse',
     lines: [
-      'Seedr Studio opens a seedr checkout as an explorer, every capability grouped by type.',
-      'A pencil marks what you can edit; an eye marks what the daily sync owns.',
+      'Seedr Studio opens a seedr checkout: every capability by type, its metadata and a preview of each file.',
+      'A pencil marks the items you can edit; the sync owns the rest. The icons are the agents each supports.',
     ],
   },
   {
-    file: 'studio-02-detail.png',
+    file: 'studio-02-add.png',
     index: '02',
-    title: 'one capability',
-    lines: [
-      'Open one: its metadata beside a read-only preview of every file it ships.',
-      'Syntax, formatted markdown or plain text, the same views as the website.',
-    ],
-  },
-  {
-    file: 'studio-03-add.png',
-    index: '03',
     title: 'add',
     lines: [
-      'Add a capability from a local folder, a git repository, or a prompt for an agent.',
-      'Every field says who fills it in: you, or the agent.',
+      'Add a capability from a local folder or a git repository, or let the agent write it from a prompt.',
+      'A folder is copied in by a transaction; a repository or a prompt goes to the coding agent.',
     ],
   },
   {
-    file: 'studio-04-test-install.png',
-    index: '04',
+    file: 'studio-03-test-install.png',
+    index: '03',
     title: 'test install',
     lines: [
       'Test install runs the real CLI in a scratch folder and lists every file it wrote.',
@@ -39,12 +30,12 @@ export const STUDIO_SLOTS: ShotSlot[] = [
     ],
   },
   {
-    file: 'studio-05-publish.png',
-    index: '05',
+    file: 'studio-04-publish.png',
+    index: '04',
     title: 'publish',
     lines: [
-      'Publish hands the commit to an agent allowed git and file edits, nothing else.',
-      'A branch whose push starts a workflow is marked, so prod says that it deploys.',
+      'Publish hands the commit to an agent that may read and edit files and run git, nothing else.',
+      'A branch whose push starts a workflow is marked; for prod, the warning names deploy.yml.',
     ],
   },
 ]

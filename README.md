@@ -4,6 +4,8 @@ Seed your Coding Agents with capabilities.
 
 Seedr is a CLI tool and web registry for AI coding assistant content. Install curated skills, agents, hooks, plugins, MCP servers, and settings for Claude Code, GitHub Copilot, Google Antigravity, Codex, and OpenCode with a single command.
 
+![A 46-second tour: one command installing a capability into five agents, then the registry it comes from](docs/assets/tour.gif)
+
 **Browse the registry** at [seedr.danieldeusing.de](https://seedr.danieldeusing.de) — search, filter by type, and preview items before installing.
 
 ![Seedr Web UI](docs/assets/screenshot-web.png)
@@ -224,6 +226,21 @@ See [docs/manual-tests/dry-run-commands.md](docs/manual-tests/dry-run-commands.m
 ## Self-Hosting
 
 Run your own private seedr instance. See the [Self-Hosting Guide](docs/self-hosting.md) for step-by-step instructions.
+
+## Seedr Studio
+
+A desktop app for maintaining a seedr registry, this one or your own fork. Browse every capability with its metadata and file previews, add one from a folder, a repository or a prompt, test-install it into a scratch folder, and publish through a coding agent.
+
+![A 31-second tour of Seedr Studio: browse, add, test install, publish](docs/assets/studio-tour.gif)
+
+![Seedr Studio with a first-party skill open: the explorer, its metadata and the formatted preview](docs/assets/studio.png)
+
+It runs from source and needs Rust (cargo):
+
+```bash
+pnpm --filter @seedr/studio tauri:dev
+SEEDR_STUDIO_REPO=/path/to/seedr pnpm --filter @seedr/studio tauri:dev   # skip the folder picker
+```
 
 ## Playgrounds
 

@@ -327,13 +327,17 @@ export function getAgentsPath(
 }
 
 /**
- * Copy a directory recursively.
+ * Copy a registry item's folder recursively, leaving out the `item.json` at its
+ * root: that is the registry's record of the item, not content, and neither the
+ * item's file tree nor a download from GitHub carries it (registry-ops `read.ts`
+ * builds the tree the same way). An `item.json` deeper down is the item's own.
  */
 export async function copyDirectory(
   source: string,
   destination: string
 ): Promise<void> {
-  await cp(source, destination, { recursive: true });
+  const metadata = join(source, "item.json");
+  await cp(source, destination, { recursive: true, filter: (path) => path !== metadata });
 }
 
 /**

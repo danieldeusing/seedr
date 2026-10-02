@@ -1070,6 +1070,18 @@ describe("plugin handler", () => {
       expect(vol.existsSync(`${CACHE_DIR}/my-plugin/my-plugin/2.0.0/.claude-plugin/plugin.json`)).toBe(true);
     });
 
+    it("leaves the registry's own item.json out of the installed tree", async () => {
+      await serveRegistryCopy({ ...firstPartyFiles, "item.json": '{"slug":"my-plugin"}' });
+      const { installPlugin } = await import("./plugin.js");
+
+      const results = await installPlugin(firstPartyItem(), ["claude"], "user", "copy", true, PROJECT);
+
+      const cachePath = `${CACHE_DIR}/my-plugin/my-plugin/2.0.0`;
+      expect(results[0]?.success).toBe(true);
+      expect(vol.existsSync(`${cachePath}/skills/one/SKILL.md`)).toBe(true);
+      expect(vol.existsSync(`${cachePath}/item.json`)).toBe(false);
+    });
+
     it("installs into Claude as its own directory marketplace, recording no commit", async () => {
       await serveRegistryCopy(firstPartyFiles);
       const { installPlugin } = await import("./plugin.js");

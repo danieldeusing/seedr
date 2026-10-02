@@ -39,11 +39,12 @@ describe("App", () => {
     // and clicking it just as the list replaces it loses the click
     await screen.findByRole("button", { name: /skills\/ 2/ });
     await userEvent.click(screen.getByRole("button", { name: "add capability" }));
-    const dialog = await screen.findByRole("dialog", { name: /add-local/ });
+    // One name for all three routes: the form's own `$` line says which operation runs.
+    const dialog = await screen.findByRole("dialog", { name: "add capability" });
     expect(dialog).toBeInTheDocument();
     expect(await screen.findByText(/not installed or not on PATH/)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /close registry-op run/ }));
+    await userEvent.click(screen.getByRole("button", { name: "close add capability" }));
     expect(screen.queryByRole("dialog")).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: /PDF$/ }));

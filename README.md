@@ -238,3 +238,6 @@ Interactive HTML playgrounds that visualize seedr's architecture and behavior.
 | [Registry Architecture](https://seedr.danieldeusing.de/playgrounds/registry-architecture.html) | The 3-level split manifest system and data flow |
 | [Compatibility Matrix](https://seedr.danieldeusing.de/playgrounds/compatibility-matrix.html) | Which content types work with which AI tools |
 
+## License
+
+[MIT](LICENSE)

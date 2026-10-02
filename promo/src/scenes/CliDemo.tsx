@@ -24,7 +24,7 @@ const LINES: Line[] = [
   { glyph: '┌', text: 'Seedr', glyphColor: theme.muted },
   {
     glyph: '◇',
-    text: 'Selected: Pdf (skill) — Use this skill whenever the user wants to do anything with PDF files…',
+    text: 'Selected: Pdf (skill) - Use this skill whenever the user wants to do anything with PDF files…',
     glyphColor: theme.muted,
   },
   { glyph: '◇', text: 'Agents: claude, copilot, antigravity, codex, opencode', glyphColor: theme.muted },

@@ -47,7 +47,7 @@ export const Promo: React.FC<PromoProps> = ({ shots }) => {
           from={firstShotAt + i * SCENE.shot}
           durationInFrames={SCENE.shot}
         >
-          <Shot shot={shot} durationInFrames={SCENE.shot} />
+          <Shot shot={shot} app="seedr" durationInFrames={SCENE.shot} />
         </Sequence>
       ))}
 

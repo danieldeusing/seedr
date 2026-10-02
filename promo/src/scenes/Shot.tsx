@@ -18,8 +18,9 @@ const TITLEBAR_H = 46
  * or narrower than the frame is fitted whole and the leftover is the card
  * colour, so nothing is ever cropped or stretched. 16:10 fills it exactly.
  */
-export const Shot: React.FC<{ shot: ResolvedShot; durationInFrames: number }> = ({
+export const Shot: React.FC<{ shot: ResolvedShot; app: string; durationInFrames: number }> = ({
   shot,
+  app,
   durationInFrames,
 }) => {
   const frame = useCurrentFrame()
@@ -72,7 +73,7 @@ export const Shot: React.FC<{ shot: ResolvedShot; durationInFrames: number }> = 
               />
             ))}
             <span style={{ fontSize: type.meta, color: theme.muted, marginLeft: 14 }}>
-              seedr — {shot.title}
+              {app} — {shot.title}
             </span>
           </div>
 

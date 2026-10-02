@@ -8,7 +8,11 @@ import { Poster } from './Poster'
 import { Promo } from './Promo'
 import type { PromoProps } from './Promo'
 import { presentShots } from './shots'
-import { FPS, totalFrames } from './timing'
+import { STUDIO_SLOTS } from './studio'
+import { StudioPoster } from './StudioPoster'
+import { StudioTour } from './StudioTour'
+import type { StudioTourProps } from './StudioTour'
+import { FPS, studioTotalFrames, totalFrames } from './timing'
 
 /**
  * The composition's length is derived from what is on disk, so the timeline in
@@ -28,6 +32,14 @@ const calculateMetadata: CalculateMetadataFunction<PromoProps> = () => {
   }
 }
 
+const calculateStudioMetadata: CalculateMetadataFunction<StudioTourProps> = () => {
+  const shots = presentShots(STUDIO_SLOTS)
+  return {
+    durationInFrames: studioTotalFrames(shots.length),
+    props: { shots },
+  }
+}
+
 export const RemotionRoot: React.FC = () => (
   <>
     <Composition
@@ -42,5 +54,18 @@ export const RemotionRoot: React.FC = () => (
     />
 
     <Still id="Poster" component={Poster} width={1920} height={1080} />
+
+    <Composition
+      id="StudioTour"
+      component={StudioTour}
+      durationInFrames={studioTotalFrames(STUDIO_SLOTS.length)}
+      fps={FPS}
+      width={1920}
+      height={1080}
+      defaultProps={{ shots: [] }}
+      calculateMetadata={calculateStudioMetadata}
+    />
+
+    <Still id="StudioPoster" component={StudioPoster} width={1920} height={1080} />
   </>
 )

@@ -1,9 +1,9 @@
 export const FPS = 30
 
 /**
- * Scene lengths in frames. The five fixed scenes total 800 frames (26.7s) and
+ * Scene lengths in frames. The four fixed scenes total 665 frames (22.2s) and
  * each present screenshot adds 180 (6s), so the full video with all four
- * assets is 1520 frames — 50.7 seconds.
+ * assets is 1385 frames — 46.2 seconds.
  *
  * Six seconds a shot rather than four because each caption is two full
  * sentences over a screenshot worth reading — four was measurably too fast on
@@ -24,3 +24,7 @@ export const SCENE = {
 export const FIXED_FRAMES = SCENE.intro + SCENE.question + SCENE.cli + SCENE.outro
 
 export const totalFrames = (shotCount: number): number => FIXED_FRAMES + shotCount * SCENE.shot
+
+/** The Studio tour: intro, its shots, outro — no question or CLI scene. */
+export const studioTotalFrames = (shotCount: number): number =>
+  SCENE.intro + shotCount * SCENE.shot + SCENE.outro

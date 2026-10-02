@@ -7,7 +7,17 @@ import { theme, type } from '../theme'
 
 const AGENTS = ['Claude Code', 'GitHub Copilot', 'Google Antigravity', 'OpenAI Codex', 'OpenCode']
 
-export const Intro: React.FC<{ durationInFrames: number }> = ({ durationInFrames }) => (
+export const Intro: React.FC<{
+  durationInFrames: number
+  command?: string
+  tagline?: string
+  items?: string[]
+}> = ({
+  durationInFrames,
+  command = 'seedr',
+  tagline = 'Seed your coding agents with capabilities.',
+  items = AGENTS,
+}) => (
   <SceneFade durationInFrames={durationInFrames}>
     <AbsoluteFill
       style={{
@@ -16,12 +26,10 @@ export const Intro: React.FC<{ durationInFrames: number }> = ({ durationInFrames
         gap: 44,
       }}
     >
-      <Prompt command="seedr" size={type.hero} />
+      <Prompt command={command} size={type.hero} />
 
       <Reveal at={30}>
-        <div style={{ fontSize: type.section, color: theme.ink, lineHeight: 1.45 }}>
-          Seed your coding agents with capabilities.
-        </div>
+        <div style={{ fontSize: type.section, color: theme.ink, lineHeight: 1.45 }}>{tagline}</div>
       </Reveal>
 
       <Reveal at={42}>
@@ -30,7 +38,7 @@ export const Intro: React.FC<{ durationInFrames: number }> = ({ durationInFrames
 
       <Reveal at={48}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px 34px', maxWidth: 1640 }}>
-          {AGENTS.map((name) => (
+          {items.map((name) => (
             <span key={name} style={{ fontSize: type.body, color: theme.muted }}>
               <span style={{ color: theme.accent }}>· </span>
               {name}

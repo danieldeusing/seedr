@@ -38,7 +38,7 @@ export const SHOT_SLOTS: ShotSlot[] = [
     index: '03',
     title: 'one capability',
     lines: [
-      'Open one: what it does, a tl;dr of every script it ships, and the file tree behind it.',
+      'Open one: what it does, a tl;dr of how it works, and the file tree behind it.',
       'The install command sits right there — copy it, or read the source first.',
     ],
   },
@@ -47,7 +47,7 @@ export const SHOT_SLOTS: ShotSlot[] = [
     index: '04',
     title: 'plugins',
     lines: [
-      'Whole plugins too — 66 of them, from single-skill wrappers to full packages.',
+      'Whole plugins too, from single-skill wrappers to full packages.',
       'Each card says what is inside before you install any of it.',
     ],
   },
@@ -66,10 +66,10 @@ export interface ResolvedShot extends ShotSlot {
  * the titles alone. Nothing ever points `<Img>` at a URL that 404s, which
  * Remotion treats as a render error, not an empty box.
  */
-export function presentShots(): ResolvedShot[] {
+export function presentShots(slots: ShotSlot[] = SHOT_SLOTS): ResolvedShot[] {
   const onDisk = new Map(getStaticFiles().map((f) => [f.name, f]))
 
-  return SHOT_SLOTS.flatMap((slot) => {
+  return slots.flatMap((slot) => {
     const file = onDisk.get(slot.file)
     if (!file || file.sizeInBytes === 0) {
       return []

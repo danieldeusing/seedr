@@ -5,7 +5,17 @@ import { AbsoluteFill } from 'remotion'
 import { Reveal, Rule, SceneFade } from '../chrome'
 import { theme, type } from '../theme'
 
-export const Outro: React.FC<{ durationInFrames: number }> = ({ durationInFrames }) => (
+export const Outro: React.FC<{
+  durationInFrames: number
+  title?: string
+  tagline?: string
+  footer?: string
+}> = ({
+  durationInFrames,
+  title = 'seedr',
+  tagline = 'Seed your coding agents with capabilities.',
+  footer = 'seedr.danieldeusing.de · npx @danieldeusing/seedr',
+}) => (
   <SceneFade durationInFrames={durationInFrames}>
     <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', gap: 34 }}>
       <div
@@ -16,7 +26,7 @@ export const Outro: React.FC<{ durationInFrames: number }> = ({ durationInFrames
           letterSpacing: '-0.03em',
         }}
       >
-        seedr
+        {title}
       </div>
 
       <Reveal at={10}>
@@ -24,15 +34,11 @@ export const Outro: React.FC<{ durationInFrames: number }> = ({ durationInFrames
       </Reveal>
 
       <Reveal at={16}>
-        <div style={{ fontSize: type.section, color: theme.ink, textAlign: 'center' }}>
-          Seed your coding agents with capabilities.
-        </div>
+        <div style={{ fontSize: type.section, color: theme.ink, textAlign: 'center' }}>{tagline}</div>
       </Reveal>
 
       <Reveal at={26}>
-        <div style={{ fontSize: type.meta, color: theme.muted, marginTop: 14 }}>
-          seedr.danieldeusing.de · npx @danieldeusing/seedr
-        </div>
+        <div style={{ fontSize: type.meta, color: theme.muted, marginTop: 14 }}>{footer}</div>
       </Reveal>
     </AbsoluteFill>
   </SceneFade>

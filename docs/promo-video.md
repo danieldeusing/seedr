@@ -9,8 +9,8 @@ configr's `docs/promo-video.md` does.
 | --- | --- | --- |
 | web captures, 2880×1800 | `pagr/public/apps/seedr/01-home.png` … `04-plugins.png`; README `docs/assets/screenshot-web.png` (the browse capture) | `npm run capture:web` (§1) |
 | the same, 1440×900 | `promo/assets/01-home.png` … `04-plugins.png` | the same script |
-| Studio window captures | `pagr/public/apps/seedr/studio-01-explorer.png` … `studio-05-publish.png`; README `docs/assets/studio-*.png` | the guided shoot (§2) |
-| Studio crops, ~1440 wide, 16:10 | `promo/assets/studio/` | cropped from those (§2) |
+| Studio window captures, 1389×868 | `promo/out/captures/` only (gitignored) | the guided shoot (§2) |
+| Studio crops | `promo/assets/studio-01-detail.png` … `studio-04-publish.png`; the same files in `pagr/public/apps/seedr/`; README `docs/assets/studio.png` (the browse crop) | cropped from those (§2) |
 | CLI still | README `docs/assets/screenshot-cli.png` | `npm run still:cli` (§3) |
 | `out/seedr-promo.mp4`, `out/seedr-poster.png` | README (inline); `pagr/public/apps/seedr/tour.mp4`, `tour-poster.png` | `Promo`, `Poster` (§4) |
 | `out/studio-tour.mp4`, `out/studio-poster.png` | README Studio section (inline); `pagr/public/apps/seedr/studio-tour.mp4`, `studio-tour-poster.png` | `StudioTour`, `StudioPoster` (§4) |
@@ -42,36 +42,62 @@ Studio is captured by hand, deliberately:
 **Run it against the public checkout, never `seedr-internal`.** The fork's items are private and
 the explorer lists every one of them.
 
+**Run the debug bundle, not `tauri:dev`.** The dev binary has no bundle identifier, so desktop
+control cannot be granted to it. The debug bundle is `dev.seedr.studio`:
+
 ```bash
-SEEDR_STUDIO_REPO=/path/to/public/seedr pnpm --filter @seedr/studio tauri:dev
+pnpm --filter @seedr/studio tauri build --debug --bundles app
+open -n --env SEEDR_STUDIO_REPO=/path/to/public/seedr \
+  "apps/studio/src-tauri/target/debug/bundle/macos/Seedr Studio.app"
 ```
 
-Navigate by desktop control and capture each view with `screencapture -x -o -l <window-id>`: one
-window, without the menu bar, the desktop, other apps or the drop shadow. A full-screen capture is
-the wrong asset and a disclosure risk; configr's first shoot caught a private key in a terminal
-scrollback that way. The window id is that of the largest titled window owned by the Studio
-process (`promo/scripts/list-windows.swift`, taken from configr). A window that is fully covered
-captures blank, so bring it forward first.
+Launching with `SEEDR_STUDIO_REPO` also rewrites the checkout Studio reopens next time
+(`~/Library/Application Support/seedr-studio/repo`). Put the old line back after the shoot.
 
-Five views, one capture each:
+**Capture one window, never the screen.** A full-screen capture is the wrong asset and a disclosure
+risk; configr's first shoot caught a private key in a terminal scrollback that way.
+`screencapture -x -o -l <window-id>` is the clean way, but it fails with "could not create image
+from window" when the shell lacks Screen Recording permission, as it did on 2026-10-02. The
+fallback that worked is desktop control's `zoom`, on exactly the window's bounds
+(`promo/scripts/list-windows.swift`, taken from configr, prints them), saved to disk. On this 1x
+display a 1440×900 window comes back as a 1389×868 JPEG; `sips -s format png` converts it. Before
+every capture:
 
-1. `studio-01-explorer` — the explorer with its type groups, the ownership marks and the agents
-   each item installs into.
-2. `studio-02-detail` — a first-party item open: the metadata pane beside the file preview.
-3. `studio-03-add` — add capability: the Author screen and its three routes.
-4. `studio-04-test-install` — test install's result for a first-party skill: every file written
-   and the byte-for-byte check.
-5. `studio-05-publish` — git → publish: the target branches, with `prod` marked as the one that
-   deploys.
+- bring Studio to the front. A notification banner and Chrome both took the front mid-shoot, and
+  every click was refused until Studio was back;
+- park the pointer off the window, or a tooltip is in frame.
 
-Keep diffs and agent transcripts out of frame, and crop when a view would show one. Test
-install's scratch directory under the system temp folder can stay: it names no user and is the
-point of that view.
+Background clicks do not reach the WKWebView of an inactive window, so the shoot needs full
+desktop control, which is asked for once.
 
-The full windows go to the site and the README as they are. The video gets a 16:10 crop about
-1440px wide of the region that carries the caption (`sips -c <h> <w> --cropOffset <top> <left>`),
-in `promo/assets/studio/`. A whole Retina window scaled into a video frame shrinks 12px UI text
-to about 5px, which nobody can read.
+Four views, one capture each:
+
+1. `studio-01-detail`: a first-party skill open: the explorer, its metadata and the formatted
+   preview. A separate explorer view was shot first and dropped, because it was the same screen
+   with only the preview mode changed.
+2. `studio-02-add`: add capability with the route list open. The form is filled through "the
+   agent writes it" with a sample prompt, so no empty-field errors show. Nothing is submitted.
+3. `studio-03-test-install`: test install of that skill: the verdict line and the files written.
+   It is a real install into a scratch folder that removes itself.
+4. `studio-04-publish`: git → publish with `main` and `prod` ticked, so the warning names
+   `ci.yml` and `deploy.yml`. Nothing is run.
+
+**Shoot the publish view from a fresh clone.** The branch list is every local branch, unpushed
+ones included. Clone the public repository, add `git branch prod origin/prod`, and relaunch Studio
+on the clone. A checkout other than the default shows a red "outside the default folder" badge in
+the title bar, which the crop below removes.
+
+Keep diffs and agent transcripts out of frame, and crop when a view would show one.
+
+The crops are the files every surface uses (`npx remotion ffmpeg -i <in> -vf crop=w:h:x:y <out>`):
+
+- the browse view loses Studio's title bar and the rounded corners, where the wallpaper shows
+  through: 1369×828 at (10, 35);
+- a dialog view keeps the dialog and a margin of the dimmed app around it: 1165×728 at (112, 70)
+  for add, and 1161×726 at (114, 34) for test install and publish.
+
+A whole window scaled into the video's 1120px frame shrinks its 12px UI text by a fifth. The
+dialog crops stay close to 1:1.
 
 ## 3. The CLI still
 
@@ -85,8 +111,10 @@ nothing from a real scrollback can appear in it.
 outro. Its captions in `src/shots.ts` are rewritten against the new frames, with **no counts**:
 the registry changes every day, and "66 of them" was stale within weeks.
 
-**`StudioTour`** is the intro (`seedr studio`), the five Studio shots at six seconds each, and an
-outro with the run command: 110 + 5 × 180 + 100 = 1110 frames, 37 seconds. It reuses `Ground`,
+**`StudioTour`** is the intro, the four Studio shots at six seconds each, and an outro with the
+run command: 110 + 4 × 180 + 100 = 930 frames, 31 seconds. The intro shows the app's own
+wordmark, `seedr-studio`, without the `$` prompt: there is no `seedr studio` command, and Studio
+runs from source. It reuses `Ground`,
 `Shot` and the scene fades. `Intro` and `Outro` take their text as props instead of hard-coding
 seedr, and `presentShots()` takes a slot list, so both tours treat a missing file the same way:
 no file, no scene. **`StudioPoster`** is its still.
@@ -112,7 +140,7 @@ before using it. Each re-render needs a re-upload, because the old URL keeps ser
 
 The layout: the seedr tour at the top; the browse capture and the CLI still where the two
 screenshots are now; a new **Seedr Studio** section with what it is in two sentences, its tour,
-the explorer and detail captures, and the run command.
+the browse crop, and the run command.
 
 **Site.** Copy the files into `pagr/public/apps/seedr/` under the names in the table. Add a Studio
 section to `SeedrPage.astro` built like the tour and screenshot blocks: every media slot is

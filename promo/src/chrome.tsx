@@ -66,7 +66,9 @@ export const Prompt: React.FC<{
   speed?: number
   size?: number
   showCursor?: boolean
-}> = ({ command, from = 0, speed = 2, size = type.title, showCursor = true }) => {
+  /** `''` for a wordmark that is not a command a shell would run. */
+  prefix?: string
+}> = ({ command, from = 0, speed = 2, size = type.title, showCursor = true, prefix = '$ ' }) => {
   const frame = useCurrentFrame()
   const typed = Math.max(0, Math.min(command.length, Math.floor((frame - from) / speed)))
   const done = typed === command.length
@@ -74,7 +76,7 @@ export const Prompt: React.FC<{
 
   return (
     <div style={{ fontSize: size, color: theme.inkStrong, letterSpacing: '-0.02em' }}>
-      <span style={{ color: theme.accent }}>$ </span>
+      {prefix && <span style={{ color: theme.accent }}>{prefix}</span>}
       {command.slice(0, typed)}
       {showCursor && (!done || blinkOn) ? (
         <span

@@ -14,6 +14,8 @@ export type StudioTourProps = {
   shots: ResolvedShot[]
 }
 
+/** The app's own title-bar wordmark — not a command: Studio runs from source (STUDIO_RUN). */
+export const STUDIO_WORDMARK = 'seedr-studio'
 export const STUDIO_TAGLINE = 'A desktop manager for a seedr registry.'
 export const STUDIO_RUN = 'pnpm --filter @seedr/studio tauri:dev'
 
@@ -25,7 +27,8 @@ export const StudioTour: React.FC<StudioTourProps> = ({ shots }) => {
       <Sequence from={0} durationInFrames={SCENE.intro}>
         <Intro
           durationInFrames={SCENE.intro}
-          command="seedr studio"
+          command={STUDIO_WORDMARK}
+          prefix=""
           tagline={STUDIO_TAGLINE}
           items={['browse', 'add', 'edit', 'test install', 'publish']}
         />
@@ -38,14 +41,14 @@ export const StudioTour: React.FC<StudioTourProps> = ({ shots }) => {
           from={SCENE.intro + i * SCENE.shot}
           durationInFrames={SCENE.shot}
         >
-          <Shot shot={shot} app="seedr studio" durationInFrames={SCENE.shot} />
+          <Shot shot={shot} app={STUDIO_WORDMARK} durationInFrames={SCENE.shot} />
         </Sequence>
       ))}
 
       <Sequence from={outroAt} durationInFrames={SCENE.outro}>
         <Outro
           durationInFrames={SCENE.outro}
-          title="seedr studio"
+          title={STUDIO_WORDMARK}
           tagline={STUDIO_TAGLINE}
           footer={STUDIO_RUN}
         />

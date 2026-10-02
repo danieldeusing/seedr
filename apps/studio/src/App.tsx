@@ -117,7 +117,7 @@ export function App() {
       </div>
 
       {dialog === "author" && (
-        <Modal title="registry-op run --op add-local" onClose={close} size="tall">
+        <Modal title="add capability" onClose={close} size="tall">
           <AuthorForm onAdded={onAdded} />
         </Modal>
       )}

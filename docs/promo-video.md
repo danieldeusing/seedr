@@ -12,8 +12,9 @@ configr's `docs/promo-video.md` does.
 | Studio window captures, 1389×868 | `promo/out/captures/` only (gitignored) | the guided shoot (§2) |
 | Studio crops | `promo/assets/studio-01-detail.png` … `studio-04-publish.png`; the same files in `pagr/public/apps/seedr/`; README `docs/assets/studio.png` (the browse crop) | cropped from those (§2) |
 | CLI still | README `docs/assets/screenshot-cli.png` | `npm run still:cli` (§3) |
-| `out/seedr-promo.mp4`, `out/seedr-poster.png` | README (inline); `pagr/public/apps/seedr/tour.mp4`, `tour-poster.png` | `Promo`, `Poster` (§4) |
-| `out/studio-tour.mp4`, `out/studio-poster.png` | README Studio section (inline); `pagr/public/apps/seedr/studio-tour.mp4`, `studio-tour-poster.png` | `StudioTour`, `StudioPoster` (§4) |
+| `out/seedr-promo.mp4`, `out/seedr-poster.png` | `pagr/public/apps/seedr/tour.mp4`, `tour-poster.png` | `Promo`, `Poster` (§4) |
+| `out/studio-tour.mp4`, `out/studio-poster.png` | `pagr/public/apps/seedr/studio-tour.mp4`, `studio-tour-poster.png` | `StudioTour`, `StudioPoster` (§4) |
+| `docs/assets/tour.gif`, `studio-tour.gif` | README, top and Studio section | `npm run gif`, `npm run gif:studio` from the two mp4s (§5) |
 
 ## 1. Web captures: scripted
 
@@ -127,19 +128,27 @@ npm run render          # Promo       → out/seedr-promo.mp4
 npm run render:studio   # StudioTour  → out/studio-tour.mp4
 npm run poster          # Poster      → out/seedr-poster.png
 npm run poster:studio   # StudioPoster → out/studio-poster.png
+npm run gif             # out/seedr-promo.mp4 → ../docs/assets/tour.gif
+npm run gif:studio      # out/studio-tour.mp4 → ../docs/assets/studio-tour.gif
 ```
+
+Renders carry no audio track (`Config.setMuted`): a silent AAC track used to be 317 kb/s, a fifth
+of every file.
 
 ## 5. Publish
 
-**README.** GitHub plays a video inline only when the file was uploaded through its own editor
-(`https://github.com/user-attachments/assets/…`). A committed or externally hosted mp4 renders as
-a link. So each mp4 is dropped into a draft on github.com, the draft is discarded unsubmitted,
-and the returned URL goes on its own line in `README.md`. Free accounts cap such uploads at
-10 MB: re-encode a larger render at a higher crf for the README, and compare extracted frames
-before using it. Each re-render needs a re-upload, because the old URL keeps serving the old cut.
+**README.** The README shows each tour as a GIF committed to the repository, as
+`cv-danieldeusing` and `morning-briefs-daniel` do: it plays without a click, needs no upload
+through GitHub's editor, and is versioned with the source that produced it. The first plan was an
+mp4 uploaded as a `user-attachments` asset, which plays inline only from that upload, is capped at
+10 MB on a free account and goes stale with every re-render. The GIF recipe is morning-briefs':
+10 fps, 960px wide, one 64-colour palette for the whole video (`palettegen=stats_mode=diff`,
+`paletteuse=dither=none:diff_mode=rectangle`). The shots' slow push-in changes every pixel of
+every frame, which is why ours are larger than its 8 MB: about 12 MB for the 46-second seedr tour
+and 10 MB for the Studio tour. Re-run both scripts after every render.
 
-The layout: the seedr tour at the top; the browse capture and the CLI still where the two
-screenshots are now; a new **Seedr Studio** section with what it is in two sentences, its tour,
+The layout: the seedr tour's GIF at the top; the browse capture and the CLI still where the two
+screenshots are now; a new **Seedr Studio** section with what it is in two sentences, its GIF,
 the browse crop, and the run command.
 
 **Site.** Copy the files into `pagr/public/apps/seedr/` under the names in the table. Add a Studio
@@ -161,6 +170,6 @@ and push, without a redeploy.
   `npx remotion ffmpeg -ss <seconds> -i out/<file>.mp4 -frames:v 1 -y /tmp/frame.png`.
   The ffmpeg bundled with Remotion is the one to use; no system ffmpeg is needed.
 - `npm run typecheck` in `promo/`.
-- The README on github.com after the push: both videos play inline and every image loads.
+- The README on github.com after the push: both GIFs play and every image loads.
 - danieldeusing.de/apps/seedr in English and German: both videos and every capture show, each
   caption matching its image.

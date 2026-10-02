@@ -96,6 +96,25 @@ describe("skill handler", () => {
       expect(vol.readlinkSync(CLAUDE_SKILL)).toBe(CENTRAL_LINK);
     });
 
+    it.each(["copy", "symlink"] as const)(
+      "leaves the registry's own item.json behind in %s mode, but not one the skill ships",
+      async (method) => {
+        vol.fromJSON({
+          "/registry/skills/test-skill/item.json": '{"slug":"test-skill"}',
+          "/registry/skills/test-skill/examples/item.json": '{"example":true}',
+        });
+        const { installSkill } = await import("./skill.js");
+
+        const results = await installSkill(skillItem(), ["claude"], "project", method, true, PROJECT);
+
+        expect(results[0]?.success).toBe(true);
+        const installed = method === "copy" ? CLAUDE_SKILL : CENTRAL_SKILL;
+        expect(vol.existsSync(`${installed}/${SKILL_MD}`)).toBe(true);
+        expect(vol.existsSync(`${installed}/item.json`)).toBe(false);
+        expect(vol.readFileSync(`${installed}/examples/item.json`, "utf-8")).toBe('{"example":true}');
+      }
+    );
+
     it("should create symlinks for multiple tools pointing to central location", async () => {
       const { installSkill } = await import("./skill.js");
 

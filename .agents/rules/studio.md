@@ -7,8 +7,8 @@ paths:
 
 A desktop capability manager for a seedr checkout, wearing the estate look on configr's
 structure: an overlay title bar (the strip IS the macOS title bar), and a searchable
-explorer with collapsible type groups whose rows show ownership (pencil = first-party/editable,
-eye = synced/read-only) and the supported agents' brand marks — a footer dropdown flips the
+explorer with collapsible type groups whose rows show ownership (a pencil on a first-party, editable row;
+a synced, read-only row is unmarked) and the supported agents' brand marks — a footer dropdown flips the
 rows to the text form (`rw-` · `cgaxo`), next to the theme dropdown. The explorer header's
 refresh button checks every synced capability against its source through `registry-op.ts
 upstream-status` — the daily sync's question, asked by hand — and marks the ones the next

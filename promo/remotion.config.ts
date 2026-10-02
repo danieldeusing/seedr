@@ -19,4 +19,8 @@ Config.setPixelFormat('yuv420p')
 // page (31 MB vs 17 MB for the same 52 s). The decision lives here so a bare
 // `npm run render` produces the web-ready file without remembering a flag.
 Config.setCrf(24)
+// The promos have no sound, but a render still carried a silent AAC track at
+// 317 kb/s: a fifth of every file, and the difference between the seedr tour
+// fitting GitHub's 10 MB inline-video limit or not.
+Config.setMuted(true)
 Config.setOverwriteOutput(true)

@@ -39,7 +39,9 @@ describe("Browse results window", () => {
   });
 
   it("renders a short list whole, without the window notice", () => {
-    renderBrowse("", "hooks");
+    // /rules is short: rules alone, as no plugin wraps one. /hooks is not: it also lists
+    // every plugin that wraps a hook, and reached the window size of 48 at the 45th.
+    renderBrowse("", "rules");
     expect(resultCards().length).toBeLessThan(48);
     expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
   });

@@ -1,0 +1,692 @@
+<title>__DESK_NAME__</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,600;125,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --canvas: #f3efe7; --sheet: #fbf9f4; --ink: #211f1a; --ink-soft: #5b554a; --rule: #8a8175; --rule-soft: #d9d1c2;
+    --brand: #b9402b; --brand-ink: #fff4ef; --peach: #f3d3c3;
+    --ok: #2f6b3a; --ok-bg: #e2eedd; --warn: #8a5a00; --warn-bg: #f6e7c4; --bad: #9b2c1f; --bad-bg: #f5d9d2; --info: #2c4f7c; --info-bg: #dde6f2;
+    --col-blocked: #9b2c1f; --col-review: #2c4f7c; --col-progress: #8a5a00; --col-ready: #2f6b3a; --col-held: #6b5e8f; --col-backlog: #8a8175; --col-done: #3f6f4a; --col-dropped: #a89f92; --seat-lead: #3a5a99; --seat-agent: #7a3e8f; --seat-owner: #8a5a00; --seat-none: #a89f92;
+    --radius: 4px; --shadow: 0 1px 0 rgba(33,31,26,.08), 0 6px 18px -12px rgba(33,31,26,.35);
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #1c1a17; --sheet: #26231f; --ink: #ece6da; --ink-soft: #b3aa9b; --rule: #6f675c; --rule-soft: #3a3630;
+      --brand: #ff8e78; --brand-ink: #2a1410; --peach: #4a2f27;
+      --ok: #9fd5a5; --ok-bg: #223a27; --warn: #f0c36d; --warn-bg: #3d2f12; --bad: #f2a08f; --bad-bg: #4a1f19; --info: #9dc0ea; --info-bg: #1f3350;
+      --col-blocked: #f2a08f; --col-review: #9dc0ea; --col-progress: #f0c36d; --col-ready: #9fd5a5; --col-held: #c3b6ea; --col-backlog: #8f867a; --col-done: #8fc39a; --col-dropped: #6f675c; --seat-lead: #9bb4e6; --seat-agent: #c9a2dc; --seat-owner: #f0c36d; --seat-none: #6f675c;
+      --shadow: 0 1px 0 rgba(0,0,0,.4), 0 6px 18px -12px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --canvas: #1c1a17; --sheet: #26231f; --ink: #ece6da; --ink-soft: #b3aa9b; --rule: #6f675c; --rule-soft: #3a3630;
+    --brand: #ff8e78; --brand-ink: #2a1410; --peach: #4a2f27;
+    --ok: #9fd5a5; --ok-bg: #223a27; --warn: #f0c36d; --warn-bg: #3d2f12; --bad: #f2a08f; --bad-bg: #4a1f19; --info: #9dc0ea; --info-bg: #1f3350;
+    --col-blocked: #f2a08f; --col-review: #9dc0ea; --col-progress: #f0c36d; --col-ready: #9fd5a5; --col-held: #c3b6ea; --col-backlog: #8f867a; --col-done: #8fc39a; --col-dropped: #6f675c; --seat-lead: #9bb4e6; --seat-agent: #c9a2dc; --seat-owner: #f0c36d; --seat-none: #6f675c;
+    --shadow: 0 1px 0 rgba(0,0,0,.4), 0 6px 18px -12px rgba(0,0,0,.8);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--canvas); color: var(--ink); font: 15px/1.5 "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; }
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: .92em; }
+  a { color: inherit; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
+  h1 { font: 700 26px/1.1 "Archivo", "Helvetica Neue", Arial, sans-serif; font-stretch: 125%; letter-spacing: -.01em; }
+  h2 { font: 600 17px/1.25 "Archivo", "Helvetica Neue", Arial, sans-serif; }
+  h3 { font: 600 15px/1.3 "IBM Plex Sans", sans-serif; }
+  .eyebrow { font: 500 11px/1 "IBM Plex Sans", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+  header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 24px; padding: 20px 28px 12px; border-bottom: 2px solid var(--ink); }
+  header.top .meta { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  nav.tabs { display: flex; gap: 4px; padding: 10px 28px 0; border-bottom: 1px solid var(--rule-soft); background: var(--canvas); position: sticky; top: 0; z-index: 5; }
+  nav.tabs button { appearance: none; border: 0; background: transparent; color: var(--ink-soft); font: 500 14px/1 "IBM Plex Sans", sans-serif; padding: 10px 14px 12px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+  nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brand); }
+  nav.tabs button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  nav.tabs .count { display: inline-block; min-width: 1.6em; padding: 1px 6px; margin-left: 6px; border-radius: 999px; background: var(--rule-soft); color: var(--ink); font-variant-numeric: tabular-nums; font-size: 12px; }
+  nav.tabs .count.hot { background: var(--brand); color: var(--brand-ink); }
+  main { padding: 20px 28px 48px; }
+  section[hidden] { display: none; }
+  .lede { max-width: 66ch; color: var(--ink-soft); margin: 0 0 18px; }
+
+  /* Inbox */
+  .inbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; align-items: start; }
+  .lane { background: var(--sheet); border: 1px solid var(--rule-soft); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .lane > header { display: flex; align-items: baseline; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule-soft); }
+  .lane > header .count { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .lane ul { list-style: none; margin: 0; padding: 0; }
+  .lane li { padding: 14px 16px; border-bottom: 1px solid var(--rule-soft); }
+  .lane li:last-child { border-bottom: 0; }
+  .lane .empty { padding: 18px 16px; color: var(--ink-soft); }
+  .item h3 { margin-bottom: 6px; }
+  .item .body { white-space: pre-wrap; margin: 0 0 10px; max-width: 70ch; }
+  .item ol.steps { margin: 6px 0 10px; padding-left: 22px; }
+  .item ol.steps li { padding: 0; border: 0; margin-bottom: 8px; }
+  .item pre { margin: 6px 0 0; padding: 10px 12px; background: var(--canvas); border: 1px solid var(--rule-soft); border-radius: var(--radius); overflow-x: auto; position: relative; }
+  .item pre code { font-size: 13px; }
+  .item .copy { position: absolute; top: 6px; right: 6px; appearance: none; border: 1px solid var(--rule-soft); background: var(--sheet); color: var(--ink-soft); font: 500 11px/1 "IBM Plex Sans", sans-serif; padding: 5px 8px; border-radius: var(--radius); cursor: pointer; }
+  .item .copy:hover, .item .copy:focus-visible { color: var(--ink); border-color: var(--rule); outline: none; }
+  .item .foot { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 8px; }
+  .item .when { color: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .item textarea { width: 100%; min-height: 64px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--canvas); color: var(--ink); font: inherit; resize: vertical; }
+  .item .options { margin: 6px 0 10px; padding-left: 22px; }
+  .item .eli5 { margin: 0 0 10px; padding: 10px 12px; background: var(--peach); color: var(--ink); border-radius: var(--radius); max-width: 70ch; }
+  .item .eli5 .eyebrow { display: block; margin-bottom: 4px; color: var(--ink); opacity: .75; }
+  .item ul.points { margin: 0 0 10px; padding-left: 20px; max-width: 70ch; }
+  .item ul.points li { padding: 0; border: 0; margin-bottom: 6px; }
+  .item .reco { margin: 0 0 10px; padding: 10px 12px; border-left: 3px solid var(--brand); background: var(--canvas); max-width: 70ch; }
+  .item .reco .eyebrow { display: block; margin-bottom: 4px; }
+  .item .options li { padding: 0; border: 0; margin-bottom: 4px; }
+  .btn { appearance: none; border: 1px solid var(--ink); background: var(--ink); color: var(--canvas); font: 600 13px/1 "IBM Plex Sans", sans-serif; padding: 8px 12px; border-radius: var(--radius); cursor: pointer; }
+  .btn.quiet { background: transparent; color: var(--ink); }
+  .btn:hover { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+  .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font: 500 12px/1.4 "IBM Plex Sans", sans-serif; }
+  .pill.action { background: var(--warn-bg); color: var(--warn); }
+  .pill.question { background: var(--info-bg); color: var(--info); }
+  .pill.info { background: var(--ok-bg); color: var(--ok); }
+  .notice { padding: 10px 14px; border-left: 3px solid var(--brand); background: var(--sheet); margin-bottom: 16px; max-width: 70ch; }
+  .history { margin-top: 24px; }
+  .history summary { cursor: pointer; color: var(--ink-soft); }
+  .history li { padding: 8px 0; border-bottom: 1px solid var(--rule-soft); color: var(--ink-soft); }
+  .history li b { color: var(--ink); }
+
+  /* Board */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 16px; }
+  .toolbar select { padding: 6px 10px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--sheet); color: var(--ink); font: inherit; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ink-soft); font-size: 13px; }
+  .legend label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 3px 8px; border: 1px solid var(--rule-soft); border-radius: 999px; background: var(--sheet); }
+  .legend label.off { opacity: .5; text-decoration: line-through; }
+  .legend label input { margin: 0; accent-color: var(--brand); }
+  .legend label::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
+  .kanban { display: grid; grid-template-columns: repeat(6, minmax(220px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+  .kcol { background: var(--sheet); border: 1px solid var(--rule-soft); border-radius: var(--radius); min-height: 120px; }
+  .kcol > header { padding: 10px 12px; border-bottom: 3px solid var(--c); display: flex; justify-content: space-between; align-items: baseline; }
+  .kcol > header .n { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .kcol .cards { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .card { background: var(--canvas); border: 1px solid var(--rule-soft); border-left: 3px solid var(--c); border-radius: var(--radius); padding: 8px 10px; }
+  .card .id { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; color: var(--ink-soft); display: flex; justify-content: space-between; gap: 8px; }
+  .card .id .size { font-family: "IBM Plex Sans", sans-serif; }
+  .card.seated { border-color: var(--seat); box-shadow: 0 0 0 1px var(--seat); }
+  .card .seat { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ink); }
+  .avatar { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--seat); color: var(--sheet); font: 700 10px/1 "IBM Plex Sans", sans-serif; letter-spacing: .02em; flex: 0 0 auto; }
+  .avatar.lg { width: 26px; height: 26px; font-size: 11px; }
+  .legend.seats label::before { display: none; }
+  .legend.seats label { gap: 6px; }
+  .legend.seats { margin-top: 6px; }
+  .legend.seats label { cursor: default; }
+  .legend.seats label::before { border-radius: 50%; }
+  .card .t { font-weight: 500; margin: 2px 0 4px; }
+  .card .who { font-size: 13px; color: var(--ink-soft); }
+  .card .who b { color: var(--ink); font-weight: 600; }
+  .card .note { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+  .card .deps { font-size: 12px; color: var(--ink-soft); margin-top: 4px; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .more { color: var(--ink-soft); font-size: 13px; padding: 4px 10px; }
+
+  /* Epics / stories */
+  table.grid { width: 100%; border-collapse: collapse; background: var(--sheet); border: 1px solid var(--rule-soft); }
+  table.grid th, table.grid td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule-soft); }
+  table.grid th { font: 500 11px/1 "IBM Plex Sans", sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  table.grid td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid tr.clickable { cursor: pointer; }
+  table.grid tr.clickable:hover td { background: var(--canvas); }
+  .bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--rule-soft); min-width: 140px; }
+  .bar i { display: block; height: 100%; }
+  .wrap { overflow-x: auto; }
+  .muted { color: var(--ink-soft); }
+  .card .pr { font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 12px; color: var(--brand); text-decoration: none; border: 1px solid var(--brand); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+  .card .pr:hover, .card .pr:focus-visible { background: var(--brand); color: var(--sheet); }
+  .card .badge { font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--col-blocked); border: 1px solid var(--col-blocked); border-radius: 3px; padding: 0 5px; margin-left: 6px; }
+  @media (prefers-reduced-motion: no-preference) { .btn, nav.tabs button { transition: background-color .15s, color .15s; } }
+
+  /* Status tabs (progress, next steps, screens, infrastructure) — built on the desk's own tokens */
+  nav.tabs { overflow-x: auto; white-space: nowrap; }
+  nav.tabs button { flex: 0 0 auto; }
+  @media (max-width: 600px) { header.top, nav.tabs, main { padding-left: 16px; padding-right: 16px; } }
+  .st-h { margin: 28px 0 10px; }
+  .st-h:first-child { margin-top: 0; }
+  .st-sub { color: var(--ink-soft); max-width: 70ch; margin: 0 0 14px; }
+  .st-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border: 1px solid var(--rule-soft); background: var(--sheet); border-radius: var(--radius); margin-bottom: 8px; }
+  .st-stats div { padding: 14px 16px; border-right: 1px solid var(--rule-soft); }
+  .st-stats div:last-child { border-right: 0; }
+  .st-stats b { display: block; font: 700 28px/1 "Archivo", sans-serif; font-stretch: 125%; font-variant-numeric: tabular-nums; }
+  .st-stats b small { font: 500 15px/1 "IBM Plex Sans", sans-serif; color: var(--ink-soft); }
+  .st-stats span { display: block; margin-top: 6px; color: var(--ink-soft); font-size: 13px; }
+  .st-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 28px; margin: 0; padding: 0; list-style: none; }
+  .st-results li { padding: 12px 0; border-top: 1px solid var(--rule-soft); min-width: 0; }
+  .st-results h3 { margin-bottom: 4px; }
+  .st-results p { margin: 0; color: var(--ink-soft); }
+  .st-results .mono { color: var(--ink-soft); }
+  details.ep { background: var(--sheet); border: 1px solid var(--rule-soft); border-bottom-width: 0; }
+  details.ep:last-of-type { border-bottom-width: 1px; }
+  details.ep > summary { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) minmax(90px, 220px) 5.5em; gap: 12px; align-items: center; padding: 10px 14px; cursor: pointer; list-style: none; }
+  details.ep > summary::-webkit-details-marker { display: none; }
+  details.ep > summary:hover { background: var(--canvas); }
+  details.ep > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+  details.ep > summary .ph { color: var(--ink-soft); font-size: 12px; }
+  details.ep > summary .n { text-align: right; font-variant-numeric: tabular-nums; }
+  details.ep .bar { min-width: 0; }
+  details.ep .body { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px 28px; padding: 6px 14px 16px; border-top: 1px solid var(--rule-soft); }
+  .phase-row { margin: 18px 0 6px; }
+  .tl { list-style: none; margin: 6px 0 0; padding: 0; }
+  .tl li { display: grid; grid-template-columns: 5.2em minmax(0, 1fr) auto; gap: 8px; padding: 4px 0; border-bottom: 1px dotted var(--rule-soft); font-size: 14px; align-items: baseline; }
+  .tl .mono { color: var(--ink-soft); }
+  .chip { display: inline-block; padding: 1px 7px; border-radius: 999px; font: 500 11.5px/1.5 "IBM Plex Sans", sans-serif; white-space: nowrap; background: var(--rule-soft); color: var(--ink); }
+  .chip.ok { background: var(--ok-bg); color: var(--ok); } .chip.warn { background: var(--warn-bg); color: var(--warn); } .chip.info { background: var(--info-bg); color: var(--info); } .chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .chip.inf { background: transparent; border: 1px dashed var(--rule); color: var(--ink-soft); }
+  /* next steps */
+  .phases { display: grid; gap: 8px; }
+  .phase { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 12px; background: var(--sheet); border: 1px solid var(--rule-soft); border-radius: var(--radius); }
+  .phase .pl b { display: block; font: 600 14px/1.2 "Archivo", sans-serif; }
+  .phase .pl span { color: var(--ink-soft); font-size: 12.5px; }
+  .phase .eps { display: flex; flex-wrap: wrap; gap: 8px; }
+  @media (max-width: 600px) { .phase { grid-template-columns: 1fr; } }
+  button.epc, button.tk { appearance: none; text-align: left; font: inherit; color: var(--ink); background: var(--canvas); border: 1px solid var(--rule-soft); border-radius: var(--radius); cursor: pointer; }
+  button.epc { padding: 7px 10px; width: 190px; max-width: 100%; }
+  button.epc .mono, button.tk .mono { color: var(--ink-soft); font-size: 12px; }
+  button.epc .t { display: block; font-weight: 500; font-size: 13.5px; line-height: 1.25; margin: 2px 0 6px; }
+  button.epc .bar { height: 5px; min-width: 0; }
+  button.epc:focus-visible, button.tk:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .sel { border-color: var(--ink) !important; box-shadow: 0 0 0 2px var(--ink); }
+  .is-dep { border-color: var(--info) !important; box-shadow: inset 4px 0 0 var(--info); }
+  .is-unl { border-color: var(--ok) !important; box-shadow: inset 4px 0 0 var(--ok); }
+  .dim { opacity: .55; }
+  .toolbar label { max-width: 100%; min-width: 0; }
+  .toolbar select { max-width: 100%; }
+  .keyline { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--ink-soft); font-size: 13px; margin: 10px 0; align-items: center; }
+  .keyline i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+  .panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 16px; margin: 12px 0 0; }
+  .panel h3 { margin-bottom: 6px; }
+  .panel p { margin: 0 0 8px; max-width: 75ch; }
+  .panel .row { display: flex; flex-wrap: wrap; gap: 5px 6px; align-items: baseline; margin: 6px 0; }
+  .panel .row > b { font-weight: 600; margin-right: 4px; }
+  .panel button.lnk { appearance: none; border: 0; background: transparent; padding: 0; color: var(--ink); font: inherit; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .92em; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .panel button.lnk:focus-visible { outline: 2px solid var(--brand); }
+  .need { margin: 8px 0; padding: 9px 12px; background: var(--warn-bg); color: var(--ink); border-radius: var(--radius); max-width: 75ch; }
+  .need b { color: var(--warn); }
+  .lanes { display: grid; grid-auto-flow: column; grid-auto-columns: 210px; gap: 10px; overflow-x: auto; padding: 2px 2px 10px; align-items: start; }
+  .lanes .lane-h { font: 500 11px/1.3 "IBM Plex Sans", sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); padding: 0 2px 6px; border-bottom: 2px solid var(--rule-soft); margin-bottom: 8px; }
+  .lanes .col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  button.tk { padding: 7px 9px; width: 100%; }
+  button.tk .t { display: block; font-size: 13px; line-height: 1.3; margin: 2px 0 4px; overflow-wrap: anywhere; }
+  button.tk .f { display: flex; flex-wrap: wrap; gap: 4px; }
+  /* screens */
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
+  .seg button { appearance: none; font: 500 13.5px/1 "IBM Plex Sans", sans-serif; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); color: var(--ink); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
+  .seg button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 22px 18px; margin-top: 14px; }
+  .shots figure { margin: 0; min-width: 0; }
+  .shots button.ph { appearance: none; display: block; width: 100%; padding: 0; border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; background: var(--sheet); cursor: zoom-in; box-shadow: var(--shadow); }
+  .shots button.ph:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  .shots img { display: block; width: 100%; height: auto; aspect-ratio: 585 / 1266; object-fit: cover; object-position: top; }
+  .shots figcaption { margin-top: 8px; font-size: 13px; color: var(--ink-soft); }
+  .shots figcaption b { display: block; color: var(--ink); font-size: 14px; }
+  .schem { border: 2px dashed var(--rule); border-radius: 14px; padding: 14px; background: transparent; aspect-ratio: 585 / 900; display: flex; flex-direction: column; gap: 8px; }
+  .schem .lab { align-self: flex-start; font: 600 10.5px/1 "IBM Plex Sans", sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--bad); border: 1px solid var(--bad); border-radius: 3px; padding: 3px 6px; }
+  .schem .ln { border: 1px solid var(--rule-soft); border-radius: 3px; padding: 7px 8px; font-size: 12.5px; color: var(--ink-soft); background: var(--sheet); }
+  .schem .ln b { color: var(--ink); display: block; }
+  dialog.zoom { border: 1px solid var(--rule); border-radius: 12px; padding: 0; background: var(--sheet); color: var(--ink); max-width: min(94vw, 520px); max-height: 94vh; }
+  dialog.zoom::backdrop { background: rgba(20, 18, 15, .7); }
+  dialog.zoom img { display: block; width: 100%; height: auto; }
+  dialog.zoom form { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 12px; background: var(--sheet); border-bottom: 1px solid var(--rule-soft); }
+  /* infrastructure */
+  .stagebar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .stagectl { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .stagectl input[type=range] { flex: 1 1 auto; min-width: 0; max-width: 520px; accent-color: var(--brand); }
+  .igwrap { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule-soft); border-radius: var(--radius); }
+  svg.ig { display: block; width: 100%; min-width: 820px; height: auto; font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; }
+  .ig .off { display: none; }
+  .ig .bx { fill: var(--canvas); stroke: var(--rule); stroke-width: 1.2; }
+  .ig .zone { fill: none; stroke: var(--rule); stroke-width: 1.2; stroke-dasharray: 6 4; }
+  .ig .t { fill: var(--ink); font-size: 13px; font-weight: 600; }
+  .ig .m { fill: var(--ink); font-size: 12.5px; font-weight: 500; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .ig .s { fill: var(--ink-soft); font-size: 11.5px; }
+  .ig .z { fill: var(--ink-soft); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 500; }
+  .ig .ln { fill: none; stroke: var(--ink-soft); stroke-width: 1.4; }
+  .ig .ah { fill: var(--ink-soft); }
+  .ig .new .bx, .ig .new.zone, .ig .new .zone { stroke: var(--brand); stroke-width: 2.4; }
+  .ig .new.ln, .ig .new .ln { stroke: var(--brand); stroke-width: 2; }
+  .ig text.new, .ig .new text.s { fill: var(--brand); font-weight: 600; }
+  .stagepanel { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px 28px; }
+  .stagepanel ul { margin: 6px 0 0; padding-left: 18px; }
+  .stagepanel li { margin-bottom: 5px; }
+  /* pictures on inbox items */
+  .item .thumbs { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 10px; }
+  .item .thumbs figure { margin: 0; width: 150px; max-width: 100%; }
+  .item button.thumb { appearance: none; display: block; width: 100%; padding: 0; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; background: var(--canvas); cursor: zoom-in; }
+  .item button.thumb:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .item button.thumb img { display: block; width: 100%; height: 100px; object-fit: cover; object-position: top; }
+  .item .thumbs figcaption { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+  dialog.pic { border: 1px solid var(--rule); border-radius: 8px; padding: 0; background: var(--sheet); color: var(--ink); width: min(96vw, 1200px); max-width: 96vw; height: 92vh; max-height: 92vh; }
+  dialog.pic[open] { display: flex; flex-direction: column; }
+  dialog.pic::backdrop { background: rgba(20, 18, 15, .75); }
+  dialog.pic .bar2 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--rule-soft); }
+  dialog.pic .bar2 b { flex: 1 1 120px; min-width: 0; overflow-wrap: anywhere; }
+  dialog.pic .bar2 output { min-width: 4.5ch; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+  dialog.pic .view { flex: 1 1 auto; overflow: auto; background: var(--canvas); }
+  dialog.pic .view img { display: block; max-width: none; height: auto; }
+  /* screens of any shape, not only phone width */
+  .shots img { aspect-ratio: auto; max-height: 460px; }
+</style>
+
+<header class="top">
+  <div>
+    <div class="eyebrow">Product owner · lead desk</div>
+    <h1>__DESK_NAME__</h1>
+  </div>
+  <div class="meta" id="meta"></div>
+</header>
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="inbox">Inbox <span class="count hot" id="inboxCount">…</span></button>
+  <button role="tab" aria-selected="false" data-tab="progress">Progress</button>
+  <button role="tab" aria-selected="false" data-tab="next">Next steps</button>
+  <button role="tab" aria-selected="false" data-tab="screens" hidden>Screens</button>
+  <button role="tab" aria-selected="false" data-tab="infra" hidden>Infrastructure</button>
+  <button role="tab" aria-selected="false" data-tab="epics">Epics</button>
+  <button role="tab" aria-selected="false" data-tab="stories">User stories</button>
+  <button role="tab" aria-selected="false" data-tab="board">Task board</button>
+</nav>
+<main>
+  <section id="tab-inbox" role="tabpanel">
+    <p class="lede">What <span data-lead></span> needs from you, in three lanes. A click on <b>Done</b> or <b>Read</b> removes the item for both of us; an answer to a question reaches <span data-lead></span> the same way. The lanes are shared state, not this page's memory.</p>
+    <div class="notice" id="dbNotice" hidden></div>
+    <div class="inbox-grid">
+      <div class="lane"><header><h2>Actions</h2><span class="count" id="c-action">0</span></header><ul id="lane-action"><li class="empty">Nothing to run.</li></ul></div>
+      <div class="lane"><header><h2>Questions</h2><span class="count" id="c-question">0</span></header><ul id="lane-question"><li class="empty">Nothing to decide.</li></ul></div>
+      <div class="lane"><header><h2>Information</h2><span class="count" id="c-info">0</span></header><ul id="lane-info"><li class="empty">Nothing new.</li></ul></div>
+    </div>
+    <details class="history"><summary>Recently done</summary><ul id="history"></ul></details>
+  </section>
+
+  <dialog class="pic" id="picZoom" aria-labelledby="picT"><div class="bar2"><b id="picT"></b><button class="btn quiet" id="picOut" aria-label="Zoom out">−</button><output id="picPct"></output><button class="btn quiet" id="picIn" aria-label="Zoom in">+</button><button class="btn quiet" id="picFit">Fit</button><form method="dialog"><button class="btn">Close</button></form></div><div class="view" id="picView"><img id="picI" alt=""></div></dialog>
+
+  <section id="tab-progress" role="tabpanel" hidden>
+    <p class="lede">What is done today, read from the plan. A task counts only when the plan says it is done.</p>
+    <div class="st-stats" id="stStats"></div>
+    <p class="muted" id="stStamp"></p>
+    <div id="stResultsWrap" hidden><h2 class="st-h">Key results</h2><ul class="st-results" id="stResults"></ul></div>
+    <h2 class="st-h">Progress per epic</h2>
+    <p class="st-sub">Open a row to see each task.</p>
+    <div id="stEpics"></div>
+    <details class="history" id="stMergesWrap" hidden><summary>The last merged pull requests</summary><ul id="stMerges"></ul></details>
+  </section>
+
+  <section id="tab-next" role="tabpanel" hidden>
+    <p class="lede">The order of the work, and what each step unlocks. This page shows order only. Nobody can see how long a task or a review takes, so there are no dates here.</p>
+    <div class="notice" id="nxGate"></div>
+    <h2 class="st-h">Phases and epics</h2>
+    <p class="st-sub">Click an epic to see what it waits for and what it unlocks.</p>
+    <div class="keyline"><span><i style="background:var(--ink)"></i>selected</span><span><i style="background:var(--info)"></i>it waits for this</span><span><i style="background:var(--ok)"></i>it unlocks this</span></div>
+    <div class="phases" id="nxPhases"></div>
+    <div class="panel" id="nxEpicPanel" aria-live="polite"></div>
+    <h2 class="st-h">Task order</h2>
+    <p class="st-sub">Every open task sits in the first column it can reach: column 1 can start now, column 2 after its tasks in column 1, and so on. Click a task to see its goal, what it waits for and what it unlocks.</p>
+    <div class="toolbar">
+      <label>Show <select id="nxScope"></select></label>
+      <span class="chip warn" data-needs></span><span class="muted">marks a step only you can take.</span>
+    </div>
+    <div class="lanes" id="nxLanes"></div>
+    <div class="panel" id="nxTaskPanel" aria-live="polite"></div>
+  </section>
+
+  <section id="tab-screens" role="tabpanel" hidden>
+    <p class="lede">What a user will see when each group of work lands. Each caption says whether the picture is a design, a built screen or only a sketch.</p>
+    <div class="seg" id="scSeg" role="group" aria-label="Group"></div>
+    <div id="scBody"></div>
+    <dialog class="zoom" id="scZoom"><form method="dialog"><b id="scZoomT"></b><button class="btn quiet">Close</button></form><img id="scZoomI" alt=""></dialog>
+  </section>
+
+  <section id="tab-infra" role="tabpanel" hidden>
+    <p class="lede">The estate today, and what each group of open tasks adds to it. Move through the stages; parts that are new in a stage are drawn in red.</p>
+    <div class="stagebar seg" id="igBar" role="group" aria-label="Stage"></div>
+    <div class="stagectl"><button class="btn quiet" id="igPrev">Back</button><input type="range" id="igRange" min="0" max="0" step="1" value="0" aria-label="Stage"><button class="btn" id="igNext">Next stage</button></div>
+    <div class="igwrap" id="igWrap"></div>
+    <div class="panel" id="igPanel" aria-live="polite"></div>
+    <p class="muted" id="igSources" style="margin-top:12px;max-width:75ch"></p>
+  </section>
+
+  <section id="tab-epics" role="tabpanel" hidden>
+    <p class="lede">Every epic in the plan, in order. The bar shows done, in flight and ready as shares of the epic's tasks. Click a row to open its board.</p>
+    <div class="wrap"><table class="grid" id="epicsTable"></table></div>
+  </section>
+
+  <section id="tab-stories" role="tabpanel" hidden>
+    <div class="toolbar">
+      <label>Epic <select id="storyEpic"></select></label>
+      <span class="muted">Stories exist only where an epic has been cut into them; an epic without stories is planned at task level.</span>
+    </div>
+    <div class="wrap"><table class="grid" id="storiesTable"></table></div>
+  </section>
+
+  <section id="tab-board" role="tabpanel" hidden>
+    <div class="toolbar">
+      <label>Epic <select id="boardEpic"></select></label>
+      <div class="legend" id="legend" aria-label="Columns — untick to hide"></div>
+      <div class="legend seats" id="seatLegend" aria-label="Seats — the card outline is the seat's colour"></div>
+    </div>
+    <div class="kanban" id="kanban"></div>
+  </section>
+</main>
+
+<script>
+const DATA = {};
+const P = DATA.project;
+const COLS = [
+  ["backlog", "Backlog", "waits for a dependency"], ["ready", "Ready to start", "every dependency done"], ["progress", "In progress", "assigned, no pull request yet"], ["held", "Held", "ready, deliberately not assigned"],
+  ["review", "In review", "open pull request, until it closes"], ["blocked", "Blocked", "waits on the owner or on a fix outside the task"],
+  ["done", "Done", "finished"], ["dropped", "Dropped", "will not be done"],
+];
+const KEY = "lead-desk:" + P.name + ":";
+let hidden = new Set(["dropped"]);
+try { const h = JSON.parse(localStorage.getItem(KEY + "hidden") || "null"); if (Array.isArray(h)) hidden = new Set(h); } catch {}
+const byId = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const prHref = (n) => P.pr_url ? esc(P.pr_url) + encodeURIComponent(n) : "";
+const pr = (n) => !n ? "" : P.pr_url ? `<a href="${prHref(n)}" target="_blank" rel="noopener">#${esc(n)}</a>` : `#${esc(n)}`;
+// every timestamp shows in the viewer's own locale and timezone; stored values stay ISO/UTC
+const when = (iso) => { if (!iso) return ""; const d = new Date(iso); return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }); };
+const needsLabel = "needs " + P.owner;
+document.querySelectorAll("[data-lead]").forEach((el) => (el.textContent = P.lead));
+document.querySelectorAll("[data-needs]").forEach((el) => (el.textContent = needsLabel));
+
+const all = DATA.tasks;
+const T = new Map(all.map((t) => [t.id, t]));
+const E = new Map(DATA.epics.map((e) => [e.id, e]));
+const isOpen = (t) => t.status === "open";
+const openDeps = (t) => t.deps.filter((id) => isOpen(T.get(id)));
+const inFlight = (c) => c.blocked + c.review + c.progress;
+const count = (f) => all.filter(f).length;
+const list = (xs) => Array.isArray(xs) ? xs : [];
+
+// ---- header + tabs
+byId("meta").textContent = `${all.length} tasks in ${DATA.epics.length} epics · ${count((t) => t.column === "done")} done · ${count((t) => ["review", "progress", "blocked"].includes(t.column))} in flight · ${count((t) => t.column === "ready")} ready · built ${when(P.generated)}`;
+const tabBtn = (name) => [...document.querySelectorAll("nav.tabs button")].find((b) => b.dataset.tab === name && !b.hidden);
+const showTab = (name) => document.querySelector(`nav.tabs button[data-tab="${name}"]`).hidden = false;
+if (DATA.screens.length) showTab("screens");
+if (DATA.infra) showTab("infra");
+document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("nav.tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+  document.querySelectorAll("main > section").forEach((s) => { s.hidden = s.id !== "tab-" + b.dataset.tab; });
+  try { localStorage.setItem(KEY + "tab", b.dataset.tab); } catch {}
+}));
+try { const t = localStorage.getItem(KEY + "tab"); if (t) tabBtn(t)?.click(); } catch {}
+
+// ---- epics
+{
+  const rows = DATA.epics.map((e) => {
+    const c = e.counts, total = e.total || 1;
+    const seg = (n, v) => n ? `<i style="width:${(100 * n / total).toFixed(1)}%;background:var(--col-${v})" title="${v}: ${n}"></i>` : "";
+    return `<tr class="clickable" data-epic="${esc(e.id)}"><td class="mono">${esc(e.id)}</td><td><b>${esc(e.title)}</b><div class="muted" style="max-width:60ch">${esc(e.goal)}</div></td><td>${esc(e.phase)}</td>
+      <td class="num">${c.done} / ${e.total}</td><td><div class="bar">${seg(c.done, "done")}${seg(c.review, "review")}${seg(c.progress, "progress")}${seg(c.blocked, "blocked")}${seg(c.ready, "ready")}${seg(c.held, "held")}</div></td>
+      <td class="num">${inFlight(c)}</td><td class="num">${c.ready}</td></tr>`;
+  });
+  byId("epicsTable").innerHTML = `<thead><tr><th>Epic</th><th>Title</th><th>Phase</th><th>Done</th><th>Progress</th><th>In flight</th><th>Ready</th></tr></thead><tbody>${rows.join("")}</tbody>`;
+  byId("epicsTable").addEventListener("click", (ev) => { const tr = ev.target.closest("tr[data-epic]"); if (!tr) return; byId("boardEpic").value = tr.dataset.epic; renderBoard(); tabBtn("board").click(); });
+}
+const epicOptions = `<option value="">All epics</option>` + DATA.epics.map((e) => `<option value="${esc(e.id)}">${esc(e.id)} · ${esc(e.title)}</option>`).join("");
+
+// ---- stories
+{
+  const sel = byId("storyEpic"); sel.innerHTML = epicOptions;
+  const render = () => {
+    const f = sel.value; const rows = DATA.stories.filter((s) => !f || s.epic === f);
+    if (!rows.length) { byId("storiesTable").innerHTML = `<tbody><tr><td class="muted">No user stories cut for this selection yet — its tasks live directly under the epic.</td></tr></tbody>`; return; }
+    byId("storiesTable").innerHTML = `<thead><tr><th>Story</th><th>Title</th><th>Tasks</th><th>Done</th><th>In flight</th><th>Ready</th></tr></thead><tbody>` +
+      rows.map((s) => `<tr><td class="mono">${esc(s.id)}</td><td><b>${esc(s.title)}</b><div class="muted" style="max-width:60ch">${esc(s.summary)}</div></td><td class="num">${s.total}</td><td class="num">${s.counts.done}</td><td class="num">${inFlight(s.counts)}</td><td class="num">${s.counts.ready}</td></tr>`).join("") + `</tbody>`;
+  };
+  sel.addEventListener("change", render); render();
+}
+
+// ---- board
+const bsel = byId("boardEpic"); bsel.innerHTML = epicOptions;
+const seatKey = (name) => !name ? "none" : name === P.owner ? "owner" : name === P.lead ? "lead" : "agent";
+const avatar = (name, cls = "") => `<span class="avatar ${cls}" style="--seat: var(--seat-${seatKey(name)})" aria-hidden="true">${esc(name ? String(name).slice(0, 2) : "–")}</span>`;
+byId("seatLegend").innerHTML = `<span class="muted">Outline and avatar = who holds it:</span> ` + [[P.owner, "owner"], [P.lead, "lead"], ["agent", "agent"]].map(([n, k]) => `<label style="--c: var(--seat-${k})">${avatar(n, "lg")}${esc(n)}</label>`).join("") + `<label style="--c: var(--seat-none)">${avatar("", "lg")}unassigned</label>`;
+function card(t) {
+  const who = t.seat ? `<div class="who"><span class="seat">${avatar(t.seat)}${esc(t.seat)}</span></div>` : "";
+  const note = t.note || t.needs ? `<div class="note">${esc(t.note || t.needs)}</div>` : "";
+  const od = openDeps(t);
+  const deps = t.column === "backlog" ? `<div class="deps">waits for ${esc(od.slice(0, 6).join(", "))}${od.length > 6 ? " …" : ""}</div>` : "";
+  const head = !t.pr ? "" : P.pr_url ? `<a class="pr" href="${prHref(t.pr)}" target="_blank" rel="noopener">PR #${esc(t.pr)} ↗</a>` : `<span class="size">PR #${esc(t.pr)}</span>`;
+  return `<div class="card${t.seat ? " seated" : ""}" style="--c: var(--col-${t.column}); --seat: var(--seat-${seatKey(t.seat)})"><div class="id"><span>${esc(t.id)}</span>${head}<span class="size">${esc(t.size)}</span></div><div class="t">${esc(t.title)}</div>${who}${note}${deps}</div>`;
+}
+function renderLegend() {
+  byId("legend").innerHTML = COLS.map(([k, label, hint]) => `<label class="${hidden.has(k) ? "off" : ""}" style="--c: var(--col-${k})" title="${esc(hint)}"><input type="checkbox" data-col="${k}" ${hidden.has(k) ? "" : "checked"}> ${label}</label>`).join("");
+}
+byId("legend").addEventListener("change", (ev) => {
+  const cb = ev.target.closest("input[data-col]"); if (!cb) return;
+  if (cb.checked) hidden.delete(cb.dataset.col); else hidden.add(cb.dataset.col);
+  try { localStorage.setItem(KEY + "hidden", JSON.stringify([...hidden])); } catch {}
+  renderLegend(); renderBoard();
+});
+function renderBoard() {
+  const f = bsel.value; const cols = COLS.filter(([k]) => !hidden.has(k));
+  byId("kanban").style.gridTemplateColumns = `repeat(${cols.length}, minmax(220px, 1fr))`;
+  byId("kanban").innerHTML = cols.map(([k, label]) => {
+    const rows = all.filter((t) => t.column === k && (!f || t.epic === f));
+    const n = rows.length, cap = f ? 400 : 40, more = n > cap ? `<div class="more">and ${n - cap} more — pick an epic</div>` : "";
+    return `<div class="kcol" style="--c: var(--col-${k})"><header><h3>${label}</h3><span class="n">${n}</span></header><div class="cards">${rows.slice(0, cap).map(card).join("")}${more}</div></div>`;
+  }).join("");
+}
+bsel.addEventListener("change", renderBoard); renderLegend(); renderBoard();
+
+// ---- inbox (shared db)
+const LANES = { action: "Actions", question: "Questions", info: "Information" };
+let dbRef = null;
+function itemHtml(d) {
+  const it = d.data(); const kind = LANES[it.kind] ? it.kind : "info";
+  const steps = list(it.steps).length ? `<ol class="steps">${it.steps.map((s) => `<li>${esc(s.text)}${s.command ? `<pre><button class="copy" data-cmd="${esc(s.command)}">copy</button><code>${esc(s.command)}</code></pre>` : ""}</li>`).join("")}</ol>` : "";
+  const options = list(it.options).length ? `<ol class="options">${it.options.map((o) => `<li>${esc(o)}</li>`).join("")}</ol>` : "";
+  const eli5 = it.eli5 ? `<div class="eli5"><span class="eyebrow">In plain words</span>${esc(it.eli5)}</div>` : "";
+  const points = list(it.points).length ? `<ul class="points">${it.points.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
+  const reco = it.recommendation ? `<div class="reco"><span class="eyebrow">${esc(P.lead)} recommends</span>${esc(it.recommendation)}</div>` : "";
+  // pictures: asset ids from the row, shown as thumbnails; a row is untrusted, so only a well-formed id becomes a URL
+  const pics = list(it.images).filter((p) => p && /^[0-9a-f]{32}$/.test(p.id));
+  const imgs = pics.length ? `<div class="thumbs">${pics.map((p) => `<figure><button class="thumb" data-src="/_blob/${p.id}" data-alt="${esc(p.caption || "Picture")}" aria-label="Enlarge: ${esc(p.caption || "picture")}"><img src="/_blob/${p.id}" alt="${esc(p.caption || "")}" loading="lazy"></button>${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>`).join("")}</div>` : "";
+  const stamp = `<span class="when">${esc(when(it.createdAt))}${it.from ? " · " + esc(it.from) : ""}</span>`;
+  let action;
+  if (kind === "question") action = `<textarea placeholder="Your answer — one line is enough" aria-label="Answer"></textarea><div class="foot"><button class="btn" data-act="answer">Send answer</button>${stamp}</div>`;
+  else if (kind === "action") action = `<div class="foot"><button class="btn" data-act="done">Done</button>${stamp}</div>`;
+  else action = `<div class="foot"><button class="btn quiet" data-act="done">Read</button>${stamp}</div>`;
+  return `<li class="item" data-id="${esc(d.id)}"><span class="pill ${kind}">${LANES[kind]}</span><h3>${esc(it.title)}</h3>${eli5}${points}${imgs}${steps}${options}${reco}${action}</li>`;
+}
+function renderInbox(snap) {
+  const docs = snap.docs.filter((d) => d.data());
+  const todo = docs.filter((d) => d.data().status !== "done").sort((a, b) => ((a.data().priority || 9) - (b.data().priority || 9)) || String(a.data().createdAt || "").localeCompare(String(b.data().createdAt || "")));
+  for (const k of Object.keys(LANES)) {
+    const items = todo.filter((d) => ((d.data().kind in LANES) ? d.data().kind : "info") === k);
+    byId("c-" + k).textContent = items.length;
+    byId("lane-" + k).innerHTML = items.length ? items.map(itemHtml).join("") : `<li class="empty">${k === "action" ? "Nothing to run." : k === "question" ? "Nothing to decide." : "Nothing new."}</li>`;
+  }
+  const c = byId("inboxCount"); c.textContent = todo.length; c.classList.toggle("hot", todo.length > 0);
+  const done = docs.filter((d) => d.data().status === "done").sort((a, b) => String(b.data().doneAt || "").localeCompare(String(a.data().doneAt || ""))).slice(0, 20);
+  byId("history").innerHTML = done.map((d) => { const it = d.data(); return `<li><b>${esc(it.title)}</b> — done ${esc(when(it.doneAt))}${it.answer ? ` · answer: ${esc(it.answer)}` : ""}</li>`; }).join("") || `<li>Nothing yet.</li>`;
+}
+document.addEventListener("click", async (ev) => {
+  const copy = ev.target.closest("button.copy");
+  if (copy) { try { await navigator.clipboard.writeText(copy.dataset.cmd); copy.textContent = "copied"; setTimeout(() => (copy.textContent = "copy"), 1500); } catch { copy.textContent = "select & copy"; } return; }
+  const btn = ev.target.closest("button[data-act]"); if (!btn || !dbRef) return;
+  const li = btn.closest("li.item"); const patch = { status: "done", doneAt: new Date().toISOString() };
+  if (btn.dataset.act === "answer") {
+    patch.answer = li.querySelector("textarea").value.trim();
+    if (!patch.answer) { li.querySelector("textarea").focus(); return; }
+  }
+  btn.disabled = true;
+  try { await dbRef.doc("inbox/" + li.dataset.id).update(patch); }
+  catch (e) { btn.disabled = false; showNotice(`Could not save: ${e && e.message ? e.message : e}`); }
+});
+function showNotice(text) { const n = byId("dbNotice"); n.textContent = text; n.hidden = false; }
+(async () => {
+  const db = await window.claude?.use("db");
+  if (!db) { showNotice(`The shared inbox is not available in this view — open the page from claude.ai to see and answer ${P.lead}'s items.`); byId("inboxCount").textContent = "–"; return; }
+  dbRef = db;
+  db.collection("inbox").onSnapshot(renderInbox, (e) => showNotice(`Inbox connection lost: ${e && e.message ? e.message : e}. Reload the page.`));
+})();
+
+// ---- status tabs: progress, next steps, screens, infrastructure
+{
+  // depth: 0 = can start now, n = n columns of open work in front of it
+  const depth = new Map();
+  const dep = (id, path = new Set()) => {
+    if (depth.has(id)) return depth.get(id);
+    if (path.has(id)) return 0; // a cycle in the plan: do not loop
+    path.add(id);
+    const d = Math.max(-1, ...openDeps(T.get(id)).map((x) => dep(x, path))) + 1;
+    path.delete(id); depth.set(id, d); return d;
+  };
+  const todo = all.filter(isOpen);
+  const rev = new Map();
+  for (const t of todo) { dep(t.id); for (const d of openDeps(t)) { if (!rev.has(d)) rev.set(d, []); rev.get(d).push(t.id); } }
+  const closure = (id, next) => { const seen = new Set(); const q = [...next(id)]; while (q.length) { const x = q.pop(); if (seen.has(x)) continue; seen.add(x); q.push(...next(x)); } return seen; };
+  const unlocksAll = (id) => closure(id, (x) => rev.get(x) || []);
+  const waitsAll = (id) => closure(id, (x) => openDeps(T.get(x)));
+  const working = (t) => t.column === "review" || t.column === "progress";
+  const stateChip = (t) => {
+    if (t.status === "done") return `<span class="chip ok">done</span>`;
+    if (t.status === "dropped") return `<span class="chip">dropped</span>`;
+    if (working(t)) return `<span class="chip info">in ${t.column}</span>`;
+    const od = openDeps(t);
+    if (od.length) return `<span class="chip">waits for ${od.length}</span>`;
+    return t.needs ? `<span class="chip warn">${esc(needsLabel)}</span>` : `<span class="chip ok">can start</span>`;
+  };
+  const bar = (done, flight, total) => `<div class="bar"><i style="width:${(100 * done / (total || 1)).toFixed(1)}%;background:var(--col-done)"></i><i style="width:${(100 * flight / (total || 1)).toFixed(1)}%;background:var(--col-review)"></i></div>`;
+  const startable = todo.filter((t) => !openDeps(t).length);
+  const flight = startable.filter(working), withOwner = startable.filter((t) => t.needs && !working(t)), free = startable.filter((t) => !t.needs && !working(t));
+
+  // ---------- Progress
+  {
+    const stats = [
+      [`${count((t) => t.status === "done")}<small> / ${all.length}</small>`, "tasks done"],
+      [`${free.length}`, "tasks an agent can start alone"],
+      [`${todo.filter(working).length}`, "tasks in work"],
+      [`${withOwner.length}`, `tasks that wait for ${esc(P.owner)}`],
+    ];
+    if (DATA.merges.length) stats.push([`${DATA.merges.length}`, "merged pull requests listed"]);
+    byId("stStats").innerHTML = stats.map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join("");
+    byId("stStamp").textContent = `Read ${P.ref ? "from " + P.ref + " · " : ""}${when(P.generated)}`;
+    if (DATA.results.length) {
+      byId("stResultsWrap").hidden = false;
+      byId("stResults").innerHTML = DATA.results.map((r) => `<li><h3>${esc(r.title)}</h3><p>${esc(r.text)} ${list(r.tasks).map((id) => `<span class="mono">${esc(id)}</span>`).join(" ")} ${list(r.prs).map(pr).join(" ")}</p></li>`).join("");
+    }
+    const line = (t) => `<li><span class="mono">${esc(t.id)}</span><span>${esc(t.title)}</span><span>${t.status === "done" && t.pr ? pr(t.pr) : stateChip(t)}</span></li>`;
+    const none = (text) => `<li><span></span><span class="muted">${text}</span><span></span></li>`;
+    byId("stEpics").innerHTML = DATA.phases.map((ph) => `<div class="phase-row"><span class="eyebrow">${esc(ph.name)}${ph.what ? " · " + esc(ph.what) : ""}</span></div>` + ph.epics.map((id) => {
+      const e = E.get(id), c = e.counts, ts = e.tasks.map((x) => T.get(x));
+      const done = ts.filter((t) => t.status === "done"), rest = ts.filter(isOpen);
+      return `<details class="ep"><summary><span class="mono">${esc(id)}</span><span><b>${esc(e.title)}</b></span>${bar(c.done, c.review + c.progress, e.total)}<span class="n">${c.done} / ${e.total}</span></summary>
+        <div class="body"><div><span class="eyebrow">Open · ${rest.length}</span><ul class="tl">${rest.map(line).join("") || none("Nothing open.")}</ul></div>
+        <div><span class="eyebrow">Done · ${done.length}</span><ul class="tl">${done.map(line).join("") || none("Nothing done yet.")}</ul></div></div></details>`;
+    }).join("")).join("");
+    if (DATA.merges.length) { byId("stMergesWrap").hidden = false; byId("stMerges").innerHTML = DATA.merges.map((m) => `<li>${esc(m.date)} · ${pr(m.n)} <b>${esc(m.title)}</b></li>`).join(""); }
+  }
+
+  // ---------- Next steps: phases
+  const eUnl = new Map(); for (const e of E.values()) for (const d of e.deps) { if (!eUnl.has(d)) eUnl.set(d, []); eUnl.get(d).push(e.id); }
+  let selEpic = (startable[0] || todo[0] || all[0] || {}).epic;
+  const renderPhases = () => {
+    const e = E.get(selEpic); if (!e) return;
+    const deps = new Set(e.deps), unl = new Set(eUnl.get(selEpic) || []);
+    byId("nxPhases").innerHTML = DATA.phases.map((ph) => `<div class="phase"><div class="pl"><b>${esc(ph.name)}</b><span>${esc(ph.what)}</span></div><div class="eps">${ph.epics.map((id) => {
+      const x = E.get(id), c = x.counts; const cls = id === selEpic ? "sel" : deps.has(id) ? "is-dep" : unl.has(id) ? "is-unl" : "dim";
+      return `<button class="epc ${cls}" data-epic="${esc(id)}" aria-pressed="${id === selEpic}"><span class="mono">${esc(id)} · ${c.done}/${x.total}</span><span class="t">${esc(x.title)}</span>${bar(c.done, c.review + c.progress, x.total)}</button>`;
+    }).join("")}</div></div>`).join("");
+    const rest = e.tasks.map((x) => T.get(x)).filter(isOpen), now = rest.filter((t) => !openDeps(t).length);
+    const links = (ids) => ids.length ? ids.map((id) => `<button class="lnk" data-epic="${esc(id)}">${esc(id)}</button>`).join(" ") : `<span class="muted">nothing</span>`;
+    byId("nxEpicPanel").innerHTML = `<h3><span class="mono">${esc(e.id)}</span> · ${esc(e.title)}</h3><p class="muted">${esc(e.goal)}</p>
+      <div class="row"><b>Waits for</b>${links(e.deps)}</div><div class="row"><b>Unlocks</b>${links(eUnl.get(e.id) || [])}</div>
+      <div class="row"><b>${e.counts.done} of ${e.total} done.</b> ${rest.length ? `${now.length} of the ${rest.length} open tasks have no open dependency${now.length ? ": " + now.map((t) => `<button class="lnk" data-task="${esc(t.id)}">${esc(t.id)}</button>`).join(" ") : ""}.` : "Nothing open."}</div>
+      ${rest.length ? `<button class="btn quiet" data-scope="${esc(e.id)}">Show this epic's task order</button>` : ""}`;
+  };
+
+  // ---------- Next steps: task order
+  let selTask = (startable[0] || todo[0] || {}).id;
+  const scopeSel = byId("nxScope");
+  scopeSel.innerHTML = `<option value="">All open tasks</option>` + DATA.epics.filter((e) => e.tasks.some((x) => isOpen(T.get(x)))).map((e) => `<option value="${esc(e.id)}">${esc(e.id)} · ${esc(e.title)}</option>`).join("");
+  const inScope = (t) => !scopeSel.value || t.epic === scopeSel.value;
+  const lk = (ids) => ids.slice(0, 14).map((id) => `<button class="lnk" data-task="${esc(id)}">${esc(id)}</button>`).join(" ") + (ids.length > 14 ? ` <span class="muted">and ${ids.length - 14} more</span>` : "");
+  const renderLanes = () => {
+    const ts = todo.filter(inScope);
+    const up = selTask ? waitsAll(selTask) : new Set(), down = selTask ? unlocksAll(selTask) : new Set();
+    const ds = [...new Set(ts.map((t) => depth.get(t.id)))].sort((a, b) => a - b);
+    byId("nxLanes").innerHTML = ds.map((d) => `<div class="col"><div class="lane-h">${d === 0 ? "1 · can start now" : `${d + 1} · after column ${d}`}</div>${ts.filter((t) => depth.get(t.id) === d).map((t) => {
+      const cls = t.id === selTask ? "sel" : up.has(t.id) ? "is-dep" : down.has(t.id) ? "is-unl" : selTask ? "dim" : "";
+      const f = (t.needs ? `<span class="chip warn">${esc(needsLabel)}</span>` : "") + (working(t) ? `<span class="chip info">in ${t.column}</span>` : "");
+      return `<button class="tk ${cls}" data-task="${esc(t.id)}" aria-pressed="${t.id === selTask}"><span class="mono">${esc(t.id)}${t.size ? " · " + esc(t.size) : ""}</span><span class="t">${esc(t.title)}</span><span class="f">${f}</span></button>`;
+    }).join("")}</div>`).join("") || `<p class="muted">No open task in this selection.</p>`;
+    const t = T.get(selTask); if (!t) { byId("nxTaskPanel").innerHTML = ""; return; }
+    const od = openDeps(t), direct = rev.get(t.id) || [], eps = new Set([...down].map((x) => T.get(x).epic));
+    byId("nxTaskPanel").innerHTML = `<h3><span class="mono">${esc(t.id)}</span> · ${esc(t.title)} ${stateChip(t)}</h3><p>${esc(t.goal)}</p>
+      ${t.needs ? `<div class="need"><b>${esc(needsLabel[0].toUpperCase() + needsLabel.slice(1))}.</b> ${esc(t.needs)}</div>` : ""}
+      <div class="row"><b>Waits for</b>${od.length ? lk(od) : `<span class="muted">nothing open</span>`}</div>
+      <div class="row"><b>Unlocks next</b>${direct.length ? lk(direct) : `<span class="muted">nothing directly</span>`}</div>
+      <div class="row"><b>In total</b>${down.size ? `${down.size} open tasks in ${eps.size} epic${eps.size === 1 ? "" : "s"} sit behind this one (${esc([...eps].sort().join(", "))}).` : "No open task sits behind this one."}</div>
+      ${t.crit ? `<div class="row muted">${esc(t.crit[0])} of ${esc(t.crit[1])} acceptance criteria ticked in the plan.</div>` : ""}`;
+  };
+  byId("tab-next").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-epic],[data-task],[data-scope]"); if (!b) return;
+    if (b.dataset.scope) { scopeSel.value = b.dataset.scope; selTask = E.get(b.dataset.scope).tasks.find((x) => isOpen(T.get(x))) || selTask; renderLanes(); byId("nxLanes").scrollIntoView({ block: "center", behavior: "smooth" }); }
+    else if (b.dataset.epic) { selEpic = b.dataset.epic; renderPhases(); }
+    else { const t = T.get(b.dataset.task); if (!t) return; selTask = t.id; if (isOpen(t) && !inScope(t)) scopeSel.value = t.epic; renderLanes(); if (b.classList.contains("lnk")) byId("nxTaskPanel").scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  });
+  scopeSel.addEventListener("change", () => { const first = todo.find(inScope); if (first && !(T.get(selTask) && inScope(T.get(selTask)))) selTask = first.id; renderLanes(); });
+  {
+    const ids = (ts) => ts.length ? ` (${esc(ts.map((t) => t.id).join(", "))})` : "";
+    byId("nxGate").innerHTML = `<b>${todo.length} tasks are open. ${startable.length} have no open dependency, and ${free.length} of those can start without you.</b> ${withOwner.length} wait for a step of yours${ids(withOwner)}, and ${flight.length} are already in work${ids(flight)}.`;
+  }
+  renderPhases(); renderLanes();
+
+  // ---------- Screens
+  if (DATA.screens.length) {
+    let sel = 0;
+    const tag = (s) => s.tag ? `<span class="chip">${esc(s.tag)}</span> ` : "";
+    const fig = (s, i) => s.img
+      ? `<figure><button class="ph" data-zoom="${i}" aria-label="Enlarge ${esc(s.name)}"><img src="${esc(s.img)}" alt="${esc(s.name)}" loading="lazy"></button><figcaption><b>${esc(s.name)}</b>${tag(s)}<span class="chip inf">${esc(s.kind || "design")}</span><br>${esc(s.why)}</figcaption></figure>`
+      : `<figure><div class="schem"><span class="lab">Schematic · no design exists</span>${list(s.lines).map(([a, b]) => `<div class="ln"><b>${esc(a)}</b>${esc(b)}</div>`).join("")}</div><figcaption><b>${esc(s.name)}</b>${tag(s)}<span class="chip inf">sketch, not a screen</span></figcaption></figure>`;
+    const render = () => {
+      const g = DATA.screens[sel];
+      byId("scSeg").innerHTML = DATA.screens.map((x, i) => `<button data-i="${i}" aria-pressed="${i === sel}">${esc(x.name)}</button>`).join("");
+      byId("scBody").innerHTML = `<h2 class="st-h">${esc(g.name)}</h2><p class="st-sub">${esc(g.text)}</p><div class="shots">${g.shots.map(fig).join("")}</div>`;
+    };
+    byId("scSeg").addEventListener("click", (ev) => { const b = ev.target.closest("button[data-i]"); if (!b) return; sel = +b.dataset.i; render(); });
+    byId("scBody").addEventListener("click", (ev) => { const b = ev.target.closest("button[data-zoom]"); if (!b) return; const s = DATA.screens[sel].shots[+b.dataset.zoom]; byId("scZoomI").src = s.img; byId("scZoomI").alt = s.name; byId("scZoomT").textContent = s.name; byId("scZoom").showModal(); });
+    byId("scZoom").addEventListener("click", (ev) => { if (ev.target === byId("scZoom")) byId("scZoom").close(); });
+    render();
+  }
+
+  // ---------- Infrastructure: one drawing, built up stage by stage
+  if (DATA.infra) {
+    const STAGES = DATA.infra.stages; let stage = 0; const range = byId("igRange");
+    byId("igWrap").innerHTML = DATA.infra.svg; // the lead's own drawing; the build script refuses scripts and event handlers in it
+    const svg = byId("igWrap").querySelector("svg"); svg.classList.add("ig");
+    byId("igSources").textContent = DATA.infra.sources || ""; range.max = STAGES.length - 1;
+    const render = () => {
+      svg.querySelectorAll("[data-s],[data-u]").forEach((el) => {
+        const s = el.dataset.s === undefined ? 0 : +el.dataset.s, u = el.dataset.u === undefined ? 99 : +el.dataset.u;
+        el.classList.toggle("off", stage < s || stage >= u); el.classList.toggle("new", stage > 0 && s === stage);
+      });
+      byId("igBar").innerHTML = STAGES.map((x, i) => `<button data-i="${i}" aria-pressed="${i === stage}">${i} · ${esc(x.name)}</button>`).join("");
+      range.value = stage; byId("igPrev").disabled = stage === 0; byId("igNext").disabled = stage === STAGES.length - 1;
+      const x = STAGES[stage], ts = list(x.tasks).map((id) => T.get(id)).filter(Boolean);
+      byId("igPanel").innerHTML = `<h3>Stage ${stage} · ${esc(x.name)}</h3><p>${esc(x.lead)}</p><div class="stagepanel"><div><span class="eyebrow">${stage ? "What it adds" : "What is there"}</span><ul>${list(x.adds).map((a) => `<li>${esc(a)}</li>`).join("")}</ul></div>
+        ${ts.length ? `<div><span class="eyebrow">Tasks</span><ul class="tl">${ts.map((t) => `<li><span class="mono">${esc(t.id)}</span><span>${esc(t.title)}</span><span>${stateChip(t)}</span></li>`).join("")}</ul></div>` : ""}</div>`;
+    };
+    const set = (n) => { stage = Math.max(0, Math.min(STAGES.length - 1, n)); render(); };
+    byId("igBar").addEventListener("click", (ev) => { const b = ev.target.closest("button[data-i]"); if (b) set(+b.dataset.i); });
+    range.addEventListener("input", () => set(+range.value));
+    byId("igPrev").addEventListener("click", () => set(stage - 1)); byId("igNext").addEventListener("click", () => set(stage + 1));
+    render();
+  }
+
+  // ---------- Pictures on inbox items: thumbnail -> dialog with zoom
+  {
+    const dlg = byId("picZoom"), img = byId("picI"); let z = 1;
+    const setZ = (n) => { z = Math.max(1, Math.min(6, n)); img.style.width = (z * 100) + "%"; byId("picPct").textContent = Math.round(z * 100) + " %"; byId("picOut").disabled = z <= 1; byId("picIn").disabled = z >= 6; };
+    document.addEventListener("click", (ev) => { const b = ev.target.closest("button.thumb"); if (!b) return; img.src = b.dataset.src; img.alt = b.dataset.alt; byId("picT").textContent = b.dataset.alt; dlg.showModal(); setZ(1); byId("picView").scrollTo(0, 0); });
+    byId("picIn").addEventListener("click", () => setZ(z * 1.5)); byId("picOut").addEventListener("click", () => setZ(z / 1.5)); byId("picFit").addEventListener("click", () => setZ(1));
+    img.addEventListener("dblclick", () => setZ(z > 1 ? 1 : 2));
+    dlg.addEventListener("click", (ev) => { if (ev.target === dlg) dlg.close(); });
+  }
+
+  // a plain #progress, #next, #screens or #infra in the link opens that tab
+  const h = location.hash.slice(1); if (h) tabBtn(h)?.click();
+}
+</script>

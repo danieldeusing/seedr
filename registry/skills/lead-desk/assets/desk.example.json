@@ -1,0 +1,54 @@
+{
+  "project": {
+    "name": "Example",
+    "owner": "Daniel",
+    "lead": "Leo",
+    "pr_url": "https://github.com/example/example/pull/",
+    "ref": "main at 1a2b3c4",
+    "desk_url": ""
+  },
+  "phases": [
+    { "name": "Phase 0", "what": "Foundation", "epics": ["E01"] },
+    { "name": "Phase 1", "what": "First product code", "epics": ["E02"] }
+  ],
+  "epics": [
+    { "id": "E01", "title": "Foundation", "phase": "0", "deps": [], "goal": "The servers, the database and the deploy path exist." },
+    { "id": "E02", "title": "Sign-up", "phase": "1", "deps": ["E01"], "goal": "A visitor can create an account." }
+  ],
+  "stories": [
+    { "id": "E02-S01", "title": "A visitor signs up with an e-mail address", "epic": "E02", "summary": "As a visitor I want an account, so that my settings follow me." }
+  ],
+  "tasks": [
+    { "id": "E01-T01", "title": "Create the database", "epic": "E01", "status": "done", "size": "S", "goal": "PostgreSQL runs with daily backups.", "pr": 12 },
+    { "id": "E01-T02", "title": "Deploy pipeline", "epic": "E01", "state": "review", "size": "M", "deps": ["E01-T01"], "goal": "A push to main deploys the app.", "pr": 14, "seat": "agent" },
+    { "id": "E01-T03", "title": "Monitoring", "epic": "E01", "size": "S", "deps": ["E01-T01"], "goal": "Alerts reach the owner when the app is down.", "crit": [0, 3] },
+    { "id": "E01-T04", "title": "Domain and DNS", "epic": "E01", "state": "blocked", "seat": "Daniel", "size": "S", "goal": "The app answers on its own domain.", "needs": "The domain is yours to buy, and the DNS token is yours to create." },
+    { "id": "E02-T01", "title": "Sign-up form", "epic": "E02", "story": "E02-S01", "size": "M", "deps": ["E01"], "goal": "The form validates the address and creates the account." },
+    { "id": "E02-T02", "title": "Confirmation e-mail", "epic": "E02", "story": "E02-S01", "size": "S", "deps": ["E02-T01"], "goal": "A new account gets one e-mail with a confirmation link." },
+    { "id": "E02-T03", "title": "Sign-up with a phone number", "epic": "E02", "status": "dropped", "size": "L", "goal": "Dropped: e-mail is enough for the first release." }
+  ],
+  "results": [
+    { "title": "The database runs, with backups", "text": "PostgreSQL 17 with one full backup each night. The restore is not proven yet.", "tasks": ["E01-T01"], "prs": [12] }
+  ],
+  "merges": [
+    { "n": 12, "title": "E01-T01 Create the database", "date": "2026-01-01" }
+  ],
+  "screens": [
+    {
+      "name": "Phase 1",
+      "text": "The first screen a visitor sees. No design exists yet, so this is a sketch.",
+      "shots": [
+        { "name": "Sign-up", "tag": "E02", "lines": [["E-mail address", "one field, checked while typing"], ["One button", "creates the account and sends the e-mail"]] }
+      ]
+    }
+  ],
+  "infra": {
+    "svg": "infra.example.svg",
+    "sources": "Sources: infra/README.md and the E01 plan entries.",
+    "stages": [
+      { "name": "Today", "lead": "What runs now.", "adds": ["One app server.", "One database with nightly backups."], "tasks": ["E01-T01"] },
+      { "name": "Reachable", "lead": "The app gets its own address.", "adds": ["DNS points the domain at the app server."], "tasks": ["E01-T04"] },
+      { "name": "Watched", "lead": "The estate reports on itself.", "adds": ["Alerts leave through a service outside the estate."], "tasks": ["E01-T03"] }
+    ]
+  }
+}

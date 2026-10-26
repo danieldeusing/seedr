@@ -20,8 +20,13 @@ import { resolveItemSource } from "./source.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Timeout for all network requests to the registry.
+// How long a registry request may wait for its response headers. The body is not timed: a large
+// file over a slow link keeps arriving for longer, and undici's own body timeout ends one that stalls.
 const FETCH_TIMEOUT_MS = 15_000;
+
+// Files of one item downloaded at once. With all 300 files of a plugin in flight over one slow
+// HTTP/2 connection, a small file's headers queued behind the other bodies past the timeout.
+const DOWNLOAD_CONCURRENCY = 8;
 
 /**
  * Walk up from a starting directory to find this package's root — the directory
@@ -132,15 +137,26 @@ async function loadFile(filename: string): Promise<string> {
   return fetchRemote(`${REGISTRY_URL}/${filename}`);
 }
 
+function unreachable(url: string, error: unknown): Error {
+  if (error instanceof Error && error.name === "TimeoutError") {
+    return new Error(`Registry unreachable: timed out fetching ${url}`, { cause: error });
+  }
+  return new Error(`Registry unreachable: ${url}`, { cause: error });
+}
+
 async function fetchResponse(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(
+    () => controller.abort(new DOMException("The operation was aborted due to timeout", "TimeoutError")),
+    FETCH_TIMEOUT_MS
+  );
   let response: Response;
   try {
-    response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    response = await fetch(url, { signal: controller.signal });
   } catch (error) {
-    if (error instanceof Error && error.name === "TimeoutError") {
-      throw new Error(`Registry unreachable: timed out fetching ${url}`, { cause: error });
-    }
-    throw new Error(`Registry unreachable: ${url}`, { cause: error });
+    throw unreachable(url, error);
+  } finally {
+    clearTimeout(timer);
   }
   if (!response.ok) {
     throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
@@ -148,14 +164,23 @@ async function fetchResponse(url: string): Promise<Response> {
   return response;
 }
 
+/** Read the body; a body that fails names the URL like a failed request. */
+async function readBody<T>(url: string, read: () => Promise<T>): Promise<T> {
+  try {
+    return await read();
+  } catch (error) {
+    throw unreachable(url, error);
+  }
+}
+
 async function fetchRemote(url: string): Promise<string> {
   const response = await fetchResponse(url);
-  return response.text();
+  return readBody(url, () => response.text());
 }
 
 async function fetchRemoteBuffer(url: string): Promise<Buffer> {
   const response = await fetchResponse(url);
-  return Buffer.from(await response.arrayBuffer());
+  return Buffer.from(await readBody(url, () => response.arrayBuffer()));
 }
 
 async function loadIndex(): Promise<RegistryManifestIndex> {
@@ -481,7 +506,8 @@ async function downloadFileSet(
   fileSet: ItemFileSet,
   stagingDir: string
 ): Promise<void> {
-  await Promise.all(fileSet.paths.map(async (relativePath) => {
+  const queue = [...fileSet.paths];
+  const download = async (relativePath: string): Promise<void> => {
     const segments = relativePath.split("/");
     for (const segment of segments) assertSafeNodeName(segment);
 
@@ -494,7 +520,19 @@ async function downloadFileSet(
     const filePath = join(stagingDir, ...segments);
     await mkdir(dirname(filePath), { recursive: true });
     await writeFile(filePath, content);
-  }));
+  };
+  const worker = async (): Promise<void> => {
+    for (let path = queue.shift(); path !== undefined; path = queue.shift()) {
+      try {
+        await download(path);
+      } catch (error) {
+        // The caller removes the staging directory; no other worker may write into it after that.
+        queue.length = 0;
+        throw error;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(DOWNLOAD_CONCURRENCY, queue.length) }, worker));
 }
 
 /**

@@ -162,6 +162,107 @@ describe("fetchItemToDestination", () => {
     expect(vol.readFileSync("/dest/lint/lint.sh", "utf-8")).toBe("#!/bin/sh\n");
   });
 
+  it("downloads a large file set a few files at a time", async () => {
+    const names = Array.from({ length: 40 }, (_, i) => `f${i}.md`);
+    for (const name of names) responses.set(`${REGISTRY_RAW}/hooks/many/${name}`, name);
+    const serve = fetchMock.getMockImplementation()!;
+    let inFlight = 0;
+    let maxInFlight = 0;
+    fetchMock.mockImplementation(async (url: string) => {
+      maxInFlight = Math.max(maxInFlight, ++inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight--;
+      return serve(url);
+    });
+    const { fetchItemToDestination } = await loadRegistry();
+    const firstParty: RegistryItem = {
+      slug: "many",
+      name: "Many",
+      type: "hook",
+      description: "d",
+      compatibility: ["claude"],
+      sourceType: "seedr",
+      contents: { files: names.map((name) => ({ name, type: "file" as const })) },
+    };
+
+    try {
+      await expect(fetchItemToDestination(firstParty, "/dest/many")).resolves.toMatchObject({ files: names });
+    } finally {
+      fetchMock.mockImplementation(serve);
+    }
+    expect(vol.readFileSync("/dest/many/f39.md", "utf-8")).toBe("f39.md");
+    expect(maxInFlight).toBeGreaterThan(1);
+    expect(maxInFlight).toBeLessThanOrEqual(8);
+  });
+
+  describe("timing", () => {
+    const slow: RegistryItem = {
+      slug: "slow",
+      name: "Slow",
+      type: "hook",
+      description: "d",
+      compatibility: ["claude"],
+      sourceType: "seedr",
+      contents: { files: [{ name: "big.html", type: "file" }] },
+    };
+    const BIG_URL = `${REGISTRY_RAW}/hooks/slow/big.html`;
+    const DEST = "/dest/slow";
+
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it("times out a request whose headers do not arrive", async () => {
+      fetchMock.mockImplementationOnce(
+        (_url: string, init?: RequestInit) =>
+          new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal!.reason)))
+      );
+      const { fetchItemToDestination } = await loadRegistry();
+
+      const install = expect(fetchItemToDestination(slow, DEST)).rejects.toThrow(
+        `Registry unreachable: timed out fetching ${BIG_URL}`
+      );
+      await vi.advanceTimersByTimeAsync(15_000);
+      await install;
+    });
+
+    it("keeps reading a body that arrives for longer than the timeout", async () => {
+      let signal: AbortSignal | undefined;
+      let finish!: () => void;
+      const finished = new Promise<void>((resolve) => (finish = resolve));
+      fetchMock.mockImplementationOnce(async (_url: string, init?: RequestInit) => {
+        signal = init?.signal ?? undefined;
+        const body = new ReadableStream({
+          async pull(controller) {
+            await finished;
+            controller.enqueue(new TextEncoder().encode("<html>"));
+            controller.close();
+          },
+        });
+        return new Response(body, { status: 200 });
+      });
+      const { fetchItemToDestination } = await loadRegistry();
+
+      const install = fetchItemToDestination(slow, DEST);
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(signal?.aborted).toBe(false);
+      finish();
+
+      await expect(install).resolves.toMatchObject({ files: ["big.html"] });
+      expect(vol.readFileSync("/dest/slow/big.html", "utf-8")).toBe("<html>");
+    });
+
+    it("names the file when its body fails", async () => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(new ReadableStream({ pull: (controller) => controller.error(new TypeError("terminated")) }), {
+          status: 200,
+        })
+      );
+      const { fetchItemToDestination } = await loadRegistry();
+
+      await expect(fetchItemToDestination(slow, DEST)).rejects.toThrow(`Registry unreachable: ${BIG_URL}`);
+    });
+  });
+
   it("verifies a first-party item whenever it carries a digest", async () => {
     responses.set(`${REGISTRY_RAW}/skills/mine/SKILL.md`, "hello\n");
     responses.set(`${REGISTRY_RAW}/skills/mine/scripts/a.py`, "print(1)\n");

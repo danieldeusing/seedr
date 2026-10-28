@@ -384,6 +384,8 @@ function checkFirstPartyPlugin(item: Item, push: Push): void {
 }
 
 const SKILL_FILE = "SKILL.md";
+/** The limit Copilot's skill loader enforces; a longer description drops the skill. */
+export const MAX_SKILL_DESCRIPTION = 1024;
 
 /**
  * Read scalar fields from a YAML frontmatter block. Handles `key: value`, quoted values,
@@ -430,6 +432,15 @@ function checkFirstPartySkill(item: Item, options: ValidateOptions, push: Push):
     push(SKILL_FILE, `frontmatter "name" must equal the slug "${String(item.slug)}"${name ? ` (found "${name}")` : ""}`);
   }
   if (!isNonEmptyString(description)) push(SKILL_FILE, 'frontmatter "description" must be non-empty');
+  else if (description.length > MAX_SKILL_DESCRIPTION) {
+    push(SKILL_FILE, `frontmatter "description" is ${description.length} characters — Copilot refuses a skill past ${MAX_SKILL_DESCRIPTION}`);
+  }
+  // parseFrontmatter is lenient; a real YAML parser (Copilot's) rejects the whole file here.
+  const block = /^---\r?\n([\s\S]*?)\r?\n---/.exec(options.skillMd)?.[1] ?? "";
+  const plain = /^description:[ \t]+([^'"|>\s].*)$/m.exec(block);
+  if (plain && (plain[1] as string).includes(": ")) {
+    push(SKILL_FILE, 'frontmatter "description" is a plain value holding ": ", which YAML reads as a second key — quote it');
+  }
 }
 
 function checkProvenance(item: Item, options: ValidateOptions, push: Push): void {

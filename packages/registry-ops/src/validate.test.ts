@@ -120,6 +120,18 @@ describe("a first-party skill", () => {
     ]);
   });
 
+  test("is refused when the description is past 1024 characters or a plain value holds ': '", () => {
+    const withDescription = (d: string) => `---\nname: alpha\ndescription: ${d}\n---\n`;
+    expect(validateItem(seedrSkill, { skillMd: withDescription("x".repeat(1024)) })).toEqual([]);
+    expect(validateItem(seedrSkill, { skillMd: withDescription("x".repeat(1025)) }).map((e) => e.message)).toEqual([
+      'frontmatter "description" is 1025 characters — Copilot refuses a skill past 1024',
+    ]);
+    expect(validateItem(seedrSkill, { skillMd: withDescription("Pairs with code-optimizer: run it first.") }).map((e) => e.message)).toEqual([
+      'frontmatter "description" is a plain value holding ": ", which YAML reads as a second key — quote it',
+    ]);
+    expect(validateItem(seedrSkill, { skillMd: withDescription("'Pairs with code-optimizer: run it first.'") })).toEqual([]);
+  });
+
   test("synced skills are not held to it", () => {
     const official = { ...seedrSkill, sourceType: "official", externalUrl: "https://github.com/a/b/tree/main/x", sourceRevision: "a".repeat(40), contentDigest: "b".repeat(64), contents: { files: [{ name: "x.md", type: "file" }] } };
     expect(validateItem(official, { skillMd: null })).toEqual([]);

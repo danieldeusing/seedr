@@ -519,7 +519,9 @@ async function downloadFileSet(
     const content = await fetchRemoteBuffer(url);
     const filePath = join(stagingDir, ...segments);
     await mkdir(dirname(filePath), { recursive: true });
-    await writeFile(filePath, content);
+    // The registry serves no file mode, so a script that a skill runs by its path would land without
+    // its execute bit. Every such script starts with "#!"; writeFile's default mode is 0o666.
+    await writeFile(filePath, content, { mode: content.toString("latin1", 0, 2) === "#!" ? 0o777 : 0o666 });
   };
   const worker = async (): Promise<void> => {
     for (let path = queue.shift(); path !== undefined; path = queue.shift()) {

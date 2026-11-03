@@ -162,6 +162,25 @@ describe("fetchItemToDestination", () => {
     expect(vol.readFileSync("/dest/lint/lint.sh", "utf-8")).toBe("#!/bin/sh\n");
   });
 
+  it("makes a downloaded script executable and leaves every other file as it is", async () => {
+    responses.set(`${REGISTRY_RAW}/hooks/lint/lint.sh`, "#!/bin/sh\n");
+    responses.set(`${REGISTRY_RAW}/hooks/lint/README.md`, "# lint\n");
+    const { fetchItemToDestination } = await loadRegistry();
+    const firstParty: RegistryItem = {
+      slug: "lint",
+      name: "Lint",
+      type: "hook",
+      description: "d",
+      compatibility: ["claude"],
+      sourceType: "seedr",
+      contents: { files: [{ name: "lint.sh", type: "file" }, { name: "README.md", type: "file" }] },
+    };
+
+    await fetchItemToDestination(firstParty, "/dest/lint");
+    expect(vol.statSync("/dest/lint/lint.sh").mode & 0o111).toBe(0o111);
+    expect(vol.statSync("/dest/lint/README.md").mode & 0o111).toBe(0);
+  });
+
   it("downloads a large file set a few files at a time", async () => {
     const names = Array.from({ length: 40 }, (_, i) => `f${i}.md`);
     for (const name of names) responses.set(`${REGISTRY_RAW}/hooks/many/${name}`, name);

@@ -18,7 +18,7 @@ describe("App", () => {
     mockFs(registryFiles());
 
     render(<App />);
-    expect(await screen.findByRole("heading", { name: "Choose a registry" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "choose a registry" })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "choose folder" }));
     expect(await screen.findByRole("button", { name: /skills\/ 2/ })).toBeInTheDocument();

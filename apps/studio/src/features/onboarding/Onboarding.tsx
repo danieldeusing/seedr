@@ -11,8 +11,7 @@ export function Onboarding({ error, onChoose }: OnboardingProps) {
   return (
     <main className="flex h-screen flex-col items-center justify-center gap-6 p-8">
       <div className="max-w-xl border border-neutral-700 bg-neutral-980 p-8">
-        <p className="prompt">seedr studio</p>
-        <h1 className="glow-lg mt-4 text-2xl font-bold">Choose a registry</h1>
+        <h1 className="prompt text-2xl font-bold">choose a registry</h1>
         <p className="mt-3 text-muted-foreground">
           Studio works on a local checkout of a seedr repository — one with a <code className="text-primary">registry/</code> directory, or whatever its{" "}
           <code className="text-primary">seedr.config.json</code> names instead, and the

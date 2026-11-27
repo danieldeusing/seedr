@@ -5,9 +5,8 @@ export function Impressum() {
   usePageMeta(impressumMeta());
   return (
     <div className="max-w-[var(--content-w)] mx-auto px-4 py-8">
-      <p className="prompt">cat imprint.txt</p>
-      <h1 className="glow mt-6 text-2xl font-bold tracking-tight">
-        Imprint
+      <h1 className="page-title prompt">
+        imprint
         <span className="cursor-block" aria-hidden />
       </h1>
 

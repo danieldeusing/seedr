@@ -217,8 +217,7 @@ export function Detail({ item, onEdit, onTest }: DetailProps) {
       <header className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="prompt text-xs">cat {item.dir}/item.json</p>
-            <h1 className="glow mt-2 text-xl font-bold">{item.item.name ?? item.slug}</h1>
+            <h1 className="glow prompt text-xl font-bold">{item.item.name ?? item.slug}</h1>
           </div>
           <span className="flex items-center gap-3">
             {onTest && !testRefusal(item) && (
